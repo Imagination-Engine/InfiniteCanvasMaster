@@ -1,0 +1,17 @@
+autogen-agentchat
+autogen-ext
+openai
+
+requests
+beautifulsoup4
+lxml
+
+faiss-cpu
+
+langchain
+langchain-community
+langchain-ollama
+langchain-text-splitters
+
+reportlab
+tiktoken
