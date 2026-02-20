@@ -1,4 +1,5 @@
 import React from 'react';
+import { Sidebar } from './Sidebar';
 
 /**
  * Props (Properties) interface for the Layout component.
@@ -46,6 +47,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         gets injected and displayed on the screen.
       */}
       {children}
+
+      {/* 
+        Step 1: Adding our new Sidebar!
+        We place it after {children} so it sits on top of the canvas.
+      */}
+      <Sidebar />
     </main>
   );
 };
