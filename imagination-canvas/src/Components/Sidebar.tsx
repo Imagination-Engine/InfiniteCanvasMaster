@@ -1,50 +1,75 @@
-import React from 'react';
+import type { DragEvent } from "react";
 
-/**
- * MODULE_TYPES defines the different kinds of blocks we can create.
- * Each has an ID (for logic) and a color (for the UI).
- */
+// ─── Module Definitions ─────────────────────────────────────────────
+// Each entry maps to a key in NODE_TYPES (see ./nodes/index.ts).
+// To add a new module: add it here AND register its component in NODE_TYPES.
 const MODULE_TYPES = [
-  { id: 'trigger', label: 'Trigger', color: 'bg-emerald-500' },
-  { id: 'action', label: 'Action', color: 'bg-blue-500' },
-  { id: 'filter', label: 'Filter', color: 'bg-amber-500' },
-];
+  {
+    type: "trigger",
+    label: "Trigger",
+    color: "#10b981",
+  }, // emerald-500
+  {
+    type: "action",
+    label: "Action",
+    color: "#3b82f6",
+  }, // blue-500
+  {
+    type: "filter",
+    label: "Filter",
+    color: "#f59e0b",
+  }, // amber-500
+] as const;
 
 /**
- * Sidebar Component
- * 
- * This component displays a list of draggable modules. 
- * We use the native HTML5 Drag and Drop API here.
+ * Sidebar — draggable module palette.
+ *
+ * Uses HTML5 Drag-and-Drop to let users drag tiles onto the Canvas.
+ * The drag payload ('application/reactflow') carries the module type string.
  */
-export const Sidebar = () => {
+export function Sidebar() {
+  const onDragStart = (
+    event: DragEvent<HTMLDivElement>,
+    moduleType: string,
+  ) => {
+    event.dataTransfer.setData(
+      "application/reactflow",
+      moduleType,
+    );
+    event.dataTransfer.effectAllowed = "move";
+  };
+
   return (
-    <div className="absolute left-6 top-1/2 -translate-y-1/2 w-64 bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl p-4 z-50">
-      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Modules</h3>
-      
-      <div className="flex flex-col gap-3">
-        {MODULE_TYPES.map((block) => (
+    <aside className="sidebar">
+      <h3 className="sidebar-title">Modules</h3>
+
+      <div className="sidebar-modules">
+        {MODULE_TYPES.map((module) => (
           <div
-            key={block.id}
-            // 1. draggable="true" tells the browser this element can be dragged.
-            draggable="true"
-            // 2. onDragStart is called the moment the user starts dragging.
-            onDragStart={(e) => {
-              // We use e.dataTransfer.setData to "attach" the block ID to the drag event.
-              // This is like putting a label on a package before shipping it to the canvas.
-              e.dataTransfer.setData('blockType', block.id);
-            }}
-            className="flex items-center gap-3 p-3 rounded-xl cursor-grab active:cursor-grabbing hover:scale-105 transition-all bg-slate-50 border border-slate-100 shadow-sm"
+            key={module.type}
+            className="sidebar-module"
+            draggable
+            onDragStart={(e) =>
+              onDragStart(e, module.type)
+            }
           >
-            {/* A small colored dot to represent the module type */}
-            <div className={`w-3 h-3 rounded-full ${block.color}`} />
-            <span className="font-medium text-slate-700">{block.label}</span>
+            <span
+              className="sidebar-module-dot"
+              style={{
+                backgroundColor: module.color,
+              }}
+            />
+            <span className="sidebar-module-label">
+              {module.label}
+            </span>
           </div>
         ))}
       </div>
-      
-      <p className="mt-6 text-[10px] text-slate-400 text-center leading-relaxed">
-        Drag a module onto the canvas to start building your flow.
+
+      <p className="sidebar-hint">
+        Drag a module onto the canvas to add it to
+        your flow.
       </p>
-    </div>
+    </aside>
   );
-};
+}
