@@ -25,7 +25,7 @@ import { NODE_TYPES } from "./nodes";
 
 // ─── Initial Demo Data ──────────────────────────────────────────────
 // Starter nodes so new users see something immediately.
-// Feel free to clear these — the drag-and-drop sidebar creates new ones.
+// Feel free to clear these — the sidebar creates new ones via drag-and-drop.
 const INITIAL_NODES: Node[] = [
   {
     id: "demo-trigger",
@@ -62,8 +62,6 @@ const INITIAL_EDGES: Edge[] = [
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────
-
-/** Generates a unique node ID using a timestamp + counter. */
 let nodeIdCounter = 0;
 const createNodeId = () =>
   `node-${Date.now()}-${nodeIdCounter++}`;
@@ -82,21 +80,15 @@ const createNodeId = () =>
  * MUST be rendered inside a <ReactFlowProvider> (see App.tsx).
  */
 export default function Canvas() {
-  // useNodesState / useEdgesState return [items, setItems, onItemsChange].
-  // The third value is an internal handler React Flow calls on drag, resize, etc.
   const [nodes, setNodes, onNodesChange] =
     useNodesState(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] =
     useEdgesState(INITIAL_EDGES);
-
-  // Converts screen coordinates → flow coordinates (accounts for pan/zoom)
   const { screenToFlowPosition } = useReactFlow();
-
   const reactFlowWrapper =
     useRef<HTMLDivElement>(null);
 
   // ── Edge Connection ───────────────────────────────────────────────
-  // Fires when a user drags from one handle to another.
   const onConnect = useCallback(
     (connection: Connection) => {
       setEdges((current) =>
@@ -106,7 +98,7 @@ export default function Canvas() {
     [setEdges],
   );
 
-  // ── Drag-and-Drop (works with Sidebar's HTML5 DnD events) ────────
+  // ── Drag-and-Drop (paired with Sidebar's HTML5 DnD) ──────────────
   const onDragOver = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -125,22 +117,19 @@ export default function Canvas() {
         );
       if (!blockType) return;
 
-      // Convert screen (x, y) → flow coordinates
       const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      const newNode: Node = {
-        id: createNodeId(),
-        type: blockType,
-        position,
-        data: { label: `New ${blockType}` },
-      };
-
       setNodes((current) => [
         ...current,
-        newNode,
+        {
+          id: createNodeId(),
+          type: blockType,
+          position,
+          data: { label: `New ${blockType}` },
+        },
       ]);
     },
     [screenToFlowPosition, setNodes],
@@ -150,7 +139,7 @@ export default function Canvas() {
   return (
     <div
       ref={reactFlowWrapper}
-      className="canvas-wrapper"
+      className="flex-1 h-full"
     >
       <ReactFlow
         nodes={nodes}

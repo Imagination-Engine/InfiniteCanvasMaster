@@ -15,33 +15,33 @@ export type ActionNodeType = Node<
 /**
  * ActionNode — performs an operation in the flow.
  *
- * Visual cues:
- *  - Blue accent bar on the left edge
- *  - Both TARGET (top) and SOURCE (bottom) handles — actions receive input and pass output
+ * - Blue accent bar on the left edge
+ * - Both TARGET (top) and SOURCE (bottom) handles — receives input and passes output
  */
 export function ActionNode({
   data,
 }: NodeProps<ActionNodeType>) {
   return (
-    <div className="action-node">
+    <div className="flex items-stretch min-w-[160px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
       {/* Receives input from upstream nodes */}
       <Handle
         type="target"
         position={Position.Top}
       />
 
-      <div className="node-accent node-accent--blue" />
+      {/* Blue accent bar */}
+      <div className="w-1.5 shrink-0 bg-blue-500" />
 
-      <div className="node-body">
-        <span className="node-type-label">
+      <div className="px-3.5 py-2.5 flex flex-col gap-0.5">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
           Action
         </span>
-        <span className="node-label">
+        <span className="text-sm font-medium text-slate-800">
           {data.label}
         </span>
       </div>
 
-      {/* Passes output to downstream nodes */}
+      {/* Passes output downstream */}
       <Handle
         type="source"
         position={Position.Bottom}

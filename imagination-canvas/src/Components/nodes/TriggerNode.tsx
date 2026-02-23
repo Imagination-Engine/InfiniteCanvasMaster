@@ -6,8 +6,6 @@ import {
 } from "@xyflow/react";
 
 // ─── Type Definition ────────────────────────────────────────────────
-// Each custom node carries a `label` string in its data payload.
-// This type is exported so the Canvas can use it when creating nodes.
 export type TriggerNodeData = { label: string };
 export type TriggerNodeType = Node<
   TriggerNodeData,
@@ -17,23 +15,22 @@ export type TriggerNodeType = Node<
 /**
  * TriggerNode — the entry-point node for any flow.
  *
- * Visual cues:
- *  - Emerald accent bar on the left edge
- *  - Only a SOURCE handle (bottom) because triggers start flows, they don't receive input
+ * - Emerald accent bar on the left edge
+ * - Only a SOURCE handle (bottom) — triggers start flows, they don't receive input
  */
 export function TriggerNode({
   data,
 }: NodeProps<TriggerNodeType>) {
   return (
-    <div className="trigger-node">
-      {/* Colored accent bar — matches the emerald color from MODULE_TYPES */}
-      <div className="node-accent node-accent--emerald" />
+    <div className="flex items-stretch min-w-[160px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      {/* Emerald accent bar */}
+      <div className="w-1.5 shrink-0 bg-emerald-500" />
 
-      <div className="node-body">
-        <span className="node-type-label">
+      <div className="px-3.5 py-2.5 flex flex-col gap-0.5">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
           Trigger
         </span>
-        <span className="node-label">
+        <span className="text-sm font-medium text-slate-800">
           {data.label}
         </span>
       </div>

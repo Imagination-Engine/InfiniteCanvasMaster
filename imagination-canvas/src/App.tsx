@@ -12,13 +12,11 @@ import { Sidebar } from "./components/Sidebar";
  *  └──────────┴──────────────────────────────────────┘
  *
  * ReactFlowProvider MUST wrap any component that calls useReactFlow().
- * We place it here so both Canvas and future siblings can access the
- * shared flow instance.
  */
 function App() {
   return (
     <ReactFlowProvider>
-      <div className="app-shell">
+      <div className="flex w-screen h-screen bg-slate-50 text-slate-900">
         <Sidebar />
         <Canvas />
       </div>

@@ -7,18 +7,23 @@ const MODULE_TYPES = [
   {
     type: "trigger",
     label: "Trigger",
-    color: "#10b981",
-  }, // emerald-500
+    dot: "bg-emerald-500",
+  },
   {
     type: "action",
     label: "Action",
-    color: "#3b82f6",
-  }, // blue-500
+    dot: "bg-blue-500",
+  },
   {
     type: "filter",
     label: "Filter",
-    color: "#f59e0b",
-  }, // amber-500
+    dot: "bg-amber-500",
+  },
+  {
+    type: "link",
+    label: "Link",
+    dot: "bg-blue-300",
+  },
 ] as const;
 
 /**
@@ -40,33 +45,37 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="sidebar">
-      <h3 className="sidebar-title">Modules</h3>
+    <aside className="w-[220px] min-w-[220px] p-6 bg-white/85 backdrop-blur-md border-r border-slate-200 flex flex-col gap-4 z-10">
+      <h1 className="text-3xl font-bold text-slate-800 font-mono">Imagination Canvas</h1>
 
-      <div className="sidebar-modules">
+      
+      
+      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+        Modules
+      </h3>
+
+      <div className="flex flex-col gap-2">
         {MODULE_TYPES.map((module) => (
           <div
             key={module.type}
-            className="sidebar-module"
             draggable
             onDragStart={(e) =>
               onDragStart(e, module.type)
             }
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100 cursor-grab active:cursor-grabbing hover:scale-[1.03] hover:shadow-sm transition-all select-none"
           >
+            {/* Color dot — matches the node's accent color */}
             <span
-              className="sidebar-module-dot"
-              style={{
-                backgroundColor: module.color,
-              }}
+              className={`w-2.5 h-2.5 rounded-full shrink-0 ${module.dot}`}
             />
-            <span className="sidebar-module-label">
+            <span className="text-sm font-medium text-slate-600">
               {module.label}
             </span>
           </div>
         ))}
       </div>
 
-      <p className="sidebar-hint">
+      <p className="mt-auto text-[11px] text-slate-400 text-center leading-relaxed">
         Drag a module onto the canvas to add it to
         your flow.
       </p>

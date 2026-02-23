@@ -15,34 +15,34 @@ export type FilterNodeType = Node<
 /**
  * FilterNode — conditionally routes data in the flow.
  *
- * Visual cues:
- *  - Amber accent bar on the left edge
- *  - TARGET handle (top) for incoming data
- *  - Two SOURCE handles (bottom-left, bottom-right) representing "pass" and "reject" branches
+ * - Amber accent bar on the left edge
+ * - TARGET handle (top) for incoming data
+ * - Two SOURCE handles (bottom-left, bottom-right) for "pass" and "reject" branches
  */
 export function FilterNode({
   data,
 }: NodeProps<FilterNodeType>) {
   return (
-    <div className="filter-node">
-      {/* Incoming data to be evaluated */}
+    <div className="flex items-stretch min-w-[160px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      {/* Incoming data */}
       <Handle
         type="target"
         position={Position.Top}
       />
 
-      <div className="node-accent node-accent--amber" />
+      {/* Amber accent bar */}
+      <div className="w-1.5 shrink-0 bg-amber-500" />
 
-      <div className="node-body">
-        <span className="node-type-label">
+      <div className="px-3.5 py-2.5 flex flex-col gap-0.5">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
           Filter
         </span>
-        <span className="node-label">
+        <span className="text-sm font-medium text-slate-800">
           {data.label}
         </span>
       </div>
 
-      {/* Two outputs: "pass" branch (left) and "reject" branch (right) */}
+      {/* Two outputs: "pass" (left) and "reject" (right) */}
       <Handle
         type="source"
         position={Position.Bottom}

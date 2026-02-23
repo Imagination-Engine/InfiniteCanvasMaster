@@ -6,14 +6,17 @@
  *   2. Export it from this barrel file
  *   3. Register it in NODE_TYPES below
  *
- * React Flow uses this map to look up which component to render for each node's `type` field.
+ * React Flow uses this map to look up which component to render
+ * for each node's `type` field.
  */
 
+// ─── Component Exports ──────────────────────────────────────────────
 export { TriggerNode } from "./TriggerNode";
 export { ActionNode } from "./ActionNode";
 export { FilterNode } from "./FilterNode";
+export { LinkNode } from "./LinkNode";
 
-// Re-export data types so the Canvas can reference them
+// ─── Type Exports ───────────────────────────────────────────────────
 export type {
   TriggerNodeData,
   TriggerNodeType,
@@ -26,20 +29,22 @@ export type {
   FilterNodeData,
   FilterNodeType,
 } from "./FilterNode";
+export type {
+  LinkNodeData,
+  LinkNodeType,
+} from "./LinkNode";
 
+// ─── Node Type Registry ────────────────────────────────────────────
+// IMPORTANT: defined outside components to prevent re-mounting on render.
 import { type NodeTypes } from "@xyflow/react";
 import { TriggerNode } from "./TriggerNode";
 import { ActionNode } from "./ActionNode";
 import { FilterNode } from "./FilterNode";
+import { LinkNode } from "./LinkNode";
 
-/**
- * NODE_TYPES — maps the string type id → React component.
- *
- * IMPORTANT: This object must be defined OUTSIDE of any component
- * to prevent React Flow from re-mounting nodes on every render.
- */
 export const NODE_TYPES: NodeTypes = {
   trigger: TriggerNode,
   action: ActionNode,
   filter: FilterNode,
+  link: LinkNode,
 };
