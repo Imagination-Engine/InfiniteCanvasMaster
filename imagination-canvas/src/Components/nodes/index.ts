@@ -15,6 +15,7 @@ export { TriggerNode } from "./TriggerNode";
 export { ActionNode } from "./ActionNode";
 export { FilterNode } from "./FilterNode";
 export { LinkNode } from "./LinkNode";
+export { AudioRecordingNode } from "./AudioRecordingNode";
 
 // ─── Type Exports ───────────────────────────────────────────────────
 export type {
@@ -33,6 +34,10 @@ export type {
   LinkNodeData,
   LinkNodeType,
 } from "./LinkNode";
+export type {
+  AudioRecordingNodeData,
+  AudioRecordingNodeType,
+} from "./AudioRecordingNode";
 
 // ─── Node Type Registry ────────────────────────────────────────────
 // IMPORTANT: defined outside components to prevent re-mounting on render.
@@ -41,10 +46,12 @@ import { TriggerNode } from "./TriggerNode";
 import { ActionNode } from "./ActionNode";
 import { FilterNode } from "./FilterNode";
 import { LinkNode } from "./LinkNode";
+import { AudioRecordingNode } from "./AudioRecordingNode";
 
 export const NODE_TYPES: NodeTypes = {
   trigger: TriggerNode,
   action: ActionNode,
   filter: FilterNode,
   link: LinkNode,
+  audioRecording: AudioRecordingNode,
 };
