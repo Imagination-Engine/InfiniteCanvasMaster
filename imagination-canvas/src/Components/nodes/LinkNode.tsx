@@ -49,16 +49,16 @@ export function LinkNode({
   );
 
   return (
-    <div className="flex items-stretch min-w-[160px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all hover:shadow-md">
+    <div className="flex items-stretch min-w-[160px] bg-white rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md relative">
       {/* TARGET HANDLE: Input from the left */}
       <Handle
         type="target"
         position={Position.Left}
-        className="w-2 h-2 bg-blue-300 border border-white"
+        className="w-2 h-2 bg-blue-300 border border-white z-10"
       />
 
       {/* Blue accent bar to indicate 'Link' type visually */}
-      <div className="w-1.5 shrink-0 bg-blue-300" />
+      <div className="w-1.5 shrink-0 bg-blue-300 rounded-l-xl" />
 
       <div className="px-3.5 py-2.5 flex flex-col gap-0.5">
         <div className="flex items-center gap-1.5">

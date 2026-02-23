@@ -67,7 +67,7 @@ export function AudioRecordingNode({
   );
 
   return (
-    <div className="flex flex-col min-w-[240px] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden transition-all duration-300 hover:shadow-2xl">
+    <div className="flex flex-col min-w-[240px] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/60 transition-all duration-300 hover:shadow-2xl relative">
       {/* 
           TARGET HANDLE (INPUT)
           Allows data/events to flow into this node from the left.
@@ -75,7 +75,7 @@ export function AudioRecordingNode({
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-rose-400 border-2 border-white"
+        className="w-3 h-3 bg-rose-400 border-2 border-white z-10"
       />
 
       {/* 
@@ -83,7 +83,7 @@ export function AudioRecordingNode({
           Animates when recording to provide immediate visual feedback.
       */}
       <div
-        className={`h-1.5 w-full transition-colors duration-500 ${
+        className={`h-1.5 w-full rounded-t-2xl transition-colors duration-500 ${
           recording
             ? "bg-rose-500 animate-pulse"
             : "bg-rose-400"
@@ -114,7 +114,7 @@ export function AudioRecordingNode({
           </div>
 
           {/* Pulsing REC Indicator */}
-          {recording && ( 
+          {recording && (
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 bg-rose-500 rounded-full animate-ping" />
               <span className="text-[10px] font-bold text-rose-500">

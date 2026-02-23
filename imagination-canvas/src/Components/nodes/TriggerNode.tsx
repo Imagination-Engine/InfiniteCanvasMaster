@@ -49,9 +49,9 @@ export function TriggerNode({
   );
 
   return (
-    <div className="flex items-stretch min-w-[160px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all hover:shadow-md">
+    <div className="flex items-stretch min-w-[160px] bg-white rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md relative">
       {/* Emerald accent bar indicating 'Trigger' type */}
-      <div className="w-1.5 shrink-0 bg-emerald-500" />
+      <div className="w-1.5 shrink-0 bg-emerald-500 rounded-l-xl" />
 
       <div className="px-3.5 py-2.5 flex flex-col gap-0.5">
         <div className="flex items-center gap-1.5">
@@ -76,7 +76,7 @@ export function TriggerNode({
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-2.5 h-2.5 bg-emerald-500 border border-white"
+        className="w-2.5 h-2.5 bg-blue-500 border border-white z-10"
       />
     </div>
   );
