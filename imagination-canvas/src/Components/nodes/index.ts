@@ -1,57 +1,56 @@
-/**
- * Node Registry — single source of truth for all custom node types.
- *
- * To add a new node type:
- *   1. Create a new component in this folder (e.g. OutputNode.tsx)
- *   2. Export it from this barrel file
- *   3. Register it in NODE_TYPES below
- *
- * React Flow uses this map to look up which component to render
- * for each node's `type` field.
- */
-
-// ─── Component Exports ──────────────────────────────────────────────
-export { TriggerNode } from "./TriggerNode";
-export { ActionNode } from "./ActionNode";
-export { FilterNode } from "./FilterNode";
-export { LinkNode } from "./LinkNode";
-export { AudioRecordingNode } from "./AudioRecordingNode";
-
-// ─── Type Exports ───────────────────────────────────────────────────
-export type {
-  TriggerNodeData,
-  TriggerNodeType,
-} from "./TriggerNode";
-export type {
-  ActionNodeData,
-  ActionNodeType,
-} from "./ActionNode";
-export type {
-  FilterNodeData,
-  FilterNodeType,
-} from "./FilterNode";
-export type {
-  LinkNodeData,
-  LinkNodeType,
-} from "./LinkNode";
-export type {
-  AudioRecordingNodeData,
-  AudioRecordingNodeType,
-} from "./AudioRecordingNode";
-
-// ─── Node Type Registry ────────────────────────────────────────────
-// IMPORTANT: defined outside components to prevent re-mounting on render.
 import { type NodeTypes } from "@xyflow/react";
-import { TriggerNode } from "./TriggerNode";
-import { ActionNode } from "./ActionNode";
-import { FilterNode } from "./FilterNode";
-import { LinkNode } from "./LinkNode";
-import { AudioRecordingNode } from "./AudioRecordingNode";
+import { MoneyNode } from "./MoneyNode";
+import { SummaryAgentNode } from "./SummaryAgentNode";
+import { FuturePurchaseNode } from "./FuturePurchaseNode";
+import { BudgetGuardNode } from "./BudgetGuardNode";
+import { ForecastAgentNode } from "./ForecastAgentNode";
+import { RecurringDetectorNode } from "./RecurringDetectorNode";
+import { AnomalyAlertNode } from "./AnomalyAlertNode";
+
+export { MoneyNode } from "./MoneyNode";
+export { SummaryAgentNode } from "./SummaryAgentNode";
+export { FuturePurchaseNode } from "./FuturePurchaseNode";
+export { BudgetGuardNode } from "./BudgetGuardNode";
+export { ForecastAgentNode } from "./ForecastAgentNode";
+export { RecurringDetectorNode } from "./RecurringDetectorNode";
+export { AnomalyAlertNode } from "./AnomalyAlertNode";
+
+export type {
+  MoneyNodeData,
+  MoneyNodeKind,
+  MoneyNodeType,
+} from "./MoneyNode";
+export type {
+  SummaryAgentNodeData,
+  SummaryAgentNodeType,
+} from "./SummaryAgentNode";
+export type {
+  FuturePurchaseNodeData,
+  FuturePurchaseNodeType,
+} from "./FuturePurchaseNode";
+export type {
+  BudgetGuardNodeData,
+  BudgetGuardNodeType,
+} from "./BudgetGuardNode";
+export type {
+  ForecastAgentNodeData,
+  ForecastAgentNodeType,
+} from "./ForecastAgentNode";
+export type {
+  RecurringDetectorNodeData,
+  RecurringDetectorNodeType,
+} from "./RecurringDetectorNode";
+export type {
+  AnomalyAlertNodeData,
+  AnomalyAlertNodeType,
+} from "./AnomalyAlertNode";
 
 export const NODE_TYPES: NodeTypes = {
-  trigger: TriggerNode,
-  action: ActionNode,
-  filter: FilterNode,
-  link: LinkNode,
-  audioRecording: AudioRecordingNode,
+  moneyNode: MoneyNode,
+  summaryAgentNode: SummaryAgentNode,
+  futurePurchaseNode: FuturePurchaseNode,
+  budgetGuardNode: BudgetGuardNode,
+  forecastAgentNode: ForecastAgentNode,
+  recurringDetectorNode: RecurringDetectorNode,
+  anomalyAlertNode: AnomalyAlertNode,
 };

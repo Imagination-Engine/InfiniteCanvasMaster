@@ -1,6 +1,6 @@
 import {
   useCallback,
-  useRef,
+  useEffect,
   type DragEvent,
 } from "react";
 import {
@@ -17,130 +17,289 @@ import {
   type Node,
 } from "@xyflow/react";
 
-// React Flow's mandatory base styles (layout, handles, edges)
 import "@xyflow/react/dist/style.css";
+import { NODE_TYPES, type MoneyNodeKind } from "./nodes";
+import type { SourceMode } from "../types/spendtrace";
 
-// Custom node type registry (see ./nodes/index.ts)
-import { NODE_TYPES } from "./nodes";
+type CanvasProps = {
+  sourceMode: SourceMode;
+};
 
-// ─── Initial Demo Data ──────────────────────────────────────────────
-// Starter nodes so new users see something immediately.
-// Feel free to clear these — the sidebar creates new ones via drag-and-drop.
-const INITIAL_NODES: Node[] = [
-  {
-    id: "demo-trigger",
-    type: "trigger",
-    position: { x: 250, y: 50 },
-    data: { label: "On Form Submit" },
-  },
-  {
-    id: "demo-filter",
-    type: "filter",
-    position: { x: 250, y: 200 },
-    data: { label: "Is Valid?" },
-  },
-  {
-    id: "demo-action",
-    type: "action",
-    position: { x: 150, y: 400 },
-    data: { label: "Save to DB" },
-  },
-];
+type ModuleType =
+  | "overall"
+  | "account"
+  | "spendTx"
+  | "transferTx"
+  | "incomeTx"
+  | "category"
+  | "summaryAgent"
+  | "futurePurchase"
+  | "budgetGuard"
+  | "forecastAgent"
+  | "recurringDetector"
+  | "anomalyAlert";
 
-const INITIAL_EDGES: Edge[] = [
-  {
-    id: "e-trigger-filter",
-    source: "demo-trigger",
-    target: "demo-filter",
-  },
-  {
-    id: "e-filter-action",
-    source: "demo-filter",
-    sourceHandle: "pass",
-    target: "demo-action",
-  },
-];
+type CreatedNode = Pick<Node, "type" | "data">;
 
-// ─── Helpers ────────────────────────────────────────────────────────
+const createMoneyNode = (
+  kind: MoneyNodeKind,
+  label: string,
+  subtitle?: string,
+  amount?: number,
+): CreatedNode => ({
+  type: "moneyNode",
+  data: {
+    kind,
+    label,
+    subtitle,
+    amount,
+  },
+});
+
+const MODULE_NODE_BUILDERS: Record<ModuleType, () => CreatedNode> = {
+  overall: () => createMoneyNode("OVERALL", "My Money Graph"),
+  account: () => createMoneyNode("ACCOUNT", "New Account", "Checking / Savings"),
+  spendTx: () => createMoneyNode("TX_SPEND", "Merchant Charge", "Spending", 42),
+  transferTx: () => createMoneyNode("TX_TRANSFER", "Transfer to Savings", "Transfer", 150),
+  incomeTx: () => createMoneyNode("TX_INCOME", "Income Deposit", "Income", 1200),
+  category: () => createMoneyNode("CATEGORY", "Category Cluster", "FOOD / ESSENTIALS / MISC"),
+  summaryAgent: () => ({
+    type: "summaryAgentNode",
+    data: { label: "Summary Agent" },
+  }),
+  futurePurchase: () => ({
+    type: "futurePurchaseNode",
+    data: {
+      label: "Future Purchase Goal",
+      targetCost: 1800,
+      monthlyContribution: 300,
+    },
+  }),
+  budgetGuard: () => ({
+    type: "budgetGuardNode",
+    data: {
+      label: "Monthly Budget Guard",
+      monthlyBudget: 2500,
+      trackedSpend: 920,
+    },
+  }),
+  forecastAgent: () => ({
+    type: "forecastAgentNode",
+    data: {
+      label: "Month-End Forecast",
+      monthlyIncome: 6200,
+      monthlySpend: 4380,
+    },
+  }),
+  recurringDetector: () => ({
+    type: "recurringDetectorNode",
+    data: {
+      label: "Recurring Charges",
+      recurringAmount: 14.99,
+      cadencePerMonth: 4,
+    },
+  }),
+  anomalyAlert: () => ({
+    type: "anomalyAlertNode",
+    data: {
+      label: "Spend Spike Detector",
+      baselineAmount: 320,
+      currentAmount: 470,
+      alertThresholdPct: 25,
+    },
+  }),
+};
+
+const buildInitialGraph = (sourceMode: SourceMode): { nodes: Node[]; edges: Edge[] } => {
+  const sourceLabel = sourceMode === "PLAID" ? "Plaid mode (local stub)" : "Demo mode";
+
+  const nodes: Node[] = [
+    {
+      id: "overall",
+      position: { x: 100, y: 160 },
+      ...createMoneyNode("OVERALL", "Joshua's SpendTrace", sourceLabel),
+    },
+    {
+      id: "acct-checking",
+      position: { x: 420, y: 40 },
+      ...createMoneyNode("ACCOUNT", "Checking Account", "Primary bank"),
+    },
+    {
+      id: "acct-brokerage",
+      position: { x: 420, y: 280 },
+      ...createMoneyNode("ACCOUNT", "Brokerage Account", "Investments"),
+    },
+    {
+      id: "tx-groceries",
+      position: { x: 760, y: 20 },
+      ...createMoneyNode("TX_SPEND", "Trader Joe's", "FOOD", 86.25),
+    },
+    {
+      id: "tx-rent",
+      position: { x: 760, y: 150 },
+      ...createMoneyNode("TX_SPEND", "Rent", "ESSENTIALS", 1450),
+    },
+    {
+      id: "tx-paycheck",
+      position: { x: 760, y: 300 },
+      ...createMoneyNode("TX_INCOME", "Payroll Deposit", "INCOME", 3200),
+    },
+    {
+      id: "tx-transfer",
+      position: { x: 760, y: 430 },
+      ...createMoneyNode("TX_TRANSFER", "Transfer to Brokerage", "INVESTING", 600),
+    },
+    {
+      id: "category-food",
+      position: { x: 1110, y: 60 },
+      ...createMoneyNode("CATEGORY", "FOOD Cluster"),
+    },
+    {
+      id: "summary-agent",
+      type: "summaryAgentNode",
+      position: { x: 1080, y: 240 },
+      data: {
+        label: "Spend Summary Agent",
+      },
+    },
+    {
+      id: "budget-guard",
+      type: "budgetGuardNode",
+      position: { x: 1080, y: 410 },
+      data: {
+        label: "Essentials Budget Guard",
+        monthlyBudget: 2200,
+        trackedSpend: 1536,
+      },
+    },
+    {
+      id: "future-goal",
+      type: "futurePurchaseNode",
+      position: { x: 1410, y: 300 },
+      data: {
+        label: "Japan Trip Fund",
+        targetCost: 4000,
+        monthlyContribution: 450,
+      },
+    },
+    {
+      id: "forecast-agent",
+      type: "forecastAgentNode",
+      position: { x: 1390, y: 120 },
+      data: {
+        label: "Month-End Forecast Agent",
+        monthlyIncome: 6200,
+        monthlySpend: 4380,
+      },
+    },
+    {
+      id: "recurring-detector",
+      type: "recurringDetectorNode",
+      position: { x: 1730, y: 220 },
+      data: {
+        label: "Subscription Detector",
+        recurringAmount: 22.5,
+        cadencePerMonth: 3,
+      },
+    },
+    {
+      id: "anomaly-alert",
+      type: "anomalyAlertNode",
+      position: { x: 1730, y: 420 },
+      data: {
+        label: "Food Spend Anomaly",
+        baselineAmount: 280,
+        currentAmount: 410,
+        alertThresholdPct: 25,
+      },
+    },
+  ];
+
+  const edges: Edge[] = [
+    { id: "e-overall-checking", source: "overall", target: "acct-checking" },
+    { id: "e-overall-brokerage", source: "overall", target: "acct-brokerage" },
+    { id: "e-checking-groceries", source: "acct-checking", target: "tx-groceries" },
+    { id: "e-checking-rent", source: "acct-checking", target: "tx-rent" },
+    { id: "e-checking-paycheck", source: "acct-checking", target: "tx-paycheck" },
+    { id: "e-checking-transfer", source: "acct-checking", target: "tx-transfer" },
+    { id: "e-groceries-food", source: "tx-groceries", target: "category-food" },
+    { id: "e-rent-agent", source: "tx-rent", target: "summary-agent" },
+    { id: "e-paycheck-agent", source: "tx-paycheck", target: "summary-agent" },
+    { id: "e-transfer-budget", source: "tx-transfer", target: "budget-guard" },
+    { id: "e-budget-goal", source: "budget-guard", target: "future-goal" },
+    { id: "e-summary-forecast", source: "summary-agent", target: "forecast-agent" },
+    { id: "e-rent-recurring", source: "tx-rent", target: "recurring-detector" },
+    { id: "e-food-anomaly", source: "tx-groceries", target: "anomaly-alert" },
+  ];
+
+  return { nodes, edges };
+};
+
 let nodeIdCounter = 0;
-const createNodeId = () =>
-  `node-${Date.now()}-${nodeIdCounter++}`;
+const createNodeId = () => `node-${Date.now()}-${nodeIdCounter++}`;
 
-// ─── Canvas Component ───────────────────────────────────────────────
-
-/**
- * Canvas — the main React Flow workspace.
- *
- * Responsibilities:
- *  1. Renders all nodes and edges
- *  2. Handles new connections between nodes
- *  3. Accepts drag-and-drop from the Sidebar to create new nodes
- *  4. Provides built-in pan, zoom, minimap, and controls
- *
- * MUST be rendered inside a <ReactFlowProvider> (see App.tsx).
- */
-export default function Canvas() {
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState(INITIAL_NODES);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState(INITIAL_EDGES);
+export default function Canvas({ sourceMode }: CanvasProps) {
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { screenToFlowPosition } = useReactFlow();
-  const reactFlowWrapper =
-    useRef<HTMLDivElement>(null);
 
-  // ── Edge Connection ───────────────────────────────────────────────
+  useEffect(() => {
+    const initialGraph = buildInitialGraph(sourceMode);
+    setNodes(initialGraph.nodes);
+    setEdges(initialGraph.edges);
+  }, [setEdges, setNodes, sourceMode]);
+
   const onConnect = useCallback(
     (connection: Connection) => {
-      setEdges((current) =>
-        addEdge(connection, current),
+      setEdges((currentEdges) =>
+        addEdge(
+          {
+            ...connection,
+            animated: false,
+          },
+          currentEdges,
+        ),
       );
     },
     [setEdges],
   );
 
-  // ── Drag-and-Drop (paired with Sidebar's HTML5 DnD) ──────────────
-  const onDragOver = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-    },
-    [],
-  );
+  const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
 
   const onDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const blockType =
-        event.dataTransfer.getData(
-          "application/reactflow",
-        );
-      if (!blockType) return;
+      const rawModuleType = event.dataTransfer.getData("application/reactflow") as ModuleType;
+      if (!rawModuleType) {
+        return;
+      }
+
+      const nodeBuilder = MODULE_NODE_BUILDERS[rawModuleType] ?? MODULE_NODE_BUILDERS.account;
+      const newNodeConfig = nodeBuilder();
 
       const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
-      setNodes((current) => [
-        ...current,
+      setNodes((currentNodes) => [
+        ...currentNodes,
         {
           id: createNodeId(),
-          type: blockType,
           position,
-          data: { label: `New ${blockType}` },
+          ...newNodeConfig,
         },
       ]);
     },
     [screenToFlowPosition, setNodes],
   );
 
-  // ── Render ────────────────────────────────────────────────────────
   return (
-    <div
-      ref={reactFlowWrapper}
-      className="flex-1 h-full"
-    >
+    <div className="h-full flex-1">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -153,17 +312,9 @@ export default function Canvas() {
         fitView
         deleteKeyCode={["Backspace", "Delete"]}
       >
-        <Background
-          gap={20}
-          size={1.5}
-          color="#cbd5e1"
-        />
+        <Background gap={24} size={1.2} color="#cbd5e1" />
         <Controls />
-        <MiniMap
-          nodeStrokeWidth={3}
-          pannable
-          zoomable
-        />
+        <MiniMap pannable zoomable nodeStrokeWidth={3} />
       </ReactFlow>
     </div>
   );

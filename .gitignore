@@ -25,6 +25,46 @@ lerna-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+**/.env
+**/.env.*
+!.env.template
+!**/.env.template
+!.env.example
+!**/.env.example
+
+# Secrets and credentials
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+*.p8
+**/*credentials*.json
+**/credentials.json
+**/service-account*.json
+secrets.*
+*.secret
+*.secrets
+token.*
+*.token
+auth-token*
+
+# Local runtimes and caches
+.venv/
+venv/
+**/.venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Local data exports / DBs (often sensitive)
+*.sqlite
+*.sqlite3
+*.db
 
 # OS files
 .DS_Store
