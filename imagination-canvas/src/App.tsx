@@ -1,6 +1,6 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import Canvas from "./components/Canvas";
-import { Sidebar } from "./components/Sidebar";
+import Canvas from "./Components/Canvas";
+import { Sidebar } from "./Components/Sidebar";
 
 /**
  * App — root component for the Imagination Canvas.
