@@ -118,7 +118,7 @@ export function ContentNode({
         minWidth={240}
         minHeight={150}
         lineClassName="!border-blue-400 !border-none"
-        handleClassName="!bg-transparent !border-none"
+        handleClassName="!bg-transparent !border-none !w-5 !h-5"
       />
       {/* TARGET HANDLE: receives connections from other blocks */}
       <Handle

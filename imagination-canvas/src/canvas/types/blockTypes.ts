@@ -32,6 +32,7 @@ export type BlockType =
   | "datatable"
   | "listicle"
   | "aigenerative"
+  | "audio"
   | "group";
 
 // ─── Generic Metadata ───────────────────────────────────────────────
@@ -108,6 +109,13 @@ export interface VideoBlockContent {
   resolution?: string;
 }
 
+export interface AudioBlockContent {
+  audioUrl?: string;
+  duration?: string;      // e.g. "0:45"
+  transcript?: string;
+  format?: "mp3" | "wav" | "webm" | "m4a";
+}
+
 export interface ChatBlockContent {
   messages: Array<{
     role: "user" | "assistant";
@@ -168,10 +176,6 @@ export interface GroupBlockContent {
   label?: string;
 }
 
-export interface RecordBlockContent {
-  
-}
-
 // ─── Content Type Map ───────────────────────────────────────────────
 
 /**
@@ -191,8 +195,8 @@ export interface BlockContentMap {
   datatable:    DataTableBlockContent;
   listicle:     ListicleBlockContent;
   aigenerative: AIGenerativeBlockContent;
+  audio:        AudioBlockContent;
   group:        GroupBlockContent;
-  record:       RecordBlockContent;
 }
 
 // ─── Core Block Data (React Flow `data` field) ──────────────────────

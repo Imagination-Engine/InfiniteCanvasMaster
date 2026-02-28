@@ -38,6 +38,7 @@ const DEFAULT_CONTENT: { [T in BlockType]: BlockContentMap[T] } = {
   datatable:    { columns: [], rows: [] },
   listicle:     { items: [] },
   aigenerative: { prompt: "", outputType: "text" },
+  audio:        { audioUrl: "", duration: "0:00" },
   group:        {},
 };
 

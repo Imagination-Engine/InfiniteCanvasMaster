@@ -28,6 +28,7 @@ import type {
   VideoBlockContent,
   ChatBlockContent,
   BrowserBlockContent,
+  AudioBlockContent,
   GroupBlockContent,
 } from "../types/blockTypes";
 
@@ -88,6 +89,7 @@ const BLOCK_TYPE_TO_JC: Record<BlockType, JsonCanvasNodeType> = {
   sandbox:      "text",
   product:      "text",
   datatable:    "text",
+  audio:        "file",
 };
 
 /**
@@ -133,9 +135,14 @@ export function exportNodeToJsonCanvas(node: CanvasBlockNode): JsonCanvasNode {
       return { ...base, text: serializeContentToText(node) };
 
     case "image":
-    case "video": {
-      const content = node.data.content as ImageBlockContent | VideoBlockContent;
-      const fileUrl = "imageUrl" in content ? content.imageUrl : content.videoUrl;
+    case "video":
+    case "audio": {
+      const content = node.data.content as ImageBlockContent | VideoBlockContent | AudioBlockContent;
+      let fileUrl = "";
+      if ("imageUrl" in content) fileUrl = content.imageUrl;
+      else if ("videoUrl" in content) fileUrl = content.videoUrl || "";
+      else if ("audioUrl" in content) fileUrl = content.audioUrl || "";
+      
       return { ...base, file: fileUrl };
     }
 

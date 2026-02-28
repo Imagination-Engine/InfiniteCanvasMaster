@@ -12,6 +12,7 @@ import {
   List,
   Sparkles,
   Group,
+  Mic,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { BlockType } from "../canvas/types/blockTypes";
@@ -41,6 +42,7 @@ const BLOCK_PALETTE: BlockPaletteEntry[] = [
   { type: "datatable",    label: "Data Table",   icon: Table,          color: "text-teal-500" },
   { type: "listicle",     label: "Listicle",     icon: List,           color: "text-amber-500" },
   { type: "aigenerative", label: "AI Generate",  icon: Sparkles,       color: "text-purple-500" },
+  { type: "audio",        label: "Audio",        icon: Mic,       color: "text-rose-500" },
   { type: "group",        label: "Group",        icon: Group,          color: "text-slate-400" },
 ];
 
@@ -63,16 +65,18 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-[220px] min-w-[220px] p-6 bg-white/85 backdrop-blur-md border-r border-slate-200 flex flex-col gap-4 z-10">
-      <h1 className="text-2xl font-bold text-slate-800 font-mono">
-        Imagination Canvas
-      </h1>
+    <aside className="w-[220px] min-w-[220px] h-full bg-white/85 backdrop-blur-md border-r border-slate-200 flex flex-col z-10 overflow-hidden">
+      <div className="shrink-0 p-6 pb-2 flex flex-col gap-1">
+        <h1 className="text-2xl font-bold text-slate-800 font-mono">
+          Imagination Canvas
+        </h1>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+          Modules
+        </h3>
+      </div>
 
-      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
-        Modules
-      </h3>
-
-      <div className="flex flex-col gap-2">
+      {/* Scrollable Node Container — extra horizontal padding prevents clipping during scale/shadow */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3 custom-scrollbar">
         {BLOCK_PALETTE.map((block) => (
           <div
             key={block.type}
@@ -80,26 +84,26 @@ export function Sidebar() {
             onDragStart={(e) =>
               onDragStart(e, block.type)
             }
-            className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-100 cursor-grab active:cursor-grabbing hover:scale-[1.03] hover:shadow-md transition-all select-none group"
+            className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-100 cursor-grab active:cursor-grabbing hover:scale-[1.04] hover:shadow-lg hover:shadow-slate-200/50 transition-all select-none group"
           >
-            {/* Lucide Icon — matches the block's accent color */}
             <block.icon
               className={`w-4 h-4 shrink-0 ${block.color} transition-transform group-hover:scale-110`}
             />
 
-            <span className="text-sm font-semibold text-slate-600">
+            <span className="text-sm font-semibold text-slate-600 outline-none">
               {block.label}
             </span>
           </div>
         ))}
       </div>
 
-      <p className="mt-auto text-[11px] text-slate-400 text-center leading-relaxed">
-        Drag a module onto the canvas to add it to
-        your flow.
-      </p>
-
-      <SaveCanvasButton />
+      <div className="shrink-0 p-6 pt-4 border-t border-slate-100 mt-auto bg-white/50">
+        <p className="mb-4 text-[11px] text-slate-400 text-center leading-relaxed">
+          Drag a module onto the canvas to add it to
+          your flow.
+        </p>
+        <SaveCanvasButton />
+      </div>
     </aside>
   );
 }

@@ -33,7 +33,7 @@ import type { BlockType } from "../canvas/types/blockTypes";
 // move them from the legacy path into this set.
 const NEW_BLOCK_TYPES: Set<BlockType> = new Set([
   "content", "image", "video", "code", "chat", "sandbox",
-  "product", "browser", "datatable", "listicle", "aigenerative", "group",
+  "product", "browser", "datatable", "listicle", "aigenerative", "audio", "group",
 ]);
 
 /** Returns true if this type uses the new BlockData schema (vs legacy { label } data). */
@@ -45,39 +45,19 @@ function isNewBlockType(type: string): type is BlockType {
 // Starter nodes so new users see something immediately.
 // Feel free to clear these — the sidebar creates new ones via drag-and-drop.
 const INITIAL_NODES: Node[] = [
-  {
-    id: "demo-trigger",
-    type: "trigger",
-    position: { x: 250, y: 50 },
-    data: { label: "On Form Submit" },
-  },
-  {
-    id: "demo-filter",
-    type: "filter",
-    position: { x: 250, y: 200 },
-    data: { label: "Is Valid?" },
-  },
-  {
-    id: "demo-action",
-    type: "action",
-    position: { x: 150, y: 400 },
-    data: { label: "Save to DB" },
-  },
+  createBlock("content", {
+    id: "demo-welcome",
+    title: "Welcome to Imagination Canvas",
+    position: { x: 250, y: 100 },
+    content: {
+      document: "# Welcome!\n\nThis is your new persistent workspace. Drag blocks from the sidebar to begin.\n\n*   **AI Agents** can read and write to these blocks.\n*   **Sandboxes** let you run code securely.\n*   **Images & Video** can be generated in-place.",
+      format: "markdown"
+    }
+  }),
 ];
 
-const INITIAL_EDGES: Edge[] = [
-  {
-    id: "e-trigger-filter",
-    source: "demo-trigger",
-    target: "demo-filter",
-  },
-  {
-    id: "e-filter-action",
-    source: "demo-filter",
-    sourceHandle: "pass",
-    target: "demo-action",
-  },
-];
+const INITIAL_EDGES: Edge[] = [];
+ 
 
 // ─── Helpers ────────────────────────────────────────────────────────
 let nodeIdCounter = 0;
