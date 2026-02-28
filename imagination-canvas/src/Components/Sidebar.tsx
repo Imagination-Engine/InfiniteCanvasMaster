@@ -6,6 +6,7 @@ import {
   Share2,
   Mic,
 } from "lucide-react";
+import SaveCanvasButton from "./SaveCanvasButton";
 
 // ─── Module Definitions ─────────────────────────────────────────────
 // Each entry maps to a key in NODE_TYPES (see ./nodes/index.ts).
@@ -63,7 +64,7 @@ export function Sidebar() {
 
   return (
     <aside className="w-[220px] min-w-[220px] p-6 bg-white/85 backdrop-blur-md border-r border-slate-200 flex flex-col gap-4 z-10">
-      <h1 className="text-3xl font-bold text-slate-800 font-mono">
+      <h1 className="text-2xl font-bold text-slate-800 font-mono">
         Imagination Canvas
       </h1>
 
@@ -97,6 +98,8 @@ export function Sidebar() {
         Drag a module onto the canvas to add it to
         your flow.
       </p>
+
+      <SaveCanvasButton />
     </aside>
   );
 }
