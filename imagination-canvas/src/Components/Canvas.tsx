@@ -23,6 +23,24 @@ import "@xyflow/react/dist/style.css";
 // Custom node type registry (see ./nodes/index.ts)
 import { NODE_TYPES } from "./nodes";
 
+// Block schema — factory for creating typed blocks
+import { createBlock } from "../canvas/factories/blockFactory";
+import type { BlockType } from "../canvas/types/blockTypes";
+
+// ─── Block Type Detection ───────────────────────────────────────────
+// New block types that use the factory + BlockData schema.
+// As you migrate old node components (trigger, action, etc.) to use BlockData,
+// move them from the legacy path into this set.
+const NEW_BLOCK_TYPES: Set<BlockType> = new Set([
+  "content", "image", "video", "code", "chat", "sandbox",
+  "product", "browser", "datatable", "listicle", "aigenerative", "group",
+]);
+
+/** Returns true if this type uses the new BlockData schema (vs legacy { label } data). */
+function isNewBlockType(type: string): type is BlockType {
+  return NEW_BLOCK_TYPES.has(type as BlockType);
+}
+
 // ─── Initial Demo Data ──────────────────────────────────────────────
 // Starter nodes so new users see something immediately.
 // Feel free to clear these — the sidebar creates new ones via drag-and-drop.
@@ -122,15 +140,26 @@ export default function Canvas() {
         y: event.clientY,
       });
 
-      setNodes((current) => [
-        ...current,
-        {
-          id: createNodeId(),
-          type: blockType,
-          position,
-          data: { label: `New ${blockType}` },
-        },
-      ]);
+      // New block types use the factory for fully-typed, schema-valid data.
+      // Legacy types (trigger, action, etc.) still use the old { label } format
+      // until their components are migrated to read from BlockData.
+      if (isNewBlockType(blockType)) {
+        setNodes((current) => [
+          ...current,
+          createBlock(blockType, { position }),
+        ]);
+      } else {
+        // Legacy fallback — remove this branch as you migrate each old node
+        setNodes((current) => [
+          ...current,
+          {
+            id: createNodeId(),
+            type: blockType,
+            position,
+            data: { label: `New ${blockType}` },
+          },
+        ]);
+      }
     },
     [screenToFlowPosition, setNodes],
   );

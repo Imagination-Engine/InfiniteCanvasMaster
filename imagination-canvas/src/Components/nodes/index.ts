@@ -11,6 +11,7 @@
  */
 
 // ─── Component Exports ──────────────────────────────────────────────
+export { ContentNode } from "./ContentNode";
 export { TriggerNode } from "./TriggerNode";
 export { ActionNode } from "./ActionNode";
 export { FilterNode } from "./FilterNode";
@@ -18,6 +19,10 @@ export { LinkNode } from "./LinkNode";
 export { AudioRecordingNode } from "./AudioRecordingNode";
 
 // ─── Type Exports ───────────────────────────────────────────────────
+export type {
+  ContentNodeData,
+  ContentNodeType,
+} from "./ContentNode";
 export type {
   TriggerNodeData,
   TriggerNodeType,
@@ -41,7 +46,9 @@ export type {
 
 // ─── Node Type Registry ────────────────────────────────────────────
 // IMPORTANT: defined outside components to prevent re-mounting on render.
+// This map tells React Flow: "when a node has type='content', render ContentNode"
 import { type NodeTypes } from "@xyflow/react";
+import { ContentNode } from "./ContentNode";
 import { TriggerNode } from "./TriggerNode";
 import { ActionNode } from "./ActionNode";
 import { FilterNode } from "./FilterNode";
@@ -49,6 +56,7 @@ import { LinkNode } from "./LinkNode";
 import { AudioRecordingNode } from "./AudioRecordingNode";
 
 export const NODE_TYPES: NodeTypes = {
+  content: ContentNode,
   trigger: TriggerNode,
   action: ActionNode,
   filter: FilterNode,

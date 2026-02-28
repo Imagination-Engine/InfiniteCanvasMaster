@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { serializeCanvasToBalnceSpec } from '../utils/canvasAdapter';
+import { exportCanvasToJsonCanvas } from '../canvas/adapters/jsonCanvasAdapter';
+import type { CanvasDocument } from '../canvas/types/blockTypes';
 import { Save } from 'lucide-react';
 
 export default function SaveCanvasButton() {
@@ -13,11 +14,11 @@ export default function SaveCanvasButton() {
     // 1. Extract the raw state from React Flow Engine
     const rawReactFlowState = toObject();
     
-    // 2. Pass it through the serialization adapter
-    const cleanAdaptedGraph = serializeCanvasToBalnceSpec(rawReactFlowState);
+    // 2. Pass it through the JSON Canvas adapter for interoperable export
+    const jsonCanvasOutput = exportCanvasToJsonCanvas(rawReactFlowState as unknown as CanvasDocument);
 
-    // Logs the cleaned data that is ready for the Knowledge Graph/Backend
-    console.log("Saving clean graph logic:", JSON.stringify(cleanAdaptedGraph, null, 2));
+    // Logs the JSON Canvas data ready for export or backend persistence
+    console.log("Saving JSON Canvas:", JSON.stringify(jsonCanvasOutput, null, 2));
     
     // Imitates network delay for UX
     await new Promise((resolve) => setTimeout(resolve, 800));
