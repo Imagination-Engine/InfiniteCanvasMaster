@@ -148,7 +148,7 @@ export default function Canvas() {
   return (
     <div
       ref={reactFlowWrapper}
-      className="flex-1 h-full"
+      className="flex-1 h-full bg-[#0A0A0F]"
     >
       <ReactFlow
         nodes={nodes}
@@ -161,17 +161,19 @@ export default function Canvas() {
         onDrop={onDrop}
         fitView
         deleteKeyCode={["Backspace", "Delete"]}
+        colorMode="dark"
       >
         <Background
           gap={20}
-          size={1.5}
-          color="#cbd5e1"
+          size={1}
+          color="rgba(255, 255, 255, 0.05)"
         />
         <Controls />
         <MiniMap
           nodeStrokeWidth={3}
           pannable
           zoomable
+          className="!bg-[#111128]/80 !border-white/10"
         />
       </ReactFlow>
     </div>

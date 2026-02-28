@@ -109,61 +109,61 @@ export function ImageNode({
   const hasImage = !!data.content.imageUrl;
 
   return (
-    <div className="flex flex-col min-w-[280px] min-h-[200px] h-full bg-white rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md relative">
+    <div className={`flex flex-col min-w-[280px] min-h-[220px] h-full bg-white/[0.03] backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
+      selected ? "border-[#00C2FF] shadow-[0_0_30px_rgba(0,194,255,0.15)] scale-[1.01]" : "border-white/5 shadow-2xl"
+    }`}>
       <NodeResizer
         isVisible={selected}
         minWidth={280}
-        minHeight={200}
-        lineClassName="!border-violet-400 !border-none"
+        minHeight={220}
+        lineClassName="!border-[#00C2FF]/50 !border-none"
         handleClassName="!bg-transparent !border-none !w-5 !h-5"
       />
 
       <Handle
         type="target"
         position={Position.Top}
-        className="w-2.5 h-2.5 bg-violet-500 border border-white z-10"
+        className="w-2 h-2 bg-[#00C2FF] border border-white/20 z-10"
       />
 
       {/* Header */}
-      <div className="px-3.5 py-2 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-        <div className="flex items-center gap-1.5 font-mono">
-          <ImageIcon className="w-3.5 h-3.5 text-violet-500" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+      <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+        <div className="flex items-center gap-2">
+          <ImageIcon className="w-3.5 h-3.5 text-[#00C2FF]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7A99]">
             Image
           </span>
         </div>
         {hasImage && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button 
               onClick={triggerUpload}
-              className="p-1 hover:bg-slate-200 rounded transition-colors"
-              title="Replace Image"
+              className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
+              title="Replace"
             >
-              <Upload className="w-3 h-3 text-slate-400" />
+              <Upload className="w-3 h-3 text-[#6B7A99] hover:text-[#00C2FF]" />
             </button>
             <button 
               onClick={handleRemoveImage}
-              className="p-1 hover:bg-red-50 rounded transition-colors group/trash"
-              title="Remove Image"
+              className="p-1.5 hover:bg-rose-500/10 rounded-lg transition-colors group/trash"
+              title="Remove"
             >
-              <Trash2 className="w-3 h-3 text-slate-400 group-hover/trash:text-red-500" />
+              <Trash2 className="w-3 h-3 text-[#6B7A99] group-hover/trash:text-rose-500" />
             </button>
           </div>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col p-3 gap-3 overflow-hidden">
-        {/* Title Input */}
+      <div className="flex-1 flex flex-col p-4 gap-3 overflow-hidden">
         <input
           type="text"
           value={data.metadata.title}
           onChange={handleTitleChange}
           placeholder="Image Title..."
-          className="text-sm font-semibold text-slate-800 outline-none w-full bg-transparent nodrag nopan"
+          className="text-sm font-black text-white outline-none w-full bg-transparent nodrag nopan uppercase tracking-tight"
         />
 
-        {/* Main Content Area */}
-        <div className="flex-1 relative rounded-lg border-2 border-dashed border-slate-100 bg-slate-50/30 overflow-hidden flex flex-col items-center justify-center group">
+        <div className="flex-1 relative rounded-xl border border-dashed border-white/10 bg-white/[0.01] overflow-hidden flex flex-col items-center justify-center group/preview">
           {hasImage ? (
             <img 
               src={data.content.imageUrl} 
@@ -171,42 +171,42 @@ export function ImageNode({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="flex flex-col items-center gap-4 py-8 px-4 w-full">
+            <div className="flex flex-col items-center gap-5 py-8 px-4 w-full text-center">
               {/* Upload Button */}
               <button 
                 onClick={triggerUpload}
-                className="flex flex-col items-center gap-2 text-slate-400 hover:text-violet-500 transition-colors"
+                className="flex flex-col items-center gap-3 text-[#6B7A99] hover:text-[#00C2FF] transition-all"
               >
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] shadow-lg flex items-center justify-center border border-white/5 group-hover/preview:scale-110 group-hover/preview:border-[#00C2FF]/30 transition-all duration-500">
                   <Upload className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium">Click to upload image</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Upload Content</span>
               </button>
 
-              <div className="w-full flex items-center gap-2">
-                <div className="h-[1px] flex-1 bg-slate-100" />
-                <span className="text-[9px] uppercase font-bold text-slate-300">or</span>
-                <div className="h-[1px] flex-1 bg-slate-100" />
+              <div className="w-full flex items-center gap-3">
+                <div className="h-[1px] flex-1 bg-white/5" />
+                <span className="text-[9px] uppercase font-black text-white/10 tracking-widest">or</span>
+                <div className="h-[1px] flex-1 bg-white/5" />
               </div>
 
               {/* AI Prompt Area */}
-              <div className="w-full flex flex-col gap-2">
-                <div className="flex items-center gap-1.5 text-violet-500">
+              <div className="w-full flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-[#00C2FF]">
                   <Sparkles className="w-3 h-3" />
-                  <span className="text-[9px] font-bold uppercase">Generate with AI</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Manifest with AI</span>
                 </div>
                 <textarea
                   value={data.content.sourcePrompt || ""}
                   onChange={handlePromptChange}
-                  placeholder="Describe the image..."
-                  className="w-full text-xs p-2 rounded-lg bg-white border border-slate-100 outline-none focus:border-violet-300 transition-colors resize-none nowheel nodrag nopan"
+                  placeholder="Describe your imagination..."
+                  className="w-full text-xs p-3 rounded-xl bg-white/[0.02] border border-white/5 outline-none focus:border-[#00C2FF]/30 transition-all resize-none nowheel nodrag nopan text-[#B0B8CC] leading-relaxed"
                   rows={2}
                 />
                 <button 
                   disabled
-                  className="w-full py-1.5 bg-violet-500/10 text-violet-500 text-[10px] font-bold rounded-lg border border-violet-100 opacity-50 cursor-not-allowed"
+                  className="w-full py-2 bg-[#00C2FF]/10 text-[#00C2FF] text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-[#00C2FF]/20 opacity-40 cursor-not-allowed"
                 >
-                  Generate (Soon)
+                  Generate
                 </button>
               </div>
             </div>
@@ -223,15 +223,15 @@ export function ImageNode({
       </div>
 
       {hasImage && data.status === "loading" && (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-20">
-          <Sparkles className="w-6 h-6 text-violet-500 animate-pulse" />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-20">
+          <Sparkles className="w-8 h-8 text-[#00C2FF] animate-pulse" />
         </div>
       )}
 
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-2.5 h-2.5 bg-violet-500 border border-white"
+        className="w-2 h-2 bg-[#00C2FF] border border-white/20"
       />
     </div>
   );

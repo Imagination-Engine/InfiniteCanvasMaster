@@ -109,91 +109,83 @@ export function ContentNode({
   );
 
   return (
-    <div className="flex items-stretch min-w-[240px] min-h-[150px] h-full bg-white rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md relative">
-      {/* NodeResizer — adds drag handles on edges and corners.
-          Only visible when the node is selected. The `minWidth` and `minHeight`
-          prevent the node from collapsing too small to be usable. */}
+    <div className={`flex items-stretch min-w-[240px] min-h-[150px] h-full bg-white/[0.03] backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
+      selected ? "border-[#7B5CEA] shadow-[0_0_30px_rgba(123,92,234,0.15)] scale-[1.01]" : "border-white/5 shadow-2xl"
+    }`}>
       <NodeResizer
         isVisible={selected}
         minWidth={240}
         minHeight={150}
-        lineClassName="!border-blue-400 !border-none"
+        lineClassName="!border-[#7B5CEA]/50 !border-none"
         handleClassName="!bg-transparent !border-none !w-5 !h-5"
       />
-      {/* TARGET HANDLE: receives connections from other blocks */}
       <Handle
         type="target"
         position={Position.Top}
-        className="w-2.5 h-2.5 bg-blue-500 border border-white z-10"
+        className="w-2 h-2 bg-[#7B5CEA] border border-white/20 z-10"
       />
 
-      {/* Accent bar — blue to match the "Content" color in the sidebar */}
-      <div className="w-1.5 shrink-0 bg-blue-500 rounded-l-xl" />
+      {/* Brand Accent Bar */}
+      <div className="w-1 shrink-0 bg-[#7B5CEA]/30" />
 
-      <div className="px-3.5 py-2.5 flex flex-col gap-1.5 flex-1">
-        {/* ── Header row: icon + type label ── */}
-        <div className="flex items-center gap-1.5">
-          <FileText className="w-3 h-3 text-blue-500" />
-          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+      <div className="px-4 py-3 flex flex-col gap-2 flex-1">
+        {/* Header row */}
+        <div className="flex items-center gap-2">
+          <FileText className="w-3.5 h-3.5 text-[#7B5CEA]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7A99]">
             Content
           </span>
-          {/* Show the format badge */}
-          <span className="ml-auto text-[9px] font-medium text-slate-300 uppercase">
+          <span className="ml-auto text-[9px] font-bold text-white/20 uppercase tracking-widest">
             {data.content.format}
           </span>
         </div>
 
-        {/* ── Title input ── */}
+        {/* Title input */}
         <input
           type="text"
           value={data.metadata.title}
           onChange={handleTitleChange}
           onKeyDown={(e) => e.stopPropagation()}
-          className="text-sm font-semibold text-slate-800 bg-transparent outline-none focus:text-blue-600 transition-colors nowheel nodrag nopan"
+          className="text-sm font-black text-white bg-transparent outline-none focus:text-[#7B5CEA] transition-colors nowheel nodrag nopan uppercase tracking-tight"
           placeholder="Block title..."
         />
 
-        {/* ── Document textarea ── */}
-        {/* This is where the user writes their actual content.
-            The nowheel/nodrag/nopan classes prevent React Flow from
-            hijacking scroll and drag events inside the textarea. */}
+        {/* Document textarea */}
         <textarea
           value={data.content.document}
           onChange={handleDocumentChange}
           onKeyDown={(e) => e.stopPropagation()}
-          className="text-xs text-slate-600 bg-slate-50 rounded-lg p-2 outline-none resize-none flex-1 border border-slate-100 focus:border-blue-300 transition-colors nowheel nodrag nopan"
+          className="text-xs text-[#B0B8CC] bg-white/[0.02] rounded-xl p-3 outline-none resize-none flex-1 border border-white/5 focus:border-[#7B5CEA]/30 focus:bg-white/[0.04] transition-all nowheel nodrag nopan leading-relaxed"
           placeholder="Start writing..."
         />
 
-        {/* ── Status indicator (shows when an AI agent is generating) ── */}
-        {data.status === "loading" && (
-          <div className="flex items-center gap-1.5 text-[10px] text-blue-500">
-            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-            Generating...
-          </div>
-        )}
+        {/* Status indicators */}
+        <div className="flex items-center justify-between mt-1">
+          {data.status === "loading" ? (
+            <div className="flex items-center gap-2 text-[10px] text-[#7B5CEA] font-black uppercase tracking-widest">
+              <div className="w-1.5 h-1.5 bg-[#7B5CEA] rounded-full animate-pulse shadow-[0_0_8px_#7B5CEA]" />
+              Generating
+            </div>
+          ) : data.status === "error" ? (
+            <div className="text-[10px] text-rose-500 font-black uppercase tracking-widest">
+              Error
+            </div>
+          ) : (
+            <div />
+          )}
 
-        {data.status === "error" && (
-          <div className="text-[10px] text-red-500 font-medium">
-            Error generating content
-          </div>
-        )}
-
-        {/* ── Agent attribution (if AI-generated) ── */}
-        {data.agentContext && (
-          <div className="text-[9px] text-slate-400 mt-0.5">
-            by {data.agentContext.generatingAgent}
-            {" · "}
-            {Math.round(data.agentContext.confidenceScore * 100)}% confidence
-          </div>
-        )}
+          {data.agentContext && (
+            <div className="text-[9px] text-[#6B7A99] font-bold uppercase tracking-widest">
+              {data.agentContext.generatingAgent} • {Math.round(data.agentContext.confidenceScore * 100)}%
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* SOURCE HANDLE: connects to downstream blocks */}
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-2.5 h-2.5 bg-blue-500 border border-white"
+        className="w-2 h-2 bg-[#7B5CEA] border border-white/20"
       />
     </div>
   );

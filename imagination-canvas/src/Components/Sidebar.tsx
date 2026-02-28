@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { BlockType } from "../canvas/types/blockTypes";
+import logo from "../assets/logo.svg";
 import SaveCanvasButton from "./SaveCanvasButton";
 
 // ─── Block Palette Definitions ──────────────────────────────────────
@@ -65,12 +66,21 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-[220px] min-w-[220px] h-full bg-white/85 backdrop-blur-md border-r border-slate-200 flex flex-col z-10 overflow-hidden">
-      <div className="shrink-0 p-6 pb-2 flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-slate-800 font-mono">
-          Imagination Canvas
-        </h1>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+    <aside className="w-[220px] min-w-[220px] h-full bg-[#111128]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col z-10 overflow-hidden">
+      <div className="shrink-0 p-6 pb-2 flex flex-col gap-4">
+        <div className="flex items-center gap-3 group">
+          <img 
+            src={logo} 
+            alt="Balnce Logo" 
+            width={32}
+            height={32}
+            className="w-8 h-8 object-contain transition-transform group-hover:scale-110 drop-shadow-[0_0_8px_rgba(123,92,234,0.3)]" 
+          />
+          <h1 className="text-[18px] font-black tracking-tighter text-white uppercase leading-none">
+            BALNCE <span className="text-[#7B5CEA]">AI</span>
+          </h1>
+        </div>
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#6B7A99]">
           Modules
         </h3>
       </div>
@@ -84,23 +94,22 @@ export function Sidebar() {
             onDragStart={(e) =>
               onDragStart(e, block.type)
             }
-            className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-100 cursor-grab active:cursor-grabbing hover:scale-[1.04] hover:shadow-lg hover:shadow-slate-200/50 transition-all select-none group"
+            className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-white/[0.03] border border-white/5 cursor-grab active:cursor-grabbing hover:scale-[1.04] hover:bg-white/[0.06] hover:border-[#7B5CEA]/30 hover:shadow-[0_8px_20px_-5px_rgba(123,92,234,0.2)] transition-all select-none group"
           >
             <block.icon
               className={`w-4 h-4 shrink-0 ${block.color} transition-transform group-hover:scale-110`}
             />
 
-            <span className="text-sm font-semibold text-slate-600 outline-none">
+            <span className="text-sm font-semibold text-[#B0B8CC] group-hover:text-white transition-colors outline-none">
               {block.label}
             </span>
           </div>
         ))}
       </div>
 
-      <div className="shrink-0 p-6 pt-4 border-t border-slate-100 mt-auto bg-white/50">
-        <p className="mb-4 text-[11px] text-slate-400 text-center leading-relaxed">
-          Drag a module onto the canvas to add it to
-          your flow.
+      <div className="shrink-0 p-6 pt-4 border-t border-white/5 mt-auto bg-black/20">
+        <p className="mb-4 text-[11px] text-[#6B7A99] font-medium text-center leading-relaxed">
+          Drag a module onto the canvas to unleash your imagination.
         </p>
         <SaveCanvasButton />
       </div>
