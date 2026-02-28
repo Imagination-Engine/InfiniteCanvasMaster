@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-bg-primary: #0A0A0F;
-  --color-brand-bg-secondary: #111128;
-  --color-brand-accent-primary: #7B5CEA;
-  --color-brand-accent-secondary: #00C2FF;
+  --color-brand-bg-page: #0A0A0F;
+  --color-brand-bg-surface: #111128;
+  --color-brand-bg-glass: rgba(255, 255, 255, 0.03);
+  
+  --color-brand-purple: #7B5CEA;
+  --color-brand-cyan: #00C2FF;
+  
   --color-brand-text-headline: #FFFFFF;
   --color-brand-text-body: #B0B8CC;
   --color-brand-text-muted: #6B7A99;
+  
+  --color-brand-border: rgba(255, 255, 255, 0.08);
+  --color-brand-border-glow: rgba(123, 100, 255, 0.2);
 }
 
 /* ─── Global Reset ─────────────────────────────────────────────── */

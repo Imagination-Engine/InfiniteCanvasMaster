@@ -109,30 +109,30 @@ export function ContentNode({
   );
 
   return (
-    <div className={`flex items-stretch min-w-[240px] min-h-[150px] h-full bg-white/[0.03] backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
-      selected ? "border-[#7B5CEA] shadow-[0_0_30px_rgba(123,92,234,0.15)] scale-[1.01]" : "border-white/5 shadow-2xl"
+    <div className={`flex items-stretch min-w-[240px] min-h-[150px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
+      selected ? "border-brand-purple shadow-[0_0_30px_rgba(123,92,234,0.15)] scale-[1.01]" : "border-brand-border shadow-2xl"
     }`}>
       <NodeResizer
         isVisible={selected}
         minWidth={240}
         minHeight={150}
-        lineClassName="!border-[#7B5CEA]/50 !border-none"
+        lineClassName="!border-brand-purple/50 !border-none"
         handleClassName="!bg-transparent !border-none !w-5 !h-5"
       />
       <Handle
         type="target"
         position={Position.Top}
-        className="w-2 h-2 bg-[#7B5CEA] border border-white/20 z-10"
+        className="w-2 h-2 bg-brand-purple border border-white/20 z-10"
       />
 
       {/* Brand Accent Bar */}
-      <div className="w-1 shrink-0 bg-[#7B5CEA]/30" />
+      <div className="w-1 shrink-0 bg-brand-purple/30" />
 
       <div className="px-4 py-3 flex flex-col gap-2 flex-1">
         {/* Header row */}
         <div className="flex items-center gap-2">
-          <FileText className="w-3.5 h-3.5 text-[#7B5CEA]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7A99]">
+          <FileText className="w-3.5 h-3.5 text-brand-purple" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
             Content
           </span>
           <span className="ml-auto text-[9px] font-bold text-white/20 uppercase tracking-widest">
@@ -146,7 +146,7 @@ export function ContentNode({
           value={data.metadata.title}
           onChange={handleTitleChange}
           onKeyDown={(e) => e.stopPropagation()}
-          className="text-sm font-black text-white bg-transparent outline-none focus:text-[#7B5CEA] transition-colors nowheel nodrag nopan uppercase tracking-tight"
+          className="text-sm font-black text-white bg-transparent outline-none focus:text-brand-purple transition-colors nowheel nodrag nopan uppercase tracking-tight"
           placeholder="Block title..."
         />
 
@@ -155,15 +155,15 @@ export function ContentNode({
           value={data.content.document}
           onChange={handleDocumentChange}
           onKeyDown={(e) => e.stopPropagation()}
-          className="text-xs text-[#B0B8CC] bg-white/[0.02] rounded-xl p-3 outline-none resize-none flex-1 border border-white/5 focus:border-[#7B5CEA]/30 focus:bg-white/[0.04] transition-all nowheel nodrag nopan leading-relaxed"
+          className="text-xs text-brand-text-body bg-white/[0.02] rounded-xl p-3 outline-none resize-none flex-1 border border-brand-border focus:border-brand-purple/30 focus:bg-white/[0.04] transition-all nowheel nodrag nopan leading-relaxed"
           placeholder="Start writing..."
         />
 
         {/* Status indicators */}
         <div className="flex items-center justify-between mt-1">
           {data.status === "loading" ? (
-            <div className="flex items-center gap-2 text-[10px] text-[#7B5CEA] font-black uppercase tracking-widest">
-              <div className="w-1.5 h-1.5 bg-[#7B5CEA] rounded-full animate-pulse shadow-[0_0_8px_#7B5CEA]" />
+            <div className="flex items-center gap-2 text-[10px] text-brand-purple font-black uppercase tracking-widest">
+              <div className="w-1.5 h-1.5 bg-brand-purple rounded-full animate-pulse shadow-[0_0_8px_rgba(123,92,234,0.5)]" />
               Generating
             </div>
           ) : data.status === "error" ? (
@@ -175,7 +175,7 @@ export function ContentNode({
           )}
 
           {data.agentContext && (
-            <div className="text-[9px] text-[#6B7A99] font-bold uppercase tracking-widest">
+            <div className="text-[9px] text-brand-text-muted font-bold uppercase tracking-widest">
               {data.agentContext.generatingAgent} • {Math.round(data.agentContext.confidenceScore * 100)}%
             </div>
           )}
@@ -185,7 +185,7 @@ export function ContentNode({
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-2 h-2 bg-[#7B5CEA] border border-white/20"
+        className="w-2 h-2 bg-brand-purple border border-white/20"
       />
     </div>
   );

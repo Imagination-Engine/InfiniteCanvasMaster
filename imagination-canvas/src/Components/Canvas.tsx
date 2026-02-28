@@ -148,7 +148,7 @@ export default function Canvas() {
   return (
     <div
       ref={reactFlowWrapper}
-      className="flex-1 h-full bg-[#0A0A0F]"
+      className="flex-1 h-full bg-brand-bg-page"
     >
       <ReactFlow
         nodes={nodes}
@@ -173,7 +173,7 @@ export default function Canvas() {
           nodeStrokeWidth={3}
           pannable
           zoomable
-          className="!bg-[#111128]/80 !border-white/10"
+          className="!bg-brand-bg-surface/80 !border-white/10"
         />
       </ReactFlow>
     </div>

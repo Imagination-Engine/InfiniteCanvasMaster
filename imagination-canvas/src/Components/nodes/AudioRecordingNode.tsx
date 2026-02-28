@@ -92,8 +92,8 @@ export function AudioRecordingNode({
   const currentAudioUrl = data.content.audioUrl || audioURL;
 
   return (
-    <div className={`flex flex-col min-w-[280px] min-h-[160px] h-full bg-white/[0.03] backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
-      selected ? "border-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.15)] scale-[1.01]" : "border-white/5 shadow-2xl"
+    <div className={`flex flex-col min-w-[280px] min-h-[160px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
+      selected ? "border-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.15)] scale-[1.01]" : "border-brand-border shadow-2xl"
     }`}>
       <NodeResizer
         isVisible={selected}
@@ -110,10 +110,10 @@ export function AudioRecordingNode({
       />
 
       {/* Header */}
-      <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+      <div className="px-4 py-2.5 border-b border-brand-border flex items-center justify-between bg-white/[0.02]">
         <div className="flex items-center gap-2">
           <Mic className={`w-3.5 h-3.5 ${recording ? "text-rose-600 animate-pulse shadow-[0_0_10px_rgba(225,29,72,0.5)]" : "text-rose-500"}`} />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7A99]">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
             Voice Recorder
           </span>
         </div>
@@ -156,7 +156,7 @@ export function AudioRecordingNode({
           ) : (
             <button
               onClick={stopRecording}
-              className="flex items-center justify-center gap-3 py-4 px-6 bg-white text-[#0A0A0F] rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 nodrag"
+              className="flex items-center justify-center gap-3 py-4 px-6 bg-white text-brand-bg-page rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 nodrag"
             >
               <Square className="w-3.5 h-3.5 fill-rose-500 text-rose-500 animate-pulse" />
               Stop Session
@@ -164,7 +164,7 @@ export function AudioRecordingNode({
           )}
 
           {currentAudioUrl && (
-            <div className="mt-2 flex flex-col gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/5 overflow-hidden">
+            <div className="mt-2 flex flex-col gap-3 p-3 bg-white/[0.02] rounded-xl border border-brand-border overflow-hidden">
                <audio
                 src={currentAudioUrl}
                 controls
@@ -174,7 +174,7 @@ export function AudioRecordingNode({
                 <a
                   href={currentAudioUrl}
                   download={`${data.metadata.title || "recording"}.webm`}
-                  className="text-[9px] font-black text-[#6B7A99] hover:text-rose-500 transition-colors tracking-[0.2em] uppercase"
+                  className="text-[9px] font-black text-brand-text-muted hover:text-rose-500 transition-colors tracking-[0.2em] uppercase"
                 >
                   Export Archive
                 </a>
