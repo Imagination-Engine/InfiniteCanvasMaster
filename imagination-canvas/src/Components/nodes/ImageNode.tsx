@@ -199,7 +199,7 @@ export function ImageNode({
                   value={data.content.sourcePrompt || ""}
                   onChange={handlePromptChange}
                   placeholder="Describe your imagination..."
-                  className="w-full text-xs p-3 rounded-xl bg-white/[0.02] border border-brand-border outline-none focus:border-brand-cyan/30 transition-all resize-none nowheel nodrag nopan text-brand-text-body leading-relaxed"
+                  className="w-full text-xs p-3 rounded-xl bg-white/[0.02] border border-brand-border outline-none focus:border-brand-cyan/30 transition-all resize-none nowheel nodrag nopan text-brand-text-body leading-relaxed custom-scrollbar"
                   rows={2}
                 />
                 <button 

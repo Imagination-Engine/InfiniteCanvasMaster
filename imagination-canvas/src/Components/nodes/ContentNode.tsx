@@ -155,7 +155,7 @@ export function ContentNode({
           value={data.content.document}
           onChange={handleDocumentChange}
           onKeyDown={(e) => e.stopPropagation()}
-          className="text-xs text-brand-text-body bg-white/[0.02] rounded-xl p-3 outline-none resize-none flex-1 border border-brand-border focus:border-brand-purple/30 focus:bg-white/[0.04] transition-all nowheel nodrag nopan leading-relaxed"
+          className="text-xs text-brand-text-body bg-white/[0.02] rounded-xl p-3 outline-none resize-none flex-1 border border-brand-border focus:border-brand-purple/30 focus:bg-white/[0.04] transition-all nowheel nodrag nopan leading-relaxed custom-scrollbar"
           placeholder="Start writing..."
         />
 
