@@ -1,6 +1,7 @@
 import {
   Handle,
   Position,
+  NodeResizer,
   type NodeProps,
   type Node,
   useReactFlow,
@@ -8,42 +9,28 @@ import {
 import React, { useCallback } from "react";
 import { Mic, Square } from "lucide-react";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder";
+import type { BlockData } from "../../canvas/types/blockTypes";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
  * AudioRecordingNode.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * A specialized React Flow node that enables voice recording directly
- * from the canvas.
- *
- * This component uses:
- * 1. `@xyflow/react`: For node handles and state updates.
- * 2. `useAudioRecorder`: A custom hook encapsulating MediaRecorder logic.
- * 3. `lucide-react`: For high-quality, scalable icons.
- * 4. `Tailwind CSS`: For a premium glassmorphism aesthetic.
+ * Updated to follow the standardized BlockData<"audio"> schema.
+ * Supports:
+ *  1. Live voice recording via MediaRecorder hook.
+ *  2. Schema-compliant metadata and content management.
+ *  3. Node resizing with invisible handles.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-export type AudioRecordingNodeData = {
-  label: string;
-};
+export type AudioRecordingNodeData = BlockData<"audio">;
+export type AudioRecordingNodeType = Node<AudioRecordingNodeData, "audio">;
 
-export type AudioRecordingNodeType = Node<
-  AudioRecordingNodeData,
-  "audioRecording"
->;
-
-/**
- * AudioRecordingNode Component
- *
- * @param id - Unique node identifier provided by React Flow.
- * @param data - The persistent data for this node (label).
- */
 export function AudioRecordingNode({
   id,
   data,
+  selected,
 }: NodeProps<AudioRecordingNodeType>) {
-  // Access React Flow's API to update node data globally
   const { updateNodeData } = useReactFlow();
 
   // Custom hook for all audio recording logic
@@ -54,126 +41,155 @@ export function AudioRecordingNode({
     stopRecording,
   } = useAudioRecorder();
 
-  /**
-   * Persists the text label as the user types.
-   */
-  const handleLabelChange = useCallback(
+  // ── Persistence Logic ───────────────────────────────────────────
+  
+  // Update parent when recording finishes
+  React.useEffect(() => {
+    if (audioURL && audioURL !== data.content.audioUrl) {
+      updateNodeData(id, {
+        ...data,
+        content: {
+          ...data.content,
+          audioUrl: audioURL,
+        },
+        metadata: {
+          ...data.metadata,
+          lastModifiedAt: new Date().toISOString(),
+          version: data.metadata.version + 1,
+        },
+      });
+    }
+  }, [audioURL, id, data, updateNodeData]);
+
+  const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateNodeData(id, {
-        label: e.target.value,
+        ...data,
+        metadata: {
+          ...data.metadata,
+          title: e.target.value,
+        },
       });
     },
-    [id, updateNodeData],
+    [id, data, updateNodeData],
   );
 
+  const handleRemoveRecording = useCallback(() => {
+    updateNodeData(id, {
+      ...data,
+      content: {
+        ...data.content,
+        audioUrl: "",
+      },
+      metadata: {
+        ...data.metadata,
+        lastModifiedAt: new Date().toISOString(),
+        version: data.metadata.version + 1,
+      },
+    });
+  }, [id, data, updateNodeData]);
+
+  const currentAudioUrl = data.content.audioUrl || audioURL;
+
   return (
-    <div className="flex flex-col min-w-[240px] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/60 transition-all duration-300 hover:shadow-2xl relative">
-      {/* 
-          TARGET HANDLE (INPUT)
-          Allows data/events to flow into this node from the left.
-      */}
+    <div className={`flex flex-col min-w-[280px] min-h-[160px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
+      selected ? "border-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.15)] scale-[1.01]" : "border-brand-border shadow-2xl"
+    }`}>
+      <NodeResizer
+        isVisible={selected}
+        minWidth={280}
+        minHeight={160}
+        lineClassName="!border-rose-500/50 !border-none"
+        handleClassName="!bg-transparent !border-none !w-5 !h-5"
+      />
+
       <Handle
         type="target"
-        position={Position.Left}
-        className="w-3 h-3 bg-rose-400 border-2 border-white z-10"
+        position={Position.Top}
+        className="w-2 h-2 bg-rose-500 border border-white/20 z-10"
       />
 
-      {/* 
-          HEADER ACCENT BAR
-          Animates when recording to provide immediate visual feedback.
-      */}
-      <div
-        className={`h-1.5 w-full rounded-t-2xl transition-colors duration-500 ${
-          recording
-            ? "bg-rose-500 animate-pulse"
-            : "bg-rose-400"
-        }`}
-      />
-
-      <div className="p-4 flex flex-col gap-4">
-        {/* HEADER: Title and Editable Label */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <Mic className="w-3 h-3 text-rose-500" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                Voice Recorder
-              </span>
-            </div>
-            <input
-              type="text"
-              value={data.label}
-              onChange={handleLabelChange}
-              // Prevent dragging the node when interacting with the input
-              onKeyDown={(e) =>
-                e.stopPropagation()
-              }
-              className="text-sm font-semibold text-slate-800 bg-transparent outline-none focus:text-rose-600 transition-colors nowheel nodrag nopan"
-              placeholder="Recording Name..."
-            />
-          </div>
-
-          {/* Pulsing REC Indicator */}
-          {recording && (
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-rose-500 rounded-full animate-ping" />
-              <span className="text-[10px] font-bold text-rose-500">
-                REC
-              </span>
-            </div>
-          )}
+      {/* Header */}
+      <div className="px-4 py-2.5 border-b border-brand-border flex items-center justify-between bg-white/[0.02]">
+        <div className="flex items-center gap-2">
+          <Mic className={`w-3.5 h-3.5 ${recording ? "text-rose-600 animate-pulse shadow-[0_0_10px_rgba(225,29,72,0.5)]" : "text-rose-500"}`} />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
+            Voice Recorder
+          </span>
         </div>
+        {recording && (
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping" />
+            <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Live</span>
+          </div>
+        )}
+        {currentAudioUrl && !recording && (
+          <button 
+           onClick={handleRemoveRecording}
+           className="p-1.5 hover:bg-rose-500/10 rounded-lg transition-colors group/trash"
+           title="Remove"
+         >
+           <Mic className="w-3 h-3 text-[#6B7A99] group-hover/trash:text-rose-500" />
+         </button>
+        )}
+      </div>
 
-        {/* RECORDER CONTROLS: Dynamic button based on recording state */}
-        <div className="flex flex-col gap-3">
+      <div className="flex-1 flex flex-col p-4 gap-4">
+        {/* Title Input */}
+        <input
+          type="text"
+          value={data.metadata.title}
+          onChange={handleTitleChange}
+          placeholder="Recording Name..."
+          className="text-sm font-black text-white outline-none w-full bg-transparent nodrag nopan uppercase tracking-tight"
+        />
+
+        <div className="flex-1 flex flex-col gap-4 justify-center">
           {!recording ? (
             <button
               onClick={startRecording}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-medium transition-all shadow-md active:scale-95 group"
+              className="flex items-center justify-center gap-3 py-4 px-6 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg shadow-rose-500/20 active:scale-95 group nodrag"
             >
               <Mic className="w-4 h-4 transition-transform group-hover:scale-110" />
-              Start Recording
+              {currentAudioUrl ? "New Take" : "Begin Recording"}
             </button>
           ) : (
             <button
               onClick={stopRecording}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-medium transition-all shadow-md active:scale-95"
+              className="flex items-center justify-center gap-3 py-4 px-6 bg-white text-brand-bg-page rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 nodrag"
             >
-              <Square className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse" />
-              Stop Recording
+              <Square className="w-3.5 h-3.5 fill-rose-500 text-rose-500 animate-pulse" />
+              Stop Session
             </button>
           )}
 
-          {/* AUDIO PLAYER: Displayed only after a recording is finished */}
-          {audioURL && (
-            <div className="flex flex-col gap-2 mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <audio
-                src={audioURL}
+          {currentAudioUrl && (
+            <div className="mt-2 flex flex-col gap-3 p-3 bg-white/[0.02] rounded-xl border border-brand-border overflow-hidden">
+               <audio
+                src={currentAudioUrl}
                 controls
-                className="w-full h-8"
+                className="w-full h-8 brightness-90 contrast-125"
               />
-              <a
-                href={audioURL}
-                download={`${data.label || "recording"}.webm`}
-                className="text-[10px] text-center font-bold text-slate-400 hover:text-rose-500 transition-colors tracking-wide uppercase"
-              >
-                Download Recording
-              </a>
+              <div className="flex justify-center">
+                <a
+                  href={currentAudioUrl}
+                  download={`${data.metadata.title || "recording"}.webm`}
+                  className="text-[9px] font-black text-brand-text-muted hover:text-rose-500 transition-colors tracking-[0.2em] uppercase"
+                >
+                  Export Archive
+                </a>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* 
-          SOURCE HANDLE (OUTPUT)
-          Allows connection to downstream nodes from the right.
-      */}
       <Handle
         type="source"
-        position={Position.Right}
-        id="audio"
-        className="w-3 h-3 bg-rose-400 border-2 border-white"
+        position={Position.Bottom}
+        className="w-2 h-2 bg-rose-500 border border-white/20"
       />
     </div>
   );
 }
+

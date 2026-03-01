@@ -1,6 +1,6 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import Canvas from "./Components/Canvas";
-import { Sidebar } from "./Components/Sidebar";
+import Canvas from "./components/Canvas";
+import { Sidebar } from "./components/Sidebar";
 
 /**
  * App — root component for the Imagination Canvas.
@@ -15,12 +15,31 @@ import { Sidebar } from "./Components/Sidebar";
  */
 function App() {
   return (
-    <ReactFlowProvider>
-      <div className="flex w-screen h-screen bg-slate-50 text-slate-900">
-        <Sidebar />
-        <Canvas />
-      </div>
-    </ReactFlowProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route 
+          path="/ImaginationCanvas" 
+          element={
+            <ReactFlowProvider>
+              <div className="flex w-screen h-screen bg-slate-50 text-slate-900">
+                <ImaginationCanvas />
+              </div>
+            </ReactFlowProvider>
+          } 
+        />
+        <Route 
+          path="/AgentCanvas" 
+          element={
+            <ReactFlowProvider>
+              <div className="flex w-screen h-screen bg-slate-50 text-slate-900">
+                <AgentCanvas />
+              </div>
+            </ReactFlowProvider>
+          } 
+        />
+      </Routes>
+    </Router>
   );
 }
 
