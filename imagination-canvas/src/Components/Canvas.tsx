@@ -1,6 +1,7 @@
 import {
   useCallback,
   useRef,
+  useEffect,
   type DragEvent,
 } from "react";
 import {
@@ -25,7 +26,7 @@ import { NODE_TYPES } from "./nodes";
 
 // Block schema — factory for creating typed blocks
 import { createBlock } from "../canvas/factories/blockFactory";
-import type { BlockType } from "../canvas/types/blockTypes";
+import type { BlockType, CanvasDocument } from "../canvas/types/blockTypes";
 
 // ─── Block Type Detection ───────────────────────────────────────────
 // New block types that use the factory + BlockData schema.
@@ -77,14 +78,54 @@ const createNodeId = () =>
  *
  * MUST be rendered inside a <ReactFlowProvider> (see App.tsx).
  */
-export default function Canvas() {
+type CanvasProps = {
+  initialDocument?: CanvasDocument | null;
+  showDemo?: boolean;
+  onDocumentChange?: (document: CanvasDocument) => void;
+};
+
+export default function Canvas({
+  initialDocument = null,
+  showDemo = true,
+  onDocumentChange,
+}: CanvasProps = {}) {
+  const startingNodes = initialDocument
+    ? (initialDocument.nodes as Node[])
+    : showDemo
+      ? INITIAL_NODES
+      : [];
+  const startingEdges = initialDocument
+    ? (initialDocument.edges as Edge[])
+    : INITIAL_EDGES;
+
   const [nodes, setNodes, onNodesChange] =
-    useNodesState(INITIAL_NODES);
+    useNodesState(startingNodes);
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState(INITIAL_EDGES);
-  const { screenToFlowPosition } = useReactFlow();
+    useEdgesState(startingEdges);
+  const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
   const reactFlowWrapper =
     useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!initialDocument) {
+      setNodes(showDemo ? INITIAL_NODES : []);
+      setEdges(INITIAL_EDGES);
+      return;
+    }
+
+    setNodes(initialDocument.nodes as Node[]);
+    setEdges(initialDocument.edges as Edge[]);
+    void setViewport(initialDocument.viewport);
+  }, [initialDocument, setEdges, setNodes, setViewport, showDemo]);
+
+  useEffect(() => {
+    if (!onDocumentChange) return;
+    onDocumentChange({
+      nodes: nodes as CanvasDocument["nodes"],
+      edges: edges as CanvasDocument["edges"],
+      viewport: getViewport(),
+    });
+  }, [nodes, edges, getViewport, onDocumentChange]);
 
   // ── Edge Connection ───────────────────────────────────────────────
   const onConnect = useCallback(

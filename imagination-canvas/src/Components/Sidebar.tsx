@@ -18,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import type { BlockType } from "../canvas/types/blockTypes";
 import logo from "../assets/logo.svg";
 import SaveCanvasButton from "./SaveCanvasButton";
+import type { CanvasDocument } from "../canvas/types/blockTypes";
 
 // ─── Block Palette Definitions ──────────────────────────────────────
 // Each entry maps to a BlockType and a key in NODE_TYPES (./nodes/index.ts).
@@ -53,7 +54,11 @@ const BLOCK_PALETTE: BlockPaletteEntry[] = [
  * Uses HTML5 Drag-and-Drop to let users drag tiles onto the Canvas.
  * The drag payload ('application/reactflow') carries the module type string.
  */
-export function Sidebar() {
+type SidebarProps = {
+  onSave?: (document: CanvasDocument) => Promise<void> | void;
+};
+
+export function Sidebar({ onSave }: SidebarProps) {
   const onDragStart = (
     event: DragEvent<HTMLDivElement>,
     moduleType: string,
@@ -111,7 +116,7 @@ export function Sidebar() {
         <p className="mb-4 text-[11px] text-brand-text-muted font-medium text-center leading-relaxed">
           Drag a module onto the canvas to unleash your imagination.
         </p>
-        <SaveCanvasButton />
+        <SaveCanvasButton onSave={onSave} />
       </div>
     </aside>
   );
