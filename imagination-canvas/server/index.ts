@@ -13,7 +13,7 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
 
-const databaseUrl = process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/imagination_canvas";
+const databaseUrl = process.env.DATABASE_URL ?? "postgres://postgres@localhost:5432/imagination_canvas";
 const jwtSecret = process.env.JWT_SECRET ?? "dev-only-change-me";
 const accessTokenTtlSeconds = Number(process.env.ACCESS_TOKEN_TTL_SECONDS ?? 900);
 const refreshTokenTtlDays = Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 30);
