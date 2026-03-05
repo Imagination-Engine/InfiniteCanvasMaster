@@ -130,16 +130,10 @@ export default function ProjectsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
-                      to={`/projects/${project.id}/creativity`}
-                      className="rounded-md border border-violet-500/40 px-3 py-2 text-sm hover:bg-violet-500/10"
+                      to={`/projects/${project.id}/canvas`}
+                      className="rounded-md border border-sky-500/40 px-3 py-2 text-sm hover:bg-sky-500/10"
                     >
-                      Creativity Canvas
-                    </Link>
-                    <Link
-                      to={`/projects/${project.id}/work`}
-                      className="rounded-md border border-emerald-500/40 px-3 py-2 text-sm hover:bg-emerald-500/10"
-                    >
-                      Work Canvas
+                      Open Canvas
                     </Link>
                     <button
                       type="button"

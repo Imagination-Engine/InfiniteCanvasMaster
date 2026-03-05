@@ -27,7 +27,7 @@ export default function App() {
 
           <Route element={<RequireAuth />}>
             <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/:projectId/:canvasKind" element={<ProjectCanvasPage />} />
+            <Route path="/projects/:projectId/canvas" element={<ProjectCanvasPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

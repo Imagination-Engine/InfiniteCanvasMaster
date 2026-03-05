@@ -6,7 +6,7 @@ import type { CanvasDocument } from '../canvas/types/blockTypes';
 import { Save } from 'lucide-react';
 
 type SaveCanvasButtonProps = {
-  onSave?: (document: CanvasDocument) => Promise<void> | void;
+  onSave?: (document: UnifiedCanvasDocument) => Promise<void> | void;
 };
 
 export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
@@ -29,18 +29,18 @@ export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
       
       // 2. Persist the data
       if (onSave) {
-        await onSave(rawReactFlowState as unknown as CanvasDocument);
+        await onSave(rawReactFlowState);
       } else {
         // Imitates network delay for UX
         await new Promise((resolve) => setTimeout(resolve, 800));
       }
 
-      setStatus('saved');
-      setTimeout(() => setStatus('idle'), 2000);
+      setStatus("saved");
+      setTimeout(() => setStatus("idle"), 2000);
     } catch (error) {
       console.error("Failed to save canvas", error);
-      setStatus('error');
-      setTimeout(() => setStatus('idle'), 2000);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2000);
     }
   };
 
@@ -52,14 +52,14 @@ export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
         status === 'error' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-800 hover:bg-slate-900 hover:shadow-md hover:-translate-y-[1px] active:scale-[0.98]'
       } disabled:opacity-70 disabled:pointer-events-none`}
     >
-      <Save className="w-4 h-4" />
-      {status === 'idle'
-        ? 'Save Canvas Data'
-        : status === 'saving'
-          ? 'Saving...'
-          : status === 'saved'
-            ? 'Saved'
-            : 'Error'}
+      <Save className="h-4 w-4" />
+      {status === "idle"
+        ? "Save Canvas Data"
+        : status === "saving"
+          ? "Saving..."
+          : status === "saved"
+            ? "Saved"
+            : "Error"}
     </button>
   );
 }

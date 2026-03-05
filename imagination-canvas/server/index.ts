@@ -492,8 +492,7 @@ app.post(
         `
         INSERT INTO canvases (project_id, kind, name, document)
         VALUES
-          ($1, 'creativity', 'Creativity Canvas', $2::jsonb),
-          ($1, 'work', 'Work Canvas', $2::jsonb)
+          ($1, 'creativity', 'Project Canvas', $2::jsonb)
         `,
         [project.id, JSON.stringify(defaultCanvasDocument)],
       );
@@ -536,6 +535,127 @@ app.delete(
     }
 
     return res.status(204).send();
+  },
+);
+
+app.get(
+  "/api/projects/:projectId/canvas",
+  requireAuth,
+  async (
+    req: AuthenticatedRequest & express.Request<{ projectId: string }>,
+    res,
+  ) => {
+    const userId = req.auth?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    const { projectId } = req.params;
+
+    const found = await pool.query<{
+      id: string;
+      kind: CanvasKind;
+      name: string;
+      document: unknown;
+      updated_at: string;
+    }>(
+      `
+      SELECT c.id, c.kind, c.name, c.document, c.updated_at
+      FROM canvases c
+      INNER JOIN projects p ON p.id = c.project_id
+      WHERE c.project_id = $1
+        AND p.user_id = $2
+      ORDER BY CASE WHEN c.kind = 'creativity' THEN 0 ELSE 1 END
+      LIMIT 1
+      `,
+      [projectId, userId],
+    );
+
+    if (found.rowCount === 0) {
+      const inserted = await pool.query<{
+        id: string;
+        kind: CanvasKind;
+        name: string;
+        document: unknown;
+        updated_at: string;
+      }>(
+        `
+        INSERT INTO canvases (project_id, kind, name, document)
+        SELECT $1, 'creativity', 'Project Canvas', $2::jsonb
+        WHERE EXISTS (
+          SELECT 1 FROM projects WHERE id = $1 AND user_id = $3
+        )
+        RETURNING id, kind, name, document, updated_at
+        `,
+        [projectId, JSON.stringify(defaultCanvasDocument), userId],
+      );
+
+      if (inserted.rowCount === 0) {
+        return res.status(404).json({ error: "Project not found." });
+      }
+
+      return res.json({ canvas: inserted.rows[0] });
+    }
+
+    return res.json({ canvas: found.rows[0] });
+  },
+);
+
+app.put(
+  "/api/projects/:projectId/canvas",
+  requireAuth,
+  async (
+    req: AuthenticatedRequest &
+      express.Request<
+        { projectId: string },
+        unknown,
+        { document?: unknown }
+      >,
+    res,
+  ) => {
+    const userId = req.auth?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    const { projectId } = req.params;
+    const document = req.body.document;
+    if (!document || typeof document !== "object") {
+      return res.status(400).json({ error: "Body must include document JSON." });
+    }
+
+    const updated = await pool.query<{
+      id: string;
+      kind: CanvasKind;
+      name: string;
+      document: unknown;
+      updated_at: string;
+    }>(
+      `
+      WITH selected_canvas AS (
+        SELECT c.id
+        FROM canvases c
+        INNER JOIN projects p ON p.id = c.project_id
+        WHERE c.project_id = $2
+          AND p.user_id = $3
+        ORDER BY CASE WHEN c.kind = 'creativity' THEN 0 ELSE 1 END
+        LIMIT 1
+      )
+      UPDATE canvases c
+      SET document = $1::jsonb,
+          updated_at = NOW()
+      FROM selected_canvas s
+      WHERE c.id = s.id
+      RETURNING c.id, c.kind, c.name, c.document, c.updated_at
+      `,
+      [JSON.stringify(document), projectId, userId],
+    );
+
+    if (updated.rowCount === 0) {
+      return res.status(404).json({ error: "Canvas not found." });
+    }
+
+    return res.json({ canvas: updated.rows[0] });
   },
 );
 
