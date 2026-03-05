@@ -1,7 +1,7 @@
 import {
   useCallback,
-  useRef,
   useEffect,
+  useMemo,
   type DragEvent,
 } from "react";
 import {
@@ -14,209 +14,240 @@ import {
   useEdgesState,
   useReactFlow,
   type Connection,
-  type Edge,
-  type Node,
+  type IsValidConnection,
 } from "@xyflow/react";
-
-// React Flow's mandatory base styles (layout, handles, edges)
 import "@xyflow/react/dist/style.css";
+import CanvasAgent from "../agent/CanvasAgent";
+import { REACT_FLOW_NODE_TYPES, getNodeDefinition } from "../nodes/NodeRegistry";
+import { createNodeFromType } from "../nodes/nodeFactory";
+import { hasCompatibleSchemaTypes } from "../nodes/types";
+import type { UnifiedCanvasDocument, UnifiedCanvasEdge, UnifiedCanvasNode } from "../nodes/canvasTypes";
+import { DEFAULT_CANVAS_DOCUMENT } from "../nodes/canvasTypes";
+import type { ParsedAgentGraph } from "../agent/agentParser";
 
-// Custom node type registry (see ./nodes/index.ts)
-import { NODE_TYPES } from "./nodes";
+const normalizeNode = (node: UnifiedCanvasNode): UnifiedCanvasNode => {
+  const definition = getNodeDefinition(node.type ?? "");
+  if (!definition) {
+    const fallback = createNodeFromType("summarizer", node.position ?? { x: 0, y: 0 });
+    return {
+      ...fallback,
+      id: node.id,
+      data: {
+        ...fallback.data,
+        id: node.id,
+        label: (node.data as { label?: string } | undefined)?.label ?? "Imported Node",
+        inputs: {
+          source: JSON.stringify(node.data ?? {}),
+        },
+      },
+    };
+  }
 
-// Block schema — factory for creating typed blocks
-import { createBlock } from "../canvas/factories/blockFactory";
-import type { BlockType, CanvasDocument } from "../canvas/types/blockTypes";
+  const incomingData = (node.data ?? {}) as Record<string, unknown>;
 
-// ─── Block Type Detection ───────────────────────────────────────────
-// New block types that use the factory + BlockData schema.
-// As you migrate old node components (trigger, action, etc.) to use BlockData,
-// move them from the legacy path into this set.
-const NEW_BLOCK_TYPES: Set<BlockType> = new Set([
-  "content", "image", "video", "code", "chat", "sandbox",
-  "product", "browser", "datatable", "listicle", "aigenerative", "audio", "group",
-]);
+  return {
+    ...node,
+    type: node.type,
+    data: {
+      ...definition.defaultData,
+      ...(incomingData as object),
+      id: node.id,
+      type: node.type,
+      inputs: {
+        ...definition.defaultData.inputs,
+        ...(typeof incomingData.inputs === "object" && incomingData.inputs
+          ? (incomingData.inputs as Record<string, unknown>)
+          : {}),
+      },
+      outputs: {
+        ...(definition.defaultData.outputs ?? {}),
+        ...(typeof incomingData.outputs === "object" && incomingData.outputs
+          ? (incomingData.outputs as Record<string, unknown>)
+          : {}),
+      },
+      config: {
+        ...(definition.defaultData.config ?? {}),
+        ...(typeof incomingData.config === "object" && incomingData.config
+          ? (incomingData.config as Record<string, unknown>)
+          : {}),
+      },
+      metadata: definition.defaultData.metadata,
+    },
+  };
+};
 
-/** Returns true if this type uses the new BlockData schema (vs legacy { label } data). */
-function isNewBlockType(type: string): type is BlockType {
-  return NEW_BLOCK_TYPES.has(type as BlockType);
-}
+const normalizeDocument = (document: UnifiedCanvasDocument | null | undefined): UnifiedCanvasDocument => {
+  if (!document) {
+    return DEFAULT_CANVAS_DOCUMENT;
+  }
 
-// ─── Initial Demo Data ──────────────────────────────────────────────
-// Starter nodes so new users see something immediately.
-// Feel free to clear these — the sidebar creates new ones via drag-and-drop.
-const INITIAL_NODES: Node[] = [
-  createBlock("content", {
-    id: "demo-welcome",
-    title: "Welcome to Imagination Canvas",
-    position: { x: 250, y: 100 },
-    content: {
-      document: "# Welcome!\n\nThis is your new persistent workspace. Drag blocks from the sidebar to begin.\n\n*   **AI Agents** can read and write to these blocks.\n*   **Sandboxes** let you run code securely.\n*   **Images & Video** can be generated in-place.",
-      format: "markdown"
-    }
-  }),
-];
+  const nodes = (document.nodes ?? []).map((node) => normalizeNode(node as UnifiedCanvasNode));
+  const edges = (document.edges ?? []) as UnifiedCanvasEdge[];
+  const viewport = document.viewport ?? DEFAULT_CANVAS_DOCUMENT.viewport;
 
-const INITIAL_EDGES: Edge[] = [];
- 
+  return { nodes, edges, viewport };
+};
 
-// ─── Helpers ────────────────────────────────────────────────────────
-let nodeIdCounter = 0;
-const createNodeId = () =>
-  `node-${Date.now()}-${nodeIdCounter++}`;
-
-// ─── Canvas Component ───────────────────────────────────────────────
-
-/**
- * Canvas — the main React Flow workspace.
- *
- * Responsibilities:
- *  1. Renders all nodes and edges
- *  2. Handles new connections between nodes
- *  3. Accepts drag-and-drop from the Sidebar to create new nodes
- *  4. Provides built-in pan, zoom, minimap, and controls
- *
- * MUST be rendered inside a <ReactFlowProvider> (see App.tsx).
- */
 type CanvasProps = {
-  initialDocument?: CanvasDocument | null;
-  showDemo?: boolean;
-  onDocumentChange?: (document: CanvasDocument) => void;
+  initialDocument?: UnifiedCanvasDocument | null;
+  onDocumentChange?: (document: UnifiedCanvasDocument) => void;
 };
 
 export default function Canvas({
   initialDocument = null,
-  showDemo = true,
   onDocumentChange,
 }: CanvasProps = {}) {
-  const startingNodes = initialDocument
-    ? (initialDocument.nodes as Node[])
-    : showDemo
-      ? INITIAL_NODES
-      : [];
-  const startingEdges = initialDocument
-    ? (initialDocument.edges as Edge[])
-    : INITIAL_EDGES;
+  const normalizedInitial = useMemo(() => normalizeDocument(initialDocument), [initialDocument]);
 
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState(startingNodes);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState(startingEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState(normalizedInitial.nodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(normalizedInitial.edges);
   const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
-  const reactFlowWrapper =
-    useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!initialDocument) {
-      setNodes(showDemo ? INITIAL_NODES : []);
-      setEdges(INITIAL_EDGES);
-      return;
-    }
-
-    setNodes(initialDocument.nodes as Node[]);
-    setEdges(initialDocument.edges as Edge[]);
-    void setViewport(initialDocument.viewport);
-  }, [initialDocument, setEdges, setNodes, setViewport, showDemo]);
+    const normalized = normalizeDocument(initialDocument);
+    setNodes(normalized.nodes);
+    setEdges(normalized.edges);
+    void setViewport(normalized.viewport);
+  }, [initialDocument, setEdges, setNodes, setViewport]);
 
   useEffect(() => {
     if (!onDocumentChange) return;
+
     onDocumentChange({
-      nodes: nodes as CanvasDocument["nodes"],
-      edges: edges as CanvasDocument["edges"],
+      nodes: nodes as UnifiedCanvasDocument["nodes"],
+      edges: edges as UnifiedCanvasDocument["edges"],
       viewport: getViewport(),
     });
   }, [nodes, edges, getViewport, onDocumentChange]);
 
-  // ── Edge Connection ───────────────────────────────────────────────
+  const isConnectionAllowed = useCallback<IsValidConnection>((connection) => {
+    if (!connection.source || !connection.target) {
+      return false;
+    }
+
+    const sourceNode = nodes.find((node) => node.id === connection.source);
+    const targetNode = nodes.find((node) => node.id === connection.target);
+    if (!sourceNode || !targetNode) {
+      return false;
+    }
+
+    const sourceDefinition = getNodeDefinition(sourceNode.type ?? "");
+    const targetDefinition = getNodeDefinition(targetNode.type ?? "");
+    if (!sourceDefinition || !targetDefinition) {
+      return false;
+    }
+
+    if (Object.keys(targetDefinition.inputSchema).length === 0) {
+      return false;
+    }
+
+    return hasCompatibleSchemaTypes(sourceDefinition.outputSchema, targetDefinition.inputSchema);
+  }, [nodes]);
+
   const onConnect = useCallback(
     (connection: Connection) => {
+      if (!isConnectionAllowed(connection)) {
+        return;
+      }
+
+      const sourceNode = nodes.find((node) => node.id === connection.source);
+      const sourceDefinition = sourceNode ? getNodeDefinition(sourceNode.type ?? "") : null;
+      const firstOutputType = sourceDefinition ? Object.values(sourceDefinition.outputSchema)[0] : undefined;
+
       setEdges((current) =>
-        addEdge(connection, current),
+        addEdge(
+          {
+            ...connection,
+            data: {
+              valueType: Array.isArray(firstOutputType) ? firstOutputType[0] : firstOutputType,
+            },
+            type: "smoothstep",
+          },
+          current,
+        ),
       );
     },
-    [setEdges],
+    [isConnectionAllowed, nodes, setEdges],
   );
 
-  // ── Drag-and-Drop (paired with Sidebar's HTML5 DnD) ──────────────
-  const onDragOver = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-    },
-    [],
-  );
+  const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
 
   const onDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      const blockType =
-        event.dataTransfer.getData(
-          "application/reactflow",
-        );
-      if (!blockType) return;
+      const explicitNodePayload = event.dataTransfer.getData("application/reactflow-node");
+      const nodeType = event.dataTransfer.getData("application/reactflow");
+      if (!nodeType || !getNodeDefinition(nodeType)) return;
 
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
+      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const node = createNodeFromType(nodeType, position);
 
-      // New block types use the factory for fully-typed, schema-valid data.
-      // Legacy types (trigger, action, etc.) still use the old { label } format
-      // until their components are migrated to read from BlockData.
-      if (isNewBlockType(blockType)) {
-        setNodes((current) => [
-          ...current,
-          createBlock(blockType, { position }),
-        ]);
-      } else {
-        // Legacy fallback — remove this branch as you migrate each old node
-        setNodes((current) => [
-          ...current,
-          {
-            id: createNodeId(),
-            type: blockType,
-            position,
-            data: { label: `New ${blockType}` },
-          },
-        ]);
+      if (explicitNodePayload) {
+        try {
+          const parsed = JSON.parse(explicitNodePayload) as {
+            nodeType?: string;
+            data?: Record<string, unknown>;
+          };
+
+          if (parsed.nodeType === nodeType && parsed.data) {
+            node.data = {
+              ...node.data,
+              ...parsed.data,
+              inputs: {
+                ...node.data.inputs,
+                ...((parsed.data.inputs as Record<string, unknown> | undefined) ?? {}),
+              },
+              outputs: {
+                ...(node.data.outputs ?? {}),
+                ...((parsed.data.outputs as Record<string, unknown> | undefined) ?? {}),
+              },
+              config: {
+                ...(node.data.config ?? {}),
+                ...((parsed.data.config as Record<string, unknown> | undefined) ?? {}),
+              },
+            };
+          }
+        } catch {
+          // Invalid payload should not block standard node creation.
+        }
       }
+
+      setNodes((current) => [...current, node]);
     },
     [screenToFlowPosition, setNodes],
   );
 
-  // ── Render ────────────────────────────────────────────────────────
+  const applyAgentGraph = useCallback((graph: ParsedAgentGraph) => {
+    setNodes((current) => [...current, ...graph.nodes]);
+    setEdges((current) => [...current, ...graph.edges]);
+  }, [setEdges, setNodes]);
+
   return (
-    <div
-      ref={reactFlowWrapper}
-      className="flex-1 h-full bg-brand-bg-page"
-    >
+    <div className="relative flex-1 bg-brand-bg-page">
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={NODE_TYPES}
+        nodeTypes={REACT_FLOW_NODE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        isValidConnection={isConnectionAllowed}
         onDragOver={onDragOver}
         onDrop={onDrop}
         fitView
         deleteKeyCode={["Backspace", "Delete"]}
         colorMode="dark"
       >
-        <Background
-          gap={20}
-          size={1}
-          color="rgba(255, 255, 255, 0.05)"
-        />
+        <Background gap={20} size={1} color="rgba(255, 255, 255, 0.05)" />
         <Controls />
-        <MiniMap
-          nodeStrokeWidth={3}
-          pannable
-          zoomable
-          className="!bg-brand-bg-surface/80 !border-white/10"
-        />
+        <MiniMap nodeStrokeWidth={2} pannable zoomable className="!border-slate-700 !bg-slate-900/80" />
       </ReactFlow>
+
+      <CanvasAgent onApplyGraph={applyAgentGraph} />
     </div>
   );
 }

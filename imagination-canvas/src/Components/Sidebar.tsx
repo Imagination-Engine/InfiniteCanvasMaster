@@ -18,7 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import type { BlockType } from "../canvas/types/blockTypes";
 import logo from "../assets/logo.svg";
 import SaveCanvasButton from "./SaveCanvasButton";
-import type { CanvasDocument } from "../canvas/types/blockTypes";
+import type { UnifiedCanvasDocument } from "../nodes/canvasTypes";
 
 // ─── Block Palette Definitions ──────────────────────────────────────
 // Each entry maps to a BlockType and a key in NODE_TYPES (./nodes/index.ts).
@@ -55,7 +55,7 @@ const BLOCK_PALETTE: BlockPaletteEntry[] = [
  * The drag payload ('application/reactflow') carries the module type string.
  */
 type SidebarProps = {
-  onSave?: (document: CanvasDocument) => Promise<void> | void;
+  onSave?: (document: UnifiedCanvasDocument) => Promise<void> | void;
 };
 
 export function Sidebar({ onSave }: SidebarProps) {
