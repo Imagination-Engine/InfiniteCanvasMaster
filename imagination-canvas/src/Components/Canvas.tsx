@@ -122,6 +122,10 @@ export default function Canvas({
   }, [nodes, edges, getViewport, onDocumentChange]);
 
   const isConnectionAllowed = useCallback<IsValidConnection>((connection) => {
+    if (connection.source === connection.target) {
+      return false;
+    }
+    
     if (!connection.source || !connection.target) {
       return false;
     }
