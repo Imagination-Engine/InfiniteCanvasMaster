@@ -1,6 +1,7 @@
 import {
   useCallback,
   useRef,
+  useEffect,
   type DragEvent,
 } from "react";
 import {
@@ -19,6 +20,7 @@ import { NODE_TYPES } from "./nodes";
 
 // Block schema — factory for creating typed blocks
 import { createBlock } from "../canvas/factories/blockFactory";
+
 import type { BlockType } from "../canvas/types/blockTypes";
 import { useCanvasStore } from "../canvas/store/useCanvasStore";
 
