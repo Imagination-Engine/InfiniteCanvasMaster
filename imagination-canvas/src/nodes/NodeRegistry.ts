@@ -13,6 +13,8 @@ export const NODE_REGISTRY: NodeRegistry = Object.fromEntries(
   ]),
 );
 
+export type NodeRegistryType = typeof NODE_REGISTRY;
+
 export const REACT_FLOW_NODE_TYPES: NodeTypes = Object.fromEntries(
   Object.keys(NODE_REGISTRY).map((nodeType) => [nodeType, BaseNode]),
 );
