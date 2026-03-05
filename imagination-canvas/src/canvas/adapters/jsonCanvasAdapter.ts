@@ -320,6 +320,6 @@ function buildContentFromJsonCanvas(
     default:
       // Fallback to ContentBlockData structure for safety, though type casting handles the TS check.
       // In a real app we might want strict validation here.
-      return { document: jcNode.text ?? "", format: "markdown" } as any;
+      return { document: jcNode.text ?? "", format: "markdown" } as unknown as BlockDataMap[BlockType];
   }
 }

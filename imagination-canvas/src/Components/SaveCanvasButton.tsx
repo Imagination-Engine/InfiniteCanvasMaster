@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { exportCanvasToJsonCanvas } from '../canvas/adapters/jsonCanvasAdapter';
 import type { CanvasDocument } from '../canvas/types/blockTypes';
+import type { UnifiedCanvasDocument } from '../nodes/canvasTypes';
 // import { useCanvasStore } from '../canvas/store/useCanvasStore';
 import { Save } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
       // We use toObject() because it includes the viewport and measured dimensions,
       // which are not tracked in the global Zustand store (performance optimization).
       const rawReactFlowState = toObject();
+      const unifiedDocument = rawReactFlowState as unknown as UnifiedCanvasDocument;
 
       // Always log the interoperable JSON Canvas format to console for debugging/export
       const jsonCanvasOutput = exportCanvasToJsonCanvas(rawReactFlowState as unknown as CanvasDocument);
@@ -29,7 +31,7 @@ export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
       
       // 2. Persist the data
       if (onSave) {
-        await onSave(rawReactFlowState);
+        await onSave(unifiedDocument);
       } else {
         // Imitates network delay for UX
         await new Promise((resolve) => setTimeout(resolve, 800));

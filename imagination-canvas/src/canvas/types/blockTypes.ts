@@ -200,8 +200,8 @@ export interface BlockData<T extends BlockType = BlockType> {
 
   // Configuration & Extensions
   extensions: {
-    config: Record<string, any>;
-    [key: string]: any;
+    config: Record<string, unknown>;
+    [key: string]: unknown;
   };
 }
 

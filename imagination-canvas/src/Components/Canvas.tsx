@@ -9,6 +9,9 @@ import {
   Background,
   Controls,
   MiniMap,
+  addEdge,
+  useNodesState,
+  useEdgesState,
   useReactFlow,
   type Connection,
   type IsValidConnection,
@@ -216,7 +219,7 @@ export default function Canvas({
 
       setNodes((current) => [...current, node]);
     },
-    [screenToFlowPosition, addBlock],
+    [screenToFlowPosition, setNodes],
   );
 
   const applyAgentGraph = useCallback((graph: ParsedAgentGraph) => {

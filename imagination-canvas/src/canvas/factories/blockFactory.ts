@@ -104,7 +104,7 @@ export function createBlock<T extends BlockType>(
     title?:        string; // mapped to meta.label
     createdBy?:    string;
     data?:         Partial<BlockDataMap[T]>;
-    config?:       Record<string, any>;
+    config?:       Record<string, unknown>;
     color?:        string;
   } = {},
 ): CanvasBlockNode<T> {

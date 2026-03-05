@@ -16,7 +16,6 @@ import {
   NodeResizer,
   type NodeProps,
   type Node,
-  useReactFlow,
 } from "@xyflow/react";
 import { Image as ImageIcon, Upload, Sparkles, Trash2 } from "lucide-react";
 import React, { useCallback, useRef } from "react";
@@ -81,7 +80,8 @@ export function ImageNode({
     [id, data, updateBlock],
   );
 
-  const sourcePrompt = data.extensions.config?.sourcePrompt || "";
+  const sourcePromptRaw = data.extensions.config?.sourcePrompt;
+  const sourcePrompt = typeof sourcePromptRaw === "string" ? sourcePromptRaw : "";
 
   // ── Title Logic ────────────────────────────────────────────────
   const handleTitleChange = useCallback(
