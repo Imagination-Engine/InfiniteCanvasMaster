@@ -19,9 +19,9 @@ import "@xyflow/react/dist/style.css";
 import { NODE_TYPES } from "./nodes";
 
 // Block schema — factory for creating typed blocks
-import { createBlock } from "../canvas/factories/blockFactory";
+// import { createBlock } from "../canvas/factories/blockFactory"; // Unused now that addBlock handles it via store
 
-import type { BlockType } from "../canvas/types/blockTypes";
+import type { BlockType, CanvasDocument } from "../canvas/types/blockTypes";
 import { useCanvasStore } from "../canvas/store/useCanvasStore";
 
 // ─── Block Type Detection ───────────────────────────────────────────
@@ -38,12 +38,13 @@ function isNewBlockType(type: string): type is BlockType {
   return NEW_BLOCK_TYPES.has(type as BlockType);
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────
-let nodeIdCounter = 0;
-const createNodeId = () =>
-  `node-${Date.now()}-${nodeIdCounter++}`;
-
 // ─── Canvas Component ───────────────────────────────────────────────
+
+type CanvasProps = {
+  initialDocument?: CanvasDocument | null;
+  // showDemo prop is available for legacy reasons but currently unused as store handles defaults
+  showDemo?: boolean;
+};
 
 /**
  * Canvas — the main React Flow workspace.
@@ -56,18 +57,29 @@ const createNodeId = () =>
  *
  * MUST be rendered inside a <ReactFlowProvider> (see App.tsx).
  */
-export default function Canvas() {
+export default function Canvas({ initialDocument }: CanvasProps) {
   const { 
     nodes, 
     edges, 
     onNodesChange, 
     onEdgesChange, 
     onConnect, 
-    addBlock 
+    addBlock,
+    setCanvas
   } = useCanvasStore();
   
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, setViewport } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // Initialize canvas from prop
+  useEffect(() => {
+    if (initialDocument) {
+      setCanvas(initialDocument.nodes, initialDocument.edges);
+      if (initialDocument.viewport) {
+        setViewport(initialDocument.viewport);
+      }
+    }
+  }, [initialDocument, setCanvas, setViewport]);
 
   // ── Drag-and-Drop (paired with Sidebar's HTML5 DnD) ──────────────
   const onDragOver = useCallback(

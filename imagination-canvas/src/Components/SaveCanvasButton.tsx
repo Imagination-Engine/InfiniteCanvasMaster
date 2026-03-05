@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { exportCanvasToJsonCanvas } from '../canvas/adapters/jsonCanvasAdapter';
 import type { CanvasDocument } from '../canvas/types/blockTypes';
-import { useCanvasStore } from '../canvas/store/useCanvasStore';
+// import { useCanvasStore } from '../canvas/store/useCanvasStore';
 import { Save } from 'lucide-react';
 
 type SaveCanvasButtonProps = {
@@ -11,28 +11,26 @@ type SaveCanvasButtonProps = {
 
 export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
   const { toObject } = useReactFlow();
-  const { nodes, edges } = useCanvasStore();
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  // const { nodes, edges } = useCanvasStore(); // Using toObject() instead to capture viewport state
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const handleSave = async () => {
     setStatus('saving');
     
-    // 1. Extract the raw state from React Flow Engine
-    const rawReactFlowState = toObject();
-    
-    // 2. We can also use the store state directly which might be more reliable
-    // for our custom data structure, but toObject() gives us viewport and measured dims.
-    // Let's stick with toObject for now but ensure we cast correctly.
-    
-    // 2. Pass it through the JSON Canvas adapter for interoperable export
-    const jsonCanvasOutput = exportCanvasToJsonCanvas(rawReactFlowState as unknown as CanvasDocument);
-
     try {
+      // 1. Extract the raw state from React Flow Engine
+      // We use toObject() because it includes the viewport and measured dimensions,
+      // which are not tracked in the global Zustand store (performance optimization).
+      const rawReactFlowState = toObject();
+
+      // Always log the interoperable JSON Canvas format to console for debugging/export
+      const jsonCanvasOutput = exportCanvasToJsonCanvas(rawReactFlowState as unknown as CanvasDocument);
+      console.log("Saving JSON Canvas:", JSON.stringify(jsonCanvasOutput, null, 2));
+      
+      // 2. Persist the data
       if (onSave) {
         await onSave(rawReactFlowState as unknown as CanvasDocument);
       } else {
-        // Logs the JSON Canvas data ready for export or backend persistence
-        console.log("Saving JSON Canvas:", JSON.stringify(jsonCanvasOutput, null, 2));
         // Imitates network delay for UX
         await new Promise((resolve) => setTimeout(resolve, 800));
       }
@@ -50,7 +48,9 @@ export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
     <button 
       onClick={handleSave}
       disabled={status === 'saving'}
-      className="flex items-center justify-center gap-2 w-full mt-4 bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-sm hover:bg-slate-900 hover:shadow-md hover:-translate-y-[1px] transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none font-semibold text-sm"
+      className={`flex items-center justify-center gap-2 w-full mt-4 text-white px-4 py-2.5 rounded-xl shadow-sm transition-all font-semibold text-sm ${
+        status === 'error' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-800 hover:bg-slate-900 hover:shadow-md hover:-translate-y-[1px] active:scale-[0.98]'
+      } disabled:opacity-70 disabled:pointer-events-none`}
     >
       <Save className="w-4 h-4" />
       {status === 'idle'
