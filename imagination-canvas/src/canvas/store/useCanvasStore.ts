@@ -89,6 +89,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             // Ensure meta/state merges correctly if provided partially
             meta: partialData.meta ? { ...node.data.meta, ...partialData.meta } : node.data.meta,
             state: partialData.state ? { ...node.data.state, ...partialData.state } : node.data.state,
+            // Ensure extensions merge correctly instead of being overwritten
+            extensions: partialData.extensions ? { ...node.data.extensions, ...partialData.extensions } : node.data.extensions,
           },
         };
       }),
