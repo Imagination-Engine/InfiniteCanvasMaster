@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { exportCanvasToJsonCanvas } from '../canvas/adapters/jsonCanvasAdapter';
-import type { CanvasDocument } from '../canvas/types/blockTypes';
 import type { UnifiedCanvasDocument } from '../nodes/canvasTypes';
-// import { useCanvasStore } from '../canvas/store/useCanvasStore';
 import { Save } from 'lucide-react';
 
 type SaveCanvasButtonProps = {
@@ -25,10 +22,8 @@ export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
       const rawReactFlowState = toObject();
       const unifiedDocument = rawReactFlowState as unknown as UnifiedCanvasDocument;
 
-      // Always log the interoperable JSON Canvas format to console for debugging/export
-      const jsonCanvasOutput = exportCanvasToJsonCanvas(rawReactFlowState as unknown as CanvasDocument);
-      console.log("Saving JSON Canvas:", JSON.stringify(jsonCanvasOutput, null, 2));
-      
+      console.log("Saving canvas:", JSON.stringify(unifiedDocument, null, 2));
+
       // 2. Persist the data
       if (onSave) {
         await onSave(unifiedDocument);
