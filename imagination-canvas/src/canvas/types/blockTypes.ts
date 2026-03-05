@@ -17,7 +17,7 @@ import type { Node, Edge } from "@xyflow/react";
 // ─── Status & Type Enums ────────────────────────────────────────────
 
 /** Lifecycle status of a block's content generation or execution. */
-export type BlockStatus = "idle" | "loading" | "complete" | "error";
+export type BlockStatus = "idle" | "running" | "completed" | "error";
 
 /** All supported canvas block types. */
 export type BlockType =
@@ -35,181 +35,174 @@ export type BlockType =
   | "audio"
   | "group";
 
-// ─── Generic Metadata ───────────────────────────────────────────────
+export type ExecutionMode = "sync" | "async" | "streaming";
+export type LLMRouting = "local" | "external" | "prefer_local" | "none";
+export type TriggerType = "manual" | "event" | "schedule" | "upstream";
+
+// ─── Metadata ───────────────────────────────────────────────────────
 
 /** Stable metadata shared by every block regardless of type. */
-export interface BlockMetadata {
-  title: string;
-  createdAt: string;           // ISO 8601
-  lastModifiedAt: string;      // ISO 8601
-  createdBy: string;           // agent ID or user ID
-  version: number;             // increment on every mutation
+export interface BlockMeta {
+  label: string;               // Display name (was title)
+  description?: string;
+  icon?: string;
   tags: string[];
+  created_at: string;          // ISO 8601
+  updated_at: string;          // ISO 8601
+  created_by: string;          // agent ID or user ID
+  author: string;              // user-id | system
+  version: number;             // increment on every mutation
   color?: string;              // hex — also used by JSON Canvas
 }
 
-// ─── Agent Context ──────────────────────────────────────────────────
+// ─── Capabilities (Inputs/Outputs) ──────────────────────────────────
 
-/** Populated by AI agents; null for user-created blocks. */
-export interface AgentContext {
-  generatingAgent: string;     // e.g. "BusinessStrategistAgent"
-  skillId: string;             // e.g. "business-plan-writer-v1"
-  inputsConsumed: string[];    // block IDs this was derived from
-  confidenceScore: number;     // 0.0 – 1.0
+export interface BlockPort {
+  name: string;
+  type: string;                // MIME-like: "text/plain", "image/*", "*/*"
+  required: boolean;
+  schema?: object | null;      // optional JSON Schema for the port's data
 }
 
-// ─── Permissions ────────────────────────────────────────────────────
-
-export interface BlockPermissions {
-  ownerId: string;
-  sharedWith: string[];
-  readOnly: boolean;
+export interface BlockCapabilities {
+  inputs: BlockPort[];
+  outputs: BlockPort[];
+  supported_triggers: TriggerType[];
+  execution_mode: ExecutionMode;
+  llm_routing: LLMRouting;
 }
 
-// ─── Per-Type Content Shapes ────────────────────────────────────────
-// Each content interface is defined separately so block types can
-// evolve independently without affecting each other.
+// ─── Per-Type Data Shapes (Runtime State) ───────────────────────────
 
-export interface ContentBlockContent {
+export interface ContentBlockData {
   document: string;
   format: "markdown" | "plaintext" | "html";
-  wordCount?: number;
-  readabilityScore?: number;
 }
 
-export interface CodeBlockContent {
+export interface CodeBlockData {
   source: string;
   language: string;
-  entrypoint?: string;
   dependencies: string[];
-  execution?: {
-    status: BlockStatus;
-    sandboxId?: string;
-    output?: string;
-    runtimeMs?: number;
-    memoryMb?: number;
-  };
+  output?: string;
+  logs?: string[];
 }
 
-export interface ImageBlockContent {
+export interface ImageBlockData {
   imageUrl: string;
   format: "png" | "jpg" | "webp" | "svg";
-  dimensions?: string;         // e.g. "1920x1080"
   altText?: string;
-  generationModel?: string;
-  sourcePrompt?: string;
 }
 
-export interface VideoBlockContent {
+export interface VideoBlockData {
   videoUrl?: string;
-  sourcePrompt?: string;
-  script?: string;
-  duration?: string;
   format?: "mp4" | "webm";
-  resolution?: string;
 }
 
-export interface AudioBlockContent {
+export interface AudioBlockData {
   audioUrl?: string;
-  duration?: string;      // e.g. "0:45"
+  duration?: string;
   transcript?: string;
-  format?: "mp3" | "wav" | "webm" | "m4a";
 }
 
-export interface ChatBlockContent {
+export interface ChatBlockData {
   messages: Array<{
     role: "user" | "assistant";
     content: string;
     timestamp: string;
-    agent?: string;
   }>;
-  context?: {
-    accessibleBlocks: string[];
-  };
 }
 
-export interface SandboxBlockContent {
-  repository?: string;
-  branch?: string;
+export interface SandboxBlockData {
   environmentVars: Record<string, string>;
   previewUrl?: string;
-  logs?: string[];
 }
 
-export interface BrowserBlockContent {
+export interface BrowserBlockData {
   url: string;
   screenshotUrl?: string;
-  scrapedText?: string;
 }
 
-export interface ProductBlockContent {
+export interface ProductBlockData {
   name: string;
-  description?: string;
   priceUsd?: number;
-  billingPeriod?: "monthly" | "yearly" | "one-time";
-  stripeProductId?: string;
-  checkoutUrl?: string;
 }
 
-export interface DataTableBlockContent {
+export interface DataTableBlockData {
   columns: string[];
   rows: unknown[][];
-  sourceQuery?: string;
 }
 
-export interface ListicleBlockContent {
+export interface ListicleBlockData {
   items: Array<{
     title: string;
     description?: string;
-    rank?: number;
   }>;
 }
 
-export interface AIGenerativeBlockContent {
+export interface AIGenerativeBlockData {
   prompt: string;
   outputType: "text" | "image" | "code";
   output?: string;
-  model?: string;
 }
 
-export interface GroupBlockContent {
+export interface GroupBlockData {
   label?: string;
 }
 
-// ─── Content Type Map ───────────────────────────────────────────────
+// ─── Data Map ───────────────────────────────────────────────────────
 
 /**
- * Maps each BlockType to its corresponding content shape.
- * This is the single source of truth for content typing — the factory,
- * adapter, and runtime all derive their content types from this map.
+ * Maps each BlockType to its corresponding runtime state data shape.
  */
-export interface BlockContentMap {
-  content:      ContentBlockContent;
-  code:         CodeBlockContent;
-  image:        ImageBlockContent;
-  video:        VideoBlockContent;
-  chat:         ChatBlockContent;
-  sandbox:      SandboxBlockContent;
-  browser:      BrowserBlockContent;
-  product:      ProductBlockContent;
-  datatable:    DataTableBlockContent;
-  listicle:     ListicleBlockContent;
-  aigenerative: AIGenerativeBlockContent;
-  audio:        AudioBlockContent;
-  group:        GroupBlockContent;
+export interface BlockDataMap {
+  content:      ContentBlockData;
+  code:         CodeBlockData;
+  image:        ImageBlockData;
+  video:        VideoBlockData;
+  chat:         ChatBlockData;
+  sandbox:      SandboxBlockData;
+  browser:      BrowserBlockData;
+  product:      ProductBlockData;
+  datatable:    DataTableBlockData;
+  listicle:     ListicleBlockData;
+  aigenerative: AIGenerativeBlockData;
+  audio:        AudioBlockData;
+  group:        GroupBlockData;
+}
+
+// ─── Block State ────────────────────────────────────────────────────
+
+export interface BlockState<T extends BlockType = BlockType> {
+  status: BlockStatus;
+  data: BlockDataMap[T];       // Runtime state specific to the block type
+  last_run: string | null;     // ISO 8601
+  error?: string;
 }
 
 // ─── Core Block Data (React Flow `data` field) ──────────────────────
 
 /** The payload stored inside React Flow's `data` field for every block. */
 export interface BlockData<T extends BlockType = BlockType> {
-  // Index signature required by @xyflow/react's Node<T extends Record<string, unknown>>
+  // Index signature required by @xyflow/react
   [key: string]: unknown;
-  status: BlockStatus;
-  metadata: BlockMetadata;
-  content: BlockContentMap[T];
-  agentContext: AgentContext | null;
-  permissions: BlockPermissions;
+
+  // Schema Version
+  version: string;
+
+  // Metadata
+  meta: BlockMeta;
+
+  // Capabilities (IO)
+  capabilities: BlockCapabilities;
+
+  // Runtime State
+  state: BlockState<T>;
+
+  // Configuration & Extensions
+  extensions: {
+    config: Record<string, any>;
+    [key: string]: any;
+  };
 }
 
 // ─── React Flow Node & Edge Wrappers ────────────────────────────────
@@ -219,11 +212,9 @@ export type CanvasBlockNode<T extends BlockType = BlockType> = Node<BlockData<T>
 
 /** Edge metadata specific to the Imagination Canvas. */
 export interface CanvasEdgeData {
-  // Index signature required by @xyflow/react's Edge<T extends Record<string, unknown>>
   [key: string]: unknown;
   connectionType: "dataflow" | "dependency" | "context" | "reference";
-  color?: string;
-  directionality?: "arrow" | "none";
+  label?: string;
 }
 
 export type CanvasEdge = Edge<CanvasEdgeData>;

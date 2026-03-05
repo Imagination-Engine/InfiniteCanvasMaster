@@ -11,25 +11,24 @@
  * Design decisions:
  *   - JSON Canvas is a lowest-common-denominator format. Rich fields (agentContext,
  *     permissions, execution state) are silently dropped on export.
- *   - Imported nodes get `agentContext: null` and `createdBy: "import"` since they
- *     were not AI-generated.
+ *   - Imported nodes get sensible defaults since they were not AI-generated.
  *   - Type mappings use const Record maps (not switch) for easy extension.
  */
 
 import type {
   BlockType,
-  BlockContentMap,
+  BlockDataMap,
   CanvasBlockNode,
   CanvasEdge,
   CanvasDocument,
-  ContentBlockContent,
-  CodeBlockContent,
-  ImageBlockContent,
-  VideoBlockContent,
-  ChatBlockContent,
-  BrowserBlockContent,
-  AudioBlockContent,
-  GroupBlockContent,
+  ContentBlockData,
+  CodeBlockData,
+  ImageBlockData,
+  VideoBlockData,
+  ChatBlockData,
+  BrowserBlockData,
+  AudioBlockData,
+  GroupBlockData,
 } from "../types/blockTypes";
 
 // ─── JSON Canvas v1.0 Spec Types (local definitions) ────────────────
@@ -120,7 +119,7 @@ export function exportNodeToJsonCanvas(node: CanvasBlockNode): JsonCanvasNode {
     y:      node.position.y,
     width:  node.measured?.width  ?? 400,
     height: node.measured?.height ?? 300,
-    color:  node.data.metadata.color,
+    color:  node.data.meta.color,
   };
 
   switch (node.type as BlockType) {
@@ -137,7 +136,7 @@ export function exportNodeToJsonCanvas(node: CanvasBlockNode): JsonCanvasNode {
     case "image":
     case "video":
     case "audio": {
-      const content = node.data.content as ImageBlockContent | VideoBlockContent | AudioBlockContent;
+      const content = node.data.state.data as ImageBlockData | VideoBlockData | AudioBlockData;
       let fileUrl = "";
       if ("imageUrl" in content) fileUrl = content.imageUrl;
       else if ("videoUrl" in content) fileUrl = content.videoUrl || "";
@@ -147,12 +146,12 @@ export function exportNodeToJsonCanvas(node: CanvasBlockNode): JsonCanvasNode {
     }
 
     case "browser": {
-      const content = node.data.content as BrowserBlockContent;
+      const content = node.data.state.data as BrowserBlockData;
       return { ...base, url: content.url };
     }
 
     case "group": {
-      const content = node.data.content as GroupBlockContent;
+      const content = node.data.state.data as GroupBlockData;
       return { ...base, label: content.label };
     }
 
@@ -175,7 +174,7 @@ export function exportEdgeToJsonCanvas(edge: CanvasEdge): JsonCanvasEdge {
     toSide:   (edge.targetHandle as JsonCanvasSide) ?? "left",
     fromEnd:  "none",
     toEnd:    edge.data?.directionality === "none" ? "none" : "arrow",
-    color:    edge.data?.color,
+    color:    (edge.data?.color as string) || undefined,
     label:    edge.label as string | undefined,
   };
 }
@@ -202,28 +201,41 @@ export function importNodeFromJsonCanvas(jcNode: JsonCanvasNode): CanvasBlockNod
   const blockType = JC_TYPE_TO_BLOCK[jcNode.type];
   const now = new Date().toISOString();
 
+  // Create default capabilities and config (simplified for import)
+  // Ideally this should use blockFactory but for pure data transformation we can construct it manually
+  // providing we match the schema.
+
   return {
     id:       jcNode.id,
     type:     blockType,
     position: { x: jcNode.x, y: jcNode.y },
     data: {
-      status: "idle",
-      metadata: {
-        title:          jcNode.label ?? "",
-        createdAt:      now,
-        lastModifiedAt: now,
-        createdBy:      "import",
+      version: "1.0.0",
+      meta: {
+        label:          jcNode.label ?? (jcNode.text ? jcNode.text.substring(0, 20) : "Imported Block"),
+        created_at:     now,
+        updated_at:     now,
+        created_by:     "import",
+        author:         "import",
         version:        1,
         tags:           [],
         color:          jcNode.color,
       },
-      content: buildContentFromJsonCanvas(blockType, jcNode),
-      agentContext: null,
-      permissions: {
-        ownerId:    "",
-        sharedWith: [],
-        readOnly:   false,
+      capabilities: {
+          inputs: [],
+          outputs: [],
+          supported_triggers: [],
+          execution_mode: "sync",
+          llm_routing: "none"
       },
+      state: {
+          status: "idle",
+          data: buildContentFromJsonCanvas(blockType, jcNode),
+          last_run: null
+      },
+      extensions: {
+          config: {}
+      }
     },
   };
 }
@@ -270,42 +282,44 @@ export function importCanvasFromJsonCanvas(jcFile: JsonCanvasFile): CanvasDocume
  */
 function serializeContentToText(node: CanvasBlockNode): string {
   const { type, data } = node;
-  const content = data.content;
+  const content = data.state.data;
 
   switch (type as BlockType) {
     case "content":
-      return (content as ContentBlockContent).document;
+      return (content as ContentBlockData).document;
     case "code":
-      return (content as CodeBlockContent).source;
+      return (content as CodeBlockData).source;
     case "chat": {
-      const chatContent = content as ChatBlockContent;
+      const chatContent = content as ChatBlockData;
       return chatContent.messages
         .map((m) => `[${m.role}] ${m.content}`)
         .join("\n");
     }
     default:
-      return data.metadata.title;
+      return data.meta.label;
   }
 }
 
 /**
- * Builds the appropriate `content` object for a given BlockType
+ * Builds the appropriate `state.data` object for a given BlockType
  * from the available JSON Canvas fields.
  */
 function buildContentFromJsonCanvas(
   blockType: BlockType,
   jcNode: JsonCanvasNode,
-): BlockContentMap[BlockType] {
+): BlockDataMap[BlockType] {
   switch (blockType) {
     case "content":
-      return { document: jcNode.text ?? "", format: "markdown" } satisfies ContentBlockContent;
+      return { document: jcNode.text ?? "", format: "markdown" } as ContentBlockData;
     case "image":
-      return { imageUrl: jcNode.file ?? "", format: "png" } satisfies ImageBlockContent;
+      return { imageUrl: jcNode.file ?? "", format: "png" } as ImageBlockData;
     case "browser":
-      return { url: jcNode.url ?? "" } satisfies BrowserBlockContent;
+      return { url: jcNode.url ?? "" } as BrowserBlockData;
     case "group":
-      return { label: jcNode.label } satisfies GroupBlockContent;
+      return { label: jcNode.label } as GroupBlockData;
     default:
-      return { document: jcNode.text ?? "", format: "markdown" } satisfies ContentBlockContent;
+      // Fallback to ContentBlockData structure for safety, though type casting handles the TS check.
+      // In a real app we might want strict validation here.
+      return { document: jcNode.text ?? "", format: "markdown" } as any;
   }
 }

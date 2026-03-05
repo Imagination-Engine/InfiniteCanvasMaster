@@ -49,7 +49,7 @@ const INITIAL_NODES: Node[] = [
     id: "demo-welcome",
     title: "Welcome to Imagination Canvas",
     position: { x: 250, y: 100 },
-    content: {
+    data: {
       document: "# Welcome!\n\nThis is your new persistent workspace. Drag blocks from the sidebar to begin.\n\n*   **AI Agents** can read and write to these blocks.\n*   **Sandboxes** let you run code securely.\n*   **Images & Video** can be generated in-place.",
       format: "markdown"
     }
@@ -89,11 +89,21 @@ export default function Canvas() {
   // ── Edge Connection ───────────────────────────────────────────────
   const onConnect = useCallback(
     (connection: Connection) => {
+      // Super simple check: only source to target, no self-loops
+      if (connection.source === connection.target) return;
       setEdges((current) =>
         addEdge(connection, current),
       );
     },
     [setEdges],
+  );
+
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      // Prevent a node from connecting to itself visually
+      return connection.source !== connection.target;
+    },
+    []
   );
 
   // ── Drag-and-Drop (paired with Sidebar's HTML5 DnD) ──────────────
@@ -157,6 +167,7 @@ export default function Canvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        isValidConnection={isValidConnection}
         onDragOver={onDragOver}
         onDrop={onDrop}
         fitView
