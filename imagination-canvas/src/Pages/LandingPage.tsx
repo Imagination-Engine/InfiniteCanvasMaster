@@ -53,7 +53,7 @@ export default function LandingPage() {
 
         <div className="flex items-center gap-6">
           <Link to="/ImaginationCanvas" className="group relative px-6 py-3 bg-gradient-to-r from-brand-purple to-brand-cyan text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(123,92,234,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(0,194,255,0.5)] active:scale-95 transition-all duration-300 flex items-center gap-2 overflow-hidden">
-            <span className="relative z-10">Unleash Yourself</span>
+            <span className="relative z-10">Unleash Your Creativity</span>
             <ArrowRight size={14} className="relative z-10 group-hover:translate-x-1 transition-transform" />
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
           </Link>

@@ -1,49 +1,38 @@
-import { ReactFlowProvider } from "@xyflow/react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { RequireAuth } from "./auth/RequireAuth";
+import AuthPage from "./Pages/AuthPage";
+import ProjectsPage from "./Pages/ProjectsPage";
+import ProjectCanvasPage from "./Pages/ProjectCanvasPage";
+import { FilesystemPage } from "./Components/filesystem/FilesystemPage";
 
-import ImaginationCanvas from "./Pages/ImaginationCanvas";
-import AgentCanvas from "./Pages/AgentCanvas";
-import LandingPage from "./Pages/LandingPage";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+function RootRedirect() {
+  const { user, loading } = useAuth();
 
-/**
- * App — root component for the Imagination Canvas.
- *
- * Layout:
- *  ┌──────────┬──────────────────────────────────────┐
- *  │ Sidebar  │          Canvas (React Flow)          │
- *  │ (modules)│  nodes · edges · pan · zoom · minimap │
- *  └──────────┴──────────────────────────────────────┘
- *
- * ReactFlowProvider MUST wrap any component that calls useReactFlow().
- */
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route 
-          path="/ImaginationCanvas" 
-          element={
-            <ReactFlowProvider>
-              <div className="flex w-screen h-screen bg-slate-50 text-slate-900">
-                <ImaginationCanvas />
-              </div>
-            </ReactFlowProvider>
-          } 
-        />
-        <Route 
-          path="/AgentCanvas" 
-          element={
-            <ReactFlowProvider>
-              <div className="flex w-screen h-screen bg-slate-50 text-slate-900">
-                <AgentCanvas />
-              </div>
-            </ReactFlowProvider>
-          } 
-        />
-      </Routes>
-    </Router>
-  );
+  if (loading) {
+    return <div className="h-screen w-screen grid place-items-center bg-slate-950 text-slate-200">Loading...</div>;
+  }
+
+  return <Navigate to={user ? "/projects" : "/auth"} replace />;
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/filesystem" element={<FilesystemPage />} />
+
+          <Route element={<RequireAuth />}>
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/projects/:projectId/:canvasKind" element={<ProjectCanvasPage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

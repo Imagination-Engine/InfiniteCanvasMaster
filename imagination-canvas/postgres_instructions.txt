@@ -1,0 +1,5 @@
+Install Postgres (EX: on Mac, use Brew)
+Run "psql postgres" in the terminal (or whatever your OS equivalent is)
+Run CREATE DATABASE imagination_canvas; (if not there already)
+Run CREATE ROLE postgres WITH LOGIN SUPERUSER; (this is the user we're loggin in as)
+
