@@ -8,13 +8,7 @@ import {
   Background,
   Controls,
   MiniMap,
-  addEdge,
-  useNodesState,
-  useEdgesState,
   useReactFlow,
-  type Connection,
-  type Edge,
-  type Node,
 } from "@xyflow/react";
 
 // React Flow's mandatory base styles (layout, handles, edges)
@@ -26,6 +20,7 @@ import { NODE_TYPES } from "./nodes";
 // Block schema — factory for creating typed blocks
 import { createBlock } from "../canvas/factories/blockFactory";
 import type { BlockType } from "../canvas/types/blockTypes";
+import { useCanvasStore } from "../canvas/store/useCanvasStore";
 
 // ─── Block Type Detection ───────────────────────────────────────────
 // New block types that use the factory + BlockData schema.
@@ -40,24 +35,6 @@ const NEW_BLOCK_TYPES: Set<BlockType> = new Set([
 function isNewBlockType(type: string): type is BlockType {
   return NEW_BLOCK_TYPES.has(type as BlockType);
 }
-
-// ─── Initial Demo Data ──────────────────────────────────────────────
-// Starter nodes so new users see something immediately.
-// Feel free to clear these — the sidebar creates new ones via drag-and-drop.
-const INITIAL_NODES: Node[] = [
-  createBlock("content", {
-    id: "demo-welcome",
-    title: "Welcome to Imagination Canvas",
-    position: { x: 250, y: 100 },
-    data: {
-      document: "# Welcome!\n\nThis is your new persistent workspace. Drag blocks from the sidebar to begin.\n\n*   **AI Agents** can read and write to these blocks.\n*   **Sandboxes** let you run code securely.\n*   **Images & Video** can be generated in-place.",
-      format: "markdown"
-    }
-  }),
-];
-
-const INITIAL_EDGES: Edge[] = [];
- 
 
 // ─── Helpers ────────────────────────────────────────────────────────
 let nodeIdCounter = 0;
@@ -78,33 +55,17 @@ const createNodeId = () =>
  * MUST be rendered inside a <ReactFlowProvider> (see App.tsx).
  */
 export default function Canvas() {
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState(INITIAL_NODES);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState(INITIAL_EDGES);
+  const { 
+    nodes, 
+    edges, 
+    onNodesChange, 
+    onEdgesChange, 
+    onConnect, 
+    addBlock 
+  } = useCanvasStore();
+  
   const { screenToFlowPosition } = useReactFlow();
-  const reactFlowWrapper =
-    useRef<HTMLDivElement>(null);
-
-  // ── Edge Connection ───────────────────────────────────────────────
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      // Super simple check: only source to target, no self-loops
-      if (connection.source === connection.target) return;
-      setEdges((current) =>
-        addEdge(connection, current),
-      );
-    },
-    [setEdges],
-  );
-
-  const isValidConnection = useCallback(
-    (connection: Connection | Edge) => {
-      // Prevent a node from connecting to itself visually
-      return connection.source !== connection.target;
-    },
-    []
-  );
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // ── Drag-and-Drop (paired with Sidebar's HTML5 DnD) ──────────────
   const onDragOver = useCallback(
@@ -130,28 +91,15 @@ export default function Canvas() {
         y: event.clientY,
       });
 
-      // New block types use the factory for fully-typed, schema-valid data.
-      // Legacy types (trigger, action, etc.) still use the old { label } format
-      // until their components are migrated to read from BlockData.
       if (isNewBlockType(blockType)) {
-        setNodes((current) => [
-          ...current,
-          createBlock(blockType, { position }),
-        ]);
+        addBlock(blockType, position);
       } else {
-        // Legacy fallback — remove this branch as you migrate each old node
-        setNodes((current) => [
-          ...current,
-          {
-            id: createNodeId(),
-            type: blockType,
-            position,
-            data: { label: `New ${blockType}` },
-          },
-        ]);
+        // Legacy fallback - keeping for now but should ideally be removed
+        // or adapted to use the store if possible, though addBlock expects typed BlockType
+        console.warn("Dropped unsupported legacy block type:", blockType);
       }
     },
-    [screenToFlowPosition, setNodes],
+    [screenToFlowPosition, addBlock],
   );
 
   // ── Render ────────────────────────────────────────────────────────
@@ -167,7 +115,6 @@ export default function Canvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        isValidConnection={isValidConnection}
         onDragOver={onDragOver}
         onDrop={onDrop}
         fitView

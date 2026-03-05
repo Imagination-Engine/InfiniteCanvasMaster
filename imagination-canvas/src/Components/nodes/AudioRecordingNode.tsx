@@ -10,6 +10,7 @@ import React, { useCallback } from "react";
 import { Mic, Square } from "lucide-react";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder";
 import type { BlockData } from "../../canvas/types/blockTypes";
+import { useCanvasStore } from "../../canvas/store/useCanvasStore";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ export function AudioRecordingNode({
   data,
   selected,
 }: NodeProps<AudioRecordingNodeType>) {
-  const { updateNodeData } = useReactFlow();
+  const { updateBlock } = useCanvasStore();
 
   // Custom hook for all audio recording logic
   const {
@@ -46,8 +47,7 @@ export function AudioRecordingNode({
   // Update parent when recording finishes
   React.useEffect(() => {
     if (audioURL && audioURL !== data.state.data.audioUrl) {
-      updateNodeData(id, {
-        ...data,
+      updateBlock(id, {
         state: {
             ...data.state,
             data: {
@@ -62,24 +62,22 @@ export function AudioRecordingNode({
         },
       });
     }
-  }, [audioURL, id, data, updateNodeData]);
+  }, [audioURL, id, data, updateBlock]);
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateNodeData(id, {
-        ...data,
+      updateBlock(id, {
         meta: {
           ...data.meta,
           label: e.target.value,
         },
       });
     },
-    [id, data, updateNodeData],
+    [id, data, updateBlock],
   );
 
   const handleRemoveRecording = useCallback(() => {
-    updateNodeData(id, {
-      ...data,
+    updateBlock(id, {
       state: {
         ...data.state,
         data: {
@@ -93,7 +91,7 @@ export function AudioRecordingNode({
         version: data.meta.version + 1,
       },
     });
-  }, [id, data, updateNodeData]);
+  }, [id, data, updateBlock]);
 
   const currentAudioUrl = data.state.data.audioUrl || audioURL;
 

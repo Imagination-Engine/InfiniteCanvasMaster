@@ -29,6 +29,7 @@ import {
 } from "@xyflow/react";
 import { FileText } from "lucide-react";
 import React, { useCallback } from "react";
+import { useCanvasStore } from "../../canvas/store/useCanvasStore";
 
 // ─── Type Wiring ────────────────────────────────────────────────────
 // Import the data shape from blockTypes.ts so TypeScript knows
@@ -68,14 +69,13 @@ export function ContentNode({
   data,
   selected,
 }: NodeProps<ContentNodeType>) {
-  const { updateNodeData } = useReactFlow();
+  const { updateBlock } = useCanvasStore();
 
   // ── Title editing ─────────────────────────────────────────────
   // Updates data.meta.label — the block's display name.
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateNodeData(id, {
-        ...data,
+      updateBlock(id, {
         meta: {
           ...data.meta,
           label: e.target.value,
@@ -84,15 +84,14 @@ export function ContentNode({
         },
       });
     },
-    [id, data, updateNodeData],
+    [id, data, updateBlock],
   );
 
   // ── Document editing ──────────────────────────────────────────
   // Updates data.state.data.document — the actual text content.
   const handleDocumentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      updateNodeData(id, {
-        ...data,
+      updateBlock(id, {
         state: {
           ...data.state,
           data: {
@@ -107,7 +106,7 @@ export function ContentNode({
         },
       });
     },
-    [id, data, updateNodeData],
+    [id, data, updateBlock],
   );
 
   const format = data.state.data.format;

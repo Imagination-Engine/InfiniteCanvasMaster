@@ -21,6 +21,7 @@ import {
 import { Image as ImageIcon, Upload, Sparkles, Trash2 } from "lucide-react";
 import React, { useCallback, useRef } from "react";
 import type { BlockData } from "../../canvas/types/blockTypes";
+import { useCanvasStore } from "../../canvas/store/useCanvasStore";
 
 export type ImageNodeData = BlockData<"image">;
 export type ImageNodeType = Node<ImageNodeData, "image">;
@@ -30,7 +31,7 @@ export function ImageNode({
   data,
   selected,
 }: NodeProps<ImageNodeType>) {
-  const { updateNodeData } = useReactFlow();
+  const { updateBlock } = useCanvasStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── File Upload Logic ───────────────────────────────────────────
@@ -41,8 +42,7 @@ export function ImageNode({
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        updateNodeData(id, {
-          ...data,
+        updateBlock(id, {
           state: {
             ...data.state,
             data: {
@@ -60,22 +60,15 @@ export function ImageNode({
       };
       reader.readAsDataURL(file);
     },
-    [id, data, updateNodeData],
+    [id, data, updateBlock],
   );
 
   const triggerUpload = () => fileInputRef.current?.click();
 
   // ── Prompt Logic ───────────────────────────────────────────────
-  // Note: sourcePrompt is currently not in the simplified schema in blockTypes.ts
-  // Assuming we might want to add it back or use 'altText' or a config field.
-  // For now I'll assume we can add it to extensions or modify the type.
-  // Let's assume it should be in `extensions.config` or we accept `sourcePrompt` in data if we extend the type.
-  // Looking at blockTypes.ts, ImageBlockData is { imageUrl, format, altText }.
-  // I'll add sourcePrompt to extensions.config for now.
   const handlePromptChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      updateNodeData(id, {
-        ...data,
+      updateBlock(id, {
         extensions: {
             ...data.extensions,
             config: {
@@ -85,7 +78,7 @@ export function ImageNode({
         }
       });
     },
-    [id, data, updateNodeData],
+    [id, data, updateBlock],
   );
 
   const sourcePrompt = data.extensions.config?.sourcePrompt || "";
@@ -93,21 +86,19 @@ export function ImageNode({
   // ── Title Logic ────────────────────────────────────────────────
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateNodeData(id, {
-        ...data,
+      updateBlock(id, {
         meta: {
           ...data.meta,
           label: e.target.value,
         },
       });
     },
-    [id, data, updateNodeData],
+    [id, data, updateBlock],
   );
 
   // ── Remove Image Logic ──────────────────────────────────────────
   const handleRemoveImage = useCallback(() => {
-    updateNodeData(id, {
-      ...data,
+    updateBlock(id, {
       state: {
         ...data.state,
         data: {
@@ -121,7 +112,7 @@ export function ImageNode({
         version: data.meta.version + 1,
       },
     });
-  }, [id, data, updateNodeData]);
+  }, [id, data, updateBlock]);
 
   const hasImage = !!data.state.data.imageUrl;
 
