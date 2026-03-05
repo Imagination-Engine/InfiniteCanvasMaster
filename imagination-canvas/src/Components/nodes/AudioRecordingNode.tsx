@@ -10,6 +10,7 @@ import React, { useCallback } from "react";
 import { Mic, Square } from "lucide-react";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder";
 import type { BlockData } from "../../canvas/types/blockTypes";
+import { useCanvasStore } from "../../canvas/store/useCanvasStore";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ export function AudioRecordingNode({
   data,
   selected,
 }: NodeProps<AudioRecordingNodeType>) {
-  const { updateNodeData } = useReactFlow();
+  const { updateBlock } = useCanvasStore();
 
   // Custom hook for all audio recording logic
   const {
@@ -42,54 +43,57 @@ export function AudioRecordingNode({
   } = useAudioRecorder();
 
   // ── Persistence Logic ───────────────────────────────────────────
-  
+
   // Update parent when recording finishes
   React.useEffect(() => {
-    if (audioURL && audioURL !== data.content.audioUrl) {
-      updateNodeData(id, {
-        ...data,
-        content: {
-          ...data.content,
-          audioUrl: audioURL,
+    if (audioURL && audioURL !== data.state.data.audioUrl) {
+      updateBlock(id, {
+        state: {
+            ...data.state,
+            data: {
+                ...data.state.data,
+                audioUrl: audioURL
+            }
         },
-        metadata: {
-          ...data.metadata,
-          lastModifiedAt: new Date().toISOString(),
-          version: data.metadata.version + 1,
+        meta: {
+          ...data.meta,
+          updated_at: new Date().toISOString(),
+          version: data.meta.version + 1,
         },
       });
     }
-  }, [audioURL, id, data, updateNodeData]);
+  }, [audioURL, id, data, updateBlock]);
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateNodeData(id, {
-        ...data,
-        metadata: {
-          ...data.metadata,
-          title: e.target.value,
+      updateBlock(id, {
+        meta: {
+          ...data.meta,
+          label: e.target.value,
         },
       });
     },
-    [id, data, updateNodeData],
+    [id, data, updateBlock],
   );
 
   const handleRemoveRecording = useCallback(() => {
-    updateNodeData(id, {
-      ...data,
-      content: {
-        ...data.content,
-        audioUrl: "",
+    updateBlock(id, {
+      state: {
+        ...data.state,
+        data: {
+            ...data.state.data,
+            audioUrl: ""
+        }
       },
-      metadata: {
-        ...data.metadata,
-        lastModifiedAt: new Date().toISOString(),
-        version: data.metadata.version + 1,
+      meta: {
+        ...data.meta,
+        updated_at: new Date().toISOString(),
+        version: data.meta.version + 1,
       },
     });
-  }, [id, data, updateNodeData]);
+  }, [id, data, updateBlock]);
 
-  const currentAudioUrl = data.content.audioUrl || audioURL;
+  const currentAudioUrl = data.state.data.audioUrl || audioURL;
 
   return (
     <div className={`flex flex-col min-w-[280px] min-h-[160px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
@@ -124,7 +128,7 @@ export function AudioRecordingNode({
           </div>
         )}
         {currentAudioUrl && !recording && (
-          <button 
+          <button
            onClick={handleRemoveRecording}
            className="p-1.5 hover:bg-rose-500/10 rounded-lg transition-colors group/trash"
            title="Remove"
@@ -138,7 +142,7 @@ export function AudioRecordingNode({
         {/* Title Input */}
         <input
           type="text"
-          value={data.metadata.title}
+          value={data.meta.label}
           onChange={handleTitleChange}
           placeholder="Recording Name..."
           className="text-sm font-black text-white outline-none w-full bg-transparent nodrag nopan uppercase tracking-tight"
@@ -173,7 +177,7 @@ export function AudioRecordingNode({
               <div className="flex justify-center">
                 <a
                   href={currentAudioUrl}
-                  download={`${data.metadata.title || "recording"}.webm`}
+                  download={`${data.meta.label || "recording"}.webm`}
                   className="text-[9px] font-black text-brand-text-muted hover:text-rose-500 transition-colors tracking-[0.2em] uppercase"
                 >
                   Export Archive
@@ -192,4 +196,3 @@ export function AudioRecordingNode({
     </div>
   );
 }
-

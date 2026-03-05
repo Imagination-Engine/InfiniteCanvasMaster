@@ -9,13 +9,7 @@ import {
   Background,
   Controls,
   MiniMap,
-  addEdge,
-  useNodesState,
-  useEdgesState,
   useReactFlow,
-  type Connection,
-  type Edge,
-  type Node,
 } from "@xyflow/react";
 
 // React Flow's mandatory base styles (layout, handles, edges)
@@ -25,8 +19,10 @@ import "@xyflow/react/dist/style.css";
 import { NODE_TYPES } from "./nodes";
 
 // Block schema — factory for creating typed blocks
-import { createBlock } from "../canvas/factories/blockFactory";
+// import { createBlock } from "../canvas/factories/blockFactory"; // Unused now that addBlock handles it via store
+
 import type { BlockType, CanvasDocument } from "../canvas/types/blockTypes";
+import { useCanvasStore } from "../canvas/store/useCanvasStore";
 
 // ─── Block Type Detection ───────────────────────────────────────────
 // New block types that use the factory + BlockData schema.
@@ -42,30 +38,13 @@ function isNewBlockType(type: string): type is BlockType {
   return NEW_BLOCK_TYPES.has(type as BlockType);
 }
 
-// ─── Initial Demo Data ──────────────────────────────────────────────
-// Starter nodes so new users see something immediately.
-// Feel free to clear these — the sidebar creates new ones via drag-and-drop.
-const INITIAL_NODES: Node[] = [
-  createBlock("content", {
-    id: "demo-welcome",
-    title: "Welcome to Imagination Canvas",
-    position: { x: 250, y: 100 },
-    content: {
-      document: "# Welcome!\n\nThis is your new persistent workspace. Drag blocks from the sidebar to begin.\n\n*   **AI Agents** can read and write to these blocks.\n*   **Sandboxes** let you run code securely.\n*   **Images & Video** can be generated in-place.",
-      format: "markdown"
-    }
-  }),
-];
-
-const INITIAL_EDGES: Edge[] = [];
- 
-
-// ─── Helpers ────────────────────────────────────────────────────────
-let nodeIdCounter = 0;
-const createNodeId = () =>
-  `node-${Date.now()}-${nodeIdCounter++}`;
-
 // ─── Canvas Component ───────────────────────────────────────────────
+
+type CanvasProps = {
+  initialDocument?: CanvasDocument | null;
+  // showDemo prop is available for legacy reasons but currently unused as store handles defaults
+  showDemo?: boolean;
+};
 
 /**
  * Canvas — the main React Flow workspace.
@@ -78,64 +57,29 @@ const createNodeId = () =>
  *
  * MUST be rendered inside a <ReactFlowProvider> (see App.tsx).
  */
-type CanvasProps = {
-  initialDocument?: CanvasDocument | null;
-  showDemo?: boolean;
-  onDocumentChange?: (document: CanvasDocument) => void;
-};
+export default function Canvas({ initialDocument }: CanvasProps) {
+  const { 
+    nodes, 
+    edges, 
+    onNodesChange, 
+    onEdgesChange, 
+    onConnect, 
+    addBlock,
+    setCanvas
+  } = useCanvasStore();
+  
+  const { screenToFlowPosition, setViewport } = useReactFlow();
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
-export default function Canvas({
-  initialDocument = null,
-  showDemo = true,
-  onDocumentChange,
-}: CanvasProps = {}) {
-  const startingNodes = initialDocument
-    ? (initialDocument.nodes as Node[])
-    : showDemo
-      ? INITIAL_NODES
-      : [];
-  const startingEdges = initialDocument
-    ? (initialDocument.edges as Edge[])
-    : INITIAL_EDGES;
-
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState(startingNodes);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState(startingEdges);
-  const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
-  const reactFlowWrapper =
-    useRef<HTMLDivElement>(null);
-
+  // Initialize canvas from prop
   useEffect(() => {
-    if (!initialDocument) {
-      setNodes(showDemo ? INITIAL_NODES : []);
-      setEdges(INITIAL_EDGES);
-      return;
+    if (initialDocument) {
+      setCanvas(initialDocument.nodes, initialDocument.edges);
+      if (initialDocument.viewport) {
+        setViewport(initialDocument.viewport);
+      }
     }
-
-    setNodes(initialDocument.nodes as Node[]);
-    setEdges(initialDocument.edges as Edge[]);
-    void setViewport(initialDocument.viewport);
-  }, [initialDocument, setEdges, setNodes, setViewport, showDemo]);
-
-  useEffect(() => {
-    if (!onDocumentChange) return;
-    onDocumentChange({
-      nodes: nodes as CanvasDocument["nodes"],
-      edges: edges as CanvasDocument["edges"],
-      viewport: getViewport(),
-    });
-  }, [nodes, edges, getViewport, onDocumentChange]);
-
-  // ── Edge Connection ───────────────────────────────────────────────
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      setEdges((current) =>
-        addEdge(connection, current),
-      );
-    },
-    [setEdges],
-  );
+  }, [initialDocument, setCanvas, setViewport]);
 
   // ── Drag-and-Drop (paired with Sidebar's HTML5 DnD) ──────────────
   const onDragOver = useCallback(
@@ -161,28 +105,15 @@ export default function Canvas({
         y: event.clientY,
       });
 
-      // New block types use the factory for fully-typed, schema-valid data.
-      // Legacy types (trigger, action, etc.) still use the old { label } format
-      // until their components are migrated to read from BlockData.
       if (isNewBlockType(blockType)) {
-        setNodes((current) => [
-          ...current,
-          createBlock(blockType, { position }),
-        ]);
+        addBlock(blockType, position);
       } else {
-        // Legacy fallback — remove this branch as you migrate each old node
-        setNodes((current) => [
-          ...current,
-          {
-            id: createNodeId(),
-            type: blockType,
-            position,
-            data: { label: `New ${blockType}` },
-          },
-        ]);
+        // Legacy fallback - keeping for now but should ideally be removed
+        // or adapted to use the store if possible, though addBlock expects typed BlockType
+        console.warn("Dropped unsupported legacy block type:", blockType);
       }
     },
-    [screenToFlowPosition, setNodes],
+    [screenToFlowPosition, addBlock],
   );
 
   // ── Render ────────────────────────────────────────────────────────
