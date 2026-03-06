@@ -42,8 +42,6 @@ Thumbs.db
 
 # AI / Agentic tools
 .gemini/
-.agent/
-!.agent/workflows/
 
 # Optional: Local-only assets or temporary design files
 *.tmp
