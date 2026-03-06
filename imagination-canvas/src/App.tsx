@@ -7,15 +7,6 @@ import ProjectCanvasPage from "./Pages/ProjectCanvasPage";
 import { FilesystemPage } from "./Components/filesystem/FilesystemPage";
 import LandingPage from "./Pages/LandingPage";
 
-// function AuthRedirect() {
-//   const { user, loading } = useAuth();
-
-//   if (loading) {
-//     return <div className="h-screen w-screen grid place-items-center bg-slate-950 text-slate-200">Loading...</div>;
-//   }
-
-//   return <Navigate to={user ? "/projects" : "/auth"} replace />;
-// }
 
 export default function App() {
   return (

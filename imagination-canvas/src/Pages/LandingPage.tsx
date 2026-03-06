@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight, Brain, Github, Shield, Cpu } from "lucide-react";
+import { Sparkles, ArrowRight, Brain, Github } from "lucide-react";
 import logo from "../assets/logo.svg";
 
 export default function LandingPage() {
@@ -11,19 +11,11 @@ export default function LandingPage() {
           className="absolute inset-0 opacity-[0.12]"
           style={{
             backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.4) 1px, transparent 0)`,
-            backgroundSize: '48px 48px',
-            animation: 'moveGrid 60s linear infinite'
+            backgroundSize: '48px 48px'
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg-page via-transparent to-brand-bg-page" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg-page via-transparent to-brand-bg-page" />
       </div>
-
-      <style>{`
-        @keyframes moveGrid {
-          0% { background-position: 0 0; }
-          100% { background-position: 48px 48px; }
-        }
-      `}</style>
 
       {/* ─── Navigation ────────────────────────────────────────────────── */}
       <nav className="fixed top-0 inset-x-0 h-20 bg-brand-bg-page/60 backdrop-blur-2xl border-b border-white/5 z-50 flex items-center justify-between px-8 md:px-20 transition-all">
@@ -34,7 +26,7 @@ export default function LandingPage() {
               alt="Balnce AI Logo" 
               width={40}
               height={40}
-              className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(123,92,234,0.3)] group-hover:drop-shadow-[0_0_20px_rgba(0,194,255,0.4)] transition-all duration-500" 
+              className="w-10 h-10 object-contain drop-shadow-[0_0_10px_--theme(--color-brand-purple/30%)] group-hover:drop-shadow-[0_0_20px_--theme(--color-brand-cyan/40%)] transition-all duration-500" 
             />
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tighter text-white uppercase leading-none">
@@ -52,7 +44,7 @@ export default function LandingPage() {
         </div>
 
         <div className="flex items-center gap-6">
-          <Link to="/projects" className="group relative px-6 py-3 bg-gradient-to-r from-brand-purple to-brand-cyan text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(123,92,234,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(0,194,255,0.5)] active:scale-95 transition-all duration-300 flex items-center gap-2 overflow-hidden">
+          <Link to="/projects" className="group relative px-6 py-3 bg-gradient-to-r from-brand-purple to-brand-cyan text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_10px_20px_-5px_--theme(--color-brand-purple/40%)] hover:shadow-[0_15px_30px_-5px_--theme(--color-brand-cyan/50%)] active:scale-95 transition-all duration-300 flex items-center gap-2 overflow-hidden">
             <span className="relative z-10">Unleash Your Creativity</span>
             <ArrowRight size={14} className="relative z-10 group-hover:translate-x-1 transition-transform" />
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -85,7 +77,7 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-6 mb-24 animate-in fade-in slide-in-from-bottom-16 duration-700 delay-300">
-            <Link to="/projects" className="px-10 py-5 bg-white text-brand-bg-page font-black rounded-2xl text-sm uppercase tracking-widest hover:bg-[#F0F4FF] hover:scale-[1.05] active:scale-[0.95] transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)]">
+            <Link to="/projects" className="px-10 py-5 bg-white text-brand-bg-page font-black rounded-2xl text-sm uppercase tracking-widest hover:bg-[#F0F4FF] hover:scale-[1.05] active:scale-[0.95] transition-all duration-300 shadow-[0_20px_40px_-10px_--theme(--color-white/20%)]">
               Build All Your Ideas
             </Link>
             <button className="px-10 py-5 bg-transparent border border-white/10 text-white font-black rounded-2xl text-sm uppercase tracking-widest hover:bg-white/5 hover:border-white/20 transition-all duration-300">
