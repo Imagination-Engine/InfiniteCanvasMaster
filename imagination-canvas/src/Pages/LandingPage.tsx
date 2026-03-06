@@ -52,7 +52,7 @@ export default function LandingPage() {
         </div>
 
         <div className="flex items-center gap-6">
-          <Link to="/ImaginationCanvas" className="group relative px-6 py-3 bg-gradient-to-r from-brand-purple to-brand-cyan text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(123,92,234,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(0,194,255,0.5)] active:scale-95 transition-all duration-300 flex items-center gap-2 overflow-hidden">
+          <Link to="/projects" className="group relative px-6 py-3 bg-gradient-to-r from-brand-purple to-brand-cyan text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(123,92,234,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(0,194,255,0.5)] active:scale-95 transition-all duration-300 flex items-center gap-2 overflow-hidden">
             <span className="relative z-10">Unleash Your Creativity</span>
             <ArrowRight size={14} className="relative z-10 group-hover:translate-x-1 transition-transform" />
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -85,7 +85,7 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-6 mb-24 animate-in fade-in slide-in-from-bottom-16 duration-700 delay-300">
-            <Link to="/ImaginationCanvas" className="px-10 py-5 bg-white text-brand-bg-page font-black rounded-2xl text-sm uppercase tracking-widest hover:bg-[#F0F4FF] hover:scale-[1.05] active:scale-[0.95] transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)]">
+            <Link to="/projects" className="px-10 py-5 bg-white text-brand-bg-page font-black rounded-2xl text-sm uppercase tracking-widest hover:bg-[#F0F4FF] hover:scale-[1.05] active:scale-[0.95] transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)]">
               Build All Your Ideas
             </Link>
             <button className="px-10 py-5 bg-transparent border border-white/10 text-white font-black rounded-2xl text-sm uppercase tracking-widest hover:bg-white/5 hover:border-white/20 transition-all duration-300">
@@ -125,12 +125,6 @@ export default function LandingPage() {
                          </div>
                       </div>
 
-                      <div className="absolute -top-20 -left-10 w-32 h-20 bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl flex items-center justify-center animate-bounce duration-[3000ms]">
-                         <Shield size={20} className="text-brand-cyan" />
-                      </div>
-                      <div className="absolute -bottom-10 -right-20 w-40 h-24 bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl flex items-center justify-center animate-bounce duration-[4000ms]">
-                         <Cpu size={24} className="text-brand-purple" />
-                      </div>
                    </div>
                    
                    {/* Connection Lines Pattern */}
