@@ -26,7 +26,7 @@ const createEntry = (
     inputs: defaults.inputs ?? {},
     outputs: defaults.outputs ?? {},
     config: defaults.config ?? {},
-    metadata: { category },
+    metadata: { category, label, description },
   },
 });
 

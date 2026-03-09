@@ -7,10 +7,6 @@ export async function runCreativeNode(
 ): Promise<Record<string, unknown>> {
   await sleep(300);
 
-  const instructions = typeof config.additionalInstructions === "string"
-    ? config.additionalInstructions.trim()
-    : "";
-
   switch (nodeType) {
     case "summarizer": {
       try {
@@ -19,10 +15,25 @@ export async function runCreativeNode(
           throw new Error("VITE_GOOGLE_API_KEY is not defined in the environment.");
         }
 
-        const sourcesRaw = inputs.sources;
-        const sources = Array.isArray(sourcesRaw)
-          ? sourcesRaw.filter(Boolean)
-          : [String(sourcesRaw ?? "")].filter(Boolean);
+        const sourcesRaw = inputs.sources ?? inputs.source;
+        let sources: string[] = [];
+
+        if (Array.isArray(sourcesRaw)) {
+          sources = sourcesRaw.map((value) => String(value)).filter(Boolean);
+        } else if (sourcesRaw && typeof sourcesRaw === "object") {
+          const record = sourcesRaw as Record<string, unknown>;
+          sources = ["text", "image", "audio"]
+            .map((key) => record[key])
+            .filter((value): value is unknown => Boolean(value))
+            .map((value) => String(value));
+
+          if (sources.length === 0) {
+            sources = [JSON.stringify(record)];
+          }
+        } else {
+          const single = String(sourcesRaw ?? "");
+          sources = single ? [single] : [];
+        }
 
         if (sources.length === 0) {
           throw new Error("No sources provided to summarize.");

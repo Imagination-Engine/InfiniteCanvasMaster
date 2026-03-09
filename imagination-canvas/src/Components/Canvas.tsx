@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   type DragEvent,
+  type MouseEvent,
 } from "react";
 import {
   ReactFlow,
@@ -24,6 +25,9 @@ import { hasCompatibleSchemaTypes } from "../nodes/types";
 import type { UnifiedCanvasDocument, UnifiedCanvasEdge, UnifiedCanvasNode } from "../nodes/canvasTypes";
 import { DEFAULT_CANVAS_DOCUMENT } from "../nodes/canvasTypes";
 import type { ParsedAgentGraph } from "../agent/agentParser";
+import { getNodeInputs, toWorkflowNodeJson } from "../nodes/workflow/inputResolution";
+import { getRuntimeState, syncRuntimeOutputsFromNodes } from "../nodes/workflow/runtimeState";
+import type { WorkflowEdge } from "../nodes/workflow/types";
 
 const normalizeNode = (node: UnifiedCanvasNode): UnifiedCanvasNode => {
   const definition = getNodeDefinition(node.type ?? "");
@@ -71,8 +75,31 @@ const normalizeNode = (node: UnifiedCanvasNode): UnifiedCanvasNode => {
           ? (incomingData.config as Record<string, unknown>)
           : {}),
       },
-      metadata: definition.defaultData.metadata,
+      metadata: {
+        ...(definition.defaultData.metadata ?? {}),
+        ...(typeof incomingData.metadata === "object" && incomingData.metadata
+          ? (incomingData.metadata as Record<string, unknown>)
+          : {}),
+        label: (incomingData.label as string | undefined) ?? definition.defaultData.label,
+        description: (incomingData.description as string | undefined) ?? definition.defaultData.description,
+      },
     },
+  };
+};
+
+const normalizeEdge = (edge: UnifiedCanvasEdge): UnifiedCanvasEdge => {
+  const fallbackEdge: WorkflowEdge = {
+    id: edge.id || `edge-${edge.source}-${edge.target}`,
+    source: edge.source,
+    target: edge.target,
+    sourceHandle: edge.sourceHandle ?? undefined,
+    targetHandle: edge.targetHandle ?? undefined,
+  };
+
+  return {
+    ...edge,
+    ...fallbackEdge,
+    type: edge.type ?? "smoothstep",
   };
 };
 
@@ -82,7 +109,7 @@ const normalizeDocument = (document: UnifiedCanvasDocument | null | undefined): 
   }
 
   const nodes = (document.nodes ?? []).map((node) => normalizeNode(node as UnifiedCanvasNode));
-  const edges = (document.edges ?? []) as UnifiedCanvasEdge[];
+  const edges = (document.edges ?? []).map((edge) => normalizeEdge(edge as UnifiedCanvasEdge));
   const viewport = document.viewport ?? DEFAULT_CANVAS_DOCUMENT.viewport;
 
   return { nodes, edges, viewport };
@@ -120,6 +147,10 @@ export default function Canvas({
       viewport: getViewport(),
     });
   }, [nodes, edges, getViewport, onDocumentChange]);
+
+  useEffect(() => {
+    syncRuntimeOutputsFromNodes(nodes as UnifiedCanvasNode[]);
+  }, [nodes]);
 
   const isConnectionAllowed = useCallback<IsValidConnection>((connection) => {
     if (connection.source === connection.target) {
@@ -231,6 +262,24 @@ export default function Canvas({
     setEdges((current) => [...current, ...graph.edges]);
   }, [setEdges, setNodes]);
 
+  const onNodeClick = useCallback(
+    (_event: MouseEvent, node: UnifiedCanvasNode) => {
+      const runtimeState = getRuntimeState();
+      const inputs = getNodeInputs(node.id, nodes as UnifiedCanvasNode[], edges as UnifiedCanvasEdge[], runtimeState);
+      const outputs = runtimeState[node.id]?.outputs ?? toWorkflowNodeJson(node).outputs;
+      const nodeJson = toWorkflowNodeJson(node);
+
+      console.group("NODE DEBUG");
+      console.log(`id: "${node.id}"`);
+      console.log(`type: "${node.type}"`);
+      console.log("nodeData:", nodeJson);
+      console.log("inputs:", inputs);
+      console.log("outputs:", outputs);
+      console.groupEnd();
+    },
+    [nodes, edges],
+  );
+
   return (
     <div className="relative flex-1 bg-brand-bg-page">
       <ReactFlow
@@ -243,6 +292,7 @@ export default function Canvas({
         isValidConnection={isConnectionAllowed}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        onNodeClick={onNodeClick}
         fitView
         deleteKeyCode={["Backspace", "Delete"]}
         colorMode="dark"
