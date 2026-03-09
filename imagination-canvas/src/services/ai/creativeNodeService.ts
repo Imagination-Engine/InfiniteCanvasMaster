@@ -12,11 +12,106 @@ export async function runCreativeNode(
     : "";
 
   switch (nodeType) {
-    case "summarizer":
-      return {
-        summary: `Summary for input: ${String(inputs.source ?? "")}`,
-        analysis: instructions ? `Analysis with instructions: ${instructions}` : "Basic analysis placeholder.",
-      };
+    case "summarizer": {
+      try {
+        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY as string | undefined;
+        if (!apiKey) {
+          throw new Error("VITE_GOOGLE_API_KEY is not defined in the environment.");
+        }
+
+        const sourcesRaw = inputs.sources;
+        const sources = Array.isArray(sourcesRaw)
+          ? sourcesRaw.filter(Boolean)
+          : [String(sourcesRaw ?? "")].filter(Boolean);
+
+        if (sources.length === 0) {
+          throw new Error("No sources provided to summarize.");
+        }
+
+        const additionalInstructions = typeof config.additionalInstructions === "string" 
+          ? config.additionalInstructions.trim() 
+          : "";
+
+        const parts: any[] = [];
+        
+        if (additionalInstructions) {
+          parts.push({ text: `Additional instructions: ${additionalInstructions}\n\n` });
+        }
+        
+        parts.push({ text: 'Please summarize and analyze the following content. Return ONLY a JSON object with two fields: "summary" (a concise summary) and "analysis" (deeper insights, patterns, or notable points).\n\n' });
+
+        sources.forEach((s, i) => {
+          parts.push({ text: `Source ${i + 1}:\n` });
+          
+          if (s.startsWith("data:image/") || s.startsWith("data:audio/")) {
+            // It's a base64 image or audio
+            // Format: data:image/png;base64,iVBORw0KGgo...
+            // Or: data:audio/mp3;base64,...
+            const matches = s.match(/^data:((?:image|audio)\/[a-zA-Z0-9+-]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+              parts.push({
+                inlineData: {
+                  mimeType: matches[1],
+                  data: matches[2]
+                }
+              });
+              parts.push({ text: "\n\n" });
+            } else {
+              parts.push({ text: "[Invalid Media Data]\n\n" });
+            }
+          } else {
+            // It's text
+            parts.push({ text: `${s}\n\n` });
+          }
+        });
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{
+                parts: parts
+              }]
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Gemini API error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        
+        let cleanJsonText = textResponse;
+        
+        const jsonBlockMatch = textResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (jsonBlockMatch && jsonBlockMatch[1]) {
+          cleanJsonText = jsonBlockMatch[1];
+        } else {
+          const firstBrace = textResponse.indexOf('{');
+          const lastBrace = textResponse.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            cleanJsonText = textResponse.substring(firstBrace, lastBrace + 1);
+          }
+        }
+        
+        const parsed = JSON.parse(cleanJsonText);
+        
+        return {
+          summary: parsed.summary || "Summarization failed",
+          analysis: parsed.analysis || "Analysis failed",
+        };
+      } catch (error) {
+        console.error("Summarizer error:", error);
+        return {
+          summary: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          analysis: "Error",
+        };
+      }
+    }
     case "translator": {
       try {
         const apiKey = import.meta.env.VITE_GOOGLE_API_KEY as string | undefined;
