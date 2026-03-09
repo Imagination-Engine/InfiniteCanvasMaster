@@ -36,9 +36,9 @@ export const NODE_CATALOG: NodeCatalog = {
     "creative",
     "Summarizer",
     "Summarize and analyze mixed media inputs.",
-    { source: ["text", "audio", "image"] },
+    { sources: ["text", "audio", "image"] },
     { summary: "text", analysis: "text" },
-    { inputs: { source: "" }, config: { additionalInstructions: "" } },
+    { inputs: { sources: [""] }, outputs: { summary: "", analysis: "" }, config: { additionalInstructions: "" } },
     "tool",
   ),
   translator: createEntry(

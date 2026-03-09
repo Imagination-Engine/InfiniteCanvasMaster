@@ -1,6 +1,7 @@
 import type { NodeTypes } from "@xyflow/react";
 import BaseNode from "./BaseNode";
 import TranslatorNode from "./TranslatorNode";
+import SummarizerNode from "./SummarizerNode";
 import { NODE_CATALOG } from "./nodeCatalog";
 import type { NodeRegistry } from "./types";
 
@@ -9,7 +10,10 @@ export const NODE_REGISTRY: NodeRegistry = Object.fromEntries(
     nodeType,
     {
       ...definition,
-      component: nodeType === "translator" ? TranslatorNode : BaseNode,
+      component: 
+        nodeType === "translator" ? TranslatorNode : 
+        nodeType === "summarizer" ? SummarizerNode : 
+        BaseNode,
     },
   ]),
 );
@@ -19,7 +23,9 @@ export type NodeRegistryType = typeof NODE_REGISTRY;
 export const REACT_FLOW_NODE_TYPES: NodeTypes = Object.fromEntries(
   Object.keys(NODE_REGISTRY).map((nodeType) => [
     nodeType,
-    nodeType === "translator" ? TranslatorNode : BaseNode,
+    nodeType === "translator" ? TranslatorNode : 
+    nodeType === "summarizer" ? SummarizerNode : 
+    BaseNode,
   ]),
 );
 
