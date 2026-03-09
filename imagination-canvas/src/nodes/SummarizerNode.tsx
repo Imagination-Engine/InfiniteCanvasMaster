@@ -69,16 +69,14 @@ export default function SummarizerNode({ id, data, selected }: NodeProps) {
   };
 
   const handleFileUpload = (index: number, file: File) => {
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file.");
+    if (!file.type.startsWith("image/") && !file.type.startsWith("audio/")) {
+      alert("Please upload an image or audio file.");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64Data = e.target?.result as string;
-      // Store in a format the service can recognize as an image:
-      // data:image/png;base64,iVBORw0KGg...
       updateSource(index, base64Data);
     };
     reader.readAsDataURL(file);
@@ -122,6 +120,7 @@ export default function SummarizerNode({ id, data, selected }: NodeProps) {
         <div className="space-y-2">
           {sources.map((source, index) => {
             const isImage = source.startsWith("data:image/");
+            const isAudio = source.startsWith("data:audio/");
             
             return (
               <div key={`source-${index}`} className="block text-xs">
@@ -132,7 +131,7 @@ export default function SummarizerNode({ id, data, selected }: NodeProps) {
                       <Upload className="h-3 w-3" />
                       <input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/*,audio/*" 
                         className="hidden" 
                         onChange={(e) => {
                           const file = e.target.files?.[0];
@@ -168,6 +167,18 @@ export default function SummarizerNode({ id, data, selected }: NodeProps) {
                       <X className="h-3 w-3" />
                     </button>
                   </div>
+                ) : isAudio ? (
+                  <div className="relative rounded border border-slate-700 bg-slate-950 p-2">
+                    <audio controls src={source} className="h-8 w-full" />
+                    <button
+                      type="button"
+                      onClick={() => updateSource(index, "")}
+                      className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 hover:text-rose-400"
+                      title="Clear audio"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
                 ) : (
                   <textarea
                     value={source}
@@ -175,7 +186,7 @@ export default function SummarizerNode({ id, data, selected }: NodeProps) {
                     onKeyDown={(event) => event.stopPropagation()}
                     rows={3}
                     className="w-full resize-y rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-sky-500"
-                    placeholder="Text or image base64..."
+                    placeholder="Text, image, or audio..."
                   />
                 )}
               </div>

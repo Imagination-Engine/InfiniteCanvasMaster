@@ -43,10 +43,11 @@ export async function runCreativeNode(
         sources.forEach((s, i) => {
           parts.push({ text: `Source ${i + 1}:\n` });
           
-          if (s.startsWith("data:image/")) {
-            // It's a base64 image
+          if (s.startsWith("data:image/") || s.startsWith("data:audio/")) {
+            // It's a base64 image or audio
             // Format: data:image/png;base64,iVBORw0KGgo...
-            const matches = s.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+            // Or: data:audio/mp3;base64,...
+            const matches = s.match(/^data:((?:image|audio)\/[a-zA-Z0-9+-]+);base64,(.+)$/);
             if (matches && matches.length === 3) {
               parts.push({
                 inlineData: {
@@ -56,7 +57,7 @@ export async function runCreativeNode(
               });
               parts.push({ text: "\n\n" });
             } else {
-              parts.push({ text: "[Invalid Image Data]\n\n" });
+              parts.push({ text: "[Invalid Media Data]\n\n" });
             }
           } else {
             // It's text
