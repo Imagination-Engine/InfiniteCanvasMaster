@@ -36,6 +36,14 @@ const inferOutputTypeFromValue = (value: unknown): NodeValueType | undefined => 
   return undefined;
 };
 
+const hasMeaningfulValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (isRecord(value)) return Object.keys(value).length > 0;
+  return true;
+};
+
 const pickBestOutputValue = (
   targetKey: string,
   targetSchema: Schema,
@@ -53,6 +61,9 @@ const pickBestOutputValue = (
 
   for (const targetType of targetTypes) {
     for (const [sourceKey, sourceValue] of Object.entries(sourceOutputs)) {
+      if (!hasMeaningfulValue(sourceValue)) {
+        continue;
+      }
       const sourceTypeFromSchema = toTypeList(sourceSchema?.[sourceKey])[0];
       const sourceType = sourceTypeFromSchema ?? inferOutputTypeFromKey(sourceKey) ?? inferOutputTypeFromValue(sourceValue);
       if (schemaTypeMatches([targetType], sourceType)) {
