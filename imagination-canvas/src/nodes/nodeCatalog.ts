@@ -47,8 +47,8 @@ export const NODE_CATALOG: NodeCatalog = {
     "Translator",
     "Translate text/audio to a target language.",
     { source: ["text", "audio"], targetLanguage: "language", outputType: ["text", "audio"] },
-    { result: ["text", "audio"] },
-    { inputs: { source: "", targetLanguage: "Spanish", outputType: "text" }, config: { additionalInstructions: "" } },
+    { result: ["text", "audio"], detectedLanguage: "text" },
+    { inputs: { source: "", targetLanguage: "Spanish", outputType: "text" }, outputs: { result: "", detectedLanguage: "" }, config: { additionalInstructions: "" } },
     "tool",
   ),
   refiner: createEntry(
