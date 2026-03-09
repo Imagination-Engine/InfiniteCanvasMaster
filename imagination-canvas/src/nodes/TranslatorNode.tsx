@@ -2,8 +2,11 @@ import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { useState } from "react";
 import { NODE_CATALOG } from "./nodeCatalog";
 import type { BaseNodeData } from "./types";
+import type { UnifiedCanvasEdge, UnifiedCanvasNode } from "./canvasTypes";
 import { runCreativeNode } from "../services/ai/creativeNodeService";
 import { getNodeIcon } from "./nodeVisuals";
+import { getNodeInputs } from "./workflow/inputResolution";
+import { getRuntimeState, setRuntimeNodeInputs, setRuntimeNodeOutputs } from "./workflow/runtimeState";
 
 const LANGUAGES = [
   "Spanish", "French", "German", "Italian", "Portuguese",
@@ -13,7 +16,7 @@ const LANGUAGES = [
 ].sort();
 
 export default function TranslatorNode({ id, data, selected }: NodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [running, setRunning] = useState(false);
 
   const nodeData = data as BaseNodeData;
@@ -50,14 +53,30 @@ export default function TranslatorNode({ id, data, selected }: NodeProps) {
   const runNode = async () => {
     setRunning(true);
     try {
-      const output = await runCreativeNode(nodeData.type, nodeData.inputs, nodeData.config ?? {});
+      const upstreamInputs = getNodeInputs(
+        id,
+        getNodes() as UnifiedCanvasNode[],
+        getEdges() as UnifiedCanvasEdge[],
+        getRuntimeState(),
+      );
+      const manualInputsWithoutSource = Object.fromEntries(
+        Object.entries(nodeData.inputs).filter(([key]) => key !== "source"),
+      );
+      const executionInputs = {
+        ...manualInputsWithoutSource,
+        ...upstreamInputs,
+      };
+
+      setRuntimeNodeInputs(id, upstreamInputs);
+
+      const output = await runCreativeNode(nodeData.type, executionInputs, nodeData.config ?? {});
       updateData({ outputs: output });
+      setRuntimeNodeOutputs(id, output);
     } finally {
       setRunning(false);
     }
   };
 
-  const source = typeof nodeData.inputs.source === "string" ? nodeData.inputs.source : "";
   const targetLanguage = typeof nodeData.inputs.targetLanguage === "string" ? nodeData.inputs.targetLanguage : "Spanish";
   const additionalInstructions = typeof nodeData.config?.additionalInstructions === "string" ? nodeData.config.additionalInstructions : "";
   
@@ -99,18 +118,6 @@ export default function TranslatorNode({ id, data, selected }: NodeProps) {
               <option key={lang} value={lang}>{lang}</option>
             ))}
           </select>
-        </label>
-
-        <label className="block text-xs">
-          <span className="mb-1 block text-slate-400">source</span>
-          <textarea
-            value={source}
-            onChange={(event) => updateData({ inputs: { source: event.target.value } })}
-            onKeyDown={(event) => event.stopPropagation()}
-            rows={4}
-            className="w-full resize-y rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-sky-500"
-            placeholder="Text to translate..."
-          />
         </label>
 
         <label className="block text-xs">

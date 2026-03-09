@@ -25,10 +25,12 @@ export type BaseNodeData = {
   label: string;
   description?: string;
   inputs: Record<string, unknown>;
-  outputs?: Record<string, unknown>;
-  config?: Record<string, unknown>;
+  outputs: Record<string, unknown>;
+  config: Record<string, unknown>;
   metadata?: {
-    category: "creative" | "workflow";
+    category?: "creative" | "workflow";
+    label?: string;
+    description?: string;
   };
 };
 

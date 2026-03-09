@@ -2,14 +2,17 @@ import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { useMemo, useState } from "react";
 import { NODE_CATALOG } from "./nodeCatalog";
 import type { BaseNodeData } from "./types";
+import type { UnifiedCanvasEdge, UnifiedCanvasNode } from "./canvasTypes";
 import { runCreativeNode } from "../services/ai/creativeNodeService";
 import { runIntegrationNode, runTriggerNode } from "../services/integrations/workflowService";
 import { getNodeIcon } from "./nodeVisuals";
+import { getNodeInputs } from "./workflow/inputResolution";
+import { getRuntimeState, setRuntimeNodeInputs, setRuntimeNodeOutputs } from "./workflow/runtimeState";
 
 const toText = (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value ?? ""));
 
 export default function BaseNode({ id, data, selected }: NodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [running, setRunning] = useState(false);
 
   const nodeData = data as BaseNodeData;
@@ -52,15 +55,34 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   const runNode = async () => {
     setRunning(true);
     try {
+      const upstreamInputs = getNodeInputs(
+        id,
+        getNodes() as UnifiedCanvasNode[],
+        getEdges() as UnifiedCanvasEdge[],
+        getRuntimeState(),
+      );
+      const manualInputsWithoutSource = Object.fromEntries(
+        Object.entries(nodeData.inputs).filter(([key]) => key !== "source"),
+      );
+      const executionInputs = {
+        ...manualInputsWithoutSource,
+        ...upstreamInputs,
+      };
+
+      setRuntimeNodeInputs(id, upstreamInputs);
+
       if (definition.category === "creative") {
-        const output = await runCreativeNode(nodeData.type, nodeData.inputs, nodeData.config ?? {});
+        const output = await runCreativeNode(nodeData.type, executionInputs, nodeData.config ?? {});
         updateData({ outputs: output });
+        setRuntimeNodeOutputs(id, output);
       } else if (definition.role === "trigger") {
-        const output = await runTriggerNode(nodeData.type, nodeData.config ?? {}, nodeData.inputs);
+        const output = await runTriggerNode(nodeData.type, nodeData.config ?? {}, executionInputs);
         updateData({ outputs: output });
+        setRuntimeNodeOutputs(id, output);
       } else {
-        const output = await runIntegrationNode(nodeData.type, nodeData.inputs, nodeData.config ?? {});
+        const output = await runIntegrationNode(nodeData.type, executionInputs, nodeData.config ?? {});
         updateData({ outputs: output });
+        setRuntimeNodeOutputs(id, output);
       }
     } finally {
       setRunning(false);
@@ -93,7 +115,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
       ) : null}
 
       <div className="space-y-2">
-        {Object.keys(definition.inputSchema).map((key) => (
+        {Object.keys(definition.inputSchema).filter((key) => key !== "source").map((key) => (
           <label key={key} className="block text-xs">
             <span className="mb-1 block text-slate-400">{key}</span>
             <input
