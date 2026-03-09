@@ -7,6 +7,7 @@ import { promises as fs } from "node:fs";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { Pool } from "pg";
+import { chromium } from "playwright";
 
 dotenv.config();
 
@@ -789,6 +790,109 @@ app.put(
     return res.json({ canvas: updated.rows[0] });
   },
 );
+
+app.post(
+  "/api/scrape",
+  requireAuth,
+  async (req: express.Request<Record<string, never>, unknown, { url?: string }>, res) => {
+    const { url } = req.body as { url?: string };
+    if (!url) {
+      return res.status(400).json({ error: "URL is required." });
+    }
+
+    let browser;
+    try {
+      console.log("Scraping URL:", url);
+      browser = await chromium.launch({ headless: true });
+      const context = await browser.newContext();
+      const page = await context.newPage();
+
+      await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+
+      const title = await page.title();
+      const rawContent = await page.evaluate(() => {
+        const elementsToRemove = document.querySelectorAll(
+          "script, style, nav, footer, header, iframe, noscript",
+        );
+        elementsToRemove.forEach((el) => el.remove());
+        return document.body.innerText.replace(/\s+/g, " ").trim();
+      });
+
+      const apiKey = process.env.VITE_GOOGLE_API_KEY;
+      if (!apiKey) {
+        throw new Error("VITE_GOOGLE_API_KEY is not defined in the environment.");
+      }
+
+      const prompt = `
+        Please analyze the following web page content.
+        URL: ${url}
+        Title: ${title}
+        
+        Extract the most important insights into 3-5 concise bullet points.
+        Return ONLY a JSON object with this exact structure:
+        {
+          "url": "${url}",
+          "title": "${title}",
+          "bullets": ["insight 1", "insight 2", "insight 3"]
+        }
+        
+        Content:
+        ${rawContent.slice(0, 15000)}
+      `;
+
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+          }),
+        },
+      );
+
+      if (!geminiResponse.ok) {
+        throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
+      }
+
+      const data = await geminiResponse.json();
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+      let cleanJsonText = textResponse;
+      const jsonBlockMatch = textResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+
+      if (jsonBlockMatch && jsonBlockMatch[1]) {
+        cleanJsonText = jsonBlockMatch[1];
+      } else {
+        const firstBrace = textResponse.indexOf("{");
+        const lastBrace = textResponse.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          cleanJsonText = textResponse.substring(firstBrace, lastBrace + 1);
+        }
+      }
+
+      const parsed = JSON.parse(cleanJsonText);
+
+      return res.json({
+        summary: {
+          url: parsed.url || url,
+          title: parsed.title || title,
+          bullets: parsed.bullets || ["Failed to extract bullets"],
+        },
+      });
+    } catch (error) {
+      console.error("Scrape error:", error);
+      return res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to scrape and summarize.",
+      });
+    } finally {
+      if (browser) {
+        await browser.close().catch(console.error);
+      }
+    }
+  },
+);
+
 
 const buildCorpus = (files: AnalyzeFileInput[]) =>
   files

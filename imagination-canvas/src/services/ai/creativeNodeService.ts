@@ -1,9 +1,14 @@
+import webScraper from "./nodeServices/webScrapperNode";
+
+
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function runCreativeNode(
   nodeType: string,
   inputs: Record<string, unknown>,
   config: Record<string, unknown>,
+  accessToken?: string | null,
 ): Promise<Record<string, unknown>> {
   await sleep(300);
 
@@ -198,13 +203,7 @@ export async function runCreativeNode(
         filtered: `Filtered result for ${String(inputs.conditions ?? "")}`,
       };
     case "webScraper":
-      return {
-        summary: {
-          url: String(inputs.url ?? ""),
-          title: "Mock page title",
-          bullets: ["Mock insight A", "Mock insight B"],
-        },
-      };
+      return webScraper({ url: String(inputs.url ?? "") }, accessToken);
     case "formatter":
       return {
         formattedFile: `mock://formatted-file.${String(inputs.desiredFormat ?? "txt")}`,

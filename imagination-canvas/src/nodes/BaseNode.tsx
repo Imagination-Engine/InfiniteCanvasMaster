@@ -8,10 +8,12 @@ import { runIntegrationNode, runTriggerNode } from "../services/integrations/wor
 import { getNodeIcon } from "./nodeVisuals";
 import { getNodeInputs } from "./workflow/inputResolution";
 import { getRuntimeState, setRuntimeNodeInputs, setRuntimeNodeOutputs } from "./workflow/runtimeState";
+import { useAuth } from "../auth/AuthContext";
 
 const toText = (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value ?? ""));
 
 export default function BaseNode({ id, data, selected }: NodeProps) {
+  const { accessToken } = useAuth();
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [running, setRunning] = useState(false);
 
@@ -72,7 +74,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
       setRuntimeNodeInputs(id, upstreamInputs);
 
       if (definition.category === "creative") {
-        const output = await runCreativeNode(nodeData.type, executionInputs, nodeData.config ?? {});
+        const output = await runCreativeNode(nodeData.type, executionInputs, nodeData.config ?? {}, accessToken);
         updateData({ outputs: output });
         setRuntimeNodeOutputs(id, output);
       } else if (definition.role === "trigger") {
