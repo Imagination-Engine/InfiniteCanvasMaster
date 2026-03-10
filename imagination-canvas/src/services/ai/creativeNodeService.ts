@@ -15,9 +15,11 @@ export async function runCreativeNode(
   switch (nodeType) {
     case "summarizer": {
       try {
-        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY as string | undefined;
+        const apiKey =
+          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
+          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
         if (!apiKey) {
-          throw new Error("VITE_GOOGLE_API_KEY is not defined in the environment.");
+          throw new Error("VITE_GOOGLE_API_KEY (or VITE_GEMINI_API_KEY) is not defined in the environment.");
         }
 
         const sourcesRaw = inputs.sources ?? inputs.source;
@@ -130,9 +132,11 @@ export async function runCreativeNode(
     }
     case "translator": {
       try {
-        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY as string | undefined;
+        const apiKey =
+          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
+          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
         if (!apiKey) {
-          throw new Error("VITE_GOOGLE_API_KEY is not defined in the environment.");
+          throw new Error("VITE_GOOGLE_API_KEY (or VITE_GEMINI_API_KEY) is not defined in the environment.");
         }
 
         const source = String(inputs.source ?? "");

@@ -12,6 +12,41 @@ import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
 
 const toText = (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value ?? ""));
+const hasMeaningfulValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
+};
+
+const mergeInputsPreferManual = (
+  upstreamInputs: Record<string, unknown>,
+  manualInputs: Record<string, unknown>,
+) => {
+  const merged: Record<string, unknown> = {
+    ...upstreamInputs,
+  };
+
+  for (const [key, value] of Object.entries(manualInputs)) {
+    if (hasMeaningfulValue(value) || !(key in merged)) {
+      merged[key] = value;
+    }
+  }
+
+  return merged;
+};
+
+const getInputPlaceholder = (nodeType: string, key: string): string => {
+  if (key === "payload") return "";
+  if (nodeType === "gmail.sendEmail" && key === "to") return "recipient@example.com";
+  if (nodeType === "gmail.sendEmail" && key === "subject") return "Weekly update";
+  if (nodeType === "gmail.sendEmail" && key === "body") return "Leave blank to use upstream text output";
+  if (nodeType === "gmail.retrieveEmail" && key === "query") return "Same Gmail syntax, e.g. from:alex newer_than:7d";
+  if (nodeType === "gmail.retrieveEmail" && key === "maxResults") return "10";
+  if (nodeType === "gmail.retrieveEmail" && key === "includeSpamTrash") return "false";
+  return "";
+};
 
 export default function BaseNode({ id, data, selected }: NodeProps) {
   const { accessToken } = useAuth();
@@ -19,19 +54,23 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   const [running, setRunning] = useState(false);
   const [slackConnected, setSlackConnected] = useState<boolean | null>(null);
   const [slackTeamName, setSlackTeamName] = useState<string>("");
+  const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
+  const [gmailAccountEmail, setGmailAccountEmail] = useState<string>("");
 
   const nodeData = data as BaseNodeData;
   const definition = NODE_CATALOG[nodeData.type];
   const NodeIcon = getNodeIcon(nodeData.type);
   const canExecute = nodeData.type !== "fileUpload";
   const isSlackNode = nodeData.type.startsWith("slack.");
+  const isGmailNode = nodeData.type.startsWith("gmail.");
 
   const canReceiveInput = useMemo(
     () => Boolean(definition && Object.keys(definition.inputSchema).length > 0),
     [definition],
   );
 
-  const pollTimer = useRef<number | null>(null);
+  const slackPollTimer = useRef<number | null>(null);
+  const gmailPollTimer = useRef<number | null>(null);
 
   const fetchSlackStatus = async (): Promise<boolean> => {
     const status = await apiRequest<{ connected: boolean; teamName?: string }>(
@@ -43,13 +82,23 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
     return Boolean(status.connected);
   };
 
+  const fetchGmailStatus = async (): Promise<boolean> => {
+    const status = await apiRequest<{ connected: boolean; email?: string }>(
+      "/api/gmail/status",
+      { method: "GET" },
+    );
+    setGmailConnected(Boolean(status.connected));
+    setGmailAccountEmail(typeof status.email === "string" ? status.email : "");
+    return Boolean(status.connected);
+  };
+
   useEffect(() => {
     if (!isSlackNode) {
       setSlackConnected(null);
       setSlackTeamName("");
-      if (pollTimer.current) {
-        window.clearInterval(pollTimer.current);
-        pollTimer.current = null;
+      if (slackPollTimer.current) {
+        window.clearInterval(slackPollTimer.current);
+        slackPollTimer.current = null;
       }
       return;
     }
@@ -67,8 +116,8 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
     })();
 
     // Auto-refresh slack connection status until connected.
-    if (!pollTimer.current) {
-      pollTimer.current = window.setInterval(() => {
+    if (!slackPollTimer.current) {
+      slackPollTimer.current = window.setInterval(() => {
         if (slackConnected) return;
         void fetchSlackStatus().catch(() => {
           setSlackConnected(false);
@@ -79,12 +128,54 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
 
     return () => {
       cancelled = true;
-      if (pollTimer.current) {
-        window.clearInterval(pollTimer.current);
-        pollTimer.current = null;
+      if (slackPollTimer.current) {
+        window.clearInterval(slackPollTimer.current);
+        slackPollTimer.current = null;
       }
     };
-  }, [accessToken, isSlackNode, slackConnected]);
+  }, [isSlackNode, slackConnected]);
+
+  useEffect(() => {
+    if (!isGmailNode) {
+      setGmailConnected(null);
+      setGmailAccountEmail("");
+      if (gmailPollTimer.current) {
+        window.clearInterval(gmailPollTimer.current);
+        gmailPollTimer.current = null;
+      }
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        if (cancelled) return;
+        await fetchGmailStatus();
+      } catch {
+        if (cancelled) return;
+        setGmailConnected(false);
+        setGmailAccountEmail("");
+      }
+    })();
+
+    if (!gmailPollTimer.current) {
+      gmailPollTimer.current = window.setInterval(() => {
+        if (gmailConnected) return;
+        void fetchGmailStatus().catch(() => {
+          setGmailConnected(false);
+          setGmailAccountEmail("");
+        });
+      }, 2000);
+    }
+
+    return () => {
+      cancelled = true;
+      if (gmailPollTimer.current) {
+        window.clearInterval(gmailPollTimer.current);
+        gmailPollTimer.current = null;
+      }
+    };
+  }, [isGmailNode, gmailConnected]);
 
   if (!definition) {
     return (
@@ -129,6 +220,19 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
           return;
         }
       }
+      if (isGmailNode) {
+        const connected = await fetchGmailStatus().catch(() => false);
+        if (!connected) {
+          window.open("/api/gmail/connect", "_blank", "noopener,noreferrer");
+          updateData({
+            outputs: {
+              ...(nodeData.outputs ?? {}),
+              text: "Gmail not connected. Complete the OAuth flow in the opened tab, then run again.",
+            },
+          });
+          return;
+        }
+      }
 
       const upstreamInputs = getNodeInputs(
         id,
@@ -139,10 +243,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
       const manualInputsWithoutSource = Object.fromEntries(
         Object.entries(nodeData.inputs).filter(([key]) => key !== "source"),
       );
-      const executionInputs = {
-        ...manualInputsWithoutSource,
-        ...upstreamInputs,
-      };
+      const executionInputs = mergeInputsPreferManual(upstreamInputs, manualInputsWithoutSource);
 
       setRuntimeNodeInputs(id, upstreamInputs);
 
@@ -163,6 +264,10 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
             // If the node succeeded, keep status in sync.
             void fetchSlackStatus();
           }
+          if (isGmailNode) {
+            // If the node succeeded, keep status in sync.
+            void fetchGmailStatus();
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : "Integration node failed.";
           const output = { error: message, text: message };
@@ -171,6 +276,9 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
 
           if (isSlackNode && message.toLowerCase().includes("slack not connected")) {
             window.open("/api/slack/connect", "_blank", "noopener,noreferrer");
+          }
+          if (isGmailNode && message.toLowerCase().includes("gmail not connected")) {
+            window.open("/api/gmail/connect", "_blank", "noopener,noreferrer");
           }
         }
       }
@@ -227,15 +335,38 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
           </div>
         </div>
       ) : null}
+      {isGmailNode ? (
+        <div className="mb-2 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-[11px] text-slate-300">
+          <div className="flex items-center justify-between gap-2">
+            <span>
+              Gmail:{" "}
+              {gmailConnected === null ? "Checking..." : gmailConnected ? `Connected${gmailAccountEmail ? ` (${gmailAccountEmail})` : ""}` : "Not connected"}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={async () => {
+                  window.open("/api/gmail/connect", "_blank", "noopener,noreferrer");
+                  await fetchGmailStatus().catch(() => false);
+                }}
+                className="rounded border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-200 hover:bg-emerald-500/20"
+              >
+                Connect
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="nodrag nowheel max-h-[400px] space-y-2 overflow-auto custom-scrollbar">
-        {Object.keys(definition.inputSchema).filter((key) => key !== "source").map((key) => (
+        {Object.keys(definition.inputSchema).filter((key) => key !== "source" && key !== "payload").map((key) => (
           <label key={key} className="block text-xs">
             <span className="mb-1 block text-slate-400">{key}</span>
             <input
               value={toText(nodeData.inputs[key] ?? "")}
               onChange={(event) => updateData({ inputs: { [key]: event.target.value } })}
               onKeyDown={(event) => event.stopPropagation()}
+              placeholder={getInputPlaceholder(nodeData.type, key)}
               className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-sky-500"
             />
           </label>

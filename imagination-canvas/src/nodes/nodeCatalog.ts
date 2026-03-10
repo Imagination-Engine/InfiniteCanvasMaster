@@ -278,8 +278,26 @@ export const NODE_CATALOG: NodeCatalog = {
   "calendly.sendInviteLink": createEntry("calendly.sendInviteLink", "workflow", "Calendly Send Invite Link", "Send Calendly invite link (mock).", { payload: ["trigger", "json", "text"], recipientEmail: "email" }, { invite: "json" }, { inputs: { recipientEmail: "" } }, "action"),
   "calendly.retrieveAvailability": createEntry("calendly.retrieveAvailability", "workflow", "Calendly Retrieve Availability", "Get Calendly availability (mock).", { payload: ["trigger", "json"], range: "text" }, { availability: "json" }, { inputs: { range: "next 7 days" } }, "action"),
 
-  "gmail.sendEmail": createEntry("gmail.sendEmail", "workflow", "Gmail Send Email", "Send Gmail email (mock).", { payload: ["trigger", "json", "text"], to: "email", subject: "text", body: "text" }, { result: "json" }, { inputs: { to: "", subject: "", body: "" } }, "action"),
-  "gmail.retrieveEmail": createEntry("gmail.retrieveEmail", "workflow", "Gmail Retrieve Email", "Retrieve Gmail email (mock).", { payload: ["trigger", "json"], query: "text" }, { email: "email", json: "json" }, { inputs: { query: "" } }, "action"),
+  "gmail.sendEmail": createEntry(
+    "gmail.sendEmail",
+    "workflow",
+    "Gmail Send Email",
+    "Send an email through the connected Gmail account.",
+    { payload: ["trigger", "json", "text"], to: "email", subject: "text", body: "text" },
+    { result: "json", text: "text" },
+    { inputs: { to: "", subject: "", body: "" }, outputs: { result: {}, text: "" } },
+    "action",
+  ),
+  "gmail.retrieveEmail": createEntry(
+    "gmail.retrieveEmail",
+    "workflow",
+    "Gmail Retrieve Email",
+    "Retrieve emails by Gmail search query.",
+    { payload: ["trigger", "json"], query: "text", maxResults: "text", includeSpamTrash: "text" },
+    { email: "email", emails: "json", json: "json", text: "text" },
+    { inputs: { query: "", maxResults: "10", includeSpamTrash: "false" }, outputs: { email: {}, emails: [], json: {}, text: "" } },
+    "action",
+  ),
 
   "sheets.createSpreadsheet": createEntry("sheets.createSpreadsheet", "workflow", "Google Sheets Create Spreadsheet", "Create spreadsheet (mock).", { payload: ["trigger", "json"], title: "text" }, { spreadsheet: "sheet" }, { inputs: { title: "Automation Output" } }, "action"),
   "sheets.updateSpreadsheet": createEntry("sheets.updateSpreadsheet", "workflow", "Google Sheets Update Spreadsheet", "Update spreadsheet (mock).", { payload: ["trigger", "json"], spreadsheetId: "text", range: "text", values: "json" }, { spreadsheet: "sheet", json: "json" }, { inputs: { spreadsheetId: "", range: "A1", values: "[]" } }, "action"),

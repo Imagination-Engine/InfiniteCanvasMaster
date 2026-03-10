@@ -9,6 +9,7 @@ import bcrypt from "bcryptjs";
 import { Pool } from "pg";
 import { chromium } from "playwright";
 import slackOauthRoutes from "../src/integrations/slack/oauthRoutes.js";
+import gmailOauthRoutes from "../src/integrations/gmail/oauthRoutes.js";
 import { getSlackClient } from "../src/integrations/slack/slackClient.js";
 
 dotenv.config();
@@ -43,6 +44,15 @@ type AnalyzeRequestBody = {
 
 type CanvasKind = "creativity" | "work";
 
+type GmailIntegrationState = {
+  accessToken: string;
+  refreshToken?: string;
+  tokenType?: string;
+  scope?: string;
+  expiresAt?: number;
+  email?: string;
+};
+
 const defaultCanvasDocument = {
   nodes: [],
   edges: [],
@@ -52,6 +62,7 @@ const defaultCanvasDocument = {
 app.use(express.json({ limit: "20mb" }));
 app.use(cookieParser());
 app.use(slackOauthRoutes);
+app.use(gmailOauthRoutes);
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -187,6 +198,180 @@ app.get("/api/slack/status", (_req, res) => {
 });
 
 const asString = (value: unknown) => (typeof value === "string" ? value : String(value ?? ""));
+const sanitizeHeaderValue = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
+const encodeBase64Url = (value: string) =>
+  Buffer.from(value, "utf8")
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+const getGmailIntegration = (): GmailIntegrationState | null => {
+  const integration = (globalThis as any).gmailIntegration as GmailIntegrationState | undefined;
+  if (!integration || typeof integration.accessToken !== "string" || !integration.accessToken) {
+    return null;
+  }
+  return integration;
+};
+
+const getGoogleOAuthConfig = () => ({
+  clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+});
+
+const getGmailAccessToken = async (): Promise<string> => {
+  const integration = getGmailIntegration();
+  if (!integration) {
+    throw new Error("Gmail not connected");
+  }
+
+  const expiresAt = Number(integration.expiresAt ?? 0);
+  const needsRefresh = !expiresAt || Date.now() >= (expiresAt - 60_000);
+  if (!needsRefresh) {
+    return integration.accessToken;
+  }
+
+  if (!integration.refreshToken) {
+    throw new Error("Gmail access token expired and no refresh token is available. Reconnect Gmail.");
+  }
+
+  const { clientId, clientSecret } = getGoogleOAuthConfig();
+  if (!clientId || !clientSecret) {
+    throw new Error("Missing Google OAuth credentials for token refresh.");
+  }
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: integration.refreshToken,
+    grant_type: "refresh_token",
+  });
+
+  const refreshResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+
+  const refreshPayload = await refreshResponse.json().catch(() => ({}));
+  if (!refreshResponse.ok) {
+    const errorText = typeof refreshPayload?.error_description === "string"
+      ? refreshPayload.error_description
+      : typeof refreshPayload?.error === "string"
+        ? refreshPayload.error
+        : "Failed to refresh Gmail access token";
+    throw new Error(errorText);
+  }
+
+  const accessToken = asString(refreshPayload?.access_token).trim();
+  const tokenType = asString(refreshPayload?.token_type ?? integration.tokenType ?? "Bearer").trim();
+  const scope = asString(refreshPayload?.scope ?? integration.scope ?? "").trim();
+  const expiresIn = Number(refreshPayload?.expires_in ?? 3600);
+  if (!accessToken) {
+    throw new Error("Gmail token refresh returned empty access token.");
+  }
+
+  const next: GmailIntegrationState = {
+    ...integration,
+    accessToken,
+    tokenType,
+    scope,
+    expiresAt: Date.now() + ((Number.isFinite(expiresIn) ? expiresIn : 3600) * 1000),
+  };
+  (globalThis as any).gmailIntegration = next;
+
+  return accessToken;
+};
+
+const gmailApiRequest = async <TResponse = unknown>(path: string, init: RequestInit = {}): Promise<TResponse> => {
+  const accessToken = await getGmailAccessToken();
+  const response = await fetch(`https://gmail.googleapis.com${path}`, {
+    ...init,
+    headers: {
+      ...(init.headers ?? {}),
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const providerError = asString((payload as any)?.error?.message ?? (payload as any)?.error_description ?? "").trim();
+    throw new Error(providerError || `Gmail API request failed (${response.status}).`);
+  }
+
+  return payload as TResponse;
+};
+
+const extractHeader = (headers: unknown, name: string) => {
+  if (!Array.isArray(headers)) return "";
+  const match = headers.find((header) => {
+    const currentName = asString((header as any)?.name).trim().toLowerCase();
+    return currentName === name.toLowerCase();
+  });
+  return asString((match as any)?.value).trim();
+};
+
+const parseGmailMessageBody = (payload: any): string => {
+  const decode = (value: string) => {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+    return Buffer.from(normalized, "base64").toString("utf8");
+  };
+
+  const bodyData = asString(payload?.body?.data ?? "").trim();
+  if (bodyData) {
+    return decode(bodyData);
+  }
+
+  const parts = Array.isArray(payload?.parts) ? payload.parts : [];
+  for (const part of parts) {
+    const mimeType = asString(part?.mimeType).trim().toLowerCase();
+    const data = asString(part?.body?.data ?? "").trim();
+    if (!data) continue;
+    if (mimeType === "text/plain" || mimeType === "text/html" || !mimeType) {
+      return decode(data);
+    }
+  }
+
+  return "";
+};
+
+const buildEmailText = (email: Record<string, unknown>) => {
+  const lines = [
+    `From: ${asString(email.from).trim()}`,
+    `To: ${asString(email.to).trim()}`,
+    `Subject: ${asString(email.subject).trim()}`,
+    `Date: ${asString(email.date).trim()}`,
+    "",
+    asString(email.snippet).trim(),
+  ];
+  return lines.filter((line) => line.length > 0).join("\n");
+};
+
+const buildEmailsText = (emails: Array<Record<string, unknown>>) => {
+  return emails
+    .map((email, index) => {
+      const header = `Email ${index + 1}`;
+      const body = buildEmailText(email);
+      return [header, body].filter(Boolean).join("\n");
+    })
+    .join("\n\n---\n\n");
+};
+
+const toBooleanLike = (value: unknown) => {
+  const normalized = asString(value).trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "y";
+};
+
+app.get("/api/gmail/status", (_req, res) => {
+  const integration = getGmailIntegration();
+  return res.json({
+    connected: Boolean(integration?.accessToken),
+    email: asString(integration?.email ?? "").trim(),
+  });
+});
 
 const isLikelySlackConversationId = (value: string) => {
   const trimmed = value.trim();
@@ -617,6 +802,177 @@ app.post("/api/slack/nodes/listUsers", requireAuth, async (_req, res) => {
       return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
     }
     return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/gmail/nodes/sendEmail", requireAuth, async (req, res) => {
+  try {
+    const to = sanitizeHeaderValue(asString(req.body?.to).trim());
+    const subject = sanitizeHeaderValue(asString(req.body?.subject).trim());
+    const body = asString(req.body?.body).trim();
+
+    if (!to) return res.status(400).json({ error: 'Missing required parameter: "to"' });
+    if (!subject) return res.status(400).json({ error: 'Missing required parameter: "subject"' });
+    if (!body) return res.status(400).json({ error: 'Missing required parameter: "body"' });
+
+    if (!to.includes("@")) {
+      return res.status(400).json({ error: "Invalid email address in 'to'." });
+    }
+
+    const message = [
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      "Content-Type: text/plain; charset=UTF-8",
+      "MIME-Version: 1.0",
+      "",
+      body,
+    ].join("\r\n");
+    const raw = encodeBase64Url(message);
+
+    const result = await gmailApiRequest<{
+      id?: string;
+      threadId?: string;
+      labelIds?: string[];
+    }>("/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      body: JSON.stringify({ raw }),
+    });
+
+    const messageId = asString(result?.id ?? "").trim();
+    const threadId = asString(result?.threadId ?? "").trim();
+    const text = `Sent email to ${to}${messageId ? ` (id: ${messageId})` : ""}`;
+
+    return res.json({
+      result: {
+        ...result,
+        to,
+        subject,
+      },
+      text,
+      messageId,
+      threadId,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.toLowerCase().includes("gmail not connected")) {
+      return res.status(409).json({ error: "Gmail not connected. Visit /api/gmail/connect first." });
+    }
+    return res.status(500).json({ error: message || "Gmail send failed." });
+  }
+});
+
+app.post("/api/gmail/nodes/retrieveEmail", requireAuth, async (req, res) => {
+  try {
+    const query = asString(req.body?.query ?? "").trim();
+    const maxResultsRaw = Number(asString(req.body?.maxResults ?? "10"));
+    const maxResults = Number.isFinite(maxResultsRaw) ? Math.max(1, Math.min(50, Math.floor(maxResultsRaw))) : 10;
+    const includeSpamTrash = toBooleanLike(req.body?.includeSpamTrash ?? "false");
+
+    const queryParams = new URLSearchParams();
+    queryParams.set("maxResults", String(maxResults));
+    if (query.length > 0) {
+      queryParams.set("q", query);
+    }
+    if (includeSpamTrash) {
+      queryParams.set("includeSpamTrash", "true");
+    }
+
+    const list = await gmailApiRequest<{
+      messages?: Array<{ id?: string; threadId?: string }>;
+      resultSizeEstimate?: number;
+      nextPageToken?: string;
+    }>(`/gmail/v1/users/me/messages?${queryParams.toString()}`);
+
+    const messages = Array.isArray(list.messages) ? list.messages : [];
+    if (messages.length === 0) {
+      return res.json({
+        email: null,
+        emails: [],
+        json: {
+          query,
+          includeSpamTrash,
+          maxResults,
+          resultSizeEstimate: Number(list.resultSizeEstimate ?? 0),
+          messages: [],
+        },
+        text: query ? `No emails found for query: ${query}` : "No emails found.",
+      });
+    }
+
+    const messageIds = messages.map((message) => asString(message?.id).trim()).filter(Boolean);
+    if (messageIds.length === 0) {
+      return res.json({
+        email: null,
+        emails: [],
+        json: {
+          query,
+          includeSpamTrash,
+          maxResults,
+          resultSizeEstimate: Number(list.resultSizeEstimate ?? messages.length),
+          messages,
+        },
+        text: `Found ${messages.length} email(s), but no valid message IDs were returned.`,
+      });
+    }
+
+    const emails = (
+      await Promise.all(
+        messageIds.map(async (messageId) => {
+          try {
+            const full = await gmailApiRequest<any>(`/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}?format=full`);
+            const payload = full?.payload ?? {};
+            return {
+              id: asString(full?.id).trim(),
+              threadId: asString(full?.threadId).trim(),
+              from: extractHeader(payload?.headers, "From"),
+              to: extractHeader(payload?.headers, "To"),
+              subject: extractHeader(payload?.headers, "Subject"),
+              date: extractHeader(payload?.headers, "Date"),
+              snippet: asString(full?.snippet).trim(),
+              body: parseGmailMessageBody(payload),
+              labelIds: Array.isArray(full?.labelIds) ? full.labelIds : [],
+              internalDate: asString(full?.internalDate).trim(),
+            };
+          } catch (error) {
+            return {
+              id: messageId,
+              threadId: "",
+              from: "",
+              to: "",
+              subject: "",
+              date: "",
+              snippet: "",
+              body: "",
+              labelIds: [],
+              internalDate: "",
+              error: error instanceof Error ? error.message : "Failed to load email details.",
+            };
+          }
+        }),
+      )
+    ).filter((email) => asString(email.id).trim().length > 0);
+    const primaryEmail = emails[0] ?? null;
+
+    return res.json({
+      email: primaryEmail,
+      emails,
+      json: {
+        query,
+        includeSpamTrash,
+        maxResults,
+        resultSizeEstimate: Number(list.resultSizeEstimate ?? messages.length),
+        nextPageToken: asString(list.nextPageToken ?? "").trim(),
+        messageIds,
+        emails,
+      },
+      text: buildEmailsText(emails),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.toLowerCase().includes("gmail not connected")) {
+      return res.status(409).json({ error: "Gmail not connected. Visit /api/gmail/connect first." });
+    }
+    return res.status(500).json({ error: message || "Gmail retrieve failed." });
   }
 });
 
@@ -1263,9 +1619,9 @@ app.post(
         return document.body.innerText.replace(/\s+/g, " ").trim();
       });
 
-      const apiKey = process.env.VITE_GOOGLE_API_KEY;
+      const apiKey = process.env.VITE_GOOGLE_API_KEY || process.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
-        throw new Error("VITE_GOOGLE_API_KEY is not defined in the environment.");
+        throw new Error("VITE_GOOGLE_API_KEY (or VITE_GEMINI_API_KEY) is not defined in the environment.");
       }
 
       const prompt = `

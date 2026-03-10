@@ -30,6 +30,9 @@ export async function runIntegrationNode(
   if (nodeType.startsWith("slack.")) {
     return runSlackNode(nodeType, inputs, accessToken);
   }
+  if (nodeType.startsWith("gmail.")) {
+    return runGmailNode(nodeType, inputs, accessToken);
+  }
 
   return {
     result: {
@@ -45,6 +48,16 @@ export async function runIntegrationNode(
 const toStringValue = (value: unknown) => (typeof value === "string" ? value : String(value ?? ""));
 
 const toTextLines = (values: string[]) => values.filter((v) => v.trim().length > 0).join("\n");
+
+const firstNonEmpty = (...values: unknown[]) => {
+  for (const value of values) {
+    const text = toStringValue(value).trim();
+    if (text.length > 0) {
+      return text;
+    }
+  }
+  return "";
+};
 
 async function runSlackNode(
   nodeType: string,
@@ -145,6 +158,55 @@ async function runSlackNode(
       return {
         result: { nodeType: type, status: "unsupported" },
         text: toTextLines([`Slack node not implemented: ${type}`, JSON.stringify(inputs)]),
+      };
+    }
+  }
+}
+
+async function runGmailNode(
+  nodeType: string,
+  inputs: Record<string, unknown>,
+  accessToken?: string | null,
+): Promise<Record<string, unknown>> {
+  switch (nodeType) {
+    case "gmail.sendEmail": {
+      const to = firstNonEmpty(inputs.to, inputs.recipient, inputs.recipientEmail);
+      const subject = firstNonEmpty(inputs.subject, inputs.title, inputs.topic);
+      const body = firstNonEmpty(
+        inputs.body,
+        inputs.result,
+        inputs.text,
+        inputs.summary,
+        inputs.analysis,
+        inputs.message,
+      );
+      return apiRequest(
+        "/api/gmail/nodes/sendEmail",
+        {
+          method: "POST",
+          body: JSON.stringify({ to, subject, body }),
+        },
+        accessToken,
+      );
+    }
+    case "gmail.retrieveEmail": {
+      const query = firstNonEmpty(inputs.query, inputs.q);
+      const maxResults = firstNonEmpty(inputs.maxResults, "10");
+      const includeSpamTrash = firstNonEmpty(inputs.includeSpamTrash, "false");
+      return apiRequest(
+        "/api/gmail/nodes/retrieveEmail",
+        {
+          method: "POST",
+          body: JSON.stringify({ query, maxResults, includeSpamTrash }),
+        },
+        accessToken,
+      );
+    }
+    default: {
+      const type = nodeType;
+      return {
+        result: { nodeType: type, status: "unsupported" },
+        text: toTextLines([`Gmail node not implemented: ${type}`, JSON.stringify(inputs)]),
       };
     }
   }
