@@ -192,10 +192,12 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 pb-20 scrollbar-gutter-stable custom-scrollbar">
         {tab === "creative" ? (
           <div className="space-y-2">
             {creativeNodeTypes.map((nodeType) => renderNodeTile(nodeType))}
+            {/* Spacer to prevent overcrowding at the bottom */}
+            <div className="h-8" />
           </div>
         ) : (
           <div className="space-y-3">
@@ -239,6 +241,8 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
                   })}
               </div>
             </div>
+            {/* Spacer to prevent overcrowding at the bottom */}
+            <div className="h-8" />
           </div>
         )}
       </div>
@@ -262,7 +266,7 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
         </button>
 
         {uploadedNodes.length > 0 ? (
-          <div className="mb-3 max-h-32 space-y-2 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-2">
+          <div className="mb-3 max-h-32 space-y-2 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-2 custom-scrollbar">
             {uploadedNodes.map((uploaded) => {
               const icon = getNodeIcon(uploaded.nodeType);
               const Icon = icon;

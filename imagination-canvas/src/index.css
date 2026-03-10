@@ -40,11 +40,11 @@ body,
 /* ─── Custom Scrollbar Utility ───────────────────────────────────── */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  scrollbar-color: rgba(123, 92, 234, 0.3) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -52,12 +52,13 @@ body,
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  border: transparent;
+  background: linear-gradient(to bottom, transparent, rgba(123, 92, 234, 0.3), transparent);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #7B5CEA;
-  opacity: 0.5;
+  background: linear-gradient(to bottom, #7B5CEA, #00C2FF);
+  box-shadow: 0 0 10px rgba(123, 92, 234, 0.5);
 }
