@@ -107,6 +107,11 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
       outputs.image = imageDataUrl;
       outputs.text = "";
       outputs.json = null;
+    } else if (mimeType.startsWith("audio/")) {
+      const audioDataUrl = await readFileAsDataUrl(file);
+      outputs.audio = audioDataUrl;
+      outputs.text = "";
+      outputs.json = null;
     } else {
       const text = await readFileAsText(file);
       outputs.text = text;
@@ -251,7 +256,7 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.md,.json,image/*"
+          accept=".txt,.md,.json,image/*,audio/*"
           multiple
           className="hidden"
           onChange={handleFileSelection}
