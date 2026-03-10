@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@slack/bolt": "^4.6.0",
     "@tailwindcss/vite": "^4.1.18",
     "@xyflow/react": "^12.10.1",
     "bcryptjs": "^2.4.3",
