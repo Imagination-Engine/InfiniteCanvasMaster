@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NODE_CATALOG } from "./nodeCatalog";
 import type { BaseNodeData } from "./types";
 import type { UnifiedCanvasEdge, UnifiedCanvasNode } from "./canvasTypes";
@@ -9,6 +9,7 @@ import { getNodeIcon } from "./nodeVisuals";
 import { getNodeInputs } from "./workflow/inputResolution";
 import { getRuntimeState, setRuntimeNodeInputs, setRuntimeNodeOutputs } from "./workflow/runtimeState";
 import { useAuth } from "../auth/AuthContext";
+import { apiRequest } from "../lib/api";
 
 const toText = (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value ?? ""));
 
@@ -16,16 +17,74 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   const { accessToken } = useAuth();
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [running, setRunning] = useState(false);
+  const [slackConnected, setSlackConnected] = useState<boolean | null>(null);
+  const [slackTeamName, setSlackTeamName] = useState<string>("");
 
   const nodeData = data as BaseNodeData;
   const definition = NODE_CATALOG[nodeData.type];
   const NodeIcon = getNodeIcon(nodeData.type);
   const canExecute = nodeData.type !== "fileUpload";
+  const isSlackNode = nodeData.type.startsWith("slack.");
 
   const canReceiveInput = useMemo(
     () => Boolean(definition && Object.keys(definition.inputSchema).length > 0),
     [definition],
   );
+
+  const pollTimer = useRef<number | null>(null);
+
+  const fetchSlackStatus = async (): Promise<boolean> => {
+    const status = await apiRequest<{ connected: boolean; teamName?: string }>(
+      "/api/slack/status",
+      { method: "GET" },
+    );
+    setSlackConnected(Boolean(status.connected));
+    setSlackTeamName(typeof status.teamName === "string" ? status.teamName : "");
+    return Boolean(status.connected);
+  };
+
+  useEffect(() => {
+    if (!isSlackNode) {
+      setSlackConnected(null);
+      setSlackTeamName("");
+      if (pollTimer.current) {
+        window.clearInterval(pollTimer.current);
+        pollTimer.current = null;
+      }
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        if (cancelled) return;
+        await fetchSlackStatus();
+      } catch {
+        if (cancelled) return;
+        setSlackConnected(false);
+        setSlackTeamName("");
+      }
+    })();
+
+    // Auto-refresh slack connection status until connected.
+    if (!pollTimer.current) {
+      pollTimer.current = window.setInterval(() => {
+        if (slackConnected) return;
+        void fetchSlackStatus().catch(() => {
+          setSlackConnected(false);
+          setSlackTeamName("");
+        });
+      }, 2000);
+    }
+
+    return () => {
+      cancelled = true;
+      if (pollTimer.current) {
+        window.clearInterval(pollTimer.current);
+        pollTimer.current = null;
+      }
+    };
+  }, [accessToken, isSlackNode, slackConnected]);
 
   if (!definition) {
     return (
@@ -57,6 +116,20 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   const runNode = async () => {
     setRunning(true);
     try {
+      if (isSlackNode) {
+        const connected = await fetchSlackStatus().catch(() => false);
+        if (!connected) {
+          window.open("/api/slack/connect", "_blank", "noopener,noreferrer");
+          updateData({
+            outputs: {
+              ...(nodeData.outputs ?? {}),
+              text: "Slack not connected. Complete the OAuth flow in the opened tab, then run again.",
+            },
+          });
+          return;
+        }
+      }
+
       const upstreamInputs = getNodeInputs(
         id,
         getNodes() as UnifiedCanvasNode[],
@@ -82,9 +155,24 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
         updateData({ outputs: output });
         setRuntimeNodeOutputs(id, output);
       } else {
-        const output = await runIntegrationNode(nodeData.type, executionInputs, nodeData.config ?? {});
-        updateData({ outputs: output });
-        setRuntimeNodeOutputs(id, output);
+        try {
+          const output = await runIntegrationNode(nodeData.type, executionInputs, nodeData.config ?? {}, accessToken);
+          updateData({ outputs: output });
+          setRuntimeNodeOutputs(id, output);
+          if (isSlackNode) {
+            // If the node succeeded, keep status in sync.
+            void fetchSlackStatus();
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Integration node failed.";
+          const output = { error: message, text: message };
+          updateData({ outputs: output });
+          setRuntimeNodeOutputs(id, output);
+
+          if (isSlackNode && message.toLowerCase().includes("slack not connected")) {
+            window.open("/api/slack/connect", "_blank", "noopener,noreferrer");
+          }
+        }
       }
     } finally {
       setRunning(false);
@@ -92,7 +180,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   };
 
   return (
-    <div className={`min-w-[280px] max-w-[360px] rounded-xl border bg-slate-900/95 p-3 text-slate-100 shadow-lg ${selected ? "border-sky-500" : "border-slate-700"}`}>
+    <div className={`flex min-w-[280px] max-w-[360px] flex-col rounded-xl border bg-slate-900/95 p-3 text-slate-100 shadow-lg ${selected ? "border-sky-500" : "border-slate-700"}`}>
       {canReceiveInput ? (
         <Handle type="target" position={Position.Top} className="h-2 w-2 border border-slate-400 bg-slate-100" />
       ) : null}
@@ -116,7 +204,31 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
         <p className="mb-3 text-xs text-slate-400">{nodeData.description}</p>
       ) : null}
 
-      <div className="space-y-2">
+      {isSlackNode ? (
+        <div className="mb-2 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-[11px] text-slate-300">
+          <div className="flex items-center justify-between gap-2">
+            <span>
+              Slack:{" "}
+              {slackConnected === null ? "Checking..." : slackConnected ? `Connected${slackTeamName ? ` (${slackTeamName})` : ""}` : "Not connected"}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={async () => {
+                  window.open("/api/slack/connect", "_blank", "noopener,noreferrer");
+                  // Polling is already running; also do an immediate status check.
+                  await fetchSlackStatus().catch(() => false);
+                }}
+                className="rounded border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-200 hover:bg-emerald-500/20"
+              >
+                Connect
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="nodrag nowheel max-h-[400px] space-y-2 overflow-auto custom-scrollbar">
         {Object.keys(definition.inputSchema).filter((key) => key !== "source").map((key) => (
           <label key={key} className="block text-xs">
             <span className="mb-1 block text-slate-400">{key}</span>
@@ -160,7 +272,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
 
       <details className="mt-2 text-xs text-slate-400">
         <summary className="cursor-pointer">Outputs</summary>
-        <pre className="mt-2 max-h-40 overflow-auto rounded bg-slate-950 p-2 text-[11px] text-slate-300">{JSON.stringify(nodeData.outputs ?? {}, null, 2)}</pre>
+        <pre className="nodrag nowheel mt-2 max-h-40 overflow-auto rounded bg-slate-950 p-2 text-[11px] text-slate-300 scrollbar-gutter-stable custom-scrollbar">{JSON.stringify(nodeData.outputs ?? {}, null, 2)}</pre>
       </details>
 
       <Handle type="source" position={Position.Bottom} className="h-2 w-2 border border-sky-400 bg-sky-500" />

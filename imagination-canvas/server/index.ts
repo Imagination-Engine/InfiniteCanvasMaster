@@ -8,6 +8,8 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { Pool } from "pg";
 import { chromium } from "playwright";
+import slackOauthRoutes from "../src/integrations/slack/oauthRoutes.js";
+import { getSlackClient } from "../src/integrations/slack/slackClient.js";
 
 dotenv.config();
 
@@ -49,6 +51,7 @@ const defaultCanvasDocument = {
 
 app.use(express.json({ limit: "20mb" }));
 app.use(cookieParser());
+app.use(slackOauthRoutes);
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -172,6 +175,448 @@ app.get("/api/health", async (_req, res) => {
     return res.json({ ok: true });
   } catch {
     return res.status(500).json({ ok: false });
+  }
+});
+
+app.get("/api/slack/status", (_req, res) => {
+  const teamId = typeof global.slackIntegration?.teamId === "string" ? global.slackIntegration.teamId : "";
+  const teamName = typeof global.slackIntegration?.teamName === "string" ? global.slackIntegration.teamName : "";
+  const botUserId = typeof global.slackIntegration?.botUserId === "string" ? global.slackIntegration.botUserId : "";
+  const connected = Boolean(global.slackIntegration?.botToken);
+  return res.json({ connected, teamId, teamName, botUserId });
+});
+
+const asString = (value: unknown) => (typeof value === "string" ? value : String(value ?? ""));
+
+const isLikelySlackConversationId = (value: string) => {
+  const trimmed = value.trim();
+  return /^([CDG][A-Z0-9]{8,}|[A-Z0-9]{9,})$/.test(trimmed);
+};
+
+const resolveSlackChannelId = async (client: ReturnType<typeof getSlackClient>, channelOrId: string) => {
+  const raw = channelOrId.trim();
+  if (!raw) return "";
+  if (isLikelySlackConversationId(raw)) return raw;
+
+  const name = raw.startsWith("#") ? raw.slice(1) : raw;
+  const list = await client.conversations.list({
+    limit: 200,
+    types: "public_channel,private_channel",
+    exclude_archived: true,
+  });
+
+  if (!list.ok) {
+    throw new Error(list.error ?? "Slack API error: conversations.list failed");
+  }
+
+  const channels = Array.isArray(list.channels) ? list.channels : [];
+  const found = channels.find((c) => asString((c as any).name ?? "").trim() === name);
+  const id = asString((found as any)?.id ?? "").trim();
+  if (!id) {
+    throw new Error(`Channel not found: ${raw} (use a channel ID like C123... or a name like #general)`);
+  }
+
+  return id;
+};
+
+const slackErrorResponse = (err: unknown) => ({
+  error: err instanceof Error ? err.message : "Slack request failed",
+});
+
+const tryJoinChannelIfNeeded = async (client: ReturnType<typeof getSlackClient>, channelId: string, slackError: string) => {
+  if (slackError !== "not_in_channel") return { joined: false, joinError: "" };
+
+  // If we can, detect private channels and provide a better message.
+  const info = await client.conversations.info({ channel: channelId }).catch(() => null);
+  const isPrivate = Boolean((info as any)?.channel?.is_private);
+  const isMember = Boolean((info as any)?.channel?.is_member);
+  if (isPrivate && !isMember) {
+    const botUserId = typeof global.slackIntegration?.botUserId === "string" ? global.slackIntegration.botUserId : "";
+    const mention = botUserId ? `<@${botUserId}>` : "the bot";
+    return { joined: false, joinError: `Bot is not in this private channel. Invite ${mention} to the channel, then retry.` };
+  }
+
+  const joined = await client.conversations.join({ channel: channelId });
+  if (joined.ok) return { joined: true, joinError: "" };
+
+  const joinError = joined.error ?? "";
+  // Private channels and some channel types cannot be joined via API.
+  if (joinError === "method_not_supported_for_channel_type" || joinError === "channel_not_found") {
+    return { joined: false, joinError: "Bot is not in this channel. For private channels, invite the bot first." };
+  }
+  if (joinError === "missing_scope") {
+    return { joined: false, joinError: "Missing scope to join channels (try reconnecting Slack with channels:join)." };
+  }
+
+  return { joined: false, joinError: joinError || "Failed to join channel." };
+};
+
+const safeSlackCall = async (promise: Promise<any>) => {
+  return promise.catch((err: any) => {
+    if (err.data?.error === "not_in_channel") return err.data;
+    throw err;
+  });
+};
+
+app.post("/api/slack/nodes/sendMessage", requireAuth, async (req, res) => {
+  try {
+    const channelInput = asString(req.body?.channelId ?? req.body?.channel).trim();
+    const message = asString(req.body?.message ?? req.body?.text).trim();
+    if (!channelInput) return res.status(400).json({ error: 'Missing required parameter: "channelId"' });
+    if (!message) return res.status(400).json({ error: 'Missing required parameter: "message"' });
+
+    const client = getSlackClient();
+    const channelId = await resolveSlackChannelId(client, channelInput);
+    let result = await safeSlackCall(client.chat.postMessage({ channel: channelId, text: message }));
+    if (!result.ok && result.error === "not_in_channel") {
+      const joinAttempt = await tryJoinChannelIfNeeded(client, channelId, result.error);
+      if (joinAttempt.joined) {
+        result = await safeSlackCall(client.chat.postMessage({ channel: channelId, text: message }));
+      } else if (joinAttempt.joinError) {
+        return res.status(409).json({ error: joinAttempt.joinError });
+      }
+    }
+
+    if (!result.ok) {
+      return res.status(502).json({
+        error: result.error ?? "Slack API error",
+        needed: (result as any).needed ?? null,
+        provided: (result as any).provided ?? null,
+      });
+    }
+
+    return res.json({ result, text: message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/sendDm", requireAuth, async (req, res) => {
+  try {
+    const userId = asString(req.body?.userId).trim();
+    const message = asString(req.body?.message ?? req.body?.text).trim();
+    if (!userId) return res.status(400).json({ error: 'Missing required parameter: "userId"' });
+    if (!message) return res.status(400).json({ error: 'Missing required parameter: "message"' });
+
+    const client = getSlackClient();
+    const opened = await client.conversations.open({ users: userId });
+    if (!opened.ok || !opened.channel?.id) {
+      return res.status(502).json({
+        error: opened.error ?? "Slack API error: conversations.open failed",
+        needed: (opened as any).needed ?? null,
+        provided: (opened as any).provided ?? null,
+      });
+    }
+
+    const result = await client.chat.postMessage({ channel: opened.channel.id, text: message });
+    if (!result.ok) {
+      return res.status(502).json({
+        error: result.error ?? "Slack API error",
+        needed: (result as any).needed ?? null,
+        provided: (result as any).provided ?? null,
+      });
+    }
+
+    return res.json({ result, text: message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/createChannel", requireAuth, async (req, res) => {
+  try {
+    const name = asString(req.body?.name).trim();
+    if (!name) return res.status(400).json({ error: 'Missing required parameter: "name"' });
+
+    const isPrivateRaw = asString(req.body?.is_private ?? req.body?.isPrivate ?? "false").trim().toLowerCase();
+    const isPrivate = isPrivateRaw === "true" || isPrivateRaw === "1" || isPrivateRaw === "yes";
+
+    const client = getSlackClient();
+    const result = await client.conversations.create({ name, is_private: isPrivate });
+    if (!result.ok) {
+      return res.status(502).json({
+        error: result.error ?? "Slack API error",
+        needed: (result as any).needed ?? null,
+        provided: (result as any).provided ?? null,
+      });
+    }
+
+    const channel = result.channel ?? null;
+    const text = channel?.id ? `Created channel ${name} (${channel.id})` : `Created channel ${name}`;
+    return res.json({ channel, text });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/inviteUsers", requireAuth, async (req, res) => {
+  try {
+    const channelInput = asString(req.body?.channelId ?? req.body?.channel).trim();
+    if (!channelInput) return res.status(400).json({ error: 'Missing required parameter: "channelId"' });
+
+    const usersRaw = req.body?.users ?? req.body?.userIds ?? req.body?.userId;
+    const users = Array.isArray(usersRaw)
+      ? usersRaw.map((u: unknown) => asString(u).trim()).filter(Boolean)
+      : asString(usersRaw).trim()
+        ? [asString(usersRaw).trim()]
+        : [];
+
+    if (users.length === 0) {
+      return res.status(400).json({ error: 'Missing required parameter: "users" (non-empty array)' });
+    }
+
+    const client = getSlackClient();
+    const channelId = await resolveSlackChannelId(client, channelInput);
+    let result = await safeSlackCall(client.conversations.invite({ channel: channelId, users: users.join(",") }));
+    if (!result.ok && result.error === "not_in_channel") {
+      const joinAttempt = await tryJoinChannelIfNeeded(client, channelId, result.error);
+      if (joinAttempt.joined) {
+        result = await safeSlackCall(client.conversations.invite({ channel: channelId, users: users.join(",") }));
+      } else if (joinAttempt.joinError) {
+        return res.status(409).json({ error: joinAttempt.joinError });
+      }
+    }
+
+    if (!result.ok) {
+      return res.status(502).json({
+        error: result.error ?? "Slack API error",
+        needed: (result as any).needed ?? null,
+        provided: (result as any).provided ?? null,
+      });
+    }
+
+    return res.json({ result, text: `Invited ${users.length} user(s) to ${channelId}` });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/inviteToWorkspace", requireAuth, async (req, res) => {
+  try {
+    const email = asString(req.body?.email).trim();
+    const teamId = asString(req.body?.teamId).trim() || (global.slackIntegration?.teamId ?? "");
+    
+    if (!email) return res.status(400).json({ error: 'Missing required parameter: "email"' });
+    if (!teamId) return res.status(400).json({ error: 'Missing required parameter: "teamId" or workspace not connected.' });
+
+    const client = getSlackClient();
+    
+    // Attempting to invite a user to the workspace.
+    // Note: The `admin.users.invite` method is generally restricted to Enterprise Grid plans
+    // and requires an admin user token with `admin.users:write` scope.
+    let result = await safeSlackCall(client.admin.users.invite({
+      team_id: teamId,
+      email: email,
+      // channel_ids is often required by the API, but we'll try without it first or let the API throw if missing.
+    }));
+
+    if (!result.ok) {
+      // If it fails, check if we can fall back to the undocumented API just in case it works for their plan
+      if (result.error === "missing_scope" || result.error === "unknown_method") {
+        try {
+          const fallback = await safeSlackCall(client.apiCall("users.admin.invite", {
+            email: email,
+            resend: true,
+          }));
+          if (fallback.ok) {
+            result = fallback;
+          }
+        } catch (e) {
+          // Ignore fallback error and stick to the original error
+        }
+      }
+
+      if (!result.ok) {
+        return res.status(502).json({
+          error: result.error ? `Slack API error: ${result.error}. Note: Workspace invites via API usually require an Enterprise Grid plan.` : "Slack API error",
+          needed: (result as any).needed ?? null,
+          provided: (result as any).provided ?? null,
+        });
+      }
+    }
+
+    return res.json({ result, text: `Invited ${email} to the workspace.` });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/readMessages", requireAuth, async (req, res) => {
+  try {
+    const channelInput = asString(req.body?.channelId ?? req.body?.channel).trim();
+    if (!channelInput) return res.status(400).json({ error: 'Missing required parameter: "channelId"' });
+
+    const limitRaw = Number(asString(req.body?.limit ?? "20"));
+    const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(200, limitRaw)) : 20;
+
+    const client = getSlackClient();
+    const channelId = await resolveSlackChannelId(client, channelInput);
+    let result = await safeSlackCall(client.conversations.history({ channel: channelId, limit }));
+    if (!result.ok && result.error === "not_in_channel") {
+      const joinAttempt = await tryJoinChannelIfNeeded(client, channelId, result.error);
+      if (joinAttempt.joined) {
+        result = await safeSlackCall(client.conversations.history({ channel: channelId, limit }));
+        if (!result.ok && result.error === "not_in_channel") {
+          return res.status(409).json({
+            error: "Bot still not in channel after join attempt. If this is a private channel, invite the bot first.",
+          });
+        }
+      } else if (joinAttempt.joinError) {
+        return res.status(409).json({ error: joinAttempt.joinError });
+      }
+    }
+
+    if (!result.ok) {
+      return res.status(502).json({
+        error: result.error ?? "Slack API error",
+        needed: (result as any).needed ?? null,
+        provided: (result as any).provided ?? null,
+      });
+    }
+
+    const messages = Array.isArray(result.messages) ? result.messages : [];
+    const text = messages
+      .map((m) => {
+        const user = asString((m as any).user ?? (m as any).username ?? "").trim();
+        const body = asString((m as any).text ?? "").trim();
+        if (!user && !body) return "";
+        return user ? `${user}: ${body}` : body;
+      })
+      .filter(Boolean)
+      .join("\n");
+
+    return res.json({ messages, text });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/getMessage", requireAuth, async (req, res) => {
+  try {
+    const channelInput = asString(req.body?.channelId ?? req.body?.channel).trim();
+    const messageTs = asString(req.body?.messageTs ?? req.body?.ts).trim();
+    if (!channelInput) return res.status(400).json({ error: 'Missing required parameter: "channelId"' });
+    if (!messageTs) return res.status(400).json({ error: 'Missing required parameter: "messageTs"' });
+
+    const client = getSlackClient();
+    const channelId = await resolveSlackChannelId(client, channelInput);
+    let history = await safeSlackCall(client.conversations.history({
+      channel: channelId,
+      latest: messageTs,
+      inclusive: true,
+      limit: 1,
+    }));
+    if (!history.ok && history.error === "not_in_channel") {
+      const joinAttempt = await tryJoinChannelIfNeeded(client, channelId, history.error);
+      if (joinAttempt.joined) {
+        history = await safeSlackCall(client.conversations.history({
+          channel: channelId,
+          latest: messageTs,
+          inclusive: true,
+          limit: 1,
+        }));
+      } else if (joinAttempt.joinError) {
+        return res.status(409).json({ error: joinAttempt.joinError });
+      }
+    }
+
+    if (!history.ok) {
+      return res.status(502).json({
+        error: history.error ?? "Slack API error",
+        needed: (history as any).needed ?? null,
+        provided: (history as any).provided ?? null,
+      });
+    }
+
+    const message = Array.isArray(history.messages) ? history.messages[0] ?? null : null;
+    const text = asString((message as any)?.text ?? "").trim();
+    return res.json({ message, json: { message }, text });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/listChannels", requireAuth, async (_req, res) => {
+  try {
+    const client = getSlackClient();
+    const result = await client.conversations.list({
+      limit: 200,
+      types: "public_channel,private_channel",
+      exclude_archived: true,
+    });
+    if (!result.ok) {
+      return res.status(502).json({
+        error: result.error ?? "Slack API error",
+        needed: (result as any).needed ?? null,
+        provided: (result as any).provided ?? null,
+      });
+    }
+
+    const channels = Array.isArray(result.channels) ? result.channels : [];
+    const text = channels.map((c) => asString((c as any).name ?? "").trim()).filter(Boolean).join("\n");
+    return res.json({ channels, text });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
+  }
+});
+
+app.post("/api/slack/nodes/listUsers", requireAuth, async (_req, res) => {
+  try {
+    const client = getSlackClient();
+    const result = await client.users.list({ limit: 200 });
+    if (!result.ok) {
+      return res.status(502).json({
+        error: result.error ?? "Slack API error",
+        needed: (result as any).needed ?? null,
+        provided: (result as any).provided ?? null,
+      });
+    }
+
+    const members = Array.isArray(result.members) ? result.members : [];
+    const text = members
+      .map((m) => asString((m as any).real_name ?? (m as any).name ?? "").trim())
+      .filter(Boolean)
+      .join("\n");
+
+    return res.json({ members, text });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Slack not connected") {
+      return res.status(409).json({ error: "Slack not connected. Visit /api/slack/connect first." });
+    }
+    return res.status(500).json(slackErrorResponse(error));
   }
 });
 

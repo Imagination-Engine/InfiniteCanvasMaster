@@ -212,7 +212,7 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
                 <p className="text-xs font-semibold text-slate-100">Trigger Nodes</p>
                 <span className="text-[10px] text-slate-500">Hover to reveal</span>
               </div>
-              <div className="max-h-0 space-y-2 overflow-hidden opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-[420px] group-hover:opacity-100">
+              <div className="max-h-0 space-y-2 overflow-y-auto custom-scrollbar opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-[420px] group-hover:opacity-100">
                 {triggerNodeTypes.map((nodeType) => renderNodeTile(nodeType))}
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
                           <ProviderIcon className={`h-4 w-4 ${providerMeta?.colorClass ?? "text-slate-300"}`} />
                           <p className="text-xs text-slate-200">{providerMeta?.label ?? `${provider} Actions`}</p>
                         </div>
-                        <div className="max-h-0 space-y-2 overflow-hidden opacity-0 transition-all duration-200 group-hover/provider:mt-2 group-hover/provider:max-h-[360px] group-hover/provider:opacity-100">
+                        <div className="max-h-0 space-y-2 overflow-y-auto custom-scrollbar opacity-0 transition-all duration-200 group-hover/provider:mt-2 group-hover/provider:max-h-[360px] group-hover/provider:opacity-100">
                           {providerNodeTypes.map((nodeType) => renderNodeTile(nodeType))}
                         </div>
                       </div>
