@@ -6,10 +6,10 @@ import {
   Image,
   List,
   MessageSquare,
-  Sparkles,
   Table,
   Upload,
   Video,
+  PenTool,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -54,9 +54,9 @@ export const PROVIDER_META: Record<ProviderKey, { label: string; icon: LucideIco
 };
 
 const NODE_ICON_BY_TYPE: Record<string, LucideIcon> = {
+  refiner: PenTool,
   summarizer: FileText,
   translator: Globe,
-  refiner: Sparkles,
   colorSwapper: Image,
   filter: List,
   webScraper: Globe,

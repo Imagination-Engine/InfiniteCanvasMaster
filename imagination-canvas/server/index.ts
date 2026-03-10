@@ -868,6 +868,57 @@ app.get("/api/auth/me", requireAuth, async (req: AuthenticatedRequest, res) => {
   return res.json({ user: foundUser.rows[0] });
 });
 
+// Refiner Endpoint
+app.post("/api/refineText", requireAuth, async (req, res) => {
+  try {
+    const { text, style } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: "No text provided" });
+    }
+
+    const writingStyle = style || "Formal";
+    
+    const prompt = `
+    Please refine or rephrase the following text to match a "${writingStyle}" writing style.
+    
+    Original Text:
+    ${text}
+    
+    Output nothing but the refined text. Use clear, appropriate vocabulary matching the "${writingStyle}" style. Re-structure sentences if necessary to better fit the style while retaining the core meaning.
+    `;
+    const apiKey = process.env.VITE_GOOGLE_API_KEY;
+    if (!apiKey) {
+      console.warn("VITE_GOOGLE_API_KEY not set. Using mock response.");
+      return res.json({ refinedText: `Refined text for "${text}" in ${writingStyle} style.` });
+    }
+
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      },
+    );
+
+    if (!geminiResponse.ok) {
+      throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
+    }
+
+    const data = await geminiResponse.json();
+    const refinedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    return res.json({ refinedText });
+
+  } catch (error) {
+    console.error("Error refining text:", error);
+    return res.status(500).json({ error: "Failed to refine text." });
+  }
+});
+
 app.get("/api/projects", requireAuth, async (req: AuthenticatedRequest, res) => {
   const userId = req.auth?.userId;
   if (!userId) {
@@ -1334,6 +1385,81 @@ app.post(
       if (browser) {
         await browser.close().catch(console.error);
       }
+    }
+  },
+);
+
+app.post(
+  "/api/rephraseText",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const text = String(req.body.text || "").trim();
+      const style = String(req.body.style || "Formal").trim();
+
+      if (!text) {
+        return res.status(400).json({ error: "Missing required parameter: text" });
+      }
+
+      const apiKey = process.env.VITE_GOOGLE_API_KEY;
+      if (!apiKey) {
+        throw new Error("VITE_GOOGLE_API_KEY is not defined in the environment.");
+      }
+
+      const prompt = `
+        Please rephrase the following text.
+        Target Style/Tone: ${style}
+        
+        Provide your rephrased text below. Return ONLY a JSON object with this exact structure:
+        {
+          "rephrased": "The final rephrased text goes here."
+        }
+        
+        Text to rephrase:
+        ${text}
+      `;
+
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+          }),
+        },
+      );
+
+      if (!geminiResponse.ok) {
+        throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
+      }
+
+      const data = await geminiResponse.json();
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+      let cleanJsonText = textResponse;
+      const jsonBlockMatch = textResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+
+      if (jsonBlockMatch && jsonBlockMatch[1]) {
+        cleanJsonText = jsonBlockMatch[1];
+      } else {
+        const firstBrace = textResponse.indexOf("{");
+        const lastBrace = textResponse.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          cleanJsonText = textResponse.substring(firstBrace, lastBrace + 1);
+        }
+      }
+
+      const parsed = JSON.parse(cleanJsonText);
+
+      return res.json({
+        rephrased: parsed.rephrased || "Failed to rephrase text.",
+      });
+    } catch (error) {
+      console.error("Rephrase error:", error);
+      return res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to rephrase text.",
+      });
     }
   },
 );

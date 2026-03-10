@@ -99,7 +99,7 @@ const normalizeEdge = (edge: UnifiedCanvasEdge): UnifiedCanvasEdge => {
   return {
     ...edge,
     ...fallbackEdge,
-    type: edge.type ?? "smoothstep",
+    type: edge.type ?? "default",
   };
 };
 
@@ -197,7 +197,7 @@ export default function Canvas({
             data: {
               valueType: Array.isArray(firstOutputType) ? firstOutputType[0] : firstOutputType,
             },
-            type: "smoothstep",
+            type: "default",
           },
           current,
         ),

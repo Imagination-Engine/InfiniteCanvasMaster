@@ -31,6 +31,16 @@ const createEntry = (
 });
 
 export const NODE_CATALOG: NodeCatalog = {
+  refiner: createEntry(
+    "refiner",
+    "creative",
+    "Refiner",
+    "Refine text into a specific writing style.",
+    { source: ["text"] },
+    { refined: "text" },
+    { inputs: { source: "" }, outputs: { refined: "" }, config: { style: "Formal", additionalInstructions: "" } },
+    "tool",
+  ),
   summarizer: createEntry(
     "summarizer",
     "creative",
@@ -49,16 +59,6 @@ export const NODE_CATALOG: NodeCatalog = {
     { source: ["text", "audio"], targetLanguage: "language", outputType: ["text", "audio"] },
     { result: ["text", "audio"], detectedLanguage: "text" },
     { inputs: { source: "", targetLanguage: "Spanish", outputType: "text" }, outputs: { result: "", detectedLanguage: "" }, config: { additionalInstructions: "" } },
-    "tool",
-  ),
-  refiner: createEntry(
-    "refiner",
-    "creative",
-    "Refiner",
-    "Refine text or clean up image content.",
-    { source: ["text", "image"], mode: "text" },
-    { refined: ["text", "image"] },
-    { inputs: { source: "", mode: "text" }, config: { additionalInstructions: "" } },
     "tool",
   ),
   colorSwapper: createEntry(

@@ -180,11 +180,16 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   };
 
   return (
-    <div className={`flex min-w-[280px] max-w-[360px] flex-col rounded-xl border bg-slate-900/95 p-3 text-slate-100 shadow-lg ${selected ? "border-sky-500" : "border-slate-700"}`}>
+    <div className={`flex min-h-[200px] min-w-[280px] flex-col rounded-xl border bg-slate-900/95 p-3 text-slate-100 shadow-lg ${selected ? "border-sky-500" : "border-slate-700"}`}>
+      {/* <NodeResizer
+        color="#0ea5e9"
+        isVisible={selected}
+        minWidth={280}
+        minHeight={200}
+      /> */}
       {canReceiveInput ? (
         <Handle type="target" position={Position.Top} className="h-2 w-2 border border-slate-400 bg-slate-100" />
       ) : null}
-
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex w-full items-center gap-2">
           <NodeIcon className="h-4 w-4 text-sky-300" />
@@ -228,7 +233,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
         </div>
       ) : null}
 
-      <div className="nodrag nowheel max-h-[400px] space-y-2 overflow-auto custom-scrollbar">
+      <div className="nodrag nowheel flex-1 space-y-2 overflow-auto custom-scrollbar">
         {Object.keys(definition.inputSchema).filter((key) => key !== "source").map((key) => (
           <label key={key} className="block text-xs">
             <span className="mb-1 block text-slate-400">{key}</span>

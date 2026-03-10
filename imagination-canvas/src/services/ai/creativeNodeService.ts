@@ -1,4 +1,5 @@
 import webScraper from "./nodeServices/webScrapperNode";
+import refinerNode from "./nodeServices/refinerNode";
 
 
 
@@ -191,9 +192,11 @@ export async function runCreativeNode(
       }
     }
     case "refiner":
-      return {
-        refined: `Refined (${String(inputs.mode ?? "text")}): ${String(inputs.source ?? "")}`,
-      };
+      return refinerNode(
+        { source: String(inputs.source ?? "") },
+        { style: String(config.style ?? "") },
+        accessToken,
+      );
     case "colorSwapper":
       return {
         image: "mock://color-swapped-image",
