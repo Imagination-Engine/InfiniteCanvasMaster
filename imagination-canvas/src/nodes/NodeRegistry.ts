@@ -1,6 +1,7 @@
 import type { NodeTypes } from "@xyflow/react";
 import BaseNode from "./BaseNode";
 import TranslatorNode from "./TranslatorNode";
+import RefinerNode from "./RefinerNode";
 import SummarizerNode from "./SummarizerNode";
 import WebScraperNode from "./WebScraperNode";
 import { NODE_CATALOG } from "./nodeCatalog";
@@ -12,6 +13,7 @@ export const NODE_REGISTRY: NodeRegistry = Object.fromEntries(
     {
       ...definition,
       component: 
+        nodeType === "refiner" ? RefinerNode :
         nodeType === "translator" ? TranslatorNode : 
         nodeType === "summarizer" ? SummarizerNode : 
         nodeType === "webScraper" ? WebScraperNode :
@@ -25,6 +27,7 @@ export type NodeRegistryType = typeof NODE_REGISTRY;
 export const REACT_FLOW_NODE_TYPES: NodeTypes = Object.fromEntries(
   Object.keys(NODE_REGISTRY).map((nodeType) => [
     nodeType,
+    nodeType === "refiner" ? RefinerNode :
     nodeType === "translator" ? TranslatorNode : 
     nodeType === "summarizer" ? SummarizerNode : 
     nodeType === "webScraper" ? WebScraperNode :
