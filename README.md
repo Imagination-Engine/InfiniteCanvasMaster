@@ -12,8 +12,13 @@ The Infinite Canvas is built as a TypeScript + React web application. The projec
 The current build requires users to run the program directly from the terminal, as the decentralized nature of the project keeps everything at a local scale.
 The intention is for the final product to be integrated within the Balnce AI app.
 
+To run the frontend, go to the imagination-canvas directory and run:
 ```bash
-npm run all
+npm run dev
+```
+To run the backend, still in the imagination-canvas directory run:
+```bash
+npm run server
 ```
 
 Upon entering the landing page, all you need to do is create an account and log in!
