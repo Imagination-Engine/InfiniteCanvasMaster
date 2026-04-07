@@ -1,11 +1,13 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import Canvas from "../Components/Canvas";
 import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
 import type { UnifiedCanvasDocument } from "../nodes/canvasTypes";
 import NodeLibraryPanel from "../library/NodeLibraryPanel";
+import logo from "../assets/logo.svg";
 
 type CanvasResponse = {
   id: string;
@@ -69,15 +71,22 @@ export default function ProjectCanvasPage() {
   }
 
   if (loading) {
-    return <div className="grid h-screen w-screen place-items-center bg-slate-950 text-slate-200">Loading canvas...</div>;
+    return (
+      <div className="grid h-screen w-screen place-items-center bg-brand-bg-page text-brand-text-body font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 rounded-full border-2 border-brand-purple/20 border-t-brand-purple animate-spin" />
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-text-muted">Loading canvas...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="grid h-screen w-screen place-items-center bg-slate-950 p-6 text-slate-200">
-        <div className="space-y-4 text-center">
-          <p className="text-rose-400">{error}</p>
-          <Link to="/projects" className="inline-block rounded-md border border-slate-700 px-3 py-2">Back to Projects</Link>
+      <div className="grid h-screen w-screen place-items-center bg-brand-bg-page p-6 text-brand-text-body font-sans">
+        <div className="space-y-6 text-center">
+          <p className="text-rose-400 text-sm font-medium">{error}</p>
+          <Link to="/projects" className="inline-block rounded-full border border-white/10 px-6 py-2.5 text-[11px] font-black uppercase tracking-widest text-white hover:bg-white/5 hover:border-brand-purple/50 transition-all">Back to Projects</Link>
         </div>
       </div>
     );
@@ -85,10 +94,18 @@ export default function ProjectCanvasPage() {
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-screen w-screen flex-col bg-slate-950 text-slate-200">
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-800 px-4">
-          <Link to="/projects" className="text-sm hover:text-white">Back to Projects</Link>
-          <p className="text-xs uppercase tracking-widest text-slate-400">Unified Project Canvas</p>
+      <div className="flex h-screen w-screen flex-col bg-brand-bg-page text-brand-text-body font-sans">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-brand-bg-page/60 backdrop-blur-2xl px-6">
+          <Link to="/projects" className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors group">
+            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+            Projects
+          </Link>
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="Balnce AI" width={24} height={24} className="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(123,92,234,0.3)]" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
+              Imagination <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-cyan">Canvas</span>
+            </p>
+          </div>
         </div>
         <div className="flex min-h-0 flex-1">
           <NodeLibraryPanel onSave={saveCanvas} />
