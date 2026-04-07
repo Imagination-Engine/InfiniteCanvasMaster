@@ -45,9 +45,9 @@ export default function SaveCanvasButton({ onSave }: SaveCanvasButtonProps) {
     <button 
       onClick={handleSave}
       disabled={status === 'saving'}
-      className={`flex items-center justify-center gap-2 w-full mt-4 text-white px-4 py-2.5 rounded-xl shadow-sm transition-all font-semibold text-sm ${
-        status === 'error' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-800 hover:bg-slate-900 hover:shadow-md hover:-translate-y-[1px] active:scale-[0.98]'
-      } disabled:opacity-70 disabled:pointer-events-none`}
+      className={`flex items-center justify-center gap-2 w-full mt-4 text-white px-4 py-3 rounded-xl shadow-sm transition-all font-bold text-[11px] uppercase tracking-widest ${
+        status === 'error' ? 'bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:bg-rose-500/30' : status === 'saved' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300' : 'bg-gradient-to-r from-brand-purple to-brand-cyan shadow-[0_4px_12px_-2px_rgba(123,92,234,0.4)] hover:shadow-[0_6px_16px_-2px_rgba(0,194,255,0.4)] hover:-translate-y-[1px] active:scale-[0.98]'
+      } disabled:opacity-60 disabled:pointer-events-none`}
     >
       <Save className="h-4 w-4" />
       {status === "idle"

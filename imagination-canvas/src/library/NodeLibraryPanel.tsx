@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { Group, Upload, Zap } from "lucide-react";
+import { Group, Upload, Zap, Sparkles } from "lucide-react";
+import logo from "../assets/logo.svg";
 import SaveCanvasButton from "../Components/SaveCanvasButton";
 import type { UnifiedCanvasDocument } from "../nodes/canvasTypes";
 import { NODE_CATALOG } from "../nodes/nodeCatalog";
@@ -164,40 +165,43 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
         key={nodeType}
         draggable
         onDragStart={(event) => onDragStart(event, nodeType)}
-        className="cursor-grab rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 active:cursor-grabbing hover:border-sky-500/60"
+        className="cursor-grab rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5 active:cursor-grabbing hover:bg-white/[0.06] hover:border-brand-purple/30 hover:shadow-[0_4px_12px_-2px_rgba(123,92,234,0.15)] transition-all group/tile"
       >
         <div className="flex items-center gap-2">
-          <NodeIcon className="h-3.5 w-3.5 text-sky-300" />
-          <p className="text-xs font-medium text-slate-100">{definition?.defaultData.label}</p>
+          <NodeIcon className="h-3.5 w-3.5 text-brand-purple group-hover/tile:text-brand-cyan transition-colors" />
+          <p className="text-xs font-semibold text-white">{definition?.defaultData.label}</p>
         </div>
-        <p className="mt-1 text-[11px] text-slate-400">{definition?.defaultData.description}</p>
+        <p className="mt-1 text-[11px] text-brand-text-muted">{definition?.defaultData.description}</p>
       </div>
     );
   };
 
   return (
-    <aside className="z-10 flex h-full w-[300px] min-w-[300px] flex-col overflow-hidden border-r border-slate-800 bg-slate-950/95">
-      <div className="border-b border-slate-800 px-4 py-4">
-        <h2 className="text-sm font-semibold text-slate-100">Node Library</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-slate-900 p-1">
+    <aside className="z-10 flex h-full w-[300px] min-w-[300px] flex-col overflow-hidden border-r border-white/5 bg-brand-bg-surface/95 backdrop-blur-2xl">
+      <div className="border-b border-white/5 px-5 py-5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <img src={logo} alt="Balnce AI" width={24} height={24} className="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(123,92,234,0.3)]" />
+          <h2 className="text-xs font-black uppercase tracking-[0.15em] text-white">Node Library</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-white/[0.03] border border-white/5 p-1">
           <button
             type="button"
             onClick={() => setTab("creative")}
-            className={`rounded-md px-2 py-1 text-xs ${tab === "creative" ? "bg-sky-600 text-white" : "text-slate-400"}`}
+            className={`rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all ${tab === "creative" ? "bg-gradient-to-r from-brand-purple to-brand-cyan text-white shadow-[0_2px_8px_-2px_rgba(123,92,234,0.4)]" : "text-brand-text-muted hover:text-white"}`}
           >
-            Creative Tools
+            <span className="flex items-center justify-center gap-1.5"><Sparkles size={11} />Creative</span>
           </button>
           <button
             type="button"
             onClick={() => setTab("workflow")}
-            className={`rounded-md px-2 py-1 text-xs ${tab === "workflow" ? "bg-sky-600 text-white" : "text-slate-400"}`}
+            className={`rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all ${tab === "workflow" ? "bg-gradient-to-r from-brand-purple to-brand-cyan text-white shadow-[0_2px_8px_-2px_rgba(123,92,234,0.4)]" : "text-brand-text-muted hover:text-white"}`}
           >
-            Workflow Automation
+            <span className="flex items-center justify-center gap-1.5"><Zap size={11} />Workflow</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 pb-20 scrollbar-gutter-stable custom-scrollbar">
+      <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4 pb-20 scrollbar-gutter-stable custom-scrollbar">
         {tab === "creative" ? (
           <div className="space-y-2">
             {creativeNodeTypes.map((nodeType) => renderNodeTile(nodeType))}
@@ -206,22 +210,22 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="group rounded-lg border border-slate-700 bg-slate-900/80 p-2">
+            <div className="group rounded-xl border border-white/5 bg-white/[0.03] p-2.5">
               <div className="flex items-center gap-2 px-1 py-1">
                 <Zap className="h-4 w-4 text-amber-300" />
-                <p className="text-xs font-semibold text-slate-100">Trigger Nodes</p>
-                <span className="text-[10px] text-slate-500">Hover to reveal</span>
+                <p className="text-xs font-bold text-white">Trigger Nodes</p>
+                <span className="text-[10px] text-brand-text-muted">Hover to reveal</span>
               </div>
               <div className="max-h-0 space-y-2 overflow-y-auto custom-scrollbar opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-[420px] group-hover:opacity-100">
                 {triggerNodeTypes.map((nodeType) => renderNodeTile(nodeType))}
               </div>
             </div>
 
-            <div className="group rounded-lg border border-slate-700 bg-slate-900/80 p-2">
+            <div className="group rounded-xl border border-white/5 bg-white/[0.03] p-2.5">
               <div className="flex items-center gap-2 px-1 py-1">
-                <Group className="h-4 w-4 text-sky-300" />
-                <p className="text-xs font-semibold text-slate-100">Action Nodes</p>
-                <span className="text-[10px] text-slate-500">Hover providers to reveal</span>
+                <Group className="h-4 w-4 text-brand-cyan" />
+                <p className="text-xs font-bold text-white">Action Nodes</p>
+                <span className="text-[10px] text-brand-text-muted">Hover providers to reveal</span>
               </div>
 
               <div className="mt-2 space-y-2">
@@ -233,10 +237,10 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
                     const providerNodeTypes = actionGroups[provider] ?? [];
 
                     return (
-                      <div key={provider} className="group/provider rounded-md border border-slate-700 bg-slate-950/70 p-2">
+                      <div key={provider} className="group/provider rounded-xl border border-white/5 bg-white/[0.02] p-2">
                         <div className="flex items-center gap-2">
-                          <ProviderIcon className={`h-4 w-4 ${providerMeta?.colorClass ?? "text-slate-300"}`} />
-                          <p className="text-xs text-slate-200">{providerMeta?.label ?? `${provider} Actions`}</p>
+                          <ProviderIcon className={`h-4 w-4 ${providerMeta?.colorClass ?? "text-brand-text-muted"}`} />
+                          <p className="text-xs text-brand-text-body font-medium">{providerMeta?.label ?? `${provider} Actions`}</p>
                         </div>
                         <div className="max-h-0 space-y-2 overflow-y-auto custom-scrollbar opacity-0 transition-all duration-200 group-hover/provider:mt-2 group-hover/provider:max-h-[360px] group-hover/provider:opacity-100">
                           {providerNodeTypes.map((nodeType) => renderNodeTile(nodeType))}
@@ -252,7 +256,7 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
         )}
       </div>
 
-      <div className="border-t border-slate-800 p-4">
+      <div className="border-t border-white/5 p-5 bg-black/20">
         <input
           ref={fileInputRef}
           type="file"
@@ -264,14 +268,14 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
         <button
           type="button"
           onClick={handleUploadClick}
-          className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 hover:border-sky-500/60 hover:text-white"
+          className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5 text-xs font-semibold text-brand-text-body hover:border-brand-purple/30 hover:text-white hover:bg-white/[0.06] transition-all"
         >
           <Upload className="h-4 w-4" />
           Upload File as Node
         </button>
 
         {uploadedNodes.length > 0 ? (
-          <div className="mb-3 max-h-32 space-y-2 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-2 custom-scrollbar">
+          <div className="mb-3 max-h-32 space-y-2 overflow-auto rounded-xl border border-white/5 bg-brand-bg-page p-2 custom-scrollbar">
             {uploadedNodes.map((uploaded) => {
               const icon = getNodeIcon(uploaded.nodeType);
               const Icon = icon;
@@ -282,10 +286,10 @@ export default function NodeLibraryPanel({ onSave }: NodeLibraryPanelProps) {
                   key={uploaded.id}
                   draggable
                   onDragStart={(event) => onDragStart(event, uploaded.nodeType, uploaded.dataPreset)}
-                  className="cursor-grab rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-[11px] text-slate-200 active:cursor-grabbing"
+                  className="cursor-grab rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5 text-[11px] text-brand-text-body active:cursor-grabbing hover:border-brand-purple/30 transition-all"
                 >
                   <div className="flex items-center gap-2">
-                    <Icon className="h-3.5 w-3.5 text-sky-300" />
+                    <Icon className="h-3.5 w-3.5 text-brand-purple" />
                     <span className="truncate">{name}</span>
                   </div>
                 </div>
