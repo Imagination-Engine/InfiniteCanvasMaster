@@ -179,7 +179,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
 
   if (!definition) {
     return (
-      <div className="min-w-[260px] rounded-lg border border-rose-500/60 bg-slate-900 p-3 text-xs text-rose-300">
+      <div className="min-w-[260px] rounded-2xl border border-rose-500/30 bg-brand-bg-surface/90 backdrop-blur-xl p-4 text-[11px] font-bold uppercase tracking-widest text-rose-300 shadow-2xl">
         Unknown node type: {nodeData.type}
       </div>
     );
@@ -288,105 +288,106 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   };
 
   return (
-    <div className={`flex min-h-[200px] min-w-[280px] flex-col rounded-xl border bg-slate-900/95 p-3 text-slate-100 shadow-lg ${selected ? "border-sky-500" : "border-slate-700"}`}>
-      {/* <NodeResizer
-        color="#0ea5e9"
-        isVisible={selected}
-        minWidth={280}
-        minHeight={200}
-      /> */}
+    <div className={`flex min-h-[220px] min-w-[300px] flex-col rounded-[24px] border bg-brand-bg-surface/90 backdrop-blur-2xl p-4 text-brand-text-body shadow-2xl transition-all duration-300 ${selected ? "border-brand-purple shadow-[0_0_30px_-5px_rgba(123,92,234,0.3)] scale-[1.02]" : "border-white/5"}`}>
       {canReceiveInput ? (
-        <Handle type="target" position={Position.Top} className="h-2 w-2 border border-slate-400 bg-slate-100" />
+        <Handle 
+          type="target" 
+          position={Position.Top} 
+          className="!h-2.5 !w-2.5 !border-2 !border-brand-bg-page !bg-brand-purple !transition-transform hover:!scale-125" 
+        />
       ) : null}
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex w-full items-center gap-2">
-          <NodeIcon className="h-4 w-4 text-sky-300" />
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex w-full items-center gap-2.5 group/label">
+          <NodeIcon className="h-4 w-4 text-brand-purple group-hover/label:text-brand-cyan transition-colors" />
           <input
             value={nodeData.label}
             onChange={(event) => updateData({ label: event.target.value })}
             onKeyDown={(event) => event.stopPropagation()}
-            className="w-full bg-transparent text-sm font-semibold outline-none"
+            className="w-full bg-transparent text-[13px] font-black uppercase tracking-widest text-white outline-none placeholder:text-brand-text-muted/50"
           />
         </div>
-        <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
+        <span className="shrink-0 rounded-full bg-white/5 border border-white/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-brand-text-muted">
           {definition.category}
         </span>
       </div>
 
       {nodeData.description ? (
-        <p className="mb-3 text-xs text-slate-400">{nodeData.description}</p>
+        <p className="mb-4 text-[11px] font-medium leading-relaxed text-brand-text-muted">{nodeData.description}</p>
       ) : null}
 
       {isSlackNode ? (
-        <div className="mb-2 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-[11px] text-slate-300">
-          <div className="flex items-center justify-between gap-2">
-            <span>
+        <div className="mb-3 rounded-xl border border-white/5 bg-brand-bg-page/50 px-3 py-2.5 text-[10px] text-brand-text-body">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-bold uppercase tracking-wider">
               Slack:{" "}
-              {slackConnected === null ? "Checking..." : slackConnected ? `Connected${slackTeamName ? ` (${slackTeamName})` : ""}` : "Not connected"}
+              <span className={slackConnected ? "text-emerald-400" : "text-brand-text-muted"}>
+                {slackConnected === null ? "Checking..." : slackConnected ? `Connected${slackTeamName ? ` (${slackTeamName})` : ""}` : "Not connected"}
+              </span>
             </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={async () => {
-                  window.open("/api/slack/connect", "_blank", "noopener,noreferrer");
-                  // Polling is already running; also do an immediate status check.
-                  await fetchSlackStatus().catch(() => false);
-                }}
-                className="rounded border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-200 hover:bg-emerald-500/20"
-              >
-                Connect
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                window.open("/api/slack/connect", "_blank", "noopener,noreferrer");
+                await fetchSlackStatus().catch(() => false);
+              }}
+              className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20 transition-all"
+            >
+              Connect
+            </button>
           </div>
         </div>
       ) : null}
       {isGmailNode ? (
-        <div className="mb-2 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-[11px] text-slate-300">
-          <div className="flex items-center justify-between gap-2">
-            <span>
+        <div className="mb-3 rounded-xl border border-white/5 bg-brand-bg-page/50 px-3 py-2.5 text-[10px] text-brand-text-body">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-bold uppercase tracking-wider">
               Gmail:{" "}
-              {gmailConnected === null ? "Checking..." : gmailConnected ? `Connected${gmailAccountEmail ? ` (${gmailAccountEmail})` : ""}` : "Not connected"}
+              <span className={gmailConnected ? "text-emerald-400" : "text-brand-text-muted"}>
+                {gmailConnected === null ? "Checking..." : gmailConnected ? `Connected${gmailAccountEmail ? ` (${gmailAccountEmail})` : ""}` : "Not connected"}
+              </span>
             </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={async () => {
-                  window.open("/api/gmail/connect", "_blank", "noopener,noreferrer");
-                  await fetchGmailStatus().catch(() => false);
-                }}
-                className="rounded border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-200 hover:bg-emerald-500/20"
-              >
-                Connect
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                window.open("/api/gmail/connect", "_blank", "noopener,noreferrer");
+                await fetchGmailStatus().catch(() => false);
+              }}
+              className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20 transition-all"
+            >
+              Connect
+            </button>
           </div>
         </div>
       ) : null}
 
-      <div className="nodrag nowheel max-h-[400px] space-y-2 overflow-auto custom-scrollbar">
+      <div className="nodrag nowheel max-h-[300px] space-y-4 overflow-auto custom-scrollbar pr-1">
         {Object.keys(definition.inputSchema).filter((key) => key !== "source" && key !== "payload").map((key) => (
-          <label key={key} className="block text-xs">
-            <span className="mb-1 block text-slate-400">{key}</span>
-            <input
-              value={toText(nodeData.inputs[key] ?? "")}
-              onChange={(event) => updateData({ inputs: { [key]: event.target.value } })}
-              onKeyDown={(event) => event.stopPropagation()}
-              placeholder={getInputPlaceholder(nodeData.type, key)}
-              className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-sky-500"
-            />
+          <label key={key} className="block space-y-1.5">
+            <span className="block text-[9px] font-black uppercase tracking-widest text-brand-text-muted px-0.5">{key}</span>
+            <div className="relative group/input">
+              <input
+                value={toText(nodeData.inputs[key] ?? "")}
+                onChange={(event) => updateData({ inputs: { [key]: event.target.value } })}
+                onKeyDown={(event) => event.stopPropagation()}
+                placeholder={getInputPlaceholder(nodeData.type, key)}
+                className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-3 py-2 text-[11px] font-medium outline-none focus:border-brand-purple/50 focus:bg-white/[0.05] transition-all text-white placeholder:text-brand-text-muted/30"
+              />
+            </div>
           </label>
         ))}
 
         {Object.keys(nodeData.config ?? {}).map((key) => (
-          <label key={key} className="block text-xs">
-            <span className="mb-1 block text-slate-400">{key}</span>
-            <textarea
-              value={toText(nodeData.config?.[key] ?? "")}
-              onChange={(event) => updateData({ config: { [key]: event.target.value } })}
-              onKeyDown={(event) => event.stopPropagation()}
-              rows={key === "additionalInstructions" ? 3 : 2}
-              className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs outline-none focus:border-sky-500"
-            />
+          <label key={key} className="block space-y-1.5">
+            <span className="block text-[9px] font-black uppercase tracking-widest text-brand-text-muted px-0.5">{key}</span>
+            <div className="relative group/input">
+              <textarea
+                value={toText(nodeData.config?.[key] ?? "")}
+                onChange={(event) => updateData({ config: { [key]: event.target.value } })}
+                onKeyDown={(event) => event.stopPropagation()}
+                rows={key === "additionalInstructions" ? 3 : 2}
+                className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-3 py-2 text-[11px] font-medium outline-none focus:border-brand-purple/50 focus:bg-white/[0.05] transition-all text-white placeholder:text-brand-text-muted/30 resize-none"
+              />
+            </div>
           </label>
         ))}
       </div>
@@ -396,22 +397,35 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
           type="button"
           onClick={() => void runNode()}
           disabled={running}
-          className="mt-3 w-full rounded border border-sky-500/50 bg-sky-500/10 px-2 py-1.5 text-xs font-medium text-sky-200 hover:bg-sky-500/20 disabled:opacity-50"
+          className="group/btn relative mt-5 flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-brand-purple to-brand-cyan px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_4px_15px_-3px_rgba(123,92,234,0.4)] transition-all hover:shadow-[0_8px_25px_-3px_rgba(0,194,255,0.5)] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0"
         >
-          {running ? "Running..." : definition.role === "trigger" ? "Emit Trigger" : "Run Node"}
+          <span className="relative z-10">
+            {running ? "Synchronising..." : definition.role === "trigger" ? "Emit Trigger" : "Run Node"}
+          </span>
+          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
         </button>
       ) : (
-        <div className="mt-3 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-400">
+        <div className="mt-5 rounded-xl border border-white/5 bg-brand-bg-page/50 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-brand-text-muted text-center italic">
           Static upload node
         </div>
       )}
 
-      <details className="mt-2 text-xs text-slate-400">
-        <summary className="cursor-pointer">Outputs</summary>
-        <pre className="nodrag nowheel mt-2 max-h-40 overflow-auto rounded bg-slate-950 p-2 text-[11px] text-slate-300 scrollbar-gutter-stable custom-scrollbar">{JSON.stringify(nodeData.outputs ?? {}, null, 2)}</pre>
+      <details className="group/outputs mt-4">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors">
+          <div className="w-1.5 h-1.5 rounded-full bg-brand-purple group-open/outputs:bg-brand-cyan transition-colors" />
+          Outputs
+        </summary>
+        <div className="relative mt-3">
+          <pre className="nodrag nowheel max-h-40 overflow-auto rounded-xl border border-white/5 bg-brand-bg-page/80 p-3 text-[10px] font-medium leading-relaxed text-brand-text-body custom-scrollbar">{JSON.stringify(nodeData.outputs ?? {}, null, 2)}</pre>
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-transparent to-brand-bg-page/20 pointer-events-none" />
+        </div>
       </details>
 
-      <Handle type="source" position={Position.Bottom} className="h-2 w-2 border border-sky-400 bg-sky-500" />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        className="!h-2.5 !w-2.5 !border-2 !border-brand-bg-page !bg-brand-cyan !transition-transform hover:!scale-125" 
+      />
     </div>
   );
 }
