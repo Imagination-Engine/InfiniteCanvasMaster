@@ -293,7 +293,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
         <Handle 
           type="target" 
           position={Position.Top} 
-          className="!h-2.5 !w-2.5 !border-2 !border-brand-bg-page !bg-brand-purple !transition-transform hover:!scale-125" 
+          className="!h-2.5 !w-2.5 !border-2 !border-brand-bg-page !bg-brand-purple transition-all ring-offset-brand-bg-page hover:!ring-4 hover:!ring-brand-purple/30 group-hover:!scale-110" 
         />
       ) : null}
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -424,7 +424,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
       <Handle 
         type="source" 
         position={Position.Bottom} 
-        className="!h-2.5 !w-2.5 !border-2 !border-brand-bg-page !bg-brand-cyan !transition-transform hover:!scale-125" 
+        className="!h-2.5 !w-2.5 !border-2 !border-brand-bg-page !bg-brand-cyan transition-all ring-offset-brand-bg-page hover:!ring-4 hover:!ring-brand-cyan/30 group-hover:!scale-110" 
       />
     </div>
   );
