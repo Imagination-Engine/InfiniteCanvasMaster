@@ -281,7 +281,11 @@ export default function Canvas({
   );
 
   return (
-    <div className="relative flex-1 bg-brand-bg-page">
+    <div className="relative flex-1 bg-brand-bg-page overflow-hidden">
+      {/* Cinematic Background Glows */}
+      <div className="absolute top-0 right-[-10%] w-[600px] h-[600px] bg-brand-purple/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-brand-cyan/5 rounded-full blur-[120px] pointer-events-none" />
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -297,9 +301,22 @@ export default function Canvas({
         deleteKeyCode={["Backspace", "Delete"]}
         colorMode="dark"
       >
-        <Background gap={20} size={1} color="rgba(255, 255, 255, 0.05)" />
-        <Controls />
-        <MiniMap nodeStrokeWidth={2} pannable zoomable className="!border-slate-700 !bg-slate-900/80" />
+        <Background 
+          gap={24} 
+          size={1} 
+          color="rgba(255, 255, 255, 0.08)" 
+          variant={undefined} /* use dots by default in RF12 if not specified, or just customize style */
+          className="opacity-50"
+        />
+        <Controls className="!bg-brand-bg-surface/80 !border-white/10 !rounded-xl !overflow-hidden !shadow-2xl !fill-white" />
+        <MiniMap 
+          nodeStrokeWidth={2} 
+          pannable 
+          zoomable 
+          className="!border-white/10 !bg-brand-bg-surface/40 !backdrop-blur-xl !rounded-2xl !overflow-hidden !shadow-2xl"
+          maskColor="rgba(0, 0, 0, 0.3)"
+          nodeColor="rgba(123, 92, 234, 0.2)"
+        />
       </ReactFlow>
 
       <CanvasAgent onApplyGraph={applyAgentGraph} />
