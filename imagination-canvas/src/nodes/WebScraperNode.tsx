@@ -1,4 +1,4 @@
-import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
+import { Handle, Position, NodeResizer, type NodeProps, useReactFlow } from "@xyflow/react";
 import { useState } from "react";
 import { Globe, ArrowRight } from "lucide-react";
 import { NODE_CATALOG } from "./nodeCatalog";
@@ -65,7 +65,14 @@ export default function WebScraperNode({ id, data, selected }: NodeProps) {
   const textOutput = typeof nodeData.outputs?.text === "string" ? nodeData.outputs.text : "";
 
   return (
-    <div className={`min-w-[320px] max-w-[420px] flex flex-col rounded-[24px] border bg-brand-bg-surface/90 backdrop-blur-2xl p-4 text-brand-text-body shadow-2xl transition-all duration-300 ${selected ? "border-brand-purple shadow-[0_0_30px_-5px_rgba(123,92,234,0.3)] scale-[1.02]" : "border-white/5"}`}>
+    <div className={`min-w-[320px] flex h-full w-full min-h-[220px] flex-col rounded-[24px] border bg-brand-bg-surface/90 backdrop-blur-2xl p-4 text-brand-text-body shadow-2xl transition-all duration-300 ${selected ? "border-brand-purple shadow-[0_0_30px_-5px_rgba(123,92,234,0.3)]" : "border-brand-purple/40 shadow-inner"}`}>
+      <NodeResizer 
+        isVisible={selected} 
+        minWidth={320} 
+        minHeight={220}
+        handleClassName="!h-6 !w-6 !bg-transparent !border-none !shadow-none"
+        lineClassName="!border-brand-purple/30"
+      />
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex w-full items-center gap-2.5 group/label">
           <NodeIcon className="h-4 w-4 text-brand-purple group-hover/label:text-brand-cyan transition-colors" />

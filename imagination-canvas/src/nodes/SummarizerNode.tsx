@@ -1,4 +1,4 @@
-import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
+import { Handle, Position, NodeResizer, type NodeProps, useReactFlow } from "@xyflow/react";
 import { useState } from "react";
 import { ArrowRight, Activity } from "lucide-react";
 import { NODE_CATALOG } from "./nodeCatalog";
@@ -79,7 +79,14 @@ export default function SummarizerNode({ id, data, selected }: NodeProps) {
   const analysis = typeof nodeData.outputs?.analysis === "string" ? nodeData.outputs.analysis : "";
 
   return (
-    <div className={`min-w-[320px] max-w-[420px] flex flex-col rounded-[24px] border bg-brand-bg-surface/90 backdrop-blur-2xl p-4 text-brand-text-body shadow-2xl transition-all duration-300 ${selected ? "border-brand-purple shadow-[0_0_30px_-5px_rgba(123,92,234,0.3)] scale-[1.02]" : "border-white/5"}`}>
+    <div className={`min-w-[320px] flex h-full w-full min-h-[220px] flex-col rounded-[24px] border bg-brand-bg-surface/90 backdrop-blur-2xl p-4 text-brand-text-body shadow-2xl transition-all duration-300 ${selected ? "border-brand-purple shadow-[0_0_30px_-5px_rgba(123,92,234,0.3)]" : "border-brand-purple/40 shadow-inner"}`}>
+      <NodeResizer 
+        isVisible={selected} 
+        minWidth={320} 
+        minHeight={220}
+        handleClassName="!h-6 !w-6 !bg-transparent !border-none !shadow-none"
+        lineClassName="!border-brand-purple/30"
+      />
       <Handle 
         type="target" 
         position={Position.Top} 

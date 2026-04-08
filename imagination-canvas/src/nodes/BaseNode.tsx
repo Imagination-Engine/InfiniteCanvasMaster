@@ -1,4 +1,4 @@
-import { Handle, Position, type NodeProps, useReactFlow } from "@xyflow/react";
+import { Handle, Position, NodeResizer, type NodeProps, useReactFlow } from "@xyflow/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NODE_CATALOG } from "./nodeCatalog";
 import type { BaseNodeData } from "./types";
@@ -288,7 +288,14 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
   };
 
   return (
-    <div className={`flex min-h-[220px] min-w-[300px] flex-col rounded-[24px] border bg-brand-bg-surface/90 backdrop-blur-2xl p-4 text-brand-text-body shadow-2xl transition-all duration-300 ${selected ? "border-brand-purple shadow-[0_0_30px_-5px_rgba(123,92,234,0.3)] scale-[1.02]" : "border-white/5"}`}>
+    <div className={`flex h-full w-full min-h-[220px] min-w-[300px] flex-col rounded-[24px] border bg-brand-bg-surface/90 backdrop-blur-2xl p-4 text-brand-text-body shadow-2xl transition-all duration-300 ${selected ? "border-brand-purple shadow-[0_0_30px_-5px_rgba(123,92,234,0.3)]" : "border-brand-purple/40 shadow-inner"}`}>
+      <NodeResizer 
+        isVisible={selected} 
+        minWidth={300} 
+        minHeight={220}
+        handleClassName="!h-6 !w-6 !bg-transparent !border-none !shadow-none"
+        lineClassName="!border-brand-purple/30"
+      />
       {canReceiveInput ? (
         <Handle 
           type="target" 
