@@ -1023,7 +1023,7 @@ app.post(
           user.id,
           refreshTokenHash,
           req.headers["user-agent"] ?? null,
-          req.ip,
+          req.ip ?? null,
           refreshTokenTtlDays,
         ],
       );
@@ -1039,6 +1039,7 @@ app.post(
         return res.status(409).json({ error: "Username is already taken." });
       }
 
+      console.error("Signup error:", error);
       return res.status(500).json({ error: "Signup failed." });
     }
   },
@@ -1091,7 +1092,7 @@ app.post(
           user.id,
           refreshTokenHash,
           req.headers["user-agent"] ?? null,
-          req.ip,
+          req.ip ?? null,
           refreshTokenTtlDays,
         ],
       );
@@ -1105,7 +1106,8 @@ app.post(
           username: user.username,
         },
       });
-    } catch {
+    } catch (error) {
+      console.error("Login error:", error);
       return res.status(500).json({ error: "Login failed." });
     }
   },
@@ -1166,7 +1168,7 @@ app.post("/api/auth/refresh", async (req, res) => {
       [
         rotatedRefreshTokenHash,
         req.headers["user-agent"] ?? null,
-        req.ip,
+        req.ip ?? null,
         refreshTokenTtlDays,
         session.id,
       ],
@@ -1182,7 +1184,8 @@ app.post("/api/auth/refresh", async (req, res) => {
         username: session.username,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Token refresh error:", error);
     return res.status(500).json({ error: "Failed to refresh session." });
   }
 });
@@ -1200,7 +1203,8 @@ app.post("/api/auth/logout", async (req, res) => {
 
     clearRefreshTokenCookie(res);
     return res.status(204).send();
-  } catch {
+  } catch (error) {
+    console.error("Logout error:", error);
     return res.status(500).json({ error: "Logout failed." });
   }
 });
@@ -1946,14 +1950,29 @@ app.post(
 );
 
 async function startServer() {
+  // Bind the port first so the server is always reachable (even while migrations run).
+  // This ensures the Vite proxy gets a proper JSON error response instead of an HTML
+  // "connection refused" proxy error if the database is temporarily unavailable.
   try {
-    await runMigrations();
-    app.listen(port, () => {
-      console.log(`API server running at http://localhost:${port}`);
+    await new Promise<void>((resolve, reject) => {
+      app.listen(port, () => {
+        console.log(`API server running at http://localhost:${port}`);
+        resolve();
+      }).on("error", reject);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error("Failed to bind server port:", error);
     process.exit(1);
+  }
+
+  try {
+    await runMigrations();
+  } catch (error) {
+    console.error(
+      "Database migration failed. The server is running but database-dependent routes" +
+      " will return errors until the database is available and migrations succeed.",
+      error,
+    );
   }
 }
 

@@ -3,3 +3,15 @@ Run "psql postgres" in the terminal (or whatever your OS equivalent is)
 Run CREATE DATABASE imagination_canvas; (if not there already)
 Run CREATE ROLE postgres WITH LOGIN SUPERUSER; (this is the user we're loggin in as)
 
+If your PostgreSQL install requires a password (common on Linux), set the DATABASE_URL
+environment variable before running the server:
+
+  DATABASE_URL="postgres://postgres:<your-password>@localhost:5432/imagination_canvas" npm run dev:all
+
+Or create a .env file in the imagination-canvas directory with:
+
+  DATABASE_URL=postgres://postgres:<your-password>@localhost:5432/imagination_canvas
+
+If you see "Login failed." or any 500 errors, check the server terminal output for the
+underlying database error message.
+
