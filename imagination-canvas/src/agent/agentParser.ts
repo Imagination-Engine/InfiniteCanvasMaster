@@ -55,8 +55,8 @@ export function parseAgentGraph(input: PlannerGraph, startX = 80, startY = 80): 
       id: edge.id || `edge-${createNodeId()}`,
       source: sourceNodeId,
       target: targetNodeId,
-      sourceHandle: edge.sourceHandle,
-      targetHandle: edge.targetHandle,
+      sourceHandle: undefined,
+      targetHandle: undefined,
       type: edge.type ?? "smoothstep",
       data: edge.data,
     });

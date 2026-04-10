@@ -1645,7 +1645,6 @@ app.put(
 
 app.post(
   "/api/scrape",
-  requireAuth,
   async (req: express.Request<Record<string, never>, unknown, { url?: string }>, res) => {
     const { url } = req.body as { url?: string };
     if (!url) {

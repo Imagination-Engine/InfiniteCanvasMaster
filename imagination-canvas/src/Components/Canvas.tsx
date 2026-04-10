@@ -5,21 +5,20 @@ import {
   type DragEvent,
   type MouseEvent,
 } from "react";
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  addEdge,
-  useNodesState,
-  useEdgesState,
-  useReactFlow,
-  type Connection,
-  type IsValidConnection,
-} from "@xyflow/react";
+import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, useReactFlow } from "@xyflow/react";
+import type { Connection, IsValidConnection } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import CanvasAgent from "../agent/CanvasAgent";
-import { REACT_FLOW_NODE_TYPES, getNodeDefinition } from "../nodes/NodeRegistry";
+import IntentcastingBar from "./IntentcastingBar";
+import { useState } from "react";
+import { REACT_FLOW_NODE_TYPES, getNodeDefinition, NODE_REGISTRY } from "../nodes/NodeRegistry";
+import AgentExecutionNode from "../nodes/AgentExecutionNode";
+import { AgentRuntime } from "../agent/AgentRuntime";
+import { parseAgentGraph } from "../agent/agentParser";
+
+const EXTENDED_NODE_TYPES = {
+  ...REACT_FLOW_NODE_TYPES,
+  agentExecution: AgentExecutionNode,
+};
 import { createNodeFromType } from "../nodes/nodeFactory";
 import { hasCompatibleSchemaTypes } from "../nodes/types";
 import type { UnifiedCanvasDocument, UnifiedCanvasEdge, UnifiedCanvasNode } from "../nodes/canvasTypes";
@@ -280,6 +279,45 @@ export default function Canvas({
     [nodes, edges],
   );
 
+  const [isOrchestrating, setIsOrchestrating] = useState(false);
+  const runtime = useMemo(() => new AgentRuntime(), []);
+
+  const handleIntentSubmit = async (prompt: string) => {
+    if (!prompt.trim() || isOrchestrating) return;
+    setIsOrchestrating(true);
+    
+    const tempId = `agent-execution-${Date.now()}`;
+    const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
+    const centerY = typeof window !== "undefined" ? window.innerHeight / 2 : 500;
+    const position = screenToFlowPosition({ x: centerX - 150, y: centerY - 50 });
+    
+    setNodes((curr) => [...curr, {
+      id: tempId,
+      type: "agentExecution",
+      position,
+      data: { prompt }
+    } as any]);
+
+    try {
+      const result = await runtime.generateWorkflow(prompt, NODE_REGISTRY);
+
+      setNodes((curr) => curr.filter((n) => n.id !== tempId));
+
+      if (result.missingCapabilities.length > 0) {
+        console.warn("Integration required:", result.missingCapabilities);
+        // We could spawn an agent terminal node here in the future
+      } else {
+        const parsed = parseAgentGraph(result.graph, position.x, position.y);
+        applyAgentGraph(parsed);
+      }
+    } catch (error) {
+      console.error("Orchestration failed:", error);
+      setNodes((curr) => curr.filter((n) => n.id !== tempId));
+    } finally {
+      setIsOrchestrating(false);
+    }
+  };
+
   return (
     <div className="relative flex-1 bg-brand-bg-page overflow-hidden">
       {/* Cinematic Background Glows */}
@@ -289,7 +327,7 @@ export default function Canvas({
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={REACT_FLOW_NODE_TYPES}
+        nodeTypes={EXTENDED_NODE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -319,7 +357,7 @@ export default function Canvas({
         />
       </ReactFlow>
 
-      <CanvasAgent onApplyGraph={applyAgentGraph} />
+      <IntentcastingBar onSubmit={handleIntentSubmit} isLoading={isOrchestrating} />
     </div>
   );
 }

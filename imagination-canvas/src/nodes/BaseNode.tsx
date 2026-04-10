@@ -241,7 +241,7 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
         getRuntimeState(),
       );
       const manualInputsWithoutSource = Object.fromEntries(
-        Object.entries(nodeData.inputs).filter(([key]) => key !== "source"),
+        Object.entries(nodeData.inputs).filter(([key]) => key !== "source" && key !== "sources"),
       );
       const executionInputs = mergeInputsPreferManual(upstreamInputs, manualInputsWithoutSource);
 
