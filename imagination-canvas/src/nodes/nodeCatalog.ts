@@ -86,9 +86,9 @@ export const NODE_CATALOG: NodeCatalog = {
     "creative",
     "Web Scraper",
     "Scrape a manually entered URL and return both structured JSON and plain text.",
-    {},
+    { url: "text" },
     { summary: "json", text: "text" },
-    { inputs: { url: "https://" }, outputs: { summary: {}, text: "" }, config: { additionalInstructions: "" } },
+    { inputs: { url: "https://" }, outputs: { summary: {}, text: "" }, config: {} },
     "tool",
   ),
   formatter: createEntry(
