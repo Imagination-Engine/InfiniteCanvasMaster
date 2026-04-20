@@ -30,3 +30,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Creations Drawer, History & Sidebar Navigation**
 *Link: [./tracks/creations_drawer_history_20260420/](./tracks/creations_drawer_history_20260420/)*
+
+---
+
+- [ ] **Track: Custom Agent Flow & Wizard**
+*Link: [./tracks/custom_agent_flow_20260420/](./tracks/custom_agent_flow_20260420/)*
