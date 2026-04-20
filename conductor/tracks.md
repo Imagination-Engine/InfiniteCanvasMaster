@@ -65,3 +65,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Surface E — Atlas (Knowledge Graph)**
 *Link: [./tracks/surface_e_atlas_20260420/](./tracks/surface_e_atlas_20260420/)*
+
+---
+
+- [ ] **Track: Monorepo Transition & Turbo Orchestration**
+*Link: [./tracks/monorepo_transition_20260420/](./tracks/monorepo_transition_20260420/)*
