@@ -110,3 +110,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Doc 02: Pre-commit Prevention & Secret Hygiene**
 *Link: [./tracks/doc02_pre_commit_prevention_20260420/](./tracks/doc02_pre_commit_prevention_20260420/)*
+
+---
+
+- [ ] **Track: Doc 02: Runtime Secret Isolation & Encrypted Storage**
+*Link: [./tracks/doc02_runtime_secret_isolation_20260420/](./tracks/doc02_runtime_secret_isolation_20260420/)*
