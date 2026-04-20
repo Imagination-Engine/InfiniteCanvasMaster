@@ -90,3 +90,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Doc 01: Agent Harness Cleanup & Migration Strategy**
 *Link: [./tracks/doc01_agent_harness_cleanup_20260420/](./tracks/doc01_agent_harness_cleanup_20260420/)*
+
+---
+
+- [ ] **Track: Doc 01: Surface E (Scribe) & Exhaustive Block Scaffolding**
+*Link: [./tracks/doc01_surface_e_scribe_20260420/](./tracks/doc01_surface_e_scribe_20260420/)*
