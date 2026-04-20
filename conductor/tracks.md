@@ -55,3 +55,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Surface C — Reel (Generative Media)**
 *Link: [./tracks/surface_c_reel_20260420/](./tracks/surface_c_reel_20260420/)*
+
+---
+
+- [ ] **Track: Surface D — Forge (App Builder)**
+*Link: [./tracks/surface_d_forge_20260420/](./tracks/surface_d_forge_20260420/)*
