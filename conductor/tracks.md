@@ -20,3 +20,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Canvas Runtime Enrichment (Presence & Execution)**
 *Link: [./tracks/canvas_runtime_enrichment_20260420/](./tracks/canvas_runtime_enrichment_20260420/)*
+
+---
+
+- [ ] **Track: Unified Chat Shell & Session Duality**
+*Link: [./tracks/unified_chat_shell_20260420/](./tracks/unified_chat_shell_20260420/)*
