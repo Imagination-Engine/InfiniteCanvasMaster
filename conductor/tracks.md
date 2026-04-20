@@ -80,3 +80,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Documentation Repo & Agent Primer System**
 *Link: [./tracks/documentation_agent_primer_20260420/](./tracks/documentation_agent_primer_20260420/)*
+
+---
+
+- [ ] **Track: Final Demo Preparation & Scripts**
+*Link: [./tracks/final_demo_prep_20260420/](./tracks/final_demo_prep_20260420/)*
