@@ -40,3 +40,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Advanced Data Model & Persistence Layer**
 *Link: [./tracks/advanced_data_model_20260420/](./tracks/advanced_data_model_20260420/)*
+
+---
+
+- [ ] **Track: Surface A — Playable (Game Studio)**
+*Link: [./tracks/surface_a_playable_20260420/](./tracks/surface_a_playable_20260420/)*
