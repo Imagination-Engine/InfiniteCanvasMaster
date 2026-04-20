@@ -105,3 +105,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Doc 01: Dependency Atlas & Hygiene Protocol**
 *Link: [./tracks/doc01_dependency_atlas_refactor_20260420/](./tracks/doc01_dependency_atlas_refactor_20260420/)*
+
+---
+
+- [ ] **Track: Doc 02: Pre-commit Prevention & Secret Hygiene**
+*Link: [./tracks/doc02_pre_commit_prevention_20260420/](./tracks/doc02_pre_commit_prevention_20260420/)*
