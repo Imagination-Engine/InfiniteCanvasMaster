@@ -95,3 +95,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Doc 01: Surface E (Scribe) & Exhaustive Block Scaffolding**
 *Link: [./tracks/doc01_surface_e_scribe_20260420/](./tracks/doc01_surface_e_scribe_20260420/)*
+
+---
+
+- [ ] **Track: Doc 01: Exterior Integrations & The 95% Automation Playbook**
+*Link: [./tracks/doc01_exterior_mcp_integrations_20260420/](./tracks/doc01_exterior_mcp_integrations_20260420/)*
