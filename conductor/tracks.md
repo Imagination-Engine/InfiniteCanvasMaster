@@ -50,3 +50,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Surface B — Conductor (Workflow Orchestration)**
 *Link: [./tracks/surface_b_conductor_20260420/](./tracks/surface_b_conductor_20260420/)*
+
+---
+
+- [ ] **Track: Surface C — Reel (Generative Media)**
+*Link: [./tracks/surface_c_reel_20260420/](./tracks/surface_c_reel_20260420/)*
