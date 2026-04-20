@@ -60,3 +60,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Surface D — Forge (App Builder)**
 *Link: [./tracks/surface_d_forge_20260420/](./tracks/surface_d_forge_20260420/)*
+
+---
+
+- [ ] **Track: Surface E — Atlas (Knowledge Graph)**
+*Link: [./tracks/surface_e_atlas_20260420/](./tracks/surface_e_atlas_20260420/)*
