@@ -45,3 +45,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Surface A — Playable (Game Studio)**
 *Link: [./tracks/surface_a_playable_20260420/](./tracks/surface_a_playable_20260420/)*
+
+---
+
+- [ ] **Track: Surface B — Conductor (Workflow Orchestration)**
+*Link: [./tracks/surface_b_conductor_20260420/](./tracks/surface_b_conductor_20260420/)*
