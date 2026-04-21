@@ -10,6 +10,9 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 - **Canvas Engines:**
   - **React Flow:** The current foundational node-based canvas implementation, retained for stability in the short term.
   - **tldraw:** Introduced as a parallel or transitional canvas engine to pave the way for the sovereign product's future path.
+- **Workspace Orchestration:**
+  - **pnpm Workspaces:** Strict dependency isolation and package management across the monorepo (`apps/*`, `packages/*`).
+  - **Turborepo:** Orchestrates parallel builds, testing, and aggressive task caching across the monorepo.
 - **Animation:** **Framer Motion** will be utilized to deliver the fluid, playful, and engaging UX required by the product guidelines.
 - **Advanced Game Engine (Surface A):**
   - **Phaser 4 & WebGL 2:** Core engine for high-performance game rendering.
