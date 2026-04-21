@@ -28,7 +28,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Custom Agent Flow & Wizard**
+- [x] **Track: Custom Agent Flow & Wizard**
 *Link: [./tracks/custom_agent_flow_20260420/](./tracks/custom_agent_flow_20260420/)*
 
 ---
