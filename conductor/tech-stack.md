@@ -33,9 +33,10 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 - **Execution Sandbox:** **WebContainers API** utilized to run a full, secure Node.js environment directly within the browser, enabling compilation and hosting of generated mini-apps.
 - **State Management:** A custom Blackboard state manager ensuring immutable, shared structured data across parallel agent nodes during the build process.
 
-## Knowledge Graph & RAG (Surface E)
-- **Auto-Layout Engine:** Integration with `dagre` (or equivalent) to algorithmically layout dense clusters of text and semantic links within the React Flow canvas.
-- **RAG Primitives:** Custom `Ingestion`, `Retrieval`, and `Synthesis` MCP blocks directly interfacing with the `pgvector` database and LLM endpoints.
+## Longform Writing & Publishing (Surface E - Scribe)
+- **Rich Text Editing:** Integration with **Tiptap** for robust, extensible rich text capabilities within Prose and Chapter blocks.
+- **Revision Tracking:** Linear revision history persistence utilizing Postgres `jsonb` arrays.
+- **Publishing Pipeline:** Automated export toolchain utilizing `epub-gen` (for EPUB) and `Puppeteer` + `Paged.js` (for PDF/Print formatting).
 
 ## Real-Time Collaboration
 - **Presence & Sync:** **Liveblocks** is utilized for real-time multiplayer presence (cursors, selections, and editing locks) and state synchronization across clients.
