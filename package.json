@@ -9,10 +9,14 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "docs:map": "tsx scripts/docs-map.ts",
-    "setup:models": "tsx scripts/setup-models.ts"
+    "setup:models": "tsx scripts/setup-models.ts",
+    "iem:new-block": "tsx scripts/new-block.ts"
   },
   "devDependencies": {
     "turbo": "latest"
   },
-  "packageManager": "pnpm@8.15.5"
+  "packageManager": "pnpm@8.15.5",
+  "dependencies": {
+    "commander": "^14.0.3"
+  }
 }
