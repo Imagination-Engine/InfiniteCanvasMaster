@@ -10,13 +10,13 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Workspace Scaffolding' (Protocol in workflow.md)
 
 ## Phase 2: Code Migration
-- [ ] Task: Move existing frontend code into `apps/web`.
-    - [ ] Sub-task: Red (Write tests verifying paths before move)
-    - [ ] Sub-task: Green (Execute `mv` commands and update internal imports)
-    - [ ] Sub-task: Refactor (Verify the Vite build succeeds in the new location)
-- [ ] Task: Move existing backend code into `apps/server`.
-    - [ ] Sub-task: Red/Green/Refactor for the backend migration.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Code Migration' (Protocol in workflow.md)
+- [x] Task: Move existing frontend code into `apps/web`.
+    - [x] Sub-task: Red (Write tests verifying paths before move)
+    - [x] Sub-task: Green (Execute `mv` commands and update internal imports)
+    - [x] Sub-task: Refactor (Verify the Vite build succeeds in the new location)
+- [x] Task: Move existing backend code into `apps/server`.
+    - [x] Sub-task: Red/Green/Refactor for the backend migration.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Code Migration' (Protocol in workflow.md)
 
 ## Phase 3: Collaboration Tools
 - [ ] Task: Implement the Github collaboration infrastructure.
