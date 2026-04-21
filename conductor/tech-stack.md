@@ -10,6 +10,9 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
   - **tldraw:** Introduced as a parallel or transitional canvas engine to pave the way for the sovereign product's future path.
 - **Animation:** **Framer Motion** will be utilized to deliver the fluid, playful, and engaging UX required by the product guidelines.
 
+## Real-Time Collaboration
+- **Presence & Sync:** **Liveblocks** is utilized for real-time multiplayer presence (cursors, selections, and editing locks) and state synchronization across clients.
+
 ## Backend & Agent Runtime
 To handle both standard web requests and heavy AI workloads, the backend utilizes a polyglot microservice approach:
 - **Core Application Server:** Node.js + Express + TypeScript. Maintains the current stable backend routing and standard API endpoints.
