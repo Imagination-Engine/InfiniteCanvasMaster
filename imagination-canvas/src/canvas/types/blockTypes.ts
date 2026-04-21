@@ -205,10 +205,20 @@ export interface BlockData<T extends BlockType = BlockType> {
   };
 }
 
+/** Temporal position and duration on a timeline track. */
+export interface TemporalCoordinate {
+  track: number;
+  time: number;
+  duration: number;
+}
+
 // ─── React Flow Node & Edge Wrappers ────────────────────────────────
 
 /** A fully-typed React Flow node carrying BlockData in its `data` field. */
-export type CanvasBlockNode<T extends BlockType = BlockType> = Node<BlockData<T>, T>;
+export type CanvasBlockNode<T extends BlockType = BlockType> = Node<BlockData<T>, T> & {
+  /** Optional temporal coordinates for the timeline view. */
+  temporal?: TemporalCoordinate;
+};
 
 /** Edge metadata specific to the Imagination Canvas. */
 export interface CanvasEdgeData {
