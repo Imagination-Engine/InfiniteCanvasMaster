@@ -44,7 +44,7 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 To handle both standard web requests and heavy AI workloads, the backend utilizes a polyglot microservice approach:
 - **Core Application Server:** Hono + Cloudflare Workers + TypeScript. Replaces the legacy Express backend to run efficiently on the Edge.
 - **High-Performance Services:** Node.js + Fastify + TypeScript. Utilized for components requiring higher throughput or lower latency (e.g., real-time canvas syncing).
-- **Agentic / AI Runtime:** Python + FastAPI. Dedicated infrastructure for the Agent Runtime, LLM orchestration, and complex Python-native AI integrations (e.g., the Autogen exploration).
+- **Agentic Runtime:** TypeScript + Vercel AI SDK. The legacy Python/Autogen exploration has been formally retired in favor of a lean, natively integrated TypeScript orchestration layer.
 - **Block Protocol / MCP Integration:** TypeScript + `@modelcontextprotocol/sdk` + `zod`. Node implementations are decoupled into composable Model Context Protocol blocks with strict Zod schema validations for inputs and outputs.
 
 ## Database & Persistence
