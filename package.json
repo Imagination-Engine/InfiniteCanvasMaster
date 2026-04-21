@@ -22,8 +22,10 @@
   },
   "packageManager": "pnpm@8.15.5",
   "lint-staged": {
+    "!(scripts/test-git-secrets.sh)": [
+      "node scripts/scan-secrets.js"
+    ],
     "*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [
