@@ -9,6 +9,7 @@ These guidelines dictate the UX, branding, and interaction principles for the Im
 ## 2. Visual Aesthetic
 - **Vibrant & Accessible:** The UI must feel friendly, engaging, and consumer-focused.
 - **Design Language:** Utilize soft corners, colorful (but accessible) highlights, and clear visual hierarchies. The interface must intentionally avoid the intimidating, dense layout of traditional developer IDEs, favoring approachability.
+- **Execution Minimalism:** During workflow execution, prioritize an uncluttered interface. Surface only final outputs or critical error states directly on the canvas, strictly avoiding dense, developer-heavy log panels.
 
 ## 3. Agentic Error Handling & UX
 - **Transparent Intent:** Agents must proactively communicate their intentions to the user *before and while* attempting to build, optimize, or solve problems.

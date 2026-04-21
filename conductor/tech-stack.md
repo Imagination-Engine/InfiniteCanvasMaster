@@ -16,6 +16,10 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
   - **Enable3D:** Integration for 3D depth and objects within Phaser.
   - **Matter.js & Spine 2D:** Physics and skeletal animations integration.
 
+## Orchestration & Integrations (Surface B)
+- **Advanced DAG Scheduler:** Custom execution engine supporting cyclic dependencies detection, exponential backoff retries, conditional routing (`If`), and looping (`ForEach`).
+- **SaaS Tool Bindings:** Composable MCP tools orchestrating remote services, initially targeting Web Fetch, Slack, and Notion APIs.
+
 ## Real-Time Collaboration
 - **Presence & Sync:** **Liveblocks** is utilized for real-time multiplayer presence (cursors, selections, and editing locks) and state synchronization across clients.
 
