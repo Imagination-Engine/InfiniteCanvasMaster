@@ -13,6 +13,7 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 - **Workspace Orchestration:**
   - **pnpm Workspaces:** Strict dependency isolation and package management across the monorepo (`apps/*`, `packages/*`).
   - **Turborepo:** Orchestrates parallel builds, testing, and aggressive task caching across the monorepo.
+  - **Dependency Atlas Governance:** Strict adherence to the monorepo dependency ledger (`docs/DEPENDENCIES.md`), enforced by the agent rules framework to prevent module bloat.
 - **Animation:** **Framer Motion** will be utilized to deliver the fluid, playful, and engaging UX required by the product guidelines.
 - **Desktop Wrapper (Stretch Goal):** **Electrobun** is utilized to scaffold the baseline build configuration to wrap the Vite frontend and embed the local Node.js backend.
 - **Advanced Game Engine (Surface A):**
