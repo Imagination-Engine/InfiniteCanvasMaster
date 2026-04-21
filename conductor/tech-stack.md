@@ -24,6 +24,10 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 - **Advanced DAG Scheduler:** Custom execution engine supporting cyclic dependencies detection, exponential backoff retries, conditional routing (`If`), and looping (`ForEach`).
 - **SaaS Tool Bindings:** Composable MCP tools orchestrating remote services, initially targeting Web Fetch, Slack, and Notion APIs.
 
+## Exterior Integrations & Automation
+- **Tier 1 MCP Servers:** Dedicated MCP server implementations for external platforms including Google Workspace (Gmail, Calendar) to enable autonomous agent interactions.
+- **CLI Automation Suite:** Custom Node.js CLI suite (`commander`, `inquirer`) providing `iem:*` commands, wrapped as executable MCP tools for the agent.
+
 ## Generative Media & Rendering (Surface C)
 - **Media Providers:** Integration with Nanobanana (TextToImage) and ElevenLabs (TextToSpeech) via MCP bindings.
 - **Render Pipeline:** Robust video stitching pipeline utilizing FFmpeg (evaluating Node.js worker or client-side WASM) to compile ordered scenes and overlay audio into MP4 artifacts.
