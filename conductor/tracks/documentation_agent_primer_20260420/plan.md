@@ -9,11 +9,11 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Unified Agent Primer & Aliases' (Protocol in workflow.md)
 
 ## Phase 2: 100% Strict README Coverage (Scaffolding)
-- [ ] Task: Scaffold templated `README.md` files for every directory containing code.
-    - [ ] Sub-task: Red (Write tests validating that all specified directories contain a `README.md`)
-    - [ ] Sub-task: Green (Implement a script that traverses the workspace directories and generates the templates)
-    - [ ] Sub-task: Refactor (Refine the template format as specified in Section 23.1)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: 100% Strict README Coverage (Scaffolding)' (Protocol in workflow.md)
+- [x] Task: Scaffold templated `README.md` files for every directory containing code.
+    - [x] Sub-task: Red (Write tests validating that all specified directories contain a `README.md`)
+    - [x] Sub-task: Green (Implement a script that traverses the workspace directories and generates the templates)
+    - [x] Sub-task: Refactor (Refine the template format as specified in Section 23.1)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: 100% Strict README Coverage (Scaffolding)' (Protocol in workflow.md)
 
 ## Phase 3: Semantic Document Map Auto-Generation
 - [ ] Task: Develop the `pnpm docs:map` script.

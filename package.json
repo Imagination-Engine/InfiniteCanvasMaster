@@ -7,7 +7,8 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "docs:map": "tsx scripts/docs-map.ts"
   },
   "devDependencies": {
     "turbo": "latest"
