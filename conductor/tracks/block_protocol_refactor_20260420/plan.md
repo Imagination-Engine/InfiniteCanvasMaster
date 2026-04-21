@@ -18,9 +18,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Establish Block Protocol Pattern' (Protocol in workflow.md)
 
 ## Phase 3: Complete Block Refactoring
-- [ ] Task: Refactor the remaining 8 existing hardcoded nodes to adhere to the established pattern.
-    - [ ] Sub-task: Red (Write failing schema/logic tests for all 8 nodes)
-    - [ ] Sub-task: Green (Implement the MCP tool interfaces for all 8 nodes)
-    - [ ] Sub-task: Refactor (Clean up and optimize shared logic)
-    - [ ] Sub-task: Adversarial (Write adversarial tests for all 8 nodes)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Complete Block Refactoring' (Protocol in workflow.md)
+- [x] Task: Refactor the remaining 8 existing hardcoded nodes to adhere to the established pattern.
+    - [x] Sub-task: Red (Write failing schema/logic tests for all 8 nodes)
+    - [x] Sub-task: Green (Implement the MCP tool interfaces for all 8 nodes)
+    - [x] Sub-task: Refactor (Clean up and optimize shared logic)
+    - [x] Sub-task: Adversarial (Write adversarial tests for all 8 nodes)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Complete Block Refactoring' (Protocol in workflow.md)
