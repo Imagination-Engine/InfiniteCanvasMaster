@@ -16,9 +16,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: 100% Strict README Coverage (Scaffolding)' (Protocol in workflow.md)
 
 ## Phase 3: Semantic Document Map Auto-Generation
-- [ ] Task: Develop the `pnpm docs:map` script.
-    - [ ] Sub-task: Red (Write tests for the auto-generation logic, mocking file system traversal)
-    - [ ] Sub-task: Green (Implement the Node.js or bash script to traverse, read headers, and output `docs/MAP.md`)
-    - [ ] Sub-task: Refactor (Optimize file reading to ensure execution time is under 2 seconds)
-    - [ ] Sub-task: Adversarial (Write tests creating cyclic directories or malformed README headers to ensure the script does not hang)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Semantic Document Map Auto-Generation' (Protocol in workflow.md)
+- [x] Task: Develop the `pnpm docs:map` script.
+    - [x] Sub-task: Red (Write tests for the auto-generation logic, mocking file system traversal)
+    - [x] Sub-task: Green (Implement the Node.js or bash script to traverse, read headers, and output `docs/MAP.md`)
+    - [x] Sub-task: Refactor (Optimize file reading to ensure execution time is under 2 seconds)
+    - [x] Sub-task: Adversarial (Write tests creating cyclic directories or malformed README headers to ensure the script does not hang)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Semantic Document Map Auto-Generation' (Protocol in workflow.md)

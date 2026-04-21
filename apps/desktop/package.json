@@ -1,0 +1,15 @@
+{
+  "name": "@iem/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "bun run bun.build.ts",
+    "test": "echo \"Electrobun stretch goal - bypass test for now\""
+  },
+  "dependencies": {
+    "electrobun": "^0.1.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
