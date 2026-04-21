@@ -1,14 +1,14 @@
 # Implementation Plan: Advanced Data Model & Persistence Layer
 
 ## Phase 1: Local Dev & Infrastructure
-- [ ] Task: Provision the local PostgreSQL + pgvector environment.
-    - [ ] Sub-task: Red (Write shell script tests verifying DB connectivity)
-    - [ ] Sub-task: Green (Create `docker-compose.yml` and `pnpm db:start` scripts)
-    - [ ] Sub-task: Refactor (Optimize Docker image sizes and startup times)
-- [ ] Task: Set up Drizzle ORM and Drizzle Kit.
-    - [ ] Sub-task: Red (Write tests confirming Drizzle instance creation and connection)
-    - [ ] Sub-task: Green (Install dependencies and configure `drizzle.config.ts`)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Local Dev & Infrastructure' (Protocol in workflow.md)
+- [x] Task: Provision the local PostgreSQL + pgvector environment.
+    - [x] Sub-task: Red (Write shell script tests verifying DB connectivity)
+    - [x] Sub-task: Green (Create `docker-compose.yml` and `pnpm db:start` scripts)
+    - [x] Sub-task: Refactor (Optimize Docker image sizes and startup times)
+- [x] Task: Set up Drizzle ORM and Drizzle Kit.
+    - [x] Sub-task: Red (Write tests confirming Drizzle instance creation and connection)
+    - [x] Sub-task: Green (Install dependencies and configure `drizzle.config.ts`)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Local Dev & Infrastructure' (Protocol in workflow.md)
 
 ## Phase 2: Schema Definition & Migrations
 - [ ] Task: Define the core schema (`users`, `sessions`, `messages`, `custom_agents`) in Drizzle.

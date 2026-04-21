@@ -33,7 +33,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Advanced Data Model & Persistence Layer**
+- [~] **Track: Advanced Data Model & Persistence Layer**
 *Link: [./tracks/advanced_data_model_20260420/](./tracks/advanced_data_model_20260420/)*
 
 ---
