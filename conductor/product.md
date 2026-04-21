@@ -1,17 +1,23 @@
 # Initial Concept
+
 There are 3 documents in the /docs folder, 00, 01, and 02. Document 00 is the foundational document, but 01 and 02 are deeply interlinked. The objective, tasks, outline, narrative spine, and all details for this project are contained within. Confirm?
 
 ## Product Vision
+
 The Imagination Engine is a unified, agentic canvas substrate designed to support five distinct interactive expressions (Playable, Conductor, Reel, Forge, and an Open Slot). It transforms a standard node-based canvas into an elite, multi-surface studio.
 
 ## Target Audience & Quality Standard
+
 The primary audience is **everyday people**. We do not design for a niche subset; the platform must be universally accessible and intuitive. To achieve this, the underlying architecture must consist of comprehensive, elite-level, production-hardened code and features that rival top-tier commercial products.
 
 ## Core Interaction Paradigm: Dual-View
+
 The platform employs a **Dual-View** interaction model. Users are not forced into a single mode of operation. Instead, there is equal emphasis on both conversational and visual interactions, allowing users to seamlessly toggle between a **Unified Chat Shell** (the chat-first entry surface) and the **Canvas** (direct manipulation of visual blocks). The transition is managed via **Session Duality**, where a canvas is materialized lazily as the conversation evolves.
 
 ## Foundational Priorities
+
 To realize this vision, the initial development sprints will prioritize four core architectural pillars:
+
 1. **Chat Shell & Duality:** Building the chat-first entry surface and establishing the deep bidirectional sync between the chat session and the canvas runtime.
 2. **Persistent Organization:** Implementing the Navigation Sidebar, Session History (List/Grid), and the Creations Drawer to ensure users can seamlessly organize and relaunch their work.
 3. **Block Protocol:** Refactoring the existing hardcoded node types into a standard, composable protocol, allowing them to function as true MCP (Model Context Protocol) tools that can be utilized by external agents.
@@ -30,3 +36,4 @@ To realize this vision, the initial development sprints will prioritize four cor
 16. **Exhaustive Block Scaffolding:** Providing automated CLI tooling (`pnpm iem:new-block`) accessible to both human engineers and AI agents to rapidly and consistently scaffold strict TDD-compliant MCP blocks across all surfaces.
 17. **Exterior Integrations & The 95% Automation Playbook:** Operationalizing the "self-executing master doc" thesis by building an executable boot sequence (`pnpm iem:boot`), conversational Student Playbooks, a CLI automation suite, and Tier 1 exterior integrations via the Model Context Protocol (Google Workspace, Slack, Notion).
 18. **Dependency Atlas & Hygiene Protocol:** Establishing a canonical dependency reference (`docs/DEPENDENCIES.md`) and enforcing an agentic hygiene protocol (`.agent/rules/dependencies.md`) to prevent bloat and mandate 4-point justifications for external module inclusion.
+19. **Pre-commit Prevention & Secret Hygiene:** Enforcing a rigorous zero-trust secret management protocol using a canonical `.env.example` blueprint and automated `git-secrets` scanning within Husky/lint-staged pre-commit hooks to categorically prevent credential leakage.
