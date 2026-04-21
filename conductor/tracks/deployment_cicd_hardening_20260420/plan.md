@@ -16,10 +16,10 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Database Connectivity & Hyperdrive' (Protocol in workflow.md)
 
 ## Phase 3: CI/CD Pipeline (GitHub Actions)
-- [ ] Task: Implement the rigorous CI workflow and deployment configurations.
-    - [ ] Sub-task: Red (Write tests verifying the existence and basic YAML syntax of the workflow files)
-    - [ ] Sub-task: Green (Create `.github/workflows/ci.yml` utilizing `actions/setup-node` and `pnpm install`, executing `npx turbo run build test lint`)
-    - [ ] Sub-task: Refactor (Configure Turborepo caching within the GitHub Action to reduce build times)
-    - [ ] Sub-task: Adversarial (Write a test script that intentionally fails a test to ensure the CI pipeline accurately returns a non-zero exit code)
-- [ ] Task: Configure the Cloudflare Pages deployment settings for `apps/web`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: CI/CD Pipeline (GitHub Actions)' (Protocol in workflow.md)
+- [x] Task: Implement the rigorous CI workflow and deployment configurations.
+    - [x] Sub-task: Red (Write tests verifying the existence and basic YAML syntax of the workflow files)
+    - [x] Sub-task: Green (Create `.github/workflows/ci.yml` utilizing `actions/setup-node` and `pnpm install`, executing `npx turbo run build test lint`)
+    - [x] Sub-task: Refactor (Configure Turborepo caching within the GitHub Action to reduce build times)
+    - [x] Sub-task: Adversarial (Write a test script that intentionally fails a test to ensure the CI pipeline accurately returns a non-zero exit code)
+- [x] Task: Configure the Cloudflare Pages deployment settings for `apps/web`.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: CI/CD Pipeline (GitHub Actions)' (Protocol in workflow.md)
