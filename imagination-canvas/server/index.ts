@@ -6,7 +6,7 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import { Pool } from "pg";
+import { pool } from "./db.js";
 import { chromium } from "playwright";
 import slackOauthRoutes from "../src/integrations/slack/oauthRoutes.js";
 import gmailOauthRoutes from "../src/integrations/gmail/oauthRoutes.js";
@@ -22,8 +22,6 @@ const jwtSecret = process.env.JWT_SECRET ?? "dev-only-change-me";
 const accessTokenTtlSeconds = Number(process.env.ACCESS_TOKEN_TTL_SECONDS ?? 900);
 const refreshTokenTtlDays = Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 30);
 const isProduction = process.env.NODE_ENV === "production";
-
-const pool = new Pool({ connectionString: databaseUrl });
 
 const ollamaUrl = process.env.OLLAMA_URL ?? "http://localhost:11434/api/generate";
 const ollamaModel = process.env.OLLAMA_MODEL ?? "llama3";

@@ -1,12 +1,12 @@
 # Implementation Plan: Custom Agent Flow & Wizard
 
 ## Phase 1: Database & RAG Foundation
-- [ ] Task: Set up the database tables and embedding infrastructure.
-    - [ ] Sub-task: Red (Write tests for DB schema constraints and embedding generation mocks)
-    - [ ] Sub-task: Green (Implement `custom_agents` table migration with `pgvector` and the Gemini embedding utility)
-    - [ ] Sub-task: Refactor (Clean up the chunking and embedding logic)
-    - [ ] Sub-task: Adversarial (Write tests attempting to retrieve embeddings scoped to a different user ID)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Database & RAG Foundation' (Protocol in workflow.md)
+- [x] Task: Set up the database tables and embedding infrastructure.
+    - [x] Sub-task: Red (Write tests for DB schema constraints and embedding generation mocks)
+    - [x] Sub-task: Green (Implement `custom_agents` table migration with `pgvector` and the Gemini embedding utility)
+    - [x] Sub-task: Refactor (Clean up the chunking and embedding logic)
+    - [x] Sub-task: Adversarial (Write tests attempting to retrieve embeddings scoped to a different user ID)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Database & RAG Foundation' (Protocol in workflow.md)
 
 ## Phase 2: The Sliding Panel UI
 - [ ] Task: Build the 6-step Custom Agent configuration form.
