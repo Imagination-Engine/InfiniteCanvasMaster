@@ -10,12 +10,12 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Workflow & Internal Systems Setup' (Protocol in workflow.md)
 
 ## Phase 2: Establish Block Protocol Pattern
-- [ ] Task: Select one existing node (e.g., 'Refiner' or 'Summarizer') and refactor it into an MCP-compliant Block.
-    - [ ] Sub-task: Red (Write failing tests for request/response schemas, happy path, and error path)
-    - [ ] Sub-task: Green (Implement the MCP tool interface and logic)
-    - [ ] Sub-task: Refactor (Clean up the implementation)
-    - [ ] Sub-task: Adversarial (Write test intentionally trying to break the tool with malformed inputs)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Establish Block Protocol Pattern' (Protocol in workflow.md)
+- [x] Task: Select one existing node (e.g., 'Refiner' or 'Summarizer') and refactor it into an MCP-compliant Block.
+    - [x] Sub-task: Red (Write failing tests for request/response schemas, happy path, and error path)
+    - [x] Sub-task: Green (Implement the MCP tool interface and logic)
+    - [x] Sub-task: Refactor (Clean up the implementation)
+    - [x] Sub-task: Adversarial (Write test intentionally trying to break the tool with malformed inputs)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Establish Block Protocol Pattern' (Protocol in workflow.md)
 
 ## Phase 3: Complete Block Refactoring
 - [ ] Task: Refactor the remaining 8 existing hardcoded nodes to adhere to the established pattern.
