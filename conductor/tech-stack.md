@@ -5,6 +5,8 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 ## Frontend & Presentation Layer
 - **Core Framework:** React + Vite + TypeScript. This provides a fast, modern, and type-safe SPA experience.
 - **Styling:** Tailwind CSS for rapid, utility-first UI development that aligns with our vibrant and accessible design guidelines.
+- **Chat & UI Components:** **Vercel AI SDK** (`ai` package) for streaming chat primitives, and **shadcn/ui** (copied components) for consistent, accessible interface elements.
+- **Onboarding & Layout:** **Embla Carousel** for fluid, touch-friendly onboarding and instructional carousels.
 - **Canvas Engines:**
   - **React Flow:** The current foundational node-based canvas implementation, retained for stability in the short term.
   - **tldraw:** Introduced as a parallel or transitional canvas engine to pave the way for the sovereign product's future path.

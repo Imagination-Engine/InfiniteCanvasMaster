@@ -8,7 +8,7 @@ The Imagination Engine is a unified, agentic canvas substrate designed to suppor
 The primary audience is **everyday people**. We do not design for a niche subset; the platform must be universally accessible and intuitive. To achieve this, the underlying architecture must consist of comprehensive, elite-level, production-hardened code and features that rival top-tier commercial products.
 
 ## Core Interaction Paradigm: Dual-View
-The platform employs a **Dual-View** interaction model. Users are not forced into a single mode of operation. Instead, there is equal emphasis on both conversational and visual interactions, allowing users to seamlessly toggle between a Chat Shell (typing thoughts to let agents build) and the Canvas (direct manipulation of visual blocks).
+The platform employs a **Dual-View** interaction model. Users are not forced into a single mode of operation. Instead, there is equal emphasis on both conversational and visual interactions, allowing users to seamlessly toggle between a **Unified Chat Shell** (the chat-first entry surface) and the **Canvas** (direct manipulation of visual blocks). The transition is managed via **Session Duality**, where a canvas is materialized lazily as the conversation evolves.
 
 ## Foundational Priorities
 To realize this vision, the initial development sprints will prioritize three core architectural pillars:
