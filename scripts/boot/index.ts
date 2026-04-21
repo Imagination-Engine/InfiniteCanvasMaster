@@ -33,6 +33,11 @@ const rulesDir = path.join(rootDir, '.agent/rules');
 if (fs.existsSync(rulesDir)) {
   const rules = fs.readdirSync(rulesDir).filter(f => f.endsWith('.md'));
   console.log(`Found ${rules.length} rule files: ${rules.join(', ')}\n`);
+  
+  if (rules.includes('dependencies.md')) {
+    console.log('--- DEPENDENCY HYGIENE PROTOCOL ---');
+    console.log(safeRead('.agent/rules/dependencies.md').substring(0, 500) + '...\n');
+  }
 } else {
   console.log('[Warning: No .agent/rules directory found]\n');
 }
