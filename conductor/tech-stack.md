@@ -20,6 +20,10 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 - **Advanced DAG Scheduler:** Custom execution engine supporting cyclic dependencies detection, exponential backoff retries, conditional routing (`If`), and looping (`ForEach`).
 - **SaaS Tool Bindings:** Composable MCP tools orchestrating remote services, initially targeting Web Fetch, Slack, and Notion APIs.
 
+## Generative Media & Rendering (Surface C)
+- **Media Providers:** Integration with Nanobanana (TextToImage) and ElevenLabs (TextToSpeech) via MCP bindings.
+- **Render Pipeline:** Robust video stitching pipeline utilizing FFmpeg (evaluating Node.js worker or client-side WASM) to compile ordered scenes and overlay audio into MP4 artifacts.
+
 ## Real-Time Collaboration
 - **Presence & Sync:** **Liveblocks** is utilized for real-time multiplayer presence (cursors, selections, and editing locks) and state synchronization across clients.
 
