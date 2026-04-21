@@ -41,13 +41,14 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 
 ## Backend & Agent Runtime
 To handle both standard web requests and heavy AI workloads, the backend utilizes a polyglot microservice approach:
-- **Core Application Server:** Node.js + Express + TypeScript. Maintains the current stable backend routing and standard API endpoints.
+- **Core Application Server:** Hono + Cloudflare Workers + TypeScript. Replaces the legacy Express backend to run efficiently on the Edge.
 - **High-Performance Services:** Node.js + Fastify + TypeScript. Utilized for components requiring higher throughput or lower latency (e.g., real-time canvas syncing).
 - **Agentic / AI Runtime:** Python + FastAPI. Dedicated infrastructure for the Agent Runtime, LLM orchestration, and complex Python-native AI integrations (e.g., the Autogen exploration).
 - **Block Protocol / MCP Integration:** TypeScript + `@modelcontextprotocol/sdk` + `zod`. Node implementations are decoupled into composable Model Context Protocol blocks with strict Zod schema validations for inputs and outputs.
 
 ## Database & Persistence
 - **Primary Data Store:** PostgreSQL. Provides robust relational data integrity for users, workspaces, and canvas states.
+- **Connection Pooling:** Cloudflare Hyperdrive. Proxies and accelerates database connections between the Edge Worker and the Postgres database.
 - **Vector Search (RAG):** `pgvector` extension for PostgreSQL combined with Gemini Embeddings to power context-aware knowledge retrieval for Custom Agents.
 - **ORM:** Drizzle ORM. Ensures strict, end-to-end type safety from the database schema up to the TypeScript APIs.
 
@@ -56,3 +57,4 @@ To handle both standard web requests and heavy AI workloads, the backend utilize
 - **Unit & Integration Testing:** Vitest. Provides a fast, Vite-native testing environment for core logic and components.
 - **E2E Testing:** Playwright. Utilized for verifying high-level user flows and canvas interactions.
 - **Workflow:** Strict Test-Driven Development (TDD) following the Red/Green/Refactor/Adversarial cycle.
+- **CI/CD Pipeline:** GitHub Actions. Enforces PR gates, runs parallel Turbo tasks, and automates deployment to Cloudflare.
