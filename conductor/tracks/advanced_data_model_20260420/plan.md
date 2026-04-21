@@ -22,8 +22,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Schema Definition & Migrations' (Protocol in workflow.md)
 
 ## Phase 3: Seeding & Data Access Layer
-- [ ] Task: Implement the database seeder.
-    - [ ] Sub-task: Red (Write tests verifying the database is populated after the script runs)
-    - [ ] Sub-task: Green (Implement `pnpm db:seed` creating a demo user, session, and wired canvas)
-    - [ ] Sub-task: Refactor (Abstract seed logic into reusable factory functions)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Seeding & Data Access Layer' (Protocol in workflow.md)
+- [x] Task: Implement the database seeder.
+    - [x] Sub-task: Red (Write tests verifying the database is populated after the script runs)
+    - [x] Sub-task: Green (Implement `pnpm db:seed` creating a demo user, session, and wired canvas)
+    - [x] Sub-task: Refactor (Abstract seed logic into reusable factory functions)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Seeding & Data Access Layer' (Protocol in workflow.md)
