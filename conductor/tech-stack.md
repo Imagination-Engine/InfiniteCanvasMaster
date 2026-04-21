@@ -11,6 +11,10 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
   - **React Flow:** The current foundational node-based canvas implementation, retained for stability in the short term.
   - **tldraw:** Introduced as a parallel or transitional canvas engine to pave the way for the sovereign product's future path.
 - **Animation:** **Framer Motion** will be utilized to deliver the fluid, playful, and engaging UX required by the product guidelines.
+- **Advanced Game Engine (Surface A):**
+  - **Phaser 4 & WebGL 2:** Core engine for high-performance game rendering.
+  - **Enable3D:** Integration for 3D depth and objects within Phaser.
+  - **Matter.js & Spine 2D:** Physics and skeletal animations integration.
 
 ## Real-Time Collaboration
 - **Presence & Sync:** **Liveblocks** is utilized for real-time multiplayer presence (cursors, selections, and editing locks) and state synchronization across clients.
