@@ -13,7 +13,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Agent Runtime & MCP Orchestration**
+- [x] **Track: Agent Runtime & MCP Orchestration**
 *Link: [./tracks/agent_runtime_mcp_20260420/](./tracks/agent_runtime_mcp_20260420/)*
 
 ---
