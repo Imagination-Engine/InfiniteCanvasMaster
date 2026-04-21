@@ -18,7 +18,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Unified Chat Shell & Session Duality**
+- [x] **Track: Unified Chat Shell & Session Duality**
 *Link: [./tracks/unified_chat_shell_20260420/](./tracks/unified_chat_shell_20260420/)*
 
 ---
