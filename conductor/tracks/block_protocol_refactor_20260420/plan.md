@@ -1,13 +1,13 @@
 # Implementation Plan: Block Protocol Refactor & Internal Systems Setup
 
 ## Phase 1: Workflow & Internal Systems Setup
-- [ ] Task: Update `conductor/workflow.md` to include the Plan Mode file-flattening workaround.
-- [ ] Task: Initialize the Agent-Assisted Bug Triage system.
-    - [ ] Sub-task: Create `docs/backlog/TRIAGE.md` with the standard template.
-- [ ] Task: Initialize the README-at-Every-Juncture structure.
-    - [ ] Sub-task: Identify primary code and documentation directories.
-    - [ ] Sub-task: Inject standard `README.md` templates into these directories.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Workflow & Internal Systems Setup' (Protocol in workflow.md)
+- [x] Task: Update `conductor/workflow.md` to include the Plan Mode file-flattening workaround.
+- [x] Task: Initialize the Agent-Assisted Bug Triage system.
+    - [x] Sub-task: Create `docs/backlog/TRIAGE.md` with the standard template.
+- [x] Task: Initialize the README-at-Every-Juncture structure.
+    - [x] Sub-task: Identify primary code and documentation directories.
+    - [x] Sub-task: Inject standard `README.md` templates into these directories.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Workflow & Internal Systems Setup' (Protocol in workflow.md)
 
 ## Phase 2: Establish Block Protocol Pattern
 - [ ] Task: Select one existing node (e.g., 'Refiner' or 'Summarizer') and refactor it into an MCP-compliant Block.

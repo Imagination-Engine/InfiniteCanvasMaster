@@ -21,3 +21,7 @@ Every new feature, block, and MCP tool must follow the strict four-step rhythm d
 ## 4. Phase Completion Verification and Checkpointing Protocol
 When generating `plan.md` files, a final verification task must be appended to every phase to ensure quality before moving to the next phase:
 `- [ ] Task: Conductor - User Manual Verification '<Phase Name>' (Protocol in workflow.md)`
+
+## 5. Plan Mode File Operations Workaround
+When operating in Plan Mode, file creation might inadvertently flatten directory structures. To prevent this, always use a shell command workaround for creating new files within nested directories.
+Example: `run_shell_command("mkdir -p path/to/dir && mv flattened_file.md path/to/dir/actual_file.md")` or by ensuring `mkdir -p` is run prior to file writes where applicable.
