@@ -15,6 +15,7 @@ To handle both standard web requests and heavy AI workloads, the backend utilize
 - **Core Application Server:** Node.js + Express + TypeScript. Maintains the current stable backend routing and standard API endpoints.
 - **High-Performance Services:** Node.js + Fastify + TypeScript. Utilized for components requiring higher throughput or lower latency (e.g., real-time canvas syncing).
 - **Agentic / AI Runtime:** Python + FastAPI. Dedicated infrastructure for the Agent Runtime, LLM orchestration, and complex Python-native AI integrations (e.g., the Autogen exploration).
+- **Block Protocol / MCP Integration:** TypeScript + `@modelcontextprotocol/sdk` + `zod`. Node implementations are decoupled into composable Model Context Protocol blocks with strict Zod schema validations for inputs and outputs.
 
 ## Database & Persistence
 - **Primary Data Store:** PostgreSQL. Provides robust relational data integrity for users, workspaces, and canvas states.
