@@ -98,7 +98,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Doc 01: Dependency Atlas & Hygiene Protocol**
+- [x] **Track: Doc 01: Dependency Atlas & Hygiene Protocol**
 *Link: [./tracks/doc01_dependency_atlas_refactor_20260420/](./tracks/doc01_dependency_atlas_refactor_20260420/)*
 
 ---
