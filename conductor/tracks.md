@@ -68,7 +68,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Deployment & CI/CD Hardening**
+- [~] **Track: Deployment & CI/CD Hardening**
 *Link: [./tracks/deployment_cicd_hardening_20260420/](./tracks/deployment_cicd_hardening_20260420/)*
 
 ---

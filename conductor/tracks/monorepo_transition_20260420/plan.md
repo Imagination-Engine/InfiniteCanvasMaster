@@ -19,7 +19,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Code Migration' (Protocol in workflow.md)
 
 ## Phase 3: Collaboration Tools
-- [ ] Task: Implement the Github collaboration infrastructure.
-    - [ ] Sub-task: Red (Write tests verifying the existence of `.github` files)
-    - [ ] Sub-task: Green (Create `CODEOWNERS` (Open mode) and `pull_request_template.md`)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Collaboration Tools' (Protocol in workflow.md)
+- [x] Task: Implement the Github collaboration infrastructure.
+    - [x] Sub-task: Red (Write tests verifying the existence of `.github` files)
+    - [x] Sub-task: Green (Create `CODEOWNERS` (Open mode) and `pull_request_template.md`)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Collaboration Tools' (Protocol in workflow.md)

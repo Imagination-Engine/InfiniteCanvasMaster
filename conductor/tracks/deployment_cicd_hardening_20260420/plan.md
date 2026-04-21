@@ -1,19 +1,19 @@
 # Implementation Plan: Deployment & CI/CD Hardening
 
 ## Phase 1: Edge Backend (Hono + Cloudflare Worker)
-- [ ] Task: Transition the `apps/server` Express backend to a Hono/Cloudflare Worker architecture.
-    - [ ] Sub-task: Red (Write API endpoint tests using `app.request()` without spinning up a full server)
-    - [ ] Sub-task: Green (Implement `src/index.ts` with Hono routing and the Cloudflare Worker entry point)
-    - [ ] Sub-task: Refactor (Extract route handlers into separate modules)
-    - [ ] Sub-task: Adversarial (Write tests asserting the `nodejs_compat` compatibility flag in `wrangler.toml`)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Edge Backend (Hono + Cloudflare Worker)' (Protocol in workflow.md)
+- [x] Task: Transition the `apps/server` Express backend to a Hono/Cloudflare Worker architecture.
+    - [x] Sub-task: Red (Write API endpoint tests using `app.request()` without spinning up a full server)
+    - [x] Sub-task: Green (Implement `src/index.ts` with Hono routing and the Cloudflare Worker entry point)
+    - [x] Sub-task: Refactor (Extract route handlers into separate modules)
+    - [x] Sub-task: Adversarial (Write tests asserting the `nodejs_compat` compatibility flag in `wrangler.toml`)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Edge Backend (Hono + Cloudflare Worker)' (Protocol in workflow.md)
 
 ## Phase 2: Database Connectivity & Hyperdrive
-- [ ] Task: Configure Drizzle ORM and Postgres to utilize Cloudflare Hyperdrive.
-    - [ ] Sub-task: Red (Write integration tests mocking the Hyperdrive `connectionString` binding)
-    - [ ] Sub-task: Green (Implement the database connection utilizing the `c.env.HYPERDRIVE` context)
-    - [ ] Sub-task: Refactor (Ensure `c.executionCtx.waitUntil(client.end())` is properly implemented for connection cleanup)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Database Connectivity & Hyperdrive' (Protocol in workflow.md)
+- [x] Task: Configure Drizzle ORM and Postgres to utilize Cloudflare Hyperdrive.
+    - [x] Sub-task: Red (Write integration tests mocking the Hyperdrive `connectionString` binding)
+    - [x] Sub-task: Green (Implement the database connection utilizing the `c.env.HYPERDRIVE` context)
+    - [x] Sub-task: Refactor (Ensure `c.executionCtx.waitUntil(client.end())` is properly implemented for connection cleanup)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Database Connectivity & Hyperdrive' (Protocol in workflow.md)
 
 ## Phase 3: CI/CD Pipeline (GitHub Actions)
 - [ ] Task: Implement the rigorous CI workflow and deployment configurations.
