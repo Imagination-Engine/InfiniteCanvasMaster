@@ -28,6 +28,7 @@ To handle both standard web requests and heavy AI workloads, the backend utilize
 - **ORM:** Drizzle ORM. Ensures strict, end-to-end type safety from the database schema up to the TypeScript APIs.
 
 ## Testing & Quality Assurance
+- **Containerization:** Docker & Docker Compose. Provisions the local PostgreSQL + pgvector environment to ensure development parity.
 - **Unit & Integration Testing:** Vitest. Provides a fast, Vite-native testing environment for core logic and components.
 - **E2E Testing:** Playwright. Utilized for verifying high-level user flows and canvas interactions.
 - **Workflow:** Strict Test-Driven Development (TDD) following the Red/Green/Refactor/Adversarial cycle.
