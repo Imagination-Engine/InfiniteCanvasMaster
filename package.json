@@ -11,12 +11,25 @@
     "docs:map": "tsx scripts/docs-map.ts",
     "setup:models": "tsx scripts/setup-models.ts",
     "iem:new-block": "tsx scripts/new-block.ts",
-    "iem:boot": "tsx scripts/boot/index.ts"
+    "iem:boot": "tsx scripts/boot/index.ts",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
     "turbo": "latest"
   },
   "packageManager": "pnpm@8.15.5",
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
   "dependencies": {
     "commander": "^14.0.3"
   }
