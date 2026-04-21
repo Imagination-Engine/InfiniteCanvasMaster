@@ -10,7 +10,8 @@
     "typecheck": "turbo run typecheck",
     "docs:map": "tsx scripts/docs-map.ts",
     "setup:models": "tsx scripts/setup-models.ts",
-    "iem:new-block": "tsx scripts/new-block.ts"
+    "iem:new-block": "tsx scripts/new-block.ts",
+    "iem:boot": "tsx scripts/boot/index.ts"
   },
   "devDependencies": {
     "turbo": "latest"
