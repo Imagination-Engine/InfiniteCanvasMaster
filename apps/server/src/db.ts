@@ -1,16 +1,30 @@
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+import { Client } from 'pg';
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { Context, Next } from 'hono';
 
-dotenv.config();
-
-const databaseUrl = process.env.DATABASE_URL ?? "postgres://postgres@localhost:5432/imagination_canvas";
-
-export const pool = new Pool({ 
-  connectionString: databaseUrl,
-  // For local dev, we might want to disable SSL, but in production we usually want it.
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
-
-export async function query(text: string, params?: any[]) {
-  return pool.query(text, params);
+export interface Env {
+  HYPERDRIVE: { connectionString: string };
 }
+
+export function setupDatabase(env: Env, executionCtx: { waitUntil: (promise: Promise<any>) => void }) {
+  const client = new Client({ connectionString: env.HYPERDRIVE.connectionString });
+  const db = drizzle(client);
+  return { db, client };
+}
+
+declare module 'hono' {
+  interface ContextVariableMap {
+    db: NodePgDatabase;
+  }
+}
+
+export const dbMiddleware = async (c: Context<{ Bindings: Env }>, next: Next) => {
+  const { db, client } = setupDatabase(c.env, c.executionCtx);
+  
+  await client.connect();
+  c.set('db', db);
+
+  await next();
+
+  c.executionCtx.waitUntil(client.end());
+};
