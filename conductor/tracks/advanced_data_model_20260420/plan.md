@@ -11,15 +11,15 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Local Dev & Infrastructure' (Protocol in workflow.md)
 
 ## Phase 2: Schema Definition & Migrations
-- [ ] Task: Define the core schema (`users`, `sessions`, `messages`, `custom_agents`) in Drizzle.
-    - [ ] Sub-task: Red (Write repository-level tests for CRUD operations on these entities)
-    - [ ] Sub-task: Green (Implement schemas and generate initial migrations)
-    - [ ] Sub-task: Refactor (Clean up schema definitions and export types)
-    - [ ] Sub-task: Adversarial (Write tests attempting to violate unique constraints, e.g., duplicate emails)
-- [ ] Task: Define the normalized Graph schema (`canvases`, `blocks`, `edges`).
-    - [ ] Sub-task: Red (Write tests verifying foreign key constraints and cascade deletes)
-    - [ ] Sub-task: Green (Implement relational graph tables and generate migrations)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Schema Definition & Migrations' (Protocol in workflow.md)
+- [x] Task: Define the core schema (`users`, `sessions`, `messages`, `custom_agents`) in Drizzle.
+    - [x] Sub-task: Red (Write repository-level tests for CRUD operations on these entities)
+    - [x] Sub-task: Green (Implement schemas and generate initial migrations)
+    - [x] Sub-task: Refactor (Clean up schema definitions and export types)
+    - [x] Sub-task: Adversarial (Write tests attempting to violate unique constraints, e.g., duplicate emails)
+- [x] Task: Define the normalized Graph schema (`canvases`, `blocks`, `edges`).
+    - [x] Sub-task: Red (Write tests verifying foreign key constraints and cascade deletes)
+    - [x] Sub-task: Green (Implement relational graph tables and generate migrations)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Schema Definition & Migrations' (Protocol in workflow.md)
 
 ## Phase 3: Seeding & Data Access Layer
 - [ ] Task: Implement the database seeder.
