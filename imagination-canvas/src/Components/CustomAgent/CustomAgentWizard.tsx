@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { StoryStep, PersonaStep, SkillsStep, ContextStep, CapabilitiesStep, PurposeStep } from './Steps/WizardSteps';
+import { handleCustomAgentComplete } from './customAgentClient';
 
 const wizardSchema = z.object({
   story: z.string()
@@ -67,8 +68,15 @@ export default function CustomAgentWizard({ onClose, onComplete }: CustomAgentWi
     }
   };
 
-  const onSubmit = (data: WizardFormData) => {
-    onComplete(data);
+  const onSubmit = async (data: WizardFormData) => {
+    try {
+      await handleCustomAgentComplete(data);
+      onComplete(data);
+      onClose();
+    } catch (error) {
+      console.error('Failed to create custom agent:', error);
+      // In a real app, we'd set a form error or toast here
+    }
   };
 
   return (

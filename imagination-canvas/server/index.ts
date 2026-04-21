@@ -14,7 +14,7 @@ import { getSlackClient } from "../src/integrations/slack/slackClient.js";
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT ?? 3001);
 
 const databaseUrl = process.env.DATABASE_URL ?? "postgres://postgres@localhost:5432/imagination_canvas";
@@ -177,6 +177,60 @@ async function runMigrations() {
     }
   }
 }
+
+import { saveCustomAgent, getCustomAgents } from "./custom_agents.js";
+import { generateEmbedding } from "../src/lib/embeddings.js";
+
+app.post("/api/custom-agents", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.auth?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+
+    const { story, persona, skills, capabilities, purpose, contextSources } = req.body;
+    
+    if (!story || !persona?.name) {
+      return res.status(400).json({ error: "Story and Persona Name are required." });
+    }
+
+    const nameSlug = persona.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const blockDefinition = {
+      id: `iem.user.${userId.substring(0, 8)}.${nameSlug}`,
+      name: persona.name,
+      description: purpose || persona.tagline || 'Custom Agent',
+      category: 'custom',
+      mode: capabilities?.executionMode || 'triggered',
+      agent: {
+        kind: 'local',
+        toolName: 'custom_agent_execution',
+      }
+    };
+
+    const agentData = {
+      userId,
+      name: persona.name,
+      tagline: persona.tagline,
+      story,
+      persona,
+      skills: skills || [],
+      contextSources: contextSources || [],
+      capabilities: capabilities || {},
+      purpose: purpose || '',
+      blockDefinition
+    };
+
+    const agentId = await saveCustomAgent(agentData);
+
+    // Placeholder: Process embeddings for context in a background task
+    // if (contextSources && contextSources.length > 0) { ... }
+
+    return res.status(201).json({ id: agentId, blockDefinition });
+  } catch (error) {
+    console.error("Error saving custom agent:", error);
+    return res.status(500).json({ error: "Failed to create custom agent." });
+  }
+});
 
 app.get("/api/health", async (_req, res) => {
   try {
@@ -1954,4 +2008,6 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+  startServer();
+}

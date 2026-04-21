@@ -17,8 +17,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: The Sliding Panel UI' (Protocol in workflow.md)
 
 ## Phase 3: Registration & Palette Integration
-- [ ] Task: Connect the form submission to the block registry.
-    - [ ] Sub-task: Red (Write tests for dynamic `BlockDefinition` generation)
-    - [ ] Sub-task: Green (Implement the API endpoint to save the agent and the client logic to update the block registry)
-    - [ ] Sub-task: Refactor (Optimize the registry state update to avoid full canvas re-renders)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Registration & Palette Integration' (Protocol in workflow.md)
+- [x] Task: Connect the form submission to the block registry.
+    - [x] Sub-task: Red (Write tests for dynamic `BlockDefinition` generation)
+    - [x] Sub-task: Green (Implement the API endpoint to save the agent and the client logic to update the block registry)
+    - [x] Sub-task: Refactor (Optimize the registry state update to avoid full canvas re-renders)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Registration & Palette Integration' (Protocol in workflow.md)
