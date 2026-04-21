@@ -38,7 +38,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Surface A — Playable (Game Studio)**
+- [x] **Track: Surface A — Playable (Game Studio)**
 *Link: [./tracks/surface_a_playable_20260420/](./tracks/surface_a_playable_20260420/)*
 
 ---
