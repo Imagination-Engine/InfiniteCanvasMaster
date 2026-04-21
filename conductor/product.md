@@ -16,3 +16,4 @@ To realize this vision, the initial development sprints will prioritize four cor
 2. **Persistent Organization:** Implementing the Navigation Sidebar, Session History (List/Grid), and the Creations Drawer to ensure users can seamlessly organize and relaunch their work.
 3. **Block Protocol:** Refactoring the existing hardcoded node types into a standard, composable protocol, allowing them to function as true MCP (Model Context Protocol) tools that can be utilized by external agents.
 4. **Collaboration Infrastructure:** Establishing an elite monorepo layout, strict workspaces, and a robust TDD (Test-Driven Development) harness to ensure the engineering team can build all five surfaces concurrently without friction.
+5. **Custom Agent Flow:** Enabling users to dynamically construct and parameterize custom agentic blocks—defining their story, persona, context (RAG), and capabilities—directly from the UI, expanding the capabilities of the engine without writing code.
