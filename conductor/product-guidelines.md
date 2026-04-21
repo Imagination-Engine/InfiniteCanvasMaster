@@ -9,7 +9,7 @@ These guidelines dictate the UX, branding, and interaction principles for the Im
 ## 2. Visual Aesthetic
 - **Vibrant & Accessible:** The UI must feel friendly, engaging, and consumer-focused.
 - **Design Language:** Utilize soft corners, colorful (but accessible) highlights, and clear visual hierarchies. The interface must intentionally avoid the intimidating, dense layout of traditional developer IDEs, favoring approachability.
-- **Execution Minimalism:** During workflow execution, prioritize an uncluttered interface. Surface only final outputs or critical error states directly on the canvas, strictly avoiding dense, developer-heavy log panels.
+- **Execution Minimalism & Transparency:** During standard workflow execution, prioritize an uncluttered interface, surfacing only final outputs or critical error states. However, for complex generative tasks (e.g., App Building in Forge), employ a dedicated, readable Build Log to transparently stream agent intentions, thoughts, and progress without overwhelming the primary canvas view.
 
 ## 3. Agentic Error Handling & UX
 - **Transparent Intent:** Agents must proactively communicate their intentions to the user *before and while* attempting to build, optimize, or solve problems.

@@ -24,6 +24,11 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 - **Media Providers:** Integration with Nanobanana (TextToImage) and ElevenLabs (TextToSpeech) via MCP bindings.
 - **Render Pipeline:** Robust video stitching pipeline utilizing FFmpeg (evaluating Node.js worker or client-side WASM) to compile ordered scenes and overlay audio into MP4 artifacts.
 
+## App Builder & Sandbox (Surface D)
+- **LLM Integration:** Specific integration with **Gemini 3.5 Pro** for advanced code generation within the Builder agent block.
+- **Execution Sandbox:** **WebContainers API** utilized to run a full, secure Node.js environment directly within the browser, enabling compilation and hosting of generated mini-apps.
+- **State Management:** A custom Blackboard state manager ensuring immutable, shared structured data across parallel agent nodes during the build process.
+
 ## Real-Time Collaboration
 - **Presence & Sync:** **Liveblocks** is utilized for real-time multiplayer presence (cursors, selections, and editing locks) and state synchronization across clients.
 
