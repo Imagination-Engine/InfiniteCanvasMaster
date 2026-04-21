@@ -23,7 +23,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Creations Drawer, History & Sidebar Navigation**
+- [x] **Track: Creations Drawer, History & Sidebar Navigation**
 *Link: [./tracks/creations_drawer_history_20260420/](./tracks/creations_drawer_history_20260420/)*
 
 ---
