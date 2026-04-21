@@ -1,0 +1,6 @@
+{
+  "models": [
+    "hermes3",
+    "qwen2.5-coder:7b"
+  ]
+}

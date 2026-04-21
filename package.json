@@ -8,7 +8,8 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
-    "docs:map": "tsx scripts/docs-map.ts"
+    "docs:map": "tsx scripts/docs-map.ts",
+    "setup:models": "tsx scripts/setup-models.ts"
   },
   "devDependencies": {
     "turbo": "latest"
