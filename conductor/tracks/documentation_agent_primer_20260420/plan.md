@@ -1,12 +1,12 @@
 # Implementation Plan: Documentation Repo & Agent Primer System
 
 ## Phase 1: Unified Agent Primer & Aliases
-- [ ] Task: Create the comprehensive `AGENTS.md` file at the root.
-    - [ ] Sub-task: Red (Write tests verifying the existence of `AGENTS.md` and required keywords/sections)
-    - [ ] Sub-task: Green (Generate the file with the core architecture, workflow rules, and pointers to specific packages)
-    - [ ] Sub-task: Refactor (Ensure symlinks/aliases like `CLAUDE.md` correctly point to `AGENTS.md`)
-    - [ ] Sub-task: Adversarial (Write tests verifying the agent primer parses correctly as valid Markdown)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Unified Agent Primer & Aliases' (Protocol in workflow.md)
+- [x] Task: Create the comprehensive `AGENTS.md` file at the root.
+    - [x] Sub-task: Red (Write tests verifying the existence of `AGENTS.md` and required keywords/sections)
+    - [x] Sub-task: Green (Generate the file with the core architecture, workflow rules, and pointers to specific packages)
+    - [x] Sub-task: Refactor (Ensure symlinks/aliases like `CLAUDE.md` correctly point to `AGENTS.md`)
+    - [x] Sub-task: Adversarial (Write tests verifying the agent primer parses correctly as valid Markdown)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Unified Agent Primer & Aliases' (Protocol in workflow.md)
 
 ## Phase 2: 100% Strict README Coverage (Scaffolding)
 - [ ] Task: Scaffold templated `README.md` files for every directory containing code.
