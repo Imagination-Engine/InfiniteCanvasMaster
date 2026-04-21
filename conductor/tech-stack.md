@@ -19,3 +19,8 @@ To handle both standard web requests and heavy AI workloads, the backend utilize
 ## Database & Persistence
 - **Primary Data Store:** PostgreSQL. Provides robust relational data integrity for users, workspaces, and canvas states.
 - **ORM:** Drizzle ORM. Ensures strict, end-to-end type safety from the database schema up to the TypeScript APIs.
+
+## Testing & Quality Assurance
+- **Unit & Integration Testing:** Vitest. Provides a fast, Vite-native testing environment for core logic and components.
+- **E2E Testing:** Playwright. Utilized for verifying high-level user flows and canvas interactions.
+- **Workflow:** Strict Test-Driven Development (TDD) following the Red/Green/Refactor/Adversarial cycle.
