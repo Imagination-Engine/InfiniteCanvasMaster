@@ -14,6 +14,7 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
   - **pnpm Workspaces:** Strict dependency isolation and package management across the monorepo (`apps/*`, `packages/*`).
   - **Turborepo:** Orchestrates parallel builds, testing, and aggressive task caching across the monorepo.
 - **Animation:** **Framer Motion** will be utilized to deliver the fluid, playful, and engaging UX required by the product guidelines.
+- **Desktop Wrapper (Stretch Goal):** **Electrobun** is utilized to scaffold the baseline build configuration to wrap the Vite frontend and embed the local Node.js backend.
 - **Advanced Game Engine (Surface A):**
   - **Phaser 4 & WebGL 2:** Core engine for high-performance game rendering.
   - **Enable3D:** Integration for 3D depth and objects within Phaser.

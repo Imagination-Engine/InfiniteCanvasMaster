@@ -26,3 +26,4 @@ To realize this vision, the initial development sprints will prioritize four cor
 12. **Monorepo Architecture:** Transitioning the repository to a strict monorepo layout using `pnpm` workspaces and `turbo` to isolate and concurrently develop the five distinct surfaces on top of a shared foundational substrate.
 13. **Deployment Architecture:** Transitioning to a high-performance "forever free" edge architecture using Cloudflare Pages and Workers, coupled with strict GitHub Actions enforcing the TDD workflow.
 14. **Documentation Primer System:** Establishing an automated, unified documentation system that scaffolds strict READMEs across all workspace directories, generates a semantic MAP.md, and maintains a unified `AGENTS.md` primer for AI CLI alignment.
+15. **Demo Artifact Generation:** Creating rigorous, localized demo scripts for all five surfaces, compiling a comprehensive faculty brief, and scaffolding the Electrobun stretch-goal desktop wrapper.
