@@ -1,51 +1,46 @@
-import { describe, it, expect, vi } from 'vitest';
-import { Pool } from 'pg';
+import { describe, it, expect, vi } from "vitest";
 
 const { mockQuery } = vi.hoisted(() => ({
-  mockQuery: vi.fn().mockResolvedValue({ rows: [{ id: 'test-id' }] })
+  mockQuery: vi.fn().mockResolvedValue({ rows: [{ id: "test-id" }] }),
 }));
 
-vi.mock('pg', () => {
-  return {
-    Pool: class {
-      query = mockQuery;
-    }
-  };
-});
+const mockClient = {
+  query: mockQuery,
+};
 
-import { saveCustomAgent } from './custom_agents';
+import { saveCustomAgent } from "./custom_agents";
 
-describe('Custom Agents Persistence', () => {
-  it('should save a custom agent to the database', async () => {
-    
+describe("Custom Agents Persistence", () => {
+  it("should save a custom agent to the database", async () => {
     const agentData = {
-      userId: 'user-123',
-      name: 'Test Agent',
-      tagline: 'A test agent',
-      story: 'Once upon a time...',
-      persona: { tone: 'formal' },
-      skills: ['web_search'],
-      purpose: 'To test',
-      blockDefinition: { id: 'test.agent' }
+      userId: "user-123",
+      name: "Test Agent",
+      tagline: "A test agent",
+      story: "Once upon a time...",
+      persona: { tone: "formal" },
+      skills: ["web_search"],
+      purpose: "To test",
+      capabilities: {},
+      blockDefinition: { id: "test.agent" },
     };
 
-    await saveCustomAgent(agentData);
-    
+    await saveCustomAgent(mockClient, agentData);
+
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO custom_agents'),
-      expect.any(Array)
+      expect.stringContaining("INSERT INTO custom_agents"),
+      expect.any(Array),
     );
   });
 
-  it('should only retrieve agents belonging to the requesting user (adversarial)', async () => {
-    const { getCustomAgents } = await import('./custom_agents');
-    
-    const userId = 'user-123';
-    await getCustomAgents(userId);
-    
+  it("should only retrieve agents belonging to the requesting user (adversarial)", async () => {
+    const { getCustomAgents } = await import("./custom_agents");
+
+    const userId = "user-123";
+    await getCustomAgents(mockClient, userId);
+
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE owner_id = $1'),
-      [userId]
+      expect.stringContaining("WHERE owner_id = $1"),
+      [userId],
     );
   });
 });

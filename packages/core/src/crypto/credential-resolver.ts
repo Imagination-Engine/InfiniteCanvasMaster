@@ -1,15 +1,20 @@
 import { encrypt, decrypt } from "./index";
+import { pgTable, text, bigint } from "drizzle-orm/pg-core";
+import { eq, and } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
-// Simplified mock types for Drizzle DB interactions
-interface MockDb {
-  insert: (table: any) => any;
-  select: (columns?: any) => any;
-}
+export const userIntegrations = pgTable("userIntegrations", {
+  userId: text("userId").notNull(),
+  service: text("service").notNull(),
+  encryptedToken: text("encryptedToken").notNull(),
+  expiresAt: bigint("expiresAt", { mode: "number" }),
+});
 
 export class CredentialResolver {
   constructor(
-    private db: MockDb,
+    private db: NodePgDatabase<any>,
     private masterKey: string,
+    private onRefreshHook?: (userId: string, service: string) => Promise<void>,
   ) {}
 
   async store(
@@ -20,8 +25,7 @@ export class CredentialResolver {
   ): Promise<void> {
     const encryptedToken = encrypt(plaintextToken, this.masterKey, service);
 
-    // Stub implementation of Drizzle insert
-    await this.db.insert("userIntegrations").values({
+    await this.db.insert(userIntegrations).values({
       userId,
       service,
       encryptedToken,
@@ -30,11 +34,15 @@ export class CredentialResolver {
   }
 
   async resolve(userId: string, service: string): Promise<string> {
-    // Stub implementation of Drizzle select
     const result = await this.db
       .select()
-      .from("userIntegrations")
-      .where({ userId, service });
+      .from(userIntegrations)
+      .where(
+        and(
+          eq(userIntegrations.userId, userId),
+          eq(userIntegrations.service, service),
+        ),
+      );
 
     if (!result || result.length === 0) {
       throw new Error(`Credential not found for service: ${service}`);
@@ -43,7 +51,12 @@ export class CredentialResolver {
     const row = result[0];
 
     if (row.expiresAt && Date.now() > row.expiresAt) {
-      // In a real implementation, this is where we'd trigger the refresh hook
+      if (this.onRefreshHook) {
+        await this.onRefreshHook(userId, service);
+        throw new Error(
+          `Credential expired and refresh triggered for service: ${service}`,
+        );
+      }
       throw new Error(`Credential expired for service: ${service}`);
     }
 

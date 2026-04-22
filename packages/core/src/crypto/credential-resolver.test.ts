@@ -63,6 +63,31 @@ describe("CredentialResolver (Red/Green Phase)", () => {
     );
   });
 
+  it("triggers refresh hook and throws an error if credential has expired", async () => {
+    const mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi
+            .fn()
+            .mockResolvedValue([
+              { encryptedToken, expiresAt: Date.now() - 10000 },
+            ]),
+        }),
+      }),
+    };
+
+    const refreshHook = vi.fn().mockResolvedValue(undefined);
+    const resolver = new CredentialResolver(
+      mockDb as any,
+      masterKey,
+      refreshHook,
+    );
+    await expect(resolver.resolve(userId, service)).rejects.toThrow(
+      "Credential expired and refresh triggered for service: slack",
+    );
+    expect(refreshHook).toHaveBeenCalledWith(userId, service);
+  });
+
   it("throws an error if credential not found", async () => {
     const mockDb = {
       select: vi.fn().mockReturnValue({

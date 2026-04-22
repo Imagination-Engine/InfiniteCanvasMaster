@@ -13,6 +13,7 @@ import { apiRequest } from "../lib/api";
 type User = {
   id: string;
   username: string;
+  hasCompletedOnboarding: boolean;
 };
 
 type AuthResponse = {
@@ -46,27 +47,37 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUser(null);
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const response = await apiRequest<AuthResponse>("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
-    });
+  const login = useCallback(
+    async (username: string, password: string) => {
+      const response = await apiRequest<AuthResponse>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
 
-    setSession(response);
-  }, [setSession]);
+      setSession(response);
+    },
+    [setSession],
+  );
 
-  const signup = useCallback(async (username: string, password: string) => {
-    const response = await apiRequest<AuthResponse>("/api/auth/signup", {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
-    });
+  const signup = useCallback(
+    async (username: string, password: string) => {
+      const response = await apiRequest<AuthResponse>("/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
 
-    setSession(response);
-  }, [setSession]);
+      setSession(response);
+    },
+    [setSession],
+  );
 
   const logout = useCallback(async () => {
     try {
-      await apiRequest<void>("/api/auth/logout", { method: "POST" }, accessToken);
+      await apiRequest<void>(
+        "/api/auth/logout",
+        { method: "POST" },
+        accessToken,
+      );
     } finally {
       clearSession();
     }
@@ -77,7 +88,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     async function bootstrapAuth() {
       try {
-        const refresh = await apiRequest<AuthResponse>("/api/auth/refresh", { method: "POST" });
+        const refresh = await apiRequest<AuthResponse>("/api/auth/refresh", {
+          method: "POST",
+        });
         if (!mounted) return;
         setSession(refresh);
       } catch {
@@ -97,14 +110,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, [clearSession, setSession]);
 
-  const value = useMemo<AuthContextValue>(() => ({
-    user,
-    accessToken,
-    loading,
-    login,
-    signup,
-    logout,
-  }), [user, accessToken, loading, login, signup, logout]);
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      accessToken,
+      loading,
+      login,
+      signup,
+      logout,
+    }),
+    [user, accessToken, loading, login, signup, logout],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

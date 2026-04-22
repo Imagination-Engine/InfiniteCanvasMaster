@@ -1,8 +1,31 @@
-import { Hono } from 'hono';
-import { healthRouter } from './routes/health';
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { healthRouter } from "./routes/health.js";
+import { authRouter } from "./routes/auth.js";
+import { projectsRouter } from "./routes/projects.js";
+import { chatRouter } from "./routes/chat.js";
+import { dbMiddleware } from "./db.js";
 
 const app = new Hono();
 
-app.route('/api/health', healthRouter);
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      // In production, you would restrict this to your actual domains
+      return origin || "http://localhost:5173";
+    },
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
+
+app.use("*", dbMiddleware);
+
+app.route("/api/health", healthRouter);
+app.route("/api/auth", authRouter);
+app.route("/api/projects", projectsRouter);
+app.route("/api/chat", chatRouter);
 
 export { app };

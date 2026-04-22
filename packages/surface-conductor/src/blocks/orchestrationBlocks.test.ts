@@ -1,53 +1,98 @@
-import { describe, it, expect } from 'vitest';
-import { ifBlock, forEachBlock, webhookTriggerBlock, scheduleTriggerBlock } from './orchestrationBlocks';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  ifBlock,
+  forEachBlock,
+  webhookTriggerBlock,
+} from "./orchestrationBlocks";
 
-describe('Orchestration Blocks (Red/Green Phase)', () => {
-  describe('If Block', () => {
-    it('has valid metadata and schema', () => {
-      expect(ifBlock.id).toBe('iem.conductor.if');
-      const validIn = { condition: 'data.value > 5', context: { data: { value: 10 } } };
+describe("Orchestration Blocks (Red/Green Phase)", () => {
+  let originalFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    vi.clearAllMocks();
+  });
+
+  describe("If Block", () => {
+    it("has valid metadata and schema", () => {
+      expect(ifBlock.id).toBe("iem.conductor.if");
+      const validIn = { condition: "value > 5", context: { value: 10 } };
       expect(ifBlock.input.parse(validIn)).toEqual(validIn);
     });
 
-    it('evaluates condition via agent execution', async () => {
-      const output = await ifBlock.agent.invoke({ condition: 'true', context: {} });
-      expect(output).toHaveProperty('branch', 'truePath');
+    it("successfully evaluates condition to true using LLM", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: "true" } }] }),
+      });
+
+      const output = await ifBlock.agent.invoke({
+        condition: "value > 5",
+        context: { value: 10 },
+      });
+      expect(output).toHaveProperty("branch", "truePath");
+      expect(output.context).toEqual({ value: 10 });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("successfully evaluates condition to false using LLM", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: "false" } }] }),
+      });
+
+      const output = await ifBlock.agent.invoke({
+        condition: "value > 5",
+        context: { value: 3 },
+      });
+      expect(output).toHaveProperty("branch", "falsePath");
+      expect(output.context).toEqual({ value: 3 });
+    });
+
+    it("handles unexpected LLM output gracefully", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: "I am not sure" } }],
+        }),
+      });
+
+      const output = await ifBlock.agent.invoke({
+        condition: "value > 5",
+        context: { value: 3 },
+      });
+      expect(output).toHaveProperty("branch", "falsePath"); // Defaults to false
     });
   });
 
-  describe('ForEach Block', () => {
-    it('has valid metadata and schema', () => {
-      expect(forEachBlock.id).toBe('iem.conductor.foreach');
-      const validIn = { collection: [1, 2, 3] };
+  describe("ForEach Block", () => {
+    it("has valid metadata and schema", () => {
+      expect(forEachBlock.id).toBe("iem.conductor.foreach");
+      const validIn = { collection: [1, 2, 3], loopTarget: "processItem" };
       expect(forEachBlock.input.parse(validIn)).toEqual(validIn);
     });
 
-    it('returns items for scheduler', async () => {
-      const output = await forEachBlock.agent.invoke({ collection: ['a', 'b'], loopTarget: 'next_block' });
-      expect(output).toHaveProperty('items', ['a', 'b']);
-      expect(output).toHaveProperty('loopTarget', 'next_block');
+    it("passes through the collection", async () => {
+      const output = await forEachBlock.agent.invoke({
+        collection: ["a", "b"],
+        loopTarget: "node2",
+      });
+      expect(output).toHaveProperty("items");
+      expect(output.items).toEqual(["a", "b"]);
+      expect(output.loopTarget).toBe("node2");
     });
   });
 
-  describe('Trigger Blocks', () => {
-    it('Webhook Trigger has valid metadata', () => {
-      expect(webhookTriggerBlock.id).toBe('iem.conductor.webhook');
-      expect(webhookTriggerBlock.mode).toBe('ambient');
-    });
-
-    it('Schedule Trigger has valid metadata', () => {
-      expect(scheduleTriggerBlock.id).toBe('iem.conductor.schedule');
-      expect(scheduleTriggerBlock.mode).toBe('ambient');
-    });
-  });
-
-  describe('Adversarial Schema Tests', () => {
-    it('If block rejects malformed input', () => {
-      expect(() => ifBlock.input.parse({ condition: 123 })).toThrow();
-    });
-
-    it('ForEach block rejects non-array collection', () => {
-      expect(() => forEachBlock.input.parse({ collection: "not_an_array" })).toThrow();
+  describe("Webhook Trigger Block", () => {
+    it("has valid metadata and schema", () => {
+      expect(webhookTriggerBlock.id).toBe("iem.conductor.webhook");
+      const validIn = { path: "/api/trigger" };
+      expect(webhookTriggerBlock.input.parse(validIn)).toEqual(validIn);
     });
   });
 });

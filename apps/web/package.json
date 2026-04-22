@@ -19,6 +19,7 @@
     "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.170",
     "@hookform/resolvers": "^5.2.2",
     "@liveblocks/client": "^3.18.4",
     "@liveblocks/react": "^3.18.4",

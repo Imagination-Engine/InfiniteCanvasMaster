@@ -1,48 +1,89 @@
 import { NODE_CATALOG } from "../../nodes/nodeCatalog";
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { z } from "zod";
 
 export type AgentGraphResponse = {
-  nodes: Array<{ type: string; label?: string; inputs?: Record<string, unknown>; config?: Record<string, unknown> }>;
+  nodes: Array<{
+    type: string;
+    label?: string;
+    inputs?: Record<string, unknown>;
+    config?: Record<string, unknown>;
+  }>;
   edges: Array<{ sourceIndex: number; targetIndex: number }>;
 };
 
-const chooseNodeTypesFromPrompt = (prompt: string): string[] => {
-  const text = prompt.toLowerCase();
+const AgentGraphSchema = z.object({
+  nodes: z.array(
+    z.object({
+      type: z.string(),
+      label: z.string().optional(),
+      inputs: z.record(z.unknown()).optional(),
+      config: z.record(z.unknown()).optional(),
+    }),
+  ),
+  edges: z.array(
+    z.object({
+      sourceIndex: z.number(),
+      targetIndex: z.number(),
+    }),
+  ),
+});
 
-  const flow: string[] = [];
-  if (text.includes("time") || text.includes("every")) flow.push("trigger.time");
-  if (text.includes("zoom") || text.includes("meeting")) flow.push("zoom.getMeetingSummary");
-  if (text.includes("email") || text.includes("gmail")) flow.push("gmail.sendEmail");
-  if (text.includes("translate") || text.includes("translator")) flow.push("translator");
-  if (text.includes("slack")) flow.push("slack.sendChannelMessage");
-
-  if (flow.length === 0) {
-    return ["trigger.time", "summarizer", "slack.sendChannelMessage"];
+export async function requestAgentGraph(
+  prompt: string,
+): Promise<AgentGraphResponse> {
+  if (!prompt.trim()) {
+    return { nodes: [], edges: [] };
   }
 
-  return flow;
-};
+  const catalogSummary = Object.keys(NODE_CATALOG)
+    .map((type) => `- ${type}: ${NODE_CATALOG[type]?.defaultData.description}`)
+    .join("\\n");
 
-export async function requestAgentGraph(prompt: string): Promise<AgentGraphResponse> {
-  // Placeholder for local LLM endpoint integration.
-  // Intended endpoint: http://localhost:11434/api/generate
-  await sleep(500);
+  const systemPrompt = `You are an AI that creates workflow graphs. Available nodes:\\n${catalogSummary}\\n\\nBased on the user prompt, generate a JSON object with 'nodes' (array of {type, label, inputs}) and 'edges' (array of {sourceIndex, targetIndex}). Ensure types match the available nodes EXACTLY. Return ONLY valid JSON, no markdown formatting.`;
 
-  const types = chooseNodeTypesFromPrompt(prompt).filter((type) => Boolean(NODE_CATALOG[type]));
-  const nodes = types.map((type, index) => ({
-    type,
-    label: NODE_CATALOG[type]?.defaultData.label,
-    inputs: {
-      prompt,
-      step: index + 1,
-    },
-  }));
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-  const edges = nodes.slice(1).map((_, index) => ({
-    sourceIndex: index,
-    targetIndex: index + 1,
-  }));
+  try {
+    const res = await fetch("http://localhost:11434/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama3",
+        system: systemPrompt,
+        prompt: prompt,
+        stream: false,
+        format: "json",
+      }),
+      signal: controller.signal,
+    });
 
-  return { nodes, edges };
+    if (!res.ok) {
+      throw new Error(`LLM API returned status ${res.status}`);
+    }
+
+    const data = await res.json();
+    const parsedData = JSON.parse(data.response);
+
+    // Ensure nodes exist in catalog
+    const validated = AgentGraphSchema.parse(parsedData);
+    validated.nodes = validated.nodes.filter((n) =>
+      Boolean(NODE_CATALOG[n.type]),
+    );
+
+    // Handle empty generation gracefully
+    if (validated.nodes.length === 0) {
+      return { nodes: [], edges: [] };
+    }
+
+    return validated;
+  } catch (err) {
+    console.error("Failed to generate agent graph:", err);
+    // Fallback or empty state on error
+    throw new Error(
+      `Agent Graph generation failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
