@@ -113,5 +113,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Doc 02: Security Lifecycle, Detection & Onboarding**
+- [x] **Track: Doc 02: Security Lifecycle, Detection & Onboarding**
 *Link: [./tracks/doc02_security_lifecycle_detection_20260420/](./tracks/doc02_security_lifecycle_detection_20260420/)*
