@@ -65,6 +65,7 @@ To handle both standard web requests and heavy AI workloads, the backend utilize
 ## Database & Persistence
 
 - **Primary Data Store:** PostgreSQL. Provides robust relational data integrity for users, workspaces, and canvas states.
+- **Encrypted Storage:** AES-256-GCM authenticated encryption utilizing Node.js `crypto` primitives to secure "Class B" secrets at rest.
 - **Connection Pooling:** Cloudflare Hyperdrive. Proxies and accelerates database connections between the Edge Worker and the Postgres database.
 - **Vector Search (RAG):** `pgvector` extension for PostgreSQL combined with Gemini Embeddings to power context-aware knowledge retrieval for Custom Agents.
 - **ORM:** Drizzle ORM. Ensures strict, end-to-end type safety from the database schema up to the TypeScript APIs.
