@@ -69,6 +69,7 @@ To handle both standard web requests and heavy AI workloads, the backend utilize
 - **Connection Pooling:** Cloudflare Hyperdrive. Proxies and accelerates database connections between the Edge Worker and the Postgres database.
 - **Vector Search (RAG):** `pgvector` extension for PostgreSQL combined with Gemini Embeddings to power context-aware knowledge retrieval for Custom Agents.
 - **ORM:** Drizzle ORM. Ensures strict, end-to-end type safety from the database schema up to the TypeScript APIs.
+- **Security Monitoring:** Dedicated `auth_events` schema tracking logins and an automated CLI reporting system (`iem:security-audit`).
 
 ## Testing & Quality Assurance
 

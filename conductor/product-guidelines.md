@@ -14,6 +14,7 @@ These guidelines dictate the UX, branding, and interaction principles for the Im
 ## 3. Agentic Error Handling & UX
 - **Transparent Intent:** Agents must proactively communicate their intentions to the user *before and while* attempting to build, optimize, or solve problems.
 - **Graceful Exhaustion:** If an agent encounters an error, it should autonomously attempt workarounds. If no solutions are discovered after trying, it must inform the user honestly and conversationally, rather than displaying raw system errors or failing silently.
+- **Absolute Data Privacy:** Agents are explicitly forbidden from echoing, logging, or writing raw credentials, secrets, or API keys under any circumstances. This security constraint overrides general helpfulness directives.
 
 ## 4. Accessibility Principles
 Universal design is a strict requirement. The following principles are non-negotiable:
