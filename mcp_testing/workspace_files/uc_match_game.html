@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Which UC Campus Are You?</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #003262, #005587); /* Classic UC Blue */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #app {
+            background: #ffffff;
+            max-width: 650px;
+            width: 100%;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1, h2, h3 {
+            color: #003262;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+
+        .btn {
+            background: #FDB515; /* California Gold */
+            color: #003262;
+            border: none;
+            padding: 14px 30px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(253, 181, 21, 0.3);
+        }
+
+        .btn:hover {
+            background: #e09f0d;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(253, 181, 21, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Quiz Layout */
+        #progress-text {
+            text-align: left;
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #FDB515;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        #question-text {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 20px;
+            color: #003262;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .option {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 16px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            font-size: 15px;
+            color: #334155;
+            display: flex;
+            align-items: center;
+        }
+
+        .option:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .option.selected {
+            background: #003262;
+            color: #ffffff;
+            border-color: #003262;
+            box-shadow: 0 4px 10px rgba(0, 50, 98, 0.2);
+        }
+
+        /* Result Layout */
+        .result-scroll {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        /* Scrollbar Styling */
+        .result-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .result-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .result-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .result-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .result-card {
+            background: #f8fafc;
+            border-left: 5px solid #FDB515;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .result-card h3 {
+            color: #005587;
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+
+        .result-card p {
+            margin-bottom: 0;
+            font-size: 15px;
+            color: #475569;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @media (max-width: 480px) {
+            #app { padding: 30px 20px; }
+            h1 { font-size: 24px; }
+            #question-text { font-size: 18px; }
+            .option { padding: 14px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <!-- Start Screen -->
+        <div id="start-screen" class="fade-in">
+            <h1>🐻 Which UC Campus Are You? 🌴</h1>
+            <p>Welcome to the ultimate University of California personality test! Grab your sunglasses, pack your study snacks, and let's find your UC soulmate.</p>
+            <button class="btn" onclick="startQuiz()">Start the Quiz</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden">
+            <div id="progress-text">Question 1 of 6</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <div id="question-container" class="fade-in">
+                <h2 id="question-text">Question goes here</h2>
+                <div class="options" id="options-container">
+                    <!-- Options injected via JS -->
+                </div>
+            </div>
+
+            <button class="btn" id="next-btn" onclick="handleNext()" disabled>Next Question</button>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden">
+            <h2 id="result-title">Your Perfect Match is...</h2>
+            <div class="result-scroll" id="result-container">
+                <!-- Results injected via JS -->
+            </div>
+            <button class="btn" onclick="restartQuiz()">Retake Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "1. What does your ideal weekend look like?",
+                options: [
+                    { text: "Hiking through a dense forest and breathing in the fresh air.", scores: ["UCSC", "UCD"] },
+                    { text: "Catching some waves, laying out on the sand, and enjoying the ocean breeze.", scores: ["UCSB", "UCSD"] },
+                    { text: "Exploring a bustling city, visiting museums, and trying the trendiest new food spots.", scores: ["UCB", "UCLA"] },
+                    { text: "Having a cozy night in playing video games, or hitting the suburbs for late-night snacks.", scores: ["UCI", "UCR"] },
+                    { text: "Taking a road trip to a National Park or exploring a close-knit, quiet town.", scores: ["UCM"] }
+                ]
+            },
+            {
+                question: "2. If you had to pick a mascot or 'spirit animal' for your life, what would it be?",
+                options: [
+                    { text: "A majestic, fierce, and historic bear.", scores: ["UCB", "UCLA"] },
+                    { text: "Something totally quirky and unique (like a banana slug or an anteater).", scores: ["UCSC", "UCI"] },
+                    { text: "A friendly farm animal or a wild woodland cat.", scores: ["UCD", "UCM"] },
+                    { text: "Something oceanic, mythological, or beach-ready.", scores: ["UCSD", "UCSB"] },
+                    { text: "A rugged, desert-ready Highlander bear.", scores: ["UCR"] }
+                ]
+            },
+            {
+                question: "3. Where is your ideal place to get some studying done?",
+                options: [
+                    { text: "A massive, historic, slightly intimidating library where you can intensely hyper-focus.", scores: ["UCB", "UCLA"] },
+                    { text: "A sleek, modern, tech-forward building with floor-to-ceiling ocean views.", scores: ["UCSD", "UCSB"] },
+                    { text: "Outside under the trees or at a cozy cafe in a charming college town.", scores: ["UCSC", "UCD"] },
+                    { text: "A suburban study room or right next to a massive esports arena.", scores: ["UCI", "UCR"] },
+                    { text: "A brand-new, completely eco-friendly and sustainable campus hub.", scores: ["UCM"] }
+                ]
+            },
+            {
+                question: "4. It’s time for a study break! What’s your go-to beverage or snack?",
+                options: [
+                    { text: "Artisanal pour-over coffee or locally brewed organic kombucha.", scores: ["UCB", "UCSC"] },
+                    { text: "Boba tea. Lots and lots of boba tea.", scores: ["UCI", "UCSD"] },
+                    { text: "Fresh, farm-to-table veggies or locally made dairy/ice cream.", scores: ["UCD"] },
+                    { text: "An aesthetic green smoothie or a loaded açaí bowl.", scores: ["UCLA", "UCSB"] },
+                    { text: "Late-night tacos from a local mom-and-pop spot.", scores: ["UCR", "UCM"] }
+                ]
+            },
+            {
+                question: "5. What is the staple item in your wardrobe?",
+                options: [
+                    { text: "Vintage thrifted layers, a beanie, and maybe some band tees.", scores: ["UCB", "UCSC"] },
+                    { text: "High-end streetwear, trendy sneakers, or matching athleisure sets.", scores: ["UCLA", "UCI"] },
+                    { text: "Swimwear, flip-flops, and a trusty pair of sunglasses.", scores: ["UCSB", "UCSD"] },
+                    { text: "A comfy hoodie, bike shorts, and practical sneakers.", scores: ["UCD", "UCM"] },
+                    { text: "Light, breezy, warm-weather clothes to beat the sunshine.", scores: ["UCR"] }
+                ]
+            },
+            {
+                question: "6. How do you prefer to get around town?",
+                options: [
+                    { text: "Walking quickly with a purpose or taking public transit (subways/buses).", scores: ["UCB", "UCLA"] },
+                    { text: "Biking! Seriously, you ride a bicycle everywhere.", scores: ["UCD", "UCSB"] },
+                    { text: "Driving your car. The windows are down, and the music is loud.", scores: ["UCI", "UCR"] },
+                    { text: "Hiking boots or taking a shuttle through the woods.", scores: ["UCSC"] },
+                    { text: "Gliding along on a skateboard or an electric scooter.", scores: ["UCSD", "UCM"] }
+                ]
+            }
+        ];
+
+        const schoolData = {
+            "UCB": { title: "UC Berkeley (Cal)", desc: "You are an intellectual powerhouse who thrives in a vibrant, historic, and slightly quirky environment. You love being in the center of the action, value activism and innovation, and probably own a fantastic collection of thrifted jackets. Welcome to the Bay Area!" },
+            "UCLA": { title: "UCLA", desc: "You belong in the glamorous, bustling heart of Los Angeles! You have a 'work hard, play hard' mentality, love being surrounded by excellence (whether in academics, sports, or food), and you keep up with the latest trends. You thrive in a highly spirited, fast-paced environment." },
+            "UCSB": { title: "UC Santa Barbara (UCSB)", desc: "Grab your surfboard—you belong at UCSB! You are laid-back, social, and love the sunshine. But don't let the relaxed beach vibe fool anyone; you are highly driven and know how to balance rigorous academics with a gorgeous, oceanfront lifestyle." },
+            "UCSD": { title: "UC San Diego (UCSD)", desc: "You are innovative, slightly introverted, and love a good view. UCSD is the perfect match for your brilliant (likely STEM-leaning) mind. You appreciate a chill, breezy coastal vibe, enjoy a good skate by the cliffs, and definitely know the best spots to grab boba." },
+            "UCI": { title: "UC Irvine (UCI)", desc: "Zot Zot Zot! You belong at UCI. You appreciate a clean, safe, and suburban environment where you can focus on your goals. You might be a bit of a gamer, a tech-enthusiast, or just someone who loves a tight-knit friend group. Plus, you live in the unofficial boba capital of the world." },
+            "UCD": { title: "UC Davis", desc: "You are friendly, down-to-earth, and love nature. UC Davis is the ultimate classic college town. You don't mind getting your hands dirty, you love animals (yes, even the campus cows!), and your bicycle is your prized possession. You're looking for a warm, welcoming community." },
+            "UCSC": { title: "UC Santa Cruz (UCSC)", desc: "You are a free spirit who belongs among the towering redwood trees! You value sustainability, progressive thinking, and the great outdoors. You want a college experience that feels like a retreat into nature, complete with ocean views and a unique, bohemian vibe." },
+            "UCR": { title: "UC Riverside (UCR)", desc: "You are community-oriented, highly adaptable, and value diversity! UCR is a rapidly growing hub in sunny Southern California. You appreciate a welcoming, inclusive environment, love trying culturally diverse foods, and aren't afraid of a little desert sunshine." },
+            "UCM": { title: "UC Merced", desc: "You are a trailblazer! As the newest UC campus, Merced is for builders, innovators, and tight-knit community seekers. You appreciate a small-town feel, eco-friendly architecture, and having Yosemite National Park practically in your backyard. You're ready to make your own history." }
+        };
+
+        let currentQuestionIndex = 0;
+        let userScores = {};
+        let currentSelectedSchools = [];
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextBtn = document.getElementById('next-btn');
+        const progressText = document.getElementById('progress-text');
+        const progressFill = document.getElementById('progress-fill');
+        const questionContainer = document.getElementById('question-container');
+        const resultContainer = document.getElementById('result-container');
+        const resultTitle = document.getElementById('result-title');
+
+        function initScores() {
+            userScores = { UCB: 0, UCLA: 0, UCSB: 0, UCSD: 0, UCI: 0, UCD: 0, UCSC: 0, UCR: 0, UCM: 0 };
+        }
+
+        function startQuiz() {
+            initScores();
+            currentQuestionIndex = 0;
+            startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            // Reset state
+            currentSelectedSchools = [];
+            nextBtn.disabled = true;
+            nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? "See Results" : "Next Question";
+
+            // Update Progress
+            const progressPercentage = ((currentQuestionIndex) / quizData.length) * 100;
+            progressFill.style.width = progressPercentage + "%";
+            progressText.innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+
+            // Re-trigger animation
+            questionContainer.classList.remove('fade-in');
+            void questionContainer.offsetWidth; // trigger reflow
+            questionContainer.classList.add('fade-in');
+
+            // Load Data
+            const qData = quizData[currentQuestionIndex];
+            questionText.innerText = qData.question;
+            optionsContainer.innerHTML = '';
+
+            qData.options.forEach((option, index) => {
+                const optDiv = document.createElement('div');
+                optDiv.className = 'option';
+                optDiv.innerText = option.text;
+                optDiv.onclick = () => selectOption(optDiv, option.scores);
+                optionsContainer.appendChild(optDiv);
+            });
+        }
+
+        function selectOption(element, scores) {
+            // Remove selected class from all options
+            const allOptions = document.querySelectorAll('.option');
+            allOptions.forEach(opt => opt.classList.remove('selected'));
+
+            // Add selected class to clicked element
+            element.classList.add('selected');
+            currentSelectedSchools = scores;
+            nextBtn.disabled = false;
+        }
+
+        function handleNext() {
+            // Add scores
+            currentSelectedSchools.forEach(school => {
+                userScores[school] += 1;
+            });
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < quizData.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            // Fill final progress bar
+            progressFill.style.width = "100%";
+            
+            setTimeout(() => {
+                quizScreen.classList.add('hidden');
+                resultScreen.classList.remove('hidden');
+                
+                // Re-trigger animation
+                resultScreen.classList.remove('fade-in');
+                void resultScreen.offsetWidth;
+                resultScreen.classList.add('fade-in');
+
+                calculateAndRenderMatch();
+            }, 300);
+        }
+
+        function calculateAndRenderMatch() {
+            let maxScore = 0;
+            let topSchools = [];
+
+            // Find highest score
+            for (const school in userScores) {
+                if (userScores[school] > maxScore) {
+                    maxScore = userScores[school];
+                }
+            }
+
+            // Find all schools with the highest score (for ties)
+            for (const school in userScores) {
+                if (userScores[school] === maxScore) {
+                    topSchools.push(school);
+                }
+            }
+
+            resultContainer.innerHTML = '';
+
+            if (topSchools.length > 1) {
+                resultTitle.innerText = "It's a Tie! You're a Dual-Enrollee 🎓";
+            } else {
+                resultTitle.innerText = "Your Perfect Match is... ✨";
+            }
+
+            topSchools.forEach(schoolId => {
+                const school = schoolData[schoolId];
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <h3>${school.title}</h3>
+                    <p>${school.desc}</p>
+                `;
+                resultContainer.appendChild(card);
+            });
+        }
+
+        function restartQuiz() {
+            startQuiz();
+        }
+    </script>
+</body>
+</html>

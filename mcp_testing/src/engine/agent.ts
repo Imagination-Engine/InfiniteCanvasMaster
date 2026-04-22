@@ -77,6 +77,7 @@ CRITICAL NOTES:
 1. The "image_generation" tool AUTOMATICALLY saves the image to the local "workspace_files" directory. DO NOT add a follow-up step to download or save the image.
 2. The "file_system" tool "write" action creates files in "workspace_files".
 3. Use {{step_name}} with underscores to reference the output of a previous step.
+4. MANDATORY: If the task requires generating code, text, or any final artifact, you MUST include a final step to save it to a file using the "file_system" tool with action "write". This allows the user to download it.
 
 Task: "${task.name}"
 Description: "${task.description}"`;

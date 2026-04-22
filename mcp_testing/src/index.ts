@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import path from 'path';
 
 const app = express();
 app.use(cors({
@@ -18,6 +19,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use('/workspace_files', express.static(path.join(process.cwd(), 'workspace_files')));
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
@@ -148,8 +150,15 @@ app.put('/api/settings/llm', requireAuth, (req: any, res) => {
 
 // GET /api/projects
 app.get('/api/projects', requireAuth, (req: any, res) => {
-    const tasks = db.prepare('SELECT id, name, created_at as updated_at FROM tasks WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+    const tasks = db.prepare('SELECT id, name, description, created_at as updated_at FROM tasks WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
     res.json({ projects: tasks });
+});
+
+// GET /api/projects/:id
+app.get('/api/projects/:id', requireAuth, (req: any, res) => {
+    const task = db.prepare('SELECT id, name, description, created_at as updated_at FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    if (!task) return res.status(404).json({ error: 'Project not found' });
+    res.json({ project: task });
 });
 
 // POST /api/projects

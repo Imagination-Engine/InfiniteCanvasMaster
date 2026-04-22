@@ -79,7 +79,7 @@ export class FileSystemTool implements ITool {
                         content = JSON.stringify(content, null, 2);
                     }
                     fs.writeFileSync(fullPath, content);
-                    return { success: true, data: 'File written successfully' };
+                    return { success: true, data: `File saved to ${args.path}` };
                 case 'list':
                     if (!fs.existsSync(fullPath)) {
                         fs.mkdirSync(fullPath, { recursive: true });
