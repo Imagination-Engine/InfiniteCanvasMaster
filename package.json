@@ -12,6 +12,7 @@
     "setup:models": "tsx scripts/setup-models.ts",
     "iem:new-block": "tsx scripts/new-block.ts",
     "iem:boot": "tsx scripts/boot/index.ts",
+    "iem:security-audit": "tsx scripts/security/audit.ts",
     "prepare": "husky"
   },
   "devDependencies": {
