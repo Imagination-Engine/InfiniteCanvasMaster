@@ -17,11 +17,22 @@ export async function apiRequest<TResponse>(
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  const response = await fetch(path, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+  } catch (error: any) {
+    // This catches network-level errors (e.g. server down, CORS failed)
+    // and prevents them from bubbling up as an unhandled TypeError.
+    throw new Error(
+      error.message?.includes("Failed to fetch")
+        ? "Network error: Unable to connect to the server. Please check your connection."
+        : error.message || "An unexpected network error occurred."
+    );
+  }
 
   if (!response.ok) {
     const maybeJson = (await response.json().catch(() => null)) as ApiError | null;

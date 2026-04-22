@@ -28,6 +28,8 @@ import { getNodeInputs, toWorkflowNodeJson } from "../nodes/workflow/inputResolu
 import { getRuntimeState, syncRuntimeOutputsFromNodes } from "../nodes/workflow/runtimeState";
 import type { WorkflowEdge } from "../nodes/workflow/types";
 import { useUpdateMyPresence } from "@liveblocks/react";
+import { useParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { RemoteCursors } from "../canvas/RemoteCursors";
 
 const normalizeNode = (node: UnifiedCanvasNode): UnifiedCanvasNode => {
