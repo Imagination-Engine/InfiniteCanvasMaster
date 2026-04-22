@@ -13,6 +13,7 @@
     "iem:new-block": "tsx scripts/new-block.ts",
     "iem:boot": "tsx scripts/boot/index.ts",
     "iem:security-audit": "tsx scripts/security/audit.ts",
+    "iem:check-rotation": "tsx scripts/security/check-rotation.ts",
     "prepare": "husky"
   },
   "devDependencies": {
