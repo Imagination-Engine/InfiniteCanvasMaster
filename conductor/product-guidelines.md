@@ -2,6 +2,16 @@
 
 These guidelines dictate the UX, branding, and interaction principles for the Imagination Engine and its five surfaces. Adherence to these principles ensures the platform remains universally accessible to "everyday people."
 
+## 0. Current State: Phase 7 (Surface Realization & Demo Readiness)
+The backend architecture (Mastra, Postgres, Drizzle, Gemini-2.5-Pro) and the 51-block system are stabilized. The current mandate is purely focused on **frontend polish and human-in-the-loop iteration**.
+
+### The Round-Robin Iteration Loop Mandate
+Every UI/UX feature must go through this strict cycle before it is considered "Done":
+1. **Physical Test:** The human user interacts with the feature on a single screen.
+2. **Feedback:** The human user provides functional and aesthetic feedback.
+3. **Extrapolation:** The AI PM must extrapolate the full architectural blast radius of that feedback (Logic, Data, Schema, APIs).
+4. **TDD Implementation:** The AI implements the extrapolated plan using Test-Driven Development.
+
 ## 1. Tone and Voice
 - **Progressive Persona:** The system's tone should be **warm and guiding** during initial onboarding, acting as a patient mentor. As the user gains confidence and familiarity, the tone should organically evolve to become more **playful and creative**, leaning into the inspiring energy of a digital studio.
 - **Cognitive Simplicity:** Use plain, everyday language. Strictly avoid technical jargon (e.g., do not use terms like "nodes," "JSON," or "MCP tools" in user-facing dialog).

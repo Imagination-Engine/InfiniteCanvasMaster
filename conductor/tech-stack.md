@@ -55,12 +55,13 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 
 ## Backend & Agent Runtime
 
-To handle both standard web requests and heavy AI workloads, the backend utilizes a polyglot microservice approach:
+To handle both standard web requests and heavy AI workloads, the backend utilizes a robust orchestration framework:
 
-- **Core Application Server:** Hono + Cloudflare Workers + TypeScript. Replaces the legacy Express backend to run efficiently on the Edge.
-- **High-Performance Services:** Node.js + Fastify + TypeScript. Utilized for components requiring higher throughput or lower latency (e.g., real-time canvas syncing).
-- **Agentic Runtime:** TypeScript + Vercel AI SDK. The legacy Python/Autogen exploration has been formally retired in favor of a lean, natively integrated TypeScript orchestration layer.
-- **Block Protocol / MCP Integration:** TypeScript + `@modelcontextprotocol/sdk` + `zod`. Node implementations are decoupled into composable Model Context Protocol blocks with strict Zod schema validations for inputs and outputs.
+- **Core Application Server:** Node.js + Hono. Provides the HTTP layer for API endpoints and WebSocket handlers.
+- **Mastra Orchestration (`@mastra/core`):** The primary brain of the Imagination Engine. Mastra manages Agent instantiation, handles dynamic workflow DAG compilation (`compileGraphToWorkflow`), and persists session thread memory.
+- **Vercel AI SDK:** Retained primarily as the Edge-compatible transport and streaming layer, utilized on the frontend (`useChat`) and integrated within Mastra.
+- **Model Context Protocol (MCP) & Mastra Tools:** TypeScript + `zod`. Legacy blocks have been bridged into native Mastra Tools via the `createMastraToolFromBlock` adapter, ensuring strict input/output validation.
+- **Google Gemini API:** `gemini-2.5-pro` is the designated intelligence model driving the DAG Goal Deconstruction Engine.
 
 ## Database & Persistence
 

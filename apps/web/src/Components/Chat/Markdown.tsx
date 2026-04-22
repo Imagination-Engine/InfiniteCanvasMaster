@@ -47,7 +47,7 @@ export const Markdown = memo(({ content, className }: MarkdownProps) => {
             );
           },
           p: ({ children }) => <p className="mb-4 last:mb-0 leading-relaxed text-slate-300">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc ml-4 mb-4 space-y-2 text-slate-300">{children}ul>,
+          ul: ({ children }) => <ul className="list-disc ml-4 mb-4 space-y-2 text-slate-300">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal ml-4 mb-4 space-y-2 text-slate-300">{children}</ol>,
           a: ({ children, href }) => (
             <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-purple hover:underline">

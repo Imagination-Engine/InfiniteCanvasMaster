@@ -86,7 +86,7 @@ authRouter.post("/signup", async (c) => {
     );
   } catch (error) {
     console.error("Signup error:", error);
-    return c.json({ error: "Internal server error" }, 500);
+    return c.json({ error: "An unexpected error occurred during signup. Please try again later." }, 500);
   }
 });
 
@@ -148,7 +148,7 @@ authRouter.post("/login", async (c) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    return c.json({ error: "Internal server error" }, 500);
+    return c.json({ error: "An unexpected error occurred during login. Please try again later." }, 500);
   }
 });
 

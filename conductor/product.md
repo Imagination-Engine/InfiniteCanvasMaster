@@ -10,18 +10,20 @@ The Imagination Engine is a unified, agentic canvas substrate designed to suppor
 
 The primary audience is **everyday people**. We do not design for a niche subset; the platform must be universally accessible and intuitive. To achieve this, the underlying architecture must consist of comprehensive, elite-level, production-hardened code and features that rival top-tier commercial products.
 
-## Core Interaction Paradigm: Dual-View
+## Core Interaction Paradigm: Dual-View & Mastra Orchestration
 
-The platform employs a **Dual-View** interaction model. Users are not forced into a single mode of operation. Instead, there is equal emphasis on both conversational and visual interactions, allowing users to seamlessly toggle between a **Unified Chat Shell** (the chat-first entry surface) and the **Canvas** (direct manipulation of visual blocks). The transition is managed via **Session Duality**, where a canvas is materialized lazily as the conversation evolves.
+The platform employs a **Dual-View** interaction model seamlessly managed by a **Mastra Orchestration Layer**. Users are not forced into a single mode of operation. There is equal emphasis on conversational and visual interactions. Users toggle between a **Unified Chat Shell** (the chat-first entry surface, enhanced with LibreChat UX paradigms) and the **Canvas** (direct manipulation of visual blocks). 
 
-## Foundational Priorities
+The backend is powered by `@mastra/core` and `gemini-2.5-pro`. It acts as a **DAG Goal Deconstruction Engine**, translating user intents into fully wired React Flow blueprints using a stabilized 51-block vocabulary.
 
-To realize this vision, the initial development sprints will prioritize four core architectural pillars:
+## Foundational Priorities (Achieved)
 
-1. **Chat Shell & Duality:** Building the chat-first entry surface and establishing the deep bidirectional sync between the chat session and the canvas runtime.
-2. **Persistent Organization:** Implementing the Navigation Sidebar, Session History (List/Grid), and the Creations Drawer to ensure users can seamlessly organize and relaunch their work.
-3. **Block Protocol:** Refactoring the existing hardcoded node types into a standard, composable protocol, allowing them to function as true MCP (Model Context Protocol) tools that can be utilized by external agents.
-4. **Collaboration Infrastructure:** Establishing an elite monorepo layout, strict workspaces, and a robust TDD (Test-Driven Development) harness to ensure the engineering team can build all five surfaces concurrently without friction.
+To realize this vision, the development sprints executed the following core architectural pillars:
+
+1. **Mastra Brain & Memory:** Transitioned from manual Vercel AI SDK loops to a formal Mastra `Agent` equipped with Postgres Memory persistence and OpenTelemetry observability.
+2. **Workflow Compilation:** Eliminated client-side block scheduling. Canvases are now dynamically compiled into native Mastra `Workflows` and executed securely on the backend.
+3. **The 51-Block System:** Scaffolded, validated, and implemented exactly 51 distinct blocks across 5 surfaces (Scribe, Playable, Atlas, Reel, Conductor/Forge). Every block strictly implements a universal `BlockDefinition` and natively bridges to Mastra Tools.
+4. **Phase 7 Live Round-Robin Iteration Loop:** Enforced a rigorous definition of "Done." All features must pass a human-in-the-loop physical test, be technically extrapolated by an AI PM across all architectural layers, and be implemented via strict TDD.
 5. **Custom Agent Flow:** Enabling users to dynamically construct and parameterize custom agentic blocks—defining their story, persona, context (RAG), and capabilities—directly from the UI, expanding the capabilities of the engine without writing code.
 6. **Robust Persistence Layer:** Implementing a formal relational data model using Drizzle ORM to ensure data integrity, relational graph storage, and a production-grade local development experience via Docker.
 7. **Playable Surface (Game Studio):** Implementing a live, collaborative multiplayer game studio environment featuring deterministic physics sync, enabling the canvas to transform into a playable world.

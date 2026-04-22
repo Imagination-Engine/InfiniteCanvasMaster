@@ -51,7 +51,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     async (username: string, password: string) => {
       const response = await apiRequest<AuthResponse>("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email: username, password }),
       });
 
       setSession(response);
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     async (username: string, password: string) => {
       const response = await apiRequest<AuthResponse>("/api/auth/signup", {
         method: "POST",
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email: username, password }),
       });
 
       setSession(response);

@@ -9,7 +9,7 @@ export const generate_canvas_blueprint = createTool({
     description: z.string(),
     nodes: z.array(z.object({
       id: z.string().describe('A unique string ID for this node (e.g., "prose-1")'),
-      type: z.enum(['prose', 'chapter', 'agent', 'playable', 'saas', 'media', 'data', 'summarizer', 'refiner']),
+      type: z.string().describe('The EXACT block type ID (e.g., "joystick", "chunker", "prose")'),
       title: z.string(),
       description: z.string(),
       recommended_params: z.record(z.string(), z.any()).optional(),
