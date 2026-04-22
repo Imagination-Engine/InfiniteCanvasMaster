@@ -15,6 +15,10 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
     "@hono/node-server": "^2.0.0",
+    "@iem/agents": "workspace:^",
+    "@iem/core": "workspace:^",
+    "@iem/db": "workspace:^",
+    "@mastra/core": "latest",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/jsonwebtoken": "^9.0.10",

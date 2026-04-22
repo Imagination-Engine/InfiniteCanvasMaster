@@ -4,7 +4,7 @@ import { dbMiddleware } from "../db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { setCookie, getCookie, deleteCookie } from "hono/cookie";
-import { users, authSessions } from "../schema.js";
+import { users, authSessions } from "@iem/db";
 
 const authRouter = new Hono();
 
@@ -23,34 +23,34 @@ const getSecrets = (c: any) => {
 
 authRouter.post("/signup", async (c) => {
   const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
-  const db = c.get("db");
+  const db = c.get("db") as any;
   const body = await c.req.json();
-  const { username, password } = body;
+  const { email, password } = body;
 
-  if (!username || !password) {
-    return c.json({ error: "Username and password required" }, 400);
+  if (!email || !password) {
+    return c.json({ error: "Email and password required" }, 400);
   }
 
   try {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.username, username));
+      .where(eq(users.email, email));
     if (existingUser.length > 0) {
-      return c.json({ error: "Username already exists" }, 409);
+      return c.json({ error: "Email already exists" }, 409);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const [newUser] = await db
       .insert(users)
       .values({
-        username,
+        email,
         passwordHash,
       })
       .returning();
 
     const accessToken = jwt.sign(
-      { sub: newUser.id, username: newUser.username },
+      { sub: newUser.id, email: newUser.email },
       JWT_SECRET,
       { expiresIn: "15m" },
     );
@@ -78,7 +78,7 @@ authRouter.post("/signup", async (c) => {
         accessToken,
         user: {
           id: newUser.id,
-          username: newUser.username,
+          email: newUser.email,
           hasCompletedOnboarding: newUser.hasCompletedOnboarding,
         },
       },
@@ -92,30 +92,30 @@ authRouter.post("/signup", async (c) => {
 
 authRouter.post("/login", async (c) => {
   const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
-  const db = c.get("db");
+  const db = c.get("db") as any;
   const body = await c.req.json();
-  const { username, password } = body;
+  const { email, password } = body;
 
-  if (!username || !password) {
-    return c.json({ error: "Username and password required" }, 400);
+  if (!email || !password) {
+    return c.json({ error: "Email and password required" }, 400);
   }
 
   try {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.username, username));
+      .where(eq(users.email, email));
     if (!user) {
-      return c.json({ error: "Invalid username or password" }, 401);
+      return c.json({ error: "Invalid email or password" }, 401);
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      return c.json({ error: "Invalid username or password" }, 401);
+      return c.json({ error: "Invalid email or password" }, 401);
     }
 
     const accessToken = jwt.sign(
-      { sub: user.id, username: user.username },
+      { sub: user.id, email: user.email },
       JWT_SECRET,
       { expiresIn: "15m" },
     );
@@ -142,7 +142,7 @@ authRouter.post("/login", async (c) => {
       accessToken,
       user: {
         id: user.id,
-        username: user.username,
+        email: user.email,
         hasCompletedOnboarding: user.hasCompletedOnboarding,
       },
     });
@@ -154,7 +154,7 @@ authRouter.post("/login", async (c) => {
 
 authRouter.post("/refresh", async (c) => {
   const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
-  const db = c.get("db");
+  const db = c.get("db") as any;
   const refreshToken = getCookie(c, "refresh_token");
 
   if (!refreshToken) {
@@ -185,7 +185,7 @@ authRouter.post("/refresh", async (c) => {
     }
 
     const accessToken = jwt.sign(
-      { sub: user.id, username: user.username },
+      { sub: user.id, email: user.email },
       JWT_SECRET,
       { expiresIn: "15m" },
     );
@@ -194,7 +194,7 @@ authRouter.post("/refresh", async (c) => {
       accessToken,
       user: {
         id: user.id,
-        username: user.username,
+        email: user.email,
         hasCompletedOnboarding: user.hasCompletedOnboarding,
       },
     });
@@ -205,7 +205,7 @@ authRouter.post("/refresh", async (c) => {
 });
 
 authRouter.post("/logout", async (c) => {
-  const db = c.get("db");
+  const db = c.get("db") as any;
   const refreshToken = getCookie(c, "refresh_token");
 
   if (refreshToken) {
@@ -220,7 +220,7 @@ authRouter.post("/logout", async (c) => {
 
 authRouter.post("/complete-onboarding", async (c) => {
   const { JWT_SECRET } = getSecrets(c);
-  const db = c.get("db");
+  const db = c.get("db") as any;
 
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {

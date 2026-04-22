@@ -12,6 +12,8 @@
     "setup:models": "tsx scripts/setup-models.ts",
     "iem:new-block": "tsx scripts/new-block.ts",
     "iem:boot": "tsx scripts/boot/index.ts",
+    "iem:pr-prep": "tsx scripts/pr-prep.ts",
+    "iem:eval": "tsx packages/agents/src/evals/runner.ts",
     "iem:security-audit": "tsx scripts/security/audit.ts",
     "iem:check-rotation": "tsx scripts/security/check-rotation.ts",
     "prepare": "husky"

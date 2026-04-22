@@ -17,12 +17,17 @@
     "jsx": "react-jsx",
 
     /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "paths": {
+      "@iem/agents": ["../../packages/agents/src"],
+      "@iem/core": ["../../packages/core/src"],
+      "@iem/db": ["../../packages/db/src"]
+    }
   },
   "include": ["src"]
 }

@@ -1,5 +1,5 @@
 // We're importing the registry to update it dynamically
-import { blockRegistry } from '../../block/registry';
+import { blockRegistry } from "@iem/core";
 
 export async function handleCustomAgentComplete(payload: any) {
   // Use a fallback token or retrieve from a store if available

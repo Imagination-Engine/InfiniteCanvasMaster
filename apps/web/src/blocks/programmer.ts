@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { GenericBlockView } from "./GenericBlockView";
-import type { BlockDefinition } from "../block/protocol";
+import type { BlockDefinition } from "@iem/core";
 
 export const ProgrammerInput = z.object({
   prompt: z.string(),

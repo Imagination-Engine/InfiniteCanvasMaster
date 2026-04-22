@@ -1,5 +1,5 @@
 import React from 'react';
-import type { BlockViewProps } from '../block/protocol';
+import type { BlockViewProps } from '@iem/core';
 
 export const RefinerView: React.FC<BlockViewProps<any, any>> = ({ data, onParamsChange, onRun }) => {
   return (

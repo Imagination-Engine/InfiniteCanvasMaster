@@ -1,4 +1,4 @@
-import { useMyPresence, useUpdateMyPresence, useOthers } from './liveblocks.config';
+import { useMyPresence, useUpdateMyPresence, useOthers } from '@liveblocks/react';
 
 export function usePresence() {
   const myPresence = useMyPresence();

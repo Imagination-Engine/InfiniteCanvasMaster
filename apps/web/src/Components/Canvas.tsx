@@ -27,6 +27,8 @@ import type { ParsedAgentGraph } from "../agent/agentParser";
 import { getNodeInputs, toWorkflowNodeJson } from "../nodes/workflow/inputResolution";
 import { getRuntimeState, syncRuntimeOutputsFromNodes } from "../nodes/workflow/runtimeState";
 import type { WorkflowEdge } from "../nodes/workflow/types";
+import { useUpdateMyPresence } from "@liveblocks/react";
+import { RemoteCursors } from "../canvas/RemoteCursors";
 
 const normalizeNode = (node: UnifiedCanvasNode): UnifiedCanvasNode => {
   const definition = getNodeDefinition(node.type ?? "");
@@ -128,6 +130,57 @@ export default function Canvas({
   const [nodes, setNodes, onNodesChange] = useNodesState(normalizedInitial.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(normalizedInitial.edges);
   const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
+
+  // Listen for AI suggested blueprints
+  useEffect(() => {
+    const handleApplyBlueprint = (event: any) => {
+      const { nodes: newNodes, edges: newEdges } = event.detail;
+      
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+
+      // Map Mastra blueprint nodes to React Flow nodes
+      const rfNodes = (newNodes || []).map((node: any, index: number) => {
+        // Fallback or specific type mapping
+        let nodeType = node.type;
+        if (node.type === 'prose') nodeType = 'summarizer';
+        if (node.type === 'agent') nodeType = 'agentExecution';
+
+        // Basic auto-layout: arrange in a grid or simple horizontal line
+        const position = screenToFlowPosition({ 
+          x: centerX + (index * 250) - ((newNodes.length * 250) / 2), 
+          y: centerY 
+        });
+
+        return {
+          id: node.id,
+          type: nodeType,
+          position,
+          data: { 
+            label: node.title,
+            description: node.description,
+            inputs: node.recommended_params || {},
+          }
+        };
+      });
+
+      // Map Mastra blueprint edges to React Flow edges
+      const rfEdges = (newEdges || []).map((edge: any, index: number) => ({
+        id: `blueprint-edge-${Date.now()}-${index}`,
+        source: edge.source,
+        target: edge.target,
+        type: 'default',
+        label: edge.condition,
+        animated: true,
+      }));
+
+      setNodes((nds) => [...nds, ...rfNodes]);
+      setEdges((eds) => [...eds, ...rfEdges]);
+    };
+
+    window.addEventListener('iem:apply-blueprint', handleApplyBlueprint);
+    return () => window.removeEventListener('iem:apply-blueprint', handleApplyBlueprint);
+  }, [screenToFlowPosition, setNodes, setEdges]);
 
   // Initialize canvas from prop
   useEffect(() => {
@@ -282,6 +335,18 @@ export default function Canvas({
   const [isOrchestrating, setIsOrchestrating] = useState(false);
   const runtime = useMemo(() => new AgentRuntime(), []);
 
+  const updateMyPresence = useUpdateMyPresence();
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    updateMyPresence({
+      cursor: { x: Math.round(e.clientX), y: Math.round(e.clientY) },
+    });
+  }, [updateMyPresence]);
+
+  const handlePointerLeave = useCallback(() => {
+    updateMyPresence({ cursor: null });
+  }, [updateMyPresence]);
+
   const handleIntentSubmit = async (prompt: string) => {
     if (!prompt.trim() || isOrchestrating) return;
     setIsOrchestrating(true);
@@ -318,11 +383,85 @@ export default function Canvas({
     }
   };
 
+  const { projectId } = useParams();
+  const { accessToken } = useAuth();
+  const [isExecuting, setIsExecuting] = useState(false);
+
+  const handleExecuteCanvas = async () => {
+    if (!projectId || !accessToken) return;
+    setIsExecuting(true);
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/execute`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          document: { nodes, edges },
+          triggerData: {} // Additional context can go here
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("Execution successful:", data.results);
+        // Update nodes with results
+        setNodes((current) => current.map((node) => {
+           const result = data.results?.[node.id]?.payload;
+           if (result) {
+             return {
+               ...node,
+               data: {
+                 ...node.data,
+                 output: result
+               }
+             };
+           }
+           return node;
+        }));
+      } else {
+        console.error("Execution failed:", data.error);
+      }
+    } catch (error) {
+      console.error("Network error during execution:", error);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   return (
-    <div className="relative flex-1 bg-brand-bg-page overflow-hidden">
+    <div 
+      className="relative flex-1 bg-brand-bg-page overflow-hidden"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
       {/* Cinematic Background Glows */}
       <div className="absolute top-0 right-[-10%] w-[600px] h-[600px] bg-brand-purple/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-brand-cyan/5 rounded-full blur-[120px] pointer-events-none" />
+
+      {/* Execution Controls */}
+      <div className="absolute top-6 right-6 z-[100]">
+        <button
+          onClick={handleExecuteCanvas}
+          disabled={isExecuting || nodes.length === 0}
+          className="px-6 py-2.5 bg-brand-cyan/20 border border-brand-cyan/40 hover:bg-brand-cyan/30 text-brand-cyan rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30 disabled:hover:bg-brand-cyan/20 backdrop-blur-xl flex items-center gap-2 shadow-[0_0_20px_rgba(0,194,255,0.2)]"
+        >
+          {isExecuting ? (
+            <>
+              <div className="w-3 h-3 rounded-full bg-brand-cyan animate-pulse" />
+              Executing...
+            </>
+          ) : (
+            "Run Pipeline"
+          )}
+        </button>
+      </div>
+
+      <RemoteCursors />
+
 
       <ReactFlow
         nodes={nodes}

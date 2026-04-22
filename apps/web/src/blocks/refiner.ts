@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { RefinerView } from "./RefinerView";
-import type { BlockDefinition } from "../block/protocol";
+import type { BlockDefinition } from "@iem/core";
 
 export const RefinerInput = z.object({
   text: z.string(),

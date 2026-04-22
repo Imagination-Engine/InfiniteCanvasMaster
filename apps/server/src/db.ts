@@ -1,5 +1,6 @@
 import { Client } from "pg";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schema from "@iem/db";
 import { Context, Next } from "hono";
 import { logger } from "./logging.js";
 
@@ -13,13 +14,13 @@ export function setupDatabase(env: Env) {
     process.env.DATABASE_URL ||
     "postgres://postgres:postgres@localhost:5433/imagination_canvas";
   const client = new Client({ connectionString });
-  const db = drizzle(client);
+  const db = drizzle(client, { schema });
   return { db, client };
 }
 
 declare module "hono" {
   interface ContextVariableMap {
-    db: NodePgDatabase;
+    db: NodePgDatabase<typeof schema>;
     user: any;
   }
 }

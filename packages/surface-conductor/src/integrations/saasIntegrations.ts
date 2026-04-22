@@ -1,22 +1,7 @@
 import { z } from 'zod';
+import { BlockDefinition, MCPToolBinding } from '@iem/core';
 
-export interface MCPToolBinding {
-  kind: 'local' | 'remote';
-  toolName: string;
-  invoke: (input: any) => Promise<any>;
-}
 
-export interface BlockDefinition<TInput extends z.ZodTypeAny, TOutput extends z.ZodTypeAny> {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  input: TInput;
-  output: TOutput;
-  view: any;
-  agent: MCPToolBinding;
-  mode: 'triggered' | 'streaming' | 'ambient';
-}
 
 const MockView = () => null;
 

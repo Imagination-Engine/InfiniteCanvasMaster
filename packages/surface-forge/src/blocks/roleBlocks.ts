@@ -1,21 +1,7 @@
 import { z } from 'zod';
+import { BlockDefinition, MCPToolBinding } from '@iem/core';
 
-export interface MCPToolBinding {
-  kind: 'local' | 'remote';
-  toolName: string;
-  invoke: (input: any, blackboard?: any) => Promise<any>;
-}
 
-export interface BlockDefinition<TInput extends z.ZodTypeAny, TOutput extends z.ZodTypeAny> {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  input: TInput;
-  output: TOutput;
-  agent: MCPToolBinding;
-  mode: 'triggered' | 'streaming' | 'ambient';
-}
 
 export const architectBlock: BlockDefinition<any, any> = {
   id: 'iem.forge.architect',

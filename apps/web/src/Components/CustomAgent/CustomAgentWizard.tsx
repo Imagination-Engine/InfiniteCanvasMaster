@@ -34,7 +34,7 @@ interface CustomAgentWizardProps {
 export default function CustomAgentWizard({ onClose, onComplete }: CustomAgentWizardProps) {
   const [step, setStep] = useState(1);
   const { control, handleSubmit, trigger, formState: { errors } } = useForm<WizardFormData>({
-    resolver: zodResolver(wizardSchema),
+    resolver: zodResolver(wizardSchema) as any,
     defaultValues: {
       story: '',
       persona: {
@@ -89,7 +89,7 @@ export default function CustomAgentWizard({ onClose, onComplete }: CustomAgentWi
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        <form id="wizard-form" onSubmit={handleSubmit(onSubmit)}>
+        <form id="wizard-form" onSubmit={handleSubmit(onSubmit as any)}>
           {step === 1 && <StoryStep control={control} errors={errors} />}
           {step === 2 && <PersonaStep control={control} />}
           {step === 3 && <SkillsStep />}

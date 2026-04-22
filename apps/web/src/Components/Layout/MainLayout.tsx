@@ -1,5 +1,5 @@
 import React from 'react';
-import { useViewStore, ViewMode } from '../../store/useViewStore';
+import { useViewStore, type ViewMode } from '../../store/useViewStore';
 import { ChatShell } from '../Chat/ChatShell';
 
 interface MainLayoutProps {
@@ -48,7 +48,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ canvasComponent }) => {
           ${viewMode === 'dual' ? 'h-1/2 md:h-full md:w-1/2' : 'h-full w-full'} 
           border-b md:border-b-0 md:border-r border-gray-200
         `}>
-          <ChatShell />
+          <ChatShell projectId="layout-default" />
         </div>
       )}
 

@@ -16,8 +16,8 @@ const AgentGraphSchema = z.object({
     z.object({
       type: z.string(),
       label: z.string().optional(),
-      inputs: z.record(z.unknown()).optional(),
-      config: z.record(z.unknown()).optional(),
+      inputs: z.record(z.string(), z.unknown()).optional(),
+      config: z.record(z.string(), z.unknown()).optional(),
     }),
   ),
   edges: z.array(

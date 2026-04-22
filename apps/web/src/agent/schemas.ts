@@ -185,7 +185,7 @@ export function validateSchema<T>(schema: object, value: unknown): T {
   const validate = ajv.compile(schema);
   const valid = validate(value);
   if (!valid) {
-    const errors = validate.errors?.map((error) => `${error.dataPath || "/"} ${error.message ?? "invalid"}`) ?? [];
+    const errors = validate.errors?.map((error: any) => `${error.dataPath || error.instancePath || "/"} ${error.message ?? "invalid"}`) ?? [];
     throw new Error(`Schema validation failed: ${errors.join("; ")}`);
   }
 

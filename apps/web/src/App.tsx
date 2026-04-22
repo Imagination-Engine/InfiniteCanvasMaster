@@ -3,7 +3,7 @@ import { AuthProvider } from "./auth/AuthContext";
 import { RequireAuth } from "./auth/RequireAuth";
 import AuthPage from "./Pages/AuthPage";
 import ProjectsPage from "./Pages/ProjectsPage";
-import ProjectCanvasPage from "./Pages/ProjectCanvasPage";
+import SessionPage from "./Pages/SessionPage";
 import { FilesystemPage } from "./Components/filesystem/FilesystemPage";
 import LandingPage from "./Pages/LandingPage";
 
@@ -33,8 +33,12 @@ export default function App() {
               element={<ProjectsPage />}
             />
             <Route
+              path="/projects/:projectId"
+              element={<SessionPage />}
+            />
+            <Route
               path="/projects/:projectId/canvas"
-              element={<ProjectCanvasPage />}
+              element={<SessionPage />}
             />
           </Route>
 

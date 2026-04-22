@@ -1,5 +1,5 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { blockRegistry } from '../block/registry';
+import { blockRegistry } from '@iem/core';
 
 export class CanvasMCPServer {
   private server: Server;

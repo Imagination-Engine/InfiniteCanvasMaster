@@ -1,1 +1,17 @@
-{ "compilerOptions": { "strict": true, "esModuleInterop": true, "skipLibCheck": true, "forceConsistentCasingInFileNames": true, "outDir": "dist" } }
+{ 
+  "compilerOptions": { 
+    "strict": true, 
+    "esModuleInterop": true, 
+    "skipLibCheck": true, 
+    "forceConsistentCasingInFileNames": true, 
+    "outDir": "dist", 
+    "rootDir": "src", 
+    "moduleResolution": "NodeNext", 
+    "module": "NodeNext",
+    "paths": {
+      "@iem/agents": ["../../packages/agents/src"],
+      "@iem/core": ["../../packages/core/src"],
+      "@iem/db": ["../../packages/db/src"]
+    }
+  } 
+}

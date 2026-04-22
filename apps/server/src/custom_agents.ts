@@ -1,4 +1,7 @@
-import { Client } from "pg";
+import { eq, desc } from "drizzle-orm";
+import { customAgents } from "@iem/db";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schema from "@iem/db";
 
 export interface CustomAgentData {
   userId: string;
@@ -39,39 +42,29 @@ export function validateCustomAgentData(data: any): data is CustomAgentData {
  * Saves a new custom agent to the database.
  */
 export async function saveCustomAgent(
-  client: Client | any,
+  db: NodePgDatabase<typeof schema>,
   data: CustomAgentData,
 ) {
   if (!validateCustomAgentData(data)) {
     throw new Error("Invalid custom agent data provided");
   }
 
-  const query = `
-    INSERT INTO custom_agents (
-      owner_id, name, tagline, avatar_url, story, 
-      persona, skills, context_sources, capabilities, 
-      purpose, block_definition
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING id;
-  `;
-
-  const values = [
-    data.userId,
-    data.name,
-    data.tagline || null,
-    data.avatarUrl || null,
-    data.story || null,
-    data.persona ? JSON.stringify(data.persona) : null,
-    JSON.stringify(data.skills),
-    data.contextSources ? JSON.stringify(data.contextSources) : null,
-    data.capabilities ? JSON.stringify(data.capabilities) : null,
-    data.purpose,
-    data.blockDefinition ? JSON.stringify(data.blockDefinition) : null,
-  ];
-
   try {
-    const result = await client.query(query, values);
-    return result.rows[0].id;
+    const [result] = await db.insert(customAgents).values({
+      ownerId: data.userId,
+      name: data.name,
+      tagline: data.tagline || null,
+      avatarUrl: data.avatarUrl || null,
+      story: data.story || null,
+      persona: data.persona || null,
+      skills: data.skills,
+      contextSources: data.contextSources || null,
+      capabilities: data.capabilities || null,
+      purpose: data.purpose,
+      blockDefinition: data.blockDefinition || null,
+    }).returning();
+    
+    return result.id;
   } catch (error) {
     throw new Error(
       `Failed to save custom agent: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -82,19 +75,16 @@ export async function saveCustomAgent(
 /**
  * Retrieves custom agents for a specific user.
  */
-export async function getCustomAgents(client: Client | any, userId: string) {
+export async function getCustomAgents(db: NodePgDatabase<typeof schema>, userId: string) {
   if (!userId || typeof userId !== "string" || userId.trim() === "") {
     throw new Error("Invalid userId provided");
   }
 
-  const query = `
-    SELECT * FROM custom_agents 
-    WHERE owner_id = $1 
-    ORDER BY created_at DESC;
-  `;
   try {
-    const result = await client.query(query, [userId]);
-    return result.rows;
+    return await db.select()
+      .from(customAgents)
+      .where(eq(customAgents.ownerId, userId))
+      .orderBy(desc(customAgents.createdAt));
   } catch (error) {
     throw new Error(
       `Failed to retrieve custom agents: ${error instanceof Error ? error.message : "Unknown error"}`,

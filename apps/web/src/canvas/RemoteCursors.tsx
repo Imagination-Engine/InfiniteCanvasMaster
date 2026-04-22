@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { useOthers } from './liveblocks.config';
+import { useOthers } from '@liveblocks/react';
+import type { Presence } from './liveblocks.config';
 
 export const RemoteCursors = memo(() => {
   const others = useOthers();
@@ -7,13 +8,14 @@ export const RemoteCursors = memo(() => {
   return (
     <>
       {others.map(({ connectionId, presence }) => {
-        if (!presence || !presence.cursor) return null;
+        const p = presence as Presence;
+        if (!p || !p.cursor) return null;
 
         return (
           <Cursor
             key={connectionId}
-            x={presence.cursor.x}
-            y={presence.cursor.y}
+            x={p.cursor.x}
+            y={p.cursor.y}
             // In a real app, we'd assign colors or names based on connectionId
             color="#3b82f6" 
           />

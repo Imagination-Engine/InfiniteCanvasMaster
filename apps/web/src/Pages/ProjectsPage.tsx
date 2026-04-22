@@ -289,7 +289,7 @@ export default function ProjectsPage() {
                     </div>
 
                     <Link
-                      to={`/projects/${project.id}/canvas`}
+                      to={`/projects/${project.id}`}
                       className="w-full flex items-center justify-center gap-3 rounded-2xl bg-white/5 border border-white/5 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white hover:bg-brand-purple/20 hover:border-brand-purple/30 transition-all active:scale-[0.98]"
                     >
                       Enter Canvas

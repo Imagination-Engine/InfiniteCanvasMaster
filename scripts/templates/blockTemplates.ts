@@ -1,38 +1,29 @@
 export const blockTemplate = `import { z } from 'zod';
+import { {{name}}View } from './{{name}}View';
+import type { BlockDefinition } from '@iem/core';
 
-export interface MCPToolBinding {
-  kind: 'local' | 'remote';
-  toolName: string;
-  invoke: (input: any) => Promise<any>;
-}
+export const {{id}}Input = z.object({
+  payload: z.string().optional()
+});
 
-export interface BlockDefinition<TInput extends z.ZodTypeAny, TOutput extends z.ZodTypeAny> {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  input: TInput;
-  output: TOutput;
-  agent: MCPToolBinding;
-  mode: 'triggered' | 'streaming' | 'ambient';
-}
+export const {{id}}Output = z.object({
+  success: z.boolean()
+});
 
-export const {{id}}Block: BlockDefinition<any, any> = {
+export const {{id}}Block: BlockDefinition<typeof {{id}}Input, typeof {{id}}Output> = {
   id: 'iem.{{surface}}.{{id}}',
   name: '{{name}}',
   description: 'Auto-generated {{name}} block',
   category: 'uncategorized',
-  input: z.object({
-    payload: z.string().optional()
-  }),
-  output: z.object({
-    success: z.boolean()
-  }),
+  input: {{id}}Input,
+  output: {{id}}Output,
+  view: {{name}}View,
   mode: 'triggered',
   agent: {
     kind: 'local',
     toolName: 'execute_{{id}}',
     invoke: async (input) => {
+      const parsed = {{id}}Input.parse(input);
       return { success: true };
     }
   }
@@ -63,16 +54,27 @@ describe('{{name}} Block (Red/Green Phase)', () => {
 `;
 
 export const viewTemplate = `import React from 'react';
+import type { BlockViewProps } from '@iem/core';
 
-export interface {{name}}ViewProps {
-  data: any;
-}
-
-export const {{name}}View: React.FC<{{name}}ViewProps> = ({ data }) => {
+export const {{name}}View: React.FC<BlockViewProps<any, any>> = ({ id, data, onParamsChange, onRun }) => {
   return (
-    <div data-testid="{{id}}-view">
-      <h3>{{name}}</h3>
-      <pre>{JSON.stringify(data, null, 2)}</pre>
+    <div 
+      data-testid="{{id}}-view"
+      className="min-w-[260px] rounded-2xl border border-white/10 bg-brand-bg-surface/90 backdrop-blur-xl p-4 text-white shadow-2xl"
+    >
+      <div className="font-bold uppercase tracking-widest text-brand-purple mb-2">{{name}}</div>
+      <button
+        onClick={onRun}
+        className="px-4 py-2 bg-brand-purple text-white rounded text-xs uppercase font-bold"
+      >
+        Run
+      </button>
+      {data.status === 'running' && <div className="text-xs text-yellow-400 mt-2">Running...</div>}
+      {data.output && (
+        <div className="mt-4 p-2 bg-black/20 rounded text-xs overflow-auto max-h-32">
+          <pre>{JSON.stringify(data.output, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 };
@@ -85,7 +87,11 @@ import { {{name}}View } from './{{name}}View';
 
 describe('{{name}}View Component', () => {
   it('renders correctly with given data', () => {
-    render(<{{name}}View data={{ test: true }} />);
+    const mockData = {
+      params: {},
+      status: 'idle' as const
+    };
+    render(<{{name}}View id="test-id" data={mockData} onParamsChange={() => {}} onRun={() => {}} />);
     expect(screen.getByTestId('{{id}}-view')).toBeInTheDocument();
     expect(screen.getByText('{{name}}')).toBeInTheDocument();
   });

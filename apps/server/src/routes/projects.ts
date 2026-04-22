@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 import jwt from "jsonwebtoken";
-import { sessions, messages, canvases } from "../schema.js";
+import { workspaces, messages, canvases, nodes, edges } from "@iem/db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "super-secret-fallback-key";
 
@@ -28,15 +28,15 @@ projectsRouter.get("/", async (c) => {
   const user = c.get("user") as any;
 
   try {
-    const userSessions = await db
+    const userWorkspaces = await db
       .select()
-      .from(sessions)
-      .where(eq(sessions.ownerId, user.sub))
-      .orderBy(desc(sessions.updatedAt));
+      .from(workspaces)
+      .where(eq(workspaces.ownerId, user.sub))
+      .orderBy(desc(workspaces.updatedAt));
 
-    const projects = userSessions.map((s: any) => ({
+    const projects = userWorkspaces.map((s: any) => ({
       id: s.id,
-      name: s.title || "Untitled Project",
+      name: s.name || "Untitled Project",
       created_at: s.createdAt,
       updated_at: s.updatedAt,
     }));
@@ -54,18 +54,18 @@ projectsRouter.post("/", async (c) => {
   const { name, story } = await c.req.json();
 
   try {
-    const [newSession] = await db
-      .insert(sessions)
+    const [newWorkspace] = await db
+      .insert(workspaces)
       .values({
         ownerId: user.sub,
-        title: name || "New Project",
+        name: name || "New Project",
       })
       .returning();
 
     // If a story is provided, seed it as the first message
     if (story) {
       await db.insert(messages).values({
-        sessionId: newSession.id,
+        workspaceId: newWorkspace.id,
         role: "user",
         content: story,
       });
@@ -74,10 +74,10 @@ projectsRouter.post("/", async (c) => {
     return c.json(
       {
         project: {
-          id: newSession.id,
-          name: newSession.title,
-          created_at: newSession.createdAt,
-          updated_at: newSession.updatedAt,
+          id: newWorkspace.id,
+          name: newWorkspace.name,
+          created_at: newWorkspace.createdAt,
+          updated_at: newWorkspace.updatedAt,
         },
       },
       201,
@@ -94,28 +94,39 @@ projectsRouter.get("/:id", async (c) => {
   const projectId = c.req.param("id");
 
   try {
-    const [session] = await db
+    const [workspace] = await db
       .select()
-      .from(sessions)
-      .where(eq(sessions.id, projectId));
-    if (!session || session.ownerId !== user.sub) {
+      .from(workspaces)
+      .where(eq(workspaces.id, projectId));
+    if (!workspace || workspace.ownerId !== user.sub) {
       return c.json({ error: "Project not found" }, 404);
     }
 
     const projectMessages = await db
       .select()
       .from(messages)
-      .where(eq(messages.sessionId, projectId))
-      .orderBy(messages.createdAt);
+      .where(eq(messages.workspaceId, projectId))
+      .orderBy(asc(messages.createdAt));
 
     return c.json({
       project: {
-        id: session.id,
-        name: session.title,
-        created_at: session.createdAt,
-        updated_at: session.updatedAt,
+        id: workspace.id,
+        name: workspace.name,
+        created_at: workspace.createdAt,
+        updated_at: workspace.updatedAt,
       },
-      messages: projectMessages,
+      messages: projectMessages.map((m: any) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        toolInvocations: m.toolCalls ? (m.toolCalls as any[]).map(tc => ({
+          state: 'result',
+          toolCallId: tc.id,
+          toolName: tc.function.name,
+          args: JSON.parse(tc.function.arguments),
+          result: { success: true }
+        })) : undefined
+      })),
     });
   } catch (error) {
     console.error("Fetch project error:", error);
@@ -130,18 +141,18 @@ projectsRouter.get("/:id/canvas", async (c) => {
 
   try {
     // Check auth
-    const [session] = await db
+    const [workspace] = await db
       .select()
-      .from(sessions)
-      .where(eq(sessions.id, projectId));
-    if (!session || session.ownerId !== user.sub) {
+      .from(workspaces)
+      .where(eq(workspaces.id, projectId));
+    if (!workspace || workspace.ownerId !== user.sub) {
       return c.json({ error: "Project not found" }, 404);
     }
 
     let [canvas] = await db
       .select()
       .from(canvases)
-      .where(eq(canvases.sessionId, projectId));
+      .where(eq(canvases.workspaceId, projectId));
 
     // Create an empty canvas if it doesn't exist
     if (!canvas) {
@@ -153,9 +164,8 @@ projectsRouter.get("/:id/canvas", async (c) => {
       [canvas] = await db
         .insert(canvases)
         .values({
-          sessionId: projectId,
+          workspaceId: projectId,
           name: "Main Canvas",
-          viewport: defaultDoc.viewport,
         })
         .returning();
 
@@ -170,14 +180,26 @@ projectsRouter.get("/:id/canvas", async (c) => {
       });
     }
 
-    // We'd ideally fetch blocks from `blocks` table here.
-    // For now, we simulate the `document` structure from `canvas.viewport` and `canvas.id`
-    // In a fully built app, this would reconstruct the UnifiedCanvasDocument from the `blocks` table.
-    // If the blocks table isn't populated, we just return an empty doc.
+    // We fetch blocks from `nodes` and `edges` tables.
+    const canvasNodes = await db.select().from(nodes).where(eq(nodes.canvasId, canvas.id));
+    const canvasEdges = await db.select().from(edges).where(eq(edges.canvasId, canvas.id));
+
     const document = {
-      nodes: [],
-      edges: [],
-      viewport: canvas.viewport || { x: 0, y: 0, zoom: 1 },
+      nodes: canvasNodes.map((n: any) => ({
+        id: n.id,
+        type: n.type,
+        position: { x: n.positionX, y: n.positionY },
+        data: n.data,
+      })),
+      edges: canvasEdges.map((e: any) => ({
+        id: e.id,
+        source: e.sourceId,
+        target: e.targetId,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle,
+        data: e.data,
+      })),
+      viewport: { x: 0, y: 0, zoom: 1 }, // we removed viewport from schema for simplicity or just provide default
     };
 
     return c.json({
@@ -203,27 +225,57 @@ projectsRouter.put("/:id/canvas", async (c) => {
 
   try {
     // Check auth
-    const [session] = await db
+    const [workspace] = await db
       .select()
-      .from(sessions)
-      .where(eq(sessions.id, projectId));
-    if (!session || session.ownerId !== user.sub) {
+      .from(workspaces)
+      .where(eq(workspaces.id, projectId));
+    if (!workspace || workspace.ownerId !== user.sub) {
       return c.json({ error: "Project not found" }, 404);
     }
 
     const [canvas] = await db
       .select()
       .from(canvases)
-      .where(eq(canvases.sessionId, projectId));
+      .where(eq(canvases.workspaceId, projectId));
     if (!canvas) {
       return c.json({ error: "Canvas not found" }, 404);
     }
 
-    // In a full implementation, we'd update the `blocks` table based on `document.nodes`.
-    // Here we just update the viewport on the canvas record to represent the save.
+    // Since we are overriding the document for now we can just clear and re-insert nodes/edges
+    // A better approach would be to upsert
+    await db.delete(nodes).where(eq(nodes.canvasId, canvas.id));
+    await db.delete(edges).where(eq(edges.canvasId, canvas.id));
+
+    if (document.nodes && document.nodes.length > 0) {
+      await db.insert(nodes).values(
+        document.nodes.map((n: any) => ({
+          id: n.id,
+          canvasId: canvas.id,
+          type: n.type,
+          positionX: n.position.x,
+          positionY: n.position.y,
+          data: n.data || {},
+        }))
+      );
+    }
+
+    if (document.edges && document.edges.length > 0) {
+      await db.insert(edges).values(
+        document.edges.map((e: any) => ({
+          id: e.id,
+          canvasId: canvas.id,
+          sourceId: e.source,
+          targetId: e.target,
+          sourceHandle: e.sourceHandle || null,
+          targetHandle: e.targetHandle || null,
+          data: e.data || {},
+        }))
+      );
+    }
+
     const [updatedCanvas] = await db
       .update(canvases)
-      .set({ viewport: document.viewport, updatedAt: new Date() })
+      .set({ updatedAt: new Date() })
       .where(eq(canvases.id, canvas.id))
       .returning();
 
@@ -242,12 +294,46 @@ projectsRouter.put("/:id/canvas", async (c) => {
   }
 });
 
+projectsRouter.post("/:id/execute", async (c) => {
+  const db = c.get("db") as any;
+  const user = c.get("user") as any;
+  const projectId = c.req.param("id");
+  const { document, triggerData } = await c.req.json();
+
+  if (!projectId || !document) {
+    return c.json({ error: "Project ID and document are required" }, 400);
+  }
+
+  // 1. Verify ownership
+  const [workspace] = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.id, projectId));
+    
+  if (!workspace || workspace.ownerId !== user.sub) {
+    return c.json({ error: "Unauthorized" }, 403);
+  }
+
+  // 2. Compile to Mastra Workflow
+  const { compileGraphToWorkflow } = await import('@iem/agents');
+  const workflow = compileGraphToWorkflow(document);
+
+  // 3. Execute via Mastra
+  try {
+    const { runId, results } = await workflow.execute({ triggerData });
+    return c.json({ success: true, runId, results }, 200);
+  } catch (error) {
+    console.error("Workflow execution failed:", error);
+    return c.json({ error: "Workflow execution failed" }, 500);
+  }
+});
+
 projectsRouter.delete("/:id", async (c) => {
   const db = c.get("db") as any;
   const projectId = c.req.param("id");
 
   try {
-    await db.delete(sessions).where(eq(sessions.id, projectId));
+    await db.delete(workspaces).where(eq(workspaces.id, projectId));
     return c.json({ success: true }, 200);
   } catch (error) {
     console.error("Delete project error:", error);

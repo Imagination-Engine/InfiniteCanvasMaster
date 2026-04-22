@@ -45,7 +45,7 @@ export interface ModelProvider {
 export class GeminiProvider implements ModelProvider {
   id = 'gemini';
   name = 'Google Gemini';
-  supportedModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+  supportedModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
   supportsTools = true;
 
   constructor(private apiKey: string) {}
