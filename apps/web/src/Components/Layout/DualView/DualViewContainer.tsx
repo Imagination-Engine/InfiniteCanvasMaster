@@ -3,7 +3,16 @@ import { useSessionStore } from "../../../store/useSessionStore";
 import Canvas from "../../Canvas";
 import { ChatShell } from "../../Chat/ChatShell";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
-import { Bot, MousePointer2, Hand, Square, Circle, Type } from "lucide-react";
+import {
+  Bot,
+  MousePointer2,
+  Hand,
+  Square,
+  Circle,
+  Type,
+  Grid,
+} from "lucide-react";
+import NodeLibraryModal from "../../../library/NodeLibraryPanel";
 
 interface DualViewContainerProps {
   projectId: string;
@@ -23,6 +32,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   const { isCanvasVisible, toggleCanvas } = useSessionStore();
   const [isChatFloating, setIsChatFloating] = React.useState(true);
   const [isChatCollapsed, setIsChatCollapsed] = React.useState(false);
+  const [isLibraryOpen, setIsLibraryOpen] = React.useState(false);
 
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">
@@ -33,6 +43,12 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           onDocumentChange={saveCanvas}
         />
       </div>
+
+      <NodeLibraryModal
+        isOpen={isLibraryOpen}
+        onClose={() => setIsLibraryOpen(false)}
+        onSave={saveCanvas}
+      />
 
       {/* Floating Agent Chat (LibreChat Pattern) */}
       <div
@@ -85,7 +101,17 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
 
         {/* Floating tldraw-style Toolbar */}
         <div className="h-16 px-6 bg-brand-bg-surface/60 backdrop-blur-3xl border border-white/10 rounded-full flex items-center gap-6 shadow-2xl">
-          {/* Contextual Tools will go here in Sequence D */}
+          <div className="flex items-center gap-2 border-r border-white/10 pr-6">
+            <button
+              onClick={() => setIsLibraryOpen(true)}
+              className="p-3 bg-brand-purple/10 hover:bg-brand-purple/20 text-brand-purple rounded-xl transition-all flex items-center gap-2 group/lib"
+            >
+              <Grid size={20} />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover/lib:block transition-all">
+                Library
+              </span>
+            </button>
+          </div>
           <div className="flex items-center gap-4 border-r border-white/10 pr-6">
             <button className="p-2 text-brand-text-muted hover:text-white transition-colors">
               <MousePointer2 size={20} />

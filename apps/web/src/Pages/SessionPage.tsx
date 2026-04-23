@@ -5,9 +5,12 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
 import type { UnifiedCanvasDocument } from "../nodes/canvasTypes";
-import NodeLibraryPanel from "../library/NodeLibraryPanel";
 import { DualViewContainer } from "../Components/Layout/DualView/DualViewContainer";
-import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react";
+import {
+  LiveblocksProvider,
+  RoomProvider,
+  ClientSideSuspense,
+} from "@liveblocks/react";
 import logo from "../assets/logo.svg";
 
 type CanvasResponse = {
@@ -124,7 +127,10 @@ export default function SessionPage() {
 
   return (
     <LiveblocksProvider publicApiKey={liveblocksKey}>
-      <RoomProvider id={`project-${projectId}`} initialPresence={{ cursor: null, selection: [] }}>
+      <RoomProvider
+        id={`project-${projectId}`}
+        initialPresence={{ cursor: null, selection: [] }}
+      >
         <ClientSideSuspense fallback={<div>Loading Realtime Context...</div>}>
           <ReactFlowProvider>
             <div className="flex h-screen w-screen flex-col bg-brand-bg-page text-brand-text-body font-sans relative overflow-hidden">
@@ -162,16 +168,14 @@ export default function SessionPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex min-h-0 flex-1 relative">
-                <NodeLibraryPanel onSave={saveCanvas} />
-                
-                <DualViewContainer 
-                   projectId={projectId}
-                   initialDocument={document}
-                   initialMessages={initialMessages}
-                   projectName={projectName}
-                   saveCanvas={saveCanvas}
+                <DualViewContainer
+                  projectId={projectId}
+                  initialDocument={document}
+                  initialMessages={initialMessages}
+                  projectName={projectName}
+                  saveCanvas={saveCanvas}
                 />
               </div>
             </div>
