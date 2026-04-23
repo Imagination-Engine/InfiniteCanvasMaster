@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { BlockDefinition, MCPToolBinding } from '@iem/core';
-
-
+import { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 const MockView = () => null;
 
@@ -25,47 +23,25 @@ export const ifBlock: BlockDefinition<any, any> = {
     toolName: "evaluate_condition",
     invoke: async (input) => {
       try {
-        const llmApi =
-          process.env.LLM_CHAT_URL ||
-          "https://api.openai.com/v1/chat/completions";
-        const apiKey = process.env.OPENAI_API_KEY || "";
+        // Use the common AI provider setup if available, or fallback to environment variables
+        const { generateText } = await import("ai");
+        const { google } = await import("@ai-sdk/google");
 
         const systemPrompt =
           "You are a precise evaluation engine. Evaluate the given condition based on the provided context. You MUST output ONLY the word 'true' or 'false'. Provide no explanations, markdown formatting, or any other text.";
         const userPrompt = `Context:\n${JSON.stringify(input.context, null, 2)}\n\nCondition: ${input.condition}`;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-        const response = await fetch(llmApi, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            temperature: 0,
-            max_tokens: 5,
-          }),
-          signal: controller.signal,
+        const { text } = await generateText({
+          model: google("gemini-2.5-pro"),
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0,
+          maxTokens: 5,
         });
 
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(
-            `Evaluation failed: ${response.status} ${response.statusText}`,
-          );
-        }
-
-        const data = await response.json();
-        const content =
-          data.choices?.[0]?.message?.content?.trim().toLowerCase() || "";
+        const content = text.trim().toLowerCase();
 
         let result = false;
         // Robust parsing of truthiness

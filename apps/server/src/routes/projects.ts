@@ -103,11 +103,11 @@ projectsRouter.get("/:id", async (c) => {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    const projectMessages = await db
-      .select()
-      .from(messages)
-      .where(eq(messages.workspaceId, projectId))
-      .orderBy(asc(messages.createdAt));
+    // Fetch messages from Mastra memory for consistent history
+    const { mastra } = await import("@iem/agents");
+    const thread = await mastra.storage?.getThreadById(projectId);
+    const history =
+      (await mastra.storage?.getMessages({ threadId: projectId })) || [];
 
     return c.json({
       project: {
@@ -116,17 +116,20 @@ projectsRouter.get("/:id", async (c) => {
         created_at: workspace.createdAt,
         updated_at: workspace.updatedAt,
       },
-      messages: projectMessages.map((m: any) => ({
+      messages: history.map((m: any) => ({
         id: m.id,
         role: m.role,
-        content: m.content,
-        toolInvocations: m.toolCalls ? (m.toolCalls as any[]).map(tc => ({
-          state: 'result',
-          toolCallId: tc.id,
-          toolName: tc.function.name,
-          args: JSON.parse(tc.function.arguments),
-          result: { success: true }
-        })) : undefined
+        content:
+          typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+        toolInvocations: m.toolCalls
+          ? m.toolCalls.map((tc: any) => ({
+              state: "result",
+              toolCallId: tc.id,
+              toolName: tc.function.name,
+              args: JSON.parse(tc.function.arguments),
+              result: { success: true },
+            }))
+          : undefined,
       })),
     });
   } catch (error) {
@@ -182,8 +185,14 @@ projectsRouter.get("/:id/canvas", async (c) => {
     }
 
     // We fetch blocks from `nodes` and `edges` tables.
-    const canvasNodes = await db.select().from(nodes).where(eq(nodes.canvasId, canvas.id));
-    const canvasEdges = await db.select().from(edges).where(eq(edges.canvasId, canvas.id));
+    const canvasNodes = await db
+      .select()
+      .from(nodes)
+      .where(eq(nodes.canvasId, canvas.id));
+    const canvasEdges = await db
+      .select()
+      .from(edges)
+      .where(eq(edges.canvasId, canvas.id));
 
     const document = {
       nodes: canvasNodes.map((n: any) => ({
@@ -256,7 +265,7 @@ projectsRouter.put("/:id/canvas", async (c) => {
           positionX: n.position.x,
           positionY: n.position.y,
           data: n.data || {},
-        }))
+        })),
       );
     }
 
@@ -270,7 +279,7 @@ projectsRouter.put("/:id/canvas", async (c) => {
           sourceHandle: e.sourceHandle || null,
           targetHandle: e.targetHandle || null,
           data: e.data || {},
-        }))
+        })),
       );
     }
 
@@ -310,13 +319,13 @@ projectsRouter.post("/:id/execute", async (c) => {
     .select()
     .from(workspaces)
     .where(eq(workspaces.id, projectId));
-    
+
   if (!workspace || workspace.ownerId !== user.sub) {
     return c.json({ error: "Unauthorized" }, 403);
   }
 
   // 2. Compile to Mastra Workflow
-  const { compileGraphToWorkflow } = await import('@iem/agents');
+  const { compileGraphToWorkflow } = await import("@iem/agents");
   const workflow = compileGraphToWorkflow(document);
 
   // 3. Execute via Mastra

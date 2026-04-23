@@ -1,10 +1,18 @@
-import { Agent } from '@mastra/core/agent';
-import { google } from '@ai-sdk/google';
-import { generate_canvas_blueprint } from '../tools/canvas.js';
+import { Agent } from "@mastra/core/agent";
+import { google } from "@ai-sdk/google";
+import { generate_canvas_blueprint } from "../tools/canvas.js";
+import {
+  programmer,
+  colorSwapper,
+  formatter,
+  filter,
+  summarizer,
+  translator,
+} from "../tools/creative.js";
 
 export const orchestrator = new Agent({
-  id: 'orchestrator',
-  name: 'Imagination Orchestrator',
+  id: "orchestrator",
+  name: "Imagination Orchestrator",
   instructions: `
     You are the Imagination Engine, an expert AI agent orchestrator, conversational product manager, and goal deconstruction engine.
     
@@ -25,8 +33,14 @@ export const orchestrator = new Agent({
     
     Ensure logical flow in your edges (e.g., a documentLoader should output to a chunker; a joystick should control a sprite).
   `,
-  model: google('gemini-2.5-pro'),
+  model: google("gemini-2.5-pro"),
   tools: {
     generate_canvas_blueprint,
+    programmer,
+    colorSwapper,
+    formatter,
+    filter,
+    summarizer,
+    translator,
   },
 });

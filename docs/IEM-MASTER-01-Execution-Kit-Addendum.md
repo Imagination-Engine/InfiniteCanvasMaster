@@ -36,6 +36,7 @@ Each Part below answers one of these directly. The Appendices give the reference
 **Part VI — Automation and the 95%** (Questions 4 and 7)
 
 Appendices
+
 - A. Model Provider Quick-Reference
 - B. Public MCP Server Directory
 - C. Automation Script Inventory
@@ -82,7 +83,7 @@ The harness for this project is three layers of lean, owned code plus two small 
 
 **Layer 1: Block Protocol** (ours, `@iem/core/block`). Already specified in MASTER-00 Section 5. The typed interface every block implements. The registry. The contract.
 
-**Layer 2: Canvas Scheduler** (ours, `@iem/core/canvas`). Already specified in MASTER-00 Section 7.2. Topological execution. Streaming handoff. Error bubbling. This *is* our multi-agent orchestrator. It does not call itself a multi-agent orchestrator because it doesn't need that vocabulary. Blocks are agents. Edges are data channels. The scheduler runs the graph.
+**Layer 2: Canvas Scheduler** (ours, `@iem/core/canvas`). Already specified in MASTER-00 Section 7.2. Topological execution. Streaming handoff. Error bubbling. This _is_ our multi-agent orchestrator. It does not call itself a multi-agent orchestrator because it doesn't need that vocabulary. Blocks are agents. Edges are data channels. The scheduler runs the graph.
 
 **Layer 3: Chain Executor** (ours, `@iem/core/chain`). A thin helper for Surface D and any case where a linear sequence of agent roles should run in series (Architect then Designer then Builder then Tester). A few hundred lines of TypeScript. Not a framework. A utility.
 
@@ -128,14 +129,14 @@ Every block declares what kind of model it wants. The Agent Runtime resolves the
 
 **Provider A: Ollama (local).** For fast iteration, privacy, zero-cost development, and any capability the team wants to keep local. The student runs Ollama on their laptop or on a lab box. Pull models based on capability and hardware:
 
-| Capability | Recommended Ollama pull | Fallback |
-|---|---|---|
-| General reasoning, 8B-class | `llama3.3` or `llama3.1:8b` | `qwen2.5:7b` |
-| Function-calling (tool use) | `hermes3` (Hermes 3 family) | `qwen2.5:7b` |
-| Large-context reasoning | `qwen2.5:14b` | `llama3.3` |
-| Code generation | `qwen2.5-coder:7b` | `deepseek-coder-v2` |
-| Tiny fast local | `phi4` or `llama3.2:3b` | `qwen2.5:3b` |
-| Vision | `llama3.2-vision` | `qwen2.5-vl` |
+| Capability                  | Recommended Ollama pull     | Fallback            |
+| --------------------------- | --------------------------- | ------------------- |
+| General reasoning, 8B-class | `llama3.3` or `llama3.1:8b` | `qwen2.5:7b`        |
+| Function-calling (tool use) | `hermes3` (Hermes 3 family) | `qwen2.5:7b`        |
+| Large-context reasoning     | `qwen2.5:14b`               | `llama3.3`          |
+| Code generation             | `qwen2.5-coder:7b`          | `deepseek-coder-v2` |
+| Tiny fast local             | `phi4` or `llama3.2:3b`     | `qwen2.5:3b`        |
+| Vision                      | `llama3.2-vision`           | `qwen2.5-vl`        |
 
 Hermes 3 earns a specific callout because Zachary asked. It is a family of Llama 3.1 fine-tunes from Nous Research that does function-calling well. When a block is going to use tool-calling against a local model (Custom Agents with skills, Conductor workflows that stay local, etc.), Hermes 3 is the default local choice. Pull whichever size matches the hardware:
 
@@ -196,7 +197,7 @@ This surface is also the project's answer to "what if you want depth instead of 
 
 **Session model and persistence (MASTER-00 Section 11).** Long-form work means sessions that live for months. Scribe forces the persistence layer to be right: versioning, draft history, revision marks. Without Scribe pushing, the session model would stay weekend-deep.
 
-**Custom Agent Flow (MASTER-00 Section 10).** Scribe introduces agent *personas* as a first-class mental model. The Line Editor, the Developmental Editor, the Beta Reader, the Fact-Checker. Each is a Custom Agent with a rich persona. Building Scribe expands what Custom Agents are capable of.
+**Custom Agent Flow (MASTER-00 Section 10).** Scribe introduces agent _personas_ as a first-class mental model. The Line Editor, the Developmental Editor, the Beta Reader, the Fact-Checker. Each is a Custom Agent with a rich persona. Building Scribe expands what Custom Agents are capable of.
 
 **Block Protocol ambient mode (MASTER-00 Section 5).** A Chapter block is not a function you call. It is a document that lives on the canvas, accumulates, and is queried ambiently (word count, character list, outline summary). Scribe pushes the `ambient` execution mode harder than any other surface.
 
@@ -260,215 +261,215 @@ Blocks are grouped: **common / cross-cutting** (usable by every surface), then p
 
 ## 3.1 Common blocks — `@iem/core/blocks/common`
 
-| ID | Name | Category | Mode | Tier | Summary |
-|---|---|---|---|---|---|
-| `iem.common.text-input` | Text Input | io | triggered | T1 | User-editable text input source |
-| `iem.common.text-output` | Text Output | io | triggered | T1 | Displays incoming text |
-| `iem.common.markdown-output` | Markdown Output | io | triggered | T1 | Renders markdown |
-| `iem.common.json-viewer` | JSON Viewer | io | triggered | T1 | Interactive JSON tree |
-| `iem.common.image-viewer` | Image Viewer | io | triggered | T1 | Displays image input |
-| `iem.common.file-loader` | File Loader | io | triggered | T1 | Upload a file, emit bytes + metadata |
-| `iem.common.url-fetcher` | URL Fetcher | io | triggered | T1 | GET a URL, emit response |
-| `iem.common.code-editor` | Code Editor | io | triggered | T1 | Monaco-backed code block |
-| `iem.common.variable` | Variable | meta | ambient | T1 | Named, persistent state holder |
-| `iem.common.constant` | Constant | meta | triggered | T1 | Literal value emitter |
-| `iem.common.comment` | Comment | meta | ambient | T1 | Sticky note, non-executing |
-| `iem.common.group` | Group | meta | triggered | T1 | Sub-canvas container (holonic) |
-| `iem.common.rerouter` | Rerouter | meta | triggered | T2 | Pass-through, for layout |
-| `iem.common.delay` | Delay | meta | triggered | T2 | Wait N ms before passing through |
-| `iem.common.log` | Log | meta | streaming | T2 | Emits to run-log for debugging |
-| `iem.common.timer` | Timer | meta | streaming | T2 | Emits tick events on schedule |
+| ID                           | Name            | Category | Mode      | Tier | Summary                              |
+| ---------------------------- | --------------- | -------- | --------- | ---- | ------------------------------------ |
+| `iem.common.text-input`      | Text Input      | io       | triggered | T1   | User-editable text input source      |
+| `iem.common.text-output`     | Text Output     | io       | triggered | T1   | Displays incoming text               |
+| `iem.common.markdown-output` | Markdown Output | io       | triggered | T1   | Renders markdown                     |
+| `iem.common.json-viewer`     | JSON Viewer     | io       | triggered | T1   | Interactive JSON tree                |
+| `iem.common.image-viewer`    | Image Viewer    | io       | triggered | T1   | Displays image input                 |
+| `iem.common.file-loader`     | File Loader     | io       | triggered | T1   | Upload a file, emit bytes + metadata |
+| `iem.common.url-fetcher`     | URL Fetcher     | io       | triggered | T1   | GET a URL, emit response             |
+| `iem.common.code-editor`     | Code Editor     | io       | triggered | T1   | Monaco-backed code block             |
+| `iem.common.variable`        | Variable        | meta     | ambient   | T1   | Named, persistent state holder       |
+| `iem.common.constant`        | Constant        | meta     | triggered | T1   | Literal value emitter                |
+| `iem.common.comment`         | Comment         | meta     | ambient   | T1   | Sticky note, non-executing           |
+| `iem.common.group`           | Group           | meta     | triggered | T1   | Sub-canvas container (holonic)       |
+| `iem.common.rerouter`        | Rerouter        | meta     | triggered | T2   | Pass-through, for layout             |
+| `iem.common.delay`           | Delay           | meta     | triggered | T2   | Wait N ms before passing through     |
+| `iem.common.log`             | Log             | meta     | streaming | T2   | Emits to run-log for debugging       |
+| `iem.common.timer`           | Timer           | meta     | streaming | T2   | Emits tick events on schedule        |
 
 ## 3.2 Agent / LLM blocks — `@iem/core/blocks/agent`
 
-| ID | Name | Category | Mode | Tier | Summary |
-|---|---|---|---|---|---|
-| `iem.agent.chat` | LLM Chat | agent | triggered | T1 | Generic LLM call, provider-agnostic |
-| `iem.agent.refiner` | Refiner | text | triggered | T1 | **Migrated from existing**, style rewrite |
-| `iem.agent.summarizer` | Summarizer | text | triggered | T1 | **Migrated**, multi-modal summary |
-| `iem.agent.translator` | Translator | text | triggered | T1 | **Migrated**, target language |
-| `iem.agent.formatter` | Formatter | text | triggered | T1 | **Migrated**, format conversion |
-| `iem.agent.programmer` | Programmer | code | triggered | T1 | **Migrated**, code generation |
-| `iem.agent.custom` | Custom Agent | agent | triggered | T1 | User-defined via Custom Agent Flow |
-| `iem.agent.embedder` | Embedder | agent | triggered | T2 | text → vector (pgvector) |
-| `iem.agent.retriever` | Retriever | agent | triggered | T2 | vector similarity search |
-| `iem.agent.memory-read` | Memory Read | agent | ambient | T2 | Read from session memory |
-| `iem.agent.memory-write` | Memory Write | agent | triggered | T2 | Write to session memory |
-| `iem.agent.tool-router` | Tool Router | agent | triggered | T3 | Agent picks which tool to call |
+| ID                       | Name         | Category | Mode      | Tier | Summary                                   |
+| ------------------------ | ------------ | -------- | --------- | ---- | ----------------------------------------- |
+| `iem.agent.chat`         | LLM Chat     | agent    | triggered | T1   | Generic LLM call, provider-agnostic       |
+| `iem.agent.refiner`      | Refiner      | text     | triggered | T1   | **Migrated from existing**, style rewrite |
+| `iem.agent.summarizer`   | Summarizer   | text     | triggered | T1   | **Migrated**, multi-modal summary         |
+| `iem.agent.translator`   | Translator   | text     | triggered | T1   | **Migrated**, target language             |
+| `iem.agent.formatter`    | Formatter    | text     | triggered | T1   | **Migrated**, format conversion           |
+| `iem.agent.programmer`   | Programmer   | code     | triggered | T1   | **Migrated**, code generation             |
+| `iem.agent.custom`       | Custom Agent | agent    | triggered | T1   | User-defined via Custom Agent Flow        |
+| `iem.agent.embedder`     | Embedder     | agent    | triggered | T2   | text → vector (pgvector)                  |
+| `iem.agent.retriever`    | Retriever    | agent    | triggered | T2   | vector similarity search                  |
+| `iem.agent.memory-read`  | Memory Read  | agent    | ambient   | T2   | Read from session memory                  |
+| `iem.agent.memory-write` | Memory Write | agent    | triggered | T2   | Write to session memory                   |
+| `iem.agent.tool-router`  | Tool Router  | agent    | triggered | T3   | Agent picks which tool to call            |
 
 ## 3.3 Data blocks — `@iem/core/blocks/data`
 
-| ID | Name | Category | Mode | Tier | Summary |
-|---|---|---|---|---|---|
-| `iem.data.filter` | Filter | data | triggered | T1 | **Migrated**, predicate-based filter |
-| `iem.data.map` | Map | data | triggered | T1 | Transform each item |
-| `iem.data.reduce` | Reduce | data | triggered | T2 | Aggregate to a single value |
-| `iem.data.join` | Join | data | triggered | T2 | Combine streams on key |
-| `iem.data.split` | Split | data | triggered | T2 | Fan out into parallel paths |
-| `iem.data.sort` | Sort | data | triggered | T2 | Sort by field |
-| `iem.data.dedupe` | Deduplicator | data | triggered | T2 | Remove duplicates |
-| `iem.data.json-parse` | JSON Parser | data | triggered | T1 | String → JSON, validated |
-| `iem.data.csv-parse` | CSV Parser | data | triggered | T2 | CSV → records |
-| `iem.data.html-parse` | HTML/XML Parser | data | triggered | T2 | Extract via CSS selector |
-| `iem.data.schema-validator` | Schema Validator | data | triggered | T2 | Zod validation in-graph |
+| ID                          | Name             | Category | Mode      | Tier | Summary                              |
+| --------------------------- | ---------------- | -------- | --------- | ---- | ------------------------------------ |
+| `iem.data.filter`           | Filter           | data     | triggered | T1   | **Migrated**, predicate-based filter |
+| `iem.data.map`              | Map              | data     | triggered | T1   | Transform each item                  |
+| `iem.data.reduce`           | Reduce           | data     | triggered | T2   | Aggregate to a single value          |
+| `iem.data.join`             | Join             | data     | triggered | T2   | Combine streams on key               |
+| `iem.data.split`            | Split            | data     | triggered | T2   | Fan out into parallel paths          |
+| `iem.data.sort`             | Sort             | data     | triggered | T2   | Sort by field                        |
+| `iem.data.dedupe`           | Deduplicator     | data     | triggered | T2   | Remove duplicates                    |
+| `iem.data.json-parse`       | JSON Parser      | data     | triggered | T1   | String → JSON, validated             |
+| `iem.data.csv-parse`        | CSV Parser       | data     | triggered | T2   | CSV → records                        |
+| `iem.data.html-parse`       | HTML/XML Parser  | data     | triggered | T2   | Extract via CSS selector             |
+| `iem.data.schema-validator` | Schema Validator | data     | triggered | T2   | Zod validation in-graph              |
 
 ## 3.4 Web / IO blocks
 
-| ID | Name | Category | Mode | Tier | Summary |
-|---|---|---|---|---|---|
-| `iem.web.scraper` | Web Scraper | io | triggered | T1 | **Migrated**, URL → structured + text |
-| `iem.web.http-request` | HTTP Request | io | triggered | T1 | Generic HTTP call |
-| `iem.web.webhook-in` | Webhook Receiver | io | streaming | T2 | Receive inbound HTTP |
-| `iem.web.rss` | RSS Reader | io | streaming | T2 | Poll feeds, emit entries |
-| `iem.web.sitemap` | Sitemap Crawler | io | streaming | T3 | Full-site crawl |
+| ID                     | Name             | Category | Mode      | Tier | Summary                               |
+| ---------------------- | ---------------- | -------- | --------- | ---- | ------------------------------------- |
+| `iem.web.scraper`      | Web Scraper      | io       | triggered | T1   | **Migrated**, URL → structured + text |
+| `iem.web.http-request` | HTTP Request     | io       | triggered | T1   | Generic HTTP call                     |
+| `iem.web.webhook-in`   | Webhook Receiver | io       | streaming | T2   | Receive inbound HTTP                  |
+| `iem.web.rss`          | RSS Reader       | io       | streaming | T2   | Poll feeds, emit entries              |
+| `iem.web.sitemap`      | Sitemap Crawler  | io       | streaming | T3   | Full-site crawl                       |
 
 ## 3.5 Media / Code blocks
 
-| ID | Name | Category | Mode | Tier | Summary |
-|---|---|---|---|---|---|
-| `iem.media.color-swapper` | Color Swapper | image | triggered | T1 | **Migrated**, palette transfer |
-| `iem.media.image-resize` | Image Resize | image | triggered | T2 | Resize/crop/format |
-| `iem.media.image-filter` | Image Filter | image | triggered | T2 | Apply filter (blur, grayscale, etc.) |
-| `iem.media.image-composite` | Image Compositor | image | triggered | T3 | Layer multiple images |
-| `iem.code.runner` | Code Runner | code | triggered | T2 | Sandboxed execution (WebContainers) |
-| `iem.code.regex` | Regex Matcher | code | triggered | T2 | Regex on input text |
-| `iem.code.template` | Template Engine | code | triggered | T2 | Handlebars-style rendering |
+| ID                          | Name             | Category | Mode      | Tier | Summary                              |
+| --------------------------- | ---------------- | -------- | --------- | ---- | ------------------------------------ |
+| `iem.media.color-swapper`   | Color Swapper    | image    | triggered | T1   | **Migrated**, palette transfer       |
+| `iem.media.image-resize`    | Image Resize     | image    | triggered | T2   | Resize/crop/format                   |
+| `iem.media.image-filter`    | Image Filter     | image    | triggered | T2   | Apply filter (blur, grayscale, etc.) |
+| `iem.media.image-composite` | Image Compositor | image    | triggered | T3   | Layer multiple images                |
+| `iem.code.runner`           | Code Runner      | code     | triggered | T2   | Sandboxed execution (WebContainers)  |
+| `iem.code.regex`            | Regex Matcher    | code     | triggered | T2   | Regex on input text                  |
+| `iem.code.template`         | Template Engine  | code     | triggered | T2   | Handlebars-style rendering           |
 
 ## 3.6 Surface A — Playable blocks (`@iem/surface-playable/blocks`)
 
-| ID | Name | Mode | Tier | Summary |
-|---|---|---|---|---|
-| `iem.playable.scene` | Scene | ambient | T1 | Game world container (2D space, physics config) |
-| `iem.playable.character` | Character | ambient | T1 | Movable entity with sprite, stats, inputs |
-| `iem.playable.item` | Item | ambient | T1 | Collectible or interactive object |
-| `iem.playable.rule` | Rule | ambient | T1 | Trigger ↔ action pair (DSL) |
-| `iem.playable.win-condition` | Win Condition | ambient | T1 | Defines victory state |
-| `iem.playable.spawner` | Spawner | ambient | T1 | Produces entities over time or on event |
-| `iem.playable.input-handler` | Input Handler | streaming | T1 | Keyboard, mouse, touch, gamepad |
-| `iem.playable.camera` | Camera | ambient | T2 | View transform, follow target |
-| `iem.playable.timer` | Game Timer | streaming | T2 | Game-clock, distinct from common.timer |
-| `iem.playable.counter` | Counter | ambient | T2 | Score, health, ammo |
-| `iem.playable.collision` | Collision Detector | streaming | T2 | Emits on contact |
-| `iem.playable.trigger-zone` | Trigger Zone | streaming | T2 | Emits when character enters region |
-| `iem.playable.dialogue` | Dialogue | triggered | T2 | Character speech with optional choices |
-| `iem.playable.game-state` | Game State | ambient | T1 | Central state for save/load |
-| `iem.playable.inventory` | Inventory | ambient | T2 | Item bag for a character |
-| `iem.playable.animation` | Animation | streaming | T3 | Sprite animation frames |
-| `iem.playable.particles` | Particle Emitter | streaming | T3 | Visual FX |
-| `iem.playable.ui-overlay` | UI Overlay (HUD) | ambient | T2 | Score, health, menu rendering |
-| `iem.playable.physics-body` | Physics Body | ambient | T3 | Rigid body attached to entity |
-| `iem.playable.audio-clip` | Audio Clip | triggered | T2 | Play SFX or music |
-| `iem.playable.multiplayer-host` | Multiplayer Host | ambient | T1 | Yjs room, presence broadcast |
+| ID                              | Name               | Mode      | Tier | Summary                                         |
+| ------------------------------- | ------------------ | --------- | ---- | ----------------------------------------------- |
+| `iem.playable.scene`            | Scene              | ambient   | T1   | Game world container (2D space, physics config) |
+| `iem.playable.character`        | Character          | ambient   | T1   | Movable entity with sprite, stats, inputs       |
+| `iem.playable.item`             | Item               | ambient   | T1   | Collectible or interactive object               |
+| `iem.playable.rule`             | Rule               | ambient   | T1   | Trigger ↔ action pair (DSL)                     |
+| `iem.playable.win-condition`    | Win Condition      | ambient   | T1   | Defines victory state                           |
+| `iem.playable.spawner`          | Spawner            | ambient   | T1   | Produces entities over time or on event         |
+| `iem.playable.input-handler`    | Input Handler      | streaming | T1   | Keyboard, mouse, touch, gamepad                 |
+| `iem.playable.camera`           | Camera             | ambient   | T2   | View transform, follow target                   |
+| `iem.playable.timer`            | Game Timer         | streaming | T2   | Game-clock, distinct from common.timer          |
+| `iem.playable.counter`          | Counter            | ambient   | T2   | Score, health, ammo                             |
+| `iem.playable.collision`        | Collision Detector | streaming | T2   | Emits on contact                                |
+| `iem.playable.trigger-zone`     | Trigger Zone       | streaming | T2   | Emits when character enters region              |
+| `iem.playable.dialogue`         | Dialogue           | triggered | T2   | Character speech with optional choices          |
+| `iem.playable.game-state`       | Game State         | ambient   | T1   | Central state for save/load                     |
+| `iem.playable.inventory`        | Inventory          | ambient   | T2   | Item bag for a character                        |
+| `iem.playable.animation`        | Animation          | streaming | T3   | Sprite animation frames                         |
+| `iem.playable.particles`        | Particle Emitter   | streaming | T3   | Visual FX                                       |
+| `iem.playable.ui-overlay`       | UI Overlay (HUD)   | ambient   | T2   | Score, health, menu rendering                   |
+| `iem.playable.physics-body`     | Physics Body       | ambient   | T3   | Rigid body attached to entity                   |
+| `iem.playable.audio-clip`       | Audio Clip         | triggered | T2   | Play SFX or music                               |
+| `iem.playable.multiplayer-host` | Multiplayer Host   | ambient   | T1   | Yjs room, presence broadcast                    |
 
 Playable uses **PixiJS 8** for rendering (2D, WebGL-accelerated). Physics via **matter.js** when needed. Presence via **Yjs + y-websocket** (already in core).
 
 ## 3.7 Surface B — Conductor blocks (`@iem/surface-conductor/blocks`)
 
-| ID | Name | Mode | Tier | Summary |
-|---|---|---|---|---|
-| `iem.conductor.trigger.manual` | Manual Trigger | triggered | T1 | "Run Now" button |
-| `iem.conductor.trigger.schedule` | Schedule Trigger | streaming | T1 | cron-style |
-| `iem.conductor.trigger.webhook` | Webhook Trigger | streaming | T1 | Inbound HTTP starts the workflow |
-| `iem.conductor.trigger.event` | Event Trigger | streaming | T2 | Internal events (another workflow) |
-| `iem.conductor.if` | If/Else | triggered | T1 | Conditional branch |
-| `iem.conductor.switch` | Switch | triggered | T2 | Multi-way branch |
-| `iem.conductor.foreach` | For Each | streaming | T1 | Iterate over collection |
-| `iem.conductor.while` | While Loop | streaming | T2 | Repeat until condition |
-| `iem.conductor.try-catch` | Try/Catch | triggered | T1 | Error-handling wrapper |
-| `iem.conductor.retry` | Retry | triggered | T1 | Exponential retry with policy |
-| `iem.conductor.parallel` | Parallel | triggered | T2 | Fan-out, fan-in |
-| `iem.conductor.merge` | Merge | triggered | T2 | Combine branches |
-| `iem.conductor.delay-scheduled` | Delay (Scheduled) | streaming | T2 | Wait until future time |
-| `iem.conductor.http-call` | HTTP Call | triggered | T1 | Outbound HTTP within workflow |
-| `iem.conductor.var-set` | Variable Set | triggered | T2 | Workflow-scoped variable write |
-| `iem.conductor.var-get` | Variable Get | triggered | T2 | Workflow-scoped variable read |
-| `iem.conductor.run-log` | Run Log Viewer | ambient | T1 | Observability panel |
+| ID                               | Name              | Mode      | Tier | Summary                            |
+| -------------------------------- | ----------------- | --------- | ---- | ---------------------------------- |
+| `iem.conductor.trigger.manual`   | Manual Trigger    | triggered | T1   | "Run Now" button                   |
+| `iem.conductor.trigger.schedule` | Schedule Trigger  | streaming | T1   | cron-style                         |
+| `iem.conductor.trigger.webhook`  | Webhook Trigger   | streaming | T1   | Inbound HTTP starts the workflow   |
+| `iem.conductor.trigger.event`    | Event Trigger     | streaming | T2   | Internal events (another workflow) |
+| `iem.conductor.if`               | If/Else           | triggered | T1   | Conditional branch                 |
+| `iem.conductor.switch`           | Switch            | triggered | T2   | Multi-way branch                   |
+| `iem.conductor.foreach`          | For Each          | streaming | T1   | Iterate over collection            |
+| `iem.conductor.while`            | While Loop        | streaming | T2   | Repeat until condition             |
+| `iem.conductor.try-catch`        | Try/Catch         | triggered | T1   | Error-handling wrapper             |
+| `iem.conductor.retry`            | Retry             | triggered | T1   | Exponential retry with policy      |
+| `iem.conductor.parallel`         | Parallel          | triggered | T2   | Fan-out, fan-in                    |
+| `iem.conductor.merge`            | Merge             | triggered | T2   | Combine branches                   |
+| `iem.conductor.delay-scheduled`  | Delay (Scheduled) | streaming | T2   | Wait until future time             |
+| `iem.conductor.http-call`        | HTTP Call         | triggered | T1   | Outbound HTTP within workflow      |
+| `iem.conductor.var-set`          | Variable Set      | triggered | T2   | Workflow-scoped variable write     |
+| `iem.conductor.var-get`          | Variable Get      | triggered | T2   | Workflow-scoped variable read      |
+| `iem.conductor.run-log`          | Run Log Viewer    | ambient   | T1   | Observability panel                |
 
 Integration-specific blocks (Gmail, Calendar, Slack, etc.) live in `@iem/agents/*` but are registered into the Conductor palette. See Part IV.
 
 ## 3.8 Surface C — Reel blocks (`@iem/surface-reel/blocks`)
 
-| ID | Name | Mode | Tier | Summary |
-|---|---|---|---|---|
-| `iem.reel.text-to-image` | Text to Image | triggered | T1 | fal.ai / Replicate / local SDXL |
-| `iem.reel.image-to-image` | Image to Image | triggered | T1 | Style transfer, in-painting |
-| `iem.reel.text-to-speech` | Text to Speech | triggered | T1 | ElevenLabs, OpenAI TTS, Kokoro |
-| `iem.reel.text-to-audio` | Text to Music | triggered | T2 | Suno, Udio, Stable Audio |
-| `iem.reel.text-to-video` | Text to Video | triggered | T2 | Runway, Pika, fal.ai |
-| `iem.reel.image-to-video` | Image to Video | triggered | T2 | Animate a still |
-| `iem.reel.voice-clone` | Voice Clone | triggered | T3 | ElevenLabs voice cloning |
-| `iem.reel.scene` | Scene | ambient | T1 | Composite: image + dialogue + duration |
-| `iem.reel.shot` | Shot | ambient | T2 | Camera angle, composition, framing |
-| `iem.reel.shot-list` | Shot List | ambient | T2 | Ordered shot plan |
-| `iem.reel.storyboard-panel` | Storyboard Panel | ambient | T2 | Scene thumbnail + description |
-| `iem.reel.cut` | Cut / Transition | triggered | T2 | Transition type between scenes |
-| `iem.reel.color-grade` | Color Grade | triggered | T3 | LUT application |
-| `iem.reel.subtitle-gen` | Subtitle Generator | triggered | T2 | Whisper timestamps → SRT |
-| `iem.reel.music-track` | Music Track | ambient | T2 | Background music with fade/duck |
-| `iem.reel.audio-duck` | Audio Ducking | triggered | T3 | Auto-lower music under dialogue |
-| `iem.reel.export` | Export (FFmpeg) | triggered | T1 | Stitch scenes → MP4 |
+| ID                          | Name               | Mode      | Tier | Summary                                |
+| --------------------------- | ------------------ | --------- | ---- | -------------------------------------- |
+| `iem.reel.text-to-image`    | Text to Image      | triggered | T1   | fal.ai / Replicate / local SDXL        |
+| `iem.reel.image-to-image`   | Image to Image     | triggered | T1   | Style transfer, in-painting            |
+| `iem.reel.text-to-speech`   | Text to Speech     | triggered | T1   | ElevenLabs, OpenAI TTS, Kokoro         |
+| `iem.reel.text-to-audio`    | Text to Music      | triggered | T2   | Suno, Udio, Stable Audio               |
+| `iem.reel.text-to-video`    | Text to Video      | triggered | T2   | Runway, Pika, fal.ai                   |
+| `iem.reel.image-to-video`   | Image to Video     | triggered | T2   | Animate a still                        |
+| `iem.reel.voice-clone`      | Voice Clone        | triggered | T3   | ElevenLabs voice cloning               |
+| `iem.reel.scene`            | Scene              | ambient   | T1   | Composite: image + dialogue + duration |
+| `iem.reel.shot`             | Shot               | ambient   | T2   | Camera angle, composition, framing     |
+| `iem.reel.shot-list`        | Shot List          | ambient   | T2   | Ordered shot plan                      |
+| `iem.reel.storyboard-panel` | Storyboard Panel   | ambient   | T2   | Scene thumbnail + description          |
+| `iem.reel.cut`              | Cut / Transition   | triggered | T2   | Transition type between scenes         |
+| `iem.reel.color-grade`      | Color Grade        | triggered | T3   | LUT application                        |
+| `iem.reel.subtitle-gen`     | Subtitle Generator | triggered | T2   | Whisper timestamps → SRT               |
+| `iem.reel.music-track`      | Music Track        | ambient   | T2   | Background music with fade/duck        |
+| `iem.reel.audio-duck`       | Audio Ducking      | triggered | T3   | Auto-lower music under dialogue        |
+| `iem.reel.export`           | Export (FFmpeg)    | triggered | T1   | Stitch scenes → MP4                    |
 
 Reel uses **ffmpeg-wasm** (browser) or **fluent-ffmpeg** (server) for the export pipeline. **fal.ai** or **Replicate** SDKs for generation. **Whisper** (via `openai` or local) for subtitles.
 
 ## 3.9 Surface D — Forge blocks (`@iem/surface-forge/blocks`)
 
-| ID | Name | Mode | Tier | Summary |
-|---|---|---|---|---|
-| `iem.forge.build-spec` | Build Spec | ambient | T1 | Structured input: what to build |
-| `iem.forge.architect` | Architect | triggered | T1 | Build Spec → file tree + component plan |
-| `iem.forge.designer` | Designer | triggered | T1 | Plan → UI design (shadcn + Tailwind) |
-| `iem.forge.builder` | Builder | triggered | T1 | Plan + Design → actual code |
-| `iem.forge.tester` | Tester | triggered | T1 | Code → test results (headless sandbox) |
-| `iem.forge.security-reviewer` | Security Reviewer | triggered | T2 | Static analysis, secret scan, CSP check |
-| `iem.forge.perf-profiler` | Performance Profiler | triggered | T3 | Lighthouse run on built artifact |
-| `iem.forge.docs-writer` | Docs Writer | triggered | T2 | Code → README |
-| `iem.forge.deployer` | Deployer | triggered | T3 | Push to Vercel/Netlify preview |
-| `iem.forge.sandbox-launcher` | Sandbox Launcher | ambient | T1 | Runs built artifact in iframe CSP-sandbox |
-| `iem.forge.build-log` | Build Log | streaming | T1 | Run-time stream of all agent outputs |
-| `iem.forge.dep-analyzer` | Dependency Analyzer | triggered | T2 | Scans built package.json |
+| ID                            | Name                 | Mode      | Tier | Summary                                   |
+| ----------------------------- | -------------------- | --------- | ---- | ----------------------------------------- |
+| `iem.forge.build-spec`        | Build Spec           | ambient   | T1   | Structured input: what to build           |
+| `iem.forge.architect`         | Architect            | triggered | T1   | Build Spec → file tree + component plan   |
+| `iem.forge.designer`          | Designer             | triggered | T1   | Plan → UI design (shadcn + Tailwind)      |
+| `iem.forge.builder`           | Builder              | triggered | T1   | Plan + Design → actual code               |
+| `iem.forge.tester`            | Tester               | triggered | T1   | Code → test results (headless sandbox)    |
+| `iem.forge.security-reviewer` | Security Reviewer    | triggered | T2   | Static analysis, secret scan, CSP check   |
+| `iem.forge.perf-profiler`     | Performance Profiler | triggered | T3   | Lighthouse run on built artifact          |
+| `iem.forge.docs-writer`       | Docs Writer          | triggered | T2   | Code → README                             |
+| `iem.forge.deployer`          | Deployer             | triggered | T3   | Push to Vercel/Netlify preview            |
+| `iem.forge.sandbox-launcher`  | Sandbox Launcher     | ambient   | T1   | Runs built artifact in iframe CSP-sandbox |
+| `iem.forge.build-log`         | Build Log            | streaming | T1   | Run-time stream of all agent outputs      |
+| `iem.forge.dep-analyzer`      | Dependency Analyzer  | triggered | T2   | Scans built package.json                  |
 
 Forge uses **WebContainers** (StackBlitz) for in-browser execution, **esbuild-wasm** for bundling, **Puppeteer** (server) for Lighthouse runs.
 
 ## 3.10 Surface E — Scribe blocks (`@iem/surface-scribe/blocks`)
 
-| ID | Name | Mode | Tier | Summary |
-|---|---|---|---|---|
-| `iem.scribe.chapter` | Chapter | ambient | T1 | Prose + title + order + revision list |
-| `iem.scribe.section` | Section / Article | ambient | T1 | Smaller prose unit, nested under chapter |
-| `iem.scribe.prose` | Prose | ambient | T1 | Rich-text block (Tiptap-backed) |
-| `iem.scribe.character-sheet` | Character Sheet | ambient | T1 | Character profile, traits, arc |
-| `iem.scribe.setting` | Setting / World Note | ambient | T2 | Place, rules of the world |
-| `iem.scribe.research-note` | Research Note | ambient | T2 | Source + excerpt + annotation |
-| `iem.scribe.outline` | Outline | ambient | T1 | Hierarchical plot structure |
-| `iem.scribe.style-guide` | Style Guide | ambient | T1 | Voice, tense, banned words, POV |
-| `iem.scribe.beat-sheet` | Beat Sheet | ambient | T2 | Save-the-Cat or custom structure |
-| `iem.scribe.dialogue` | Dialogue Block | ambient | T2 | Multi-speaker dialogue with tags |
-| `iem.scribe.line-editor` | Line Editor | triggered | T1 | Agent: rhythm, word choice, concision |
-| `iem.scribe.dev-editor` | Developmental Editor | triggered | T2 | Agent: plot, pacing, arc feedback |
-| `iem.scribe.copy-editor` | Copy Editor | triggered | T2 | Agent: grammar, consistency |
-| `iem.scribe.beta-reader` | Beta Reader | triggered | T2 | Agent: "how did that make you feel" feedback |
-| `iem.scribe.fact-checker` | Fact Checker | triggered | T2 | Agent: verify claims with web-search |
-| `iem.scribe.voice-checker` | Voice Consistency Checker | triggered | T3 | Agent: style drift detection |
-| `iem.scribe.chapter-summary` | Chapter Summary | triggered | T2 | Auto-generated per-chapter summary |
-| `iem.scribe.magazine-layout` | Magazine Layout | ambient | T2 | Spread: column grid + images + copy |
-| `iem.scribe.cover-designer` | Cover Designer | triggered | T2 | Delegates to Reel's image gen |
-| `iem.scribe.toc` | Table of Contents | ambient | T1 | Auto-generated from chapters |
-| `iem.scribe.index` | Index | ambient | T3 | Auto-generated back-of-book index |
-| `iem.scribe.export-epub` | Export: EPUB | triggered | T1 | Produces .epub |
-| `iem.scribe.export-pdf` | Export: PDF | triggered | T1 | Produces reading-format PDF |
-| `iem.scribe.export-print` | Export: Print-ready | triggered | T2 | PDF with bleed, trim marks |
-| `iem.scribe.export-web` | Export: Web | triggered | T2 | Static site |
+| ID                           | Name                      | Mode      | Tier | Summary                                      |
+| ---------------------------- | ------------------------- | --------- | ---- | -------------------------------------------- |
+| `iem.scribe.chapter`         | Chapter                   | ambient   | T1   | Prose + title + order + revision list        |
+| `iem.scribe.section`         | Section / Article         | ambient   | T1   | Smaller prose unit, nested under chapter     |
+| `iem.scribe.prose`           | Prose                     | ambient   | T1   | Rich-text block (Tiptap-backed)              |
+| `iem.scribe.character-sheet` | Character Sheet           | ambient   | T1   | Character profile, traits, arc               |
+| `iem.scribe.setting`         | Setting / World Note      | ambient   | T2   | Place, rules of the world                    |
+| `iem.scribe.research-note`   | Research Note             | ambient   | T2   | Source + excerpt + annotation                |
+| `iem.scribe.outline`         | Outline                   | ambient   | T1   | Hierarchical plot structure                  |
+| `iem.scribe.style-guide`     | Style Guide               | ambient   | T1   | Voice, tense, banned words, POV              |
+| `iem.scribe.beat-sheet`      | Beat Sheet                | ambient   | T2   | Save-the-Cat or custom structure             |
+| `iem.scribe.dialogue`        | Dialogue Block            | ambient   | T2   | Multi-speaker dialogue with tags             |
+| `iem.scribe.line-editor`     | Line Editor               | triggered | T1   | Agent: rhythm, word choice, concision        |
+| `iem.scribe.dev-editor`      | Developmental Editor      | triggered | T2   | Agent: plot, pacing, arc feedback            |
+| `iem.scribe.copy-editor`     | Copy Editor               | triggered | T2   | Agent: grammar, consistency                  |
+| `iem.scribe.beta-reader`     | Beta Reader               | triggered | T2   | Agent: "how did that make you feel" feedback |
+| `iem.scribe.fact-checker`    | Fact Checker              | triggered | T2   | Agent: verify claims with web-search         |
+| `iem.scribe.voice-checker`   | Voice Consistency Checker | triggered | T3   | Agent: style drift detection                 |
+| `iem.scribe.chapter-summary` | Chapter Summary           | triggered | T2   | Auto-generated per-chapter summary           |
+| `iem.scribe.magazine-layout` | Magazine Layout           | ambient   | T2   | Spread: column grid + images + copy          |
+| `iem.scribe.cover-designer`  | Cover Designer            | triggered | T2   | Delegates to Reel's image gen                |
+| `iem.scribe.toc`             | Table of Contents         | ambient   | T1   | Auto-generated from chapters                 |
+| `iem.scribe.index`           | Index                     | ambient   | T3   | Auto-generated back-of-book index            |
+| `iem.scribe.export-epub`     | Export: EPUB              | triggered | T1   | Produces .epub                               |
+| `iem.scribe.export-pdf`      | Export: PDF               | triggered | T1   | Produces reading-format PDF                  |
+| `iem.scribe.export-print`    | Export: Print-ready       | triggered | T2   | PDF with bleed, trim marks                   |
+| `iem.scribe.export-web`      | Export: Web               | triggered | T2   | Static site                                  |
 
 Scribe uses **Tiptap** for rich text, **epub-gen** for EPUB, **Puppeteer + Paged.js** for print PDF, **Astro** or a minimal static-site-generator for web export.
 
 ## 3.11 Priority tier summary
 
-| Tier | Count | Ship by |
-|---|---|---|
-| T1 (must) | 62 | Week 14 (demo day) |
-| T2 (should) | 54 | Week 16 |
-| T3 (post) | 29 | Post-capstone |
-| **Total** | **145** | |
+| Tier        | Count   | Ship by            |
+| ----------- | ------- | ------------------ |
+| T1 (must)   | 62      | Week 14 (demo day) |
+| T2 (should) | 54      | Week 16            |
+| T3 (post)   | 29      | Post-capstone      |
+| **Total**   | **145** |                    |
 
 T1 is the contract for demo day. T2 is the contract for a post-demo release. T3 is the roadmap.
 
@@ -498,32 +499,32 @@ The Conductor surface especially, and to a lesser extent every other surface, de
 
 **Tier 1 — Ship by Week 12.** Necessary for compelling Conductor demos.
 
-| Service | Type | Status | Responsible |
-|---|---|---|---|
-| Gmail | Google Workspace | Official + community MCP servers exist | Conductor student (integrate) |
-| Google Calendar | Google Workspace | Official + community MCP servers exist | Conductor student |
-| Google Drive | Google Workspace | Official + community MCP servers exist | Core team (in-house wrapper) |
-| Slack | Messaging | Community MCP server | Conductor student |
-| Discord | Messaging | Community MCP server | Conductor student |
-| Notion | Knowledge | Official MCP server | Conductor student |
-| Obsidian | Knowledge (local) | In-house, file-system based | Core team |
-| GitHub | Dev | Official MCP server | Conductor student |
-| Filesystem (local) | IO | Official MCP server (Anthropic's) | Core team |
-| Web Search | IO | Community (Brave, Serper, Tavily) | Core team |
+| Service            | Type              | Status                                 | Responsible                   |
+| ------------------ | ----------------- | -------------------------------------- | ----------------------------- |
+| Gmail              | Google Workspace  | Official + community MCP servers exist | Conductor student (integrate) |
+| Google Calendar    | Google Workspace  | Official + community MCP servers exist | Conductor student             |
+| Google Drive       | Google Workspace  | Official + community MCP servers exist | Core team (in-house wrapper)  |
+| Slack              | Messaging         | Community MCP server                   | Conductor student             |
+| Discord            | Messaging         | Community MCP server                   | Conductor student             |
+| Notion             | Knowledge         | Official MCP server                    | Conductor student             |
+| Obsidian           | Knowledge (local) | In-house, file-system based            | Core team                     |
+| GitHub             | Dev               | Official MCP server                    | Conductor student             |
+| Filesystem (local) | IO                | Official MCP server (Anthropic's)      | Core team                     |
+| Web Search         | IO                | Community (Brave, Serper, Tavily)      | Core team                     |
 
 **Tier 2 — Stretch to Week 14.** Expand the Conductor palette, give Scribe and Reel some external hooks.
 
-| Service | Type | Status | Responsible |
-|---|---|---|---|
-| Airtable | Data | Community | Conductor student |
-| Linear | Dev | Community | Conductor student |
-| Outlook / Microsoft 365 | Productivity | Official | Deferred |
-| Google Docs (deep) | Productivity | Community | Conductor student |
-| Figma | Design | Community | Reel student |
-| Zoom / Meet | Productivity | Deferred | Deferred |
-| Spotify | Media | Community | Reel student (optional) |
-| Webhooks (generic) | IO | In-house | Conductor student |
-| RSS | IO | In-house (already as block) | Conductor student |
+| Service                 | Type         | Status                      | Responsible             |
+| ----------------------- | ------------ | --------------------------- | ----------------------- |
+| Airtable                | Data         | Community                   | Conductor student       |
+| Linear                  | Dev          | Community                   | Conductor student       |
+| Outlook / Microsoft 365 | Productivity | Official                    | Deferred                |
+| Google Docs (deep)      | Productivity | Community                   | Conductor student       |
+| Figma                   | Design       | Community                   | Reel student            |
+| Zoom / Meet             | Productivity | Deferred                    | Deferred                |
+| Spotify                 | Media        | Community                   | Reel student (optional) |
+| Webhooks (generic)      | IO           | In-house                    | Conductor student       |
+| RSS                     | IO           | In-house (already as block) | Conductor student       |
 
 **Tier 3 — Post-capstone.** Mapped now so the future is legible.
 
@@ -563,12 +564,12 @@ Every integration exposes one or more blocks via a consistent pattern. Example f
 ```typescript
 // packages/agents/servers/gmail/blocks.ts
 
-import { createIntegrationBlock } from '@iem/core/agent/integration-helper'
+import { createIntegrationBlock } from "@iem/core/agent/integration-helper";
 
 export const gmailSendBlock = createIntegrationBlock({
-  id: 'iem.integration.gmail.send',
-  name: 'Gmail: Send',
-  service: 'gmail',
+  id: "iem.integration.gmail.send",
+  name: "Gmail: Send",
+  service: "gmail",
   requiresAuth: true,
   input: z.object({
     to: z.array(z.string().email()),
@@ -582,13 +583,13 @@ export const gmailSendBlock = createIntegrationBlock({
     threadId: z.string(),
     sentAt: z.string(),
   }),
-  mcpTool: 'gmail.send',
-})
+  mcpTool: "gmail.send",
+});
 
 export const gmailSearchBlock = createIntegrationBlock({
-  id: 'iem.integration.gmail.search',
+  id: "iem.integration.gmail.search",
   // ...
-})
+});
 ```
 
 The helper handles credential resolution, rate-limiting, error normalization, and retry defaults. A student adding a new Gmail operation writes only the schema and the tool name.
@@ -629,163 +630,163 @@ The list is long. The goal is not to use everything. The goal is for the team to
 
 ## 5.1 Core backend
 
-| Package | Purpose | Alternative | Notes |
-|---|---|---|---|
-| `express` | HTTP server | Hono, Fastify | Already in use; keep |
-| `drizzle-orm` | ORM | Prisma | TypeScript-native, schema-as-code |
-| `drizzle-kit` | Migrations | — | Companion to Drizzle |
-| `pg` | Postgres driver | postgres.js | Standard |
-| `pgvector` | Vector extension | — | For Custom Agent RAG |
-| `bcrypt` | Password hashing | argon2 | Already in use |
-| `jsonwebtoken` | JWT | jose | Already in use |
-| `zod` | Schema validation | valibot, superstruct | Block Protocol depends on it |
-| `pino` | Structured logging | winston | Fast, production-grade |
-| `dotenv` | Env loading | `@t3-oss/env-core` (for type-safe) | T3 env preferred for DX |
-| `@modelcontextprotocol/sdk` | MCP client + server | — | Core to the harness |
-| `ai` | Vercel AI SDK | LangChain JS | Our chat primitive |
-| `@ai-sdk/google` | Gemini provider | — | Provider |
-| `@ai-sdk/anthropic` | Claude provider | — | Provider |
-| `@ai-sdk/openai` | OpenAI / OpenAI-compatible | — | Covers Ollama when needed |
-| `node-cron` | Scheduled triggers | BullMQ | For Conductor schedule block |
-| `ioredis` | Redis client | — | Only if BullMQ chosen |
-| `express-rate-limit` | Rate limiting | — | Auth endpoints |
-| `helmet` | Security headers | — | Standard middleware |
-| `cors` | CORS | — | Already standard |
-| `cookie-parser` | Cookies | — | Standard |
-| `multer` | File uploads | busboy | If accepting uploads |
+| Package                     | Purpose                    | Alternative                        | Notes                             |
+| --------------------------- | -------------------------- | ---------------------------------- | --------------------------------- |
+| `express`                   | HTTP server                | Hono, Fastify                      | Already in use; keep              |
+| `drizzle-orm`               | ORM                        | Prisma                             | TypeScript-native, schema-as-code |
+| `drizzle-kit`               | Migrations                 | —                                  | Companion to Drizzle              |
+| `pg`                        | Postgres driver            | postgres.js                        | Standard                          |
+| `pgvector`                  | Vector extension           | —                                  | For Custom Agent RAG              |
+| `bcrypt`                    | Password hashing           | argon2                             | Already in use                    |
+| `jsonwebtoken`              | JWT                        | jose                               | Already in use                    |
+| `zod`                       | Schema validation          | valibot, superstruct               | Block Protocol depends on it      |
+| `pino`                      | Structured logging         | winston                            | Fast, production-grade            |
+| `dotenv`                    | Env loading                | `@t3-oss/env-core` (for type-safe) | T3 env preferred for DX           |
+| `@modelcontextprotocol/sdk` | MCP client + server        | —                                  | Core to the harness               |
+| `ai`                        | Vercel AI SDK              | LangChain JS                       | Our chat primitive                |
+| `@ai-sdk/google`            | Gemini provider            | —                                  | Provider                          |
+| `@ai-sdk/anthropic`         | Claude provider            | —                                  | Provider                          |
+| `@ai-sdk/openai`            | OpenAI / OpenAI-compatible | —                                  | Covers Ollama when needed         |
+| `node-cron`                 | Scheduled triggers         | BullMQ                             | For Conductor schedule block      |
+| `ioredis`                   | Redis client               | —                                  | Only if BullMQ chosen             |
+| `express-rate-limit`        | Rate limiting              | —                                  | Auth endpoints                    |
+| `helmet`                    | Security headers           | —                                  | Standard middleware               |
+| `cors`                      | CORS                       | —                                  | Already standard                  |
+| `cookie-parser`             | Cookies                    | —                                  | Standard                          |
+| `multer`                    | File uploads               | busboy                             | If accepting uploads              |
 
 ## 5.2 Core frontend
 
-| Package | Purpose | Alternative | Notes |
-|---|---|---|---|
-| `react` | UI | — | Already |
-| `react-dom` | DOM renderer | — | Already |
-| `vite` | Dev/build | — | Already |
-| `typescript` | Language | — | Already |
-| `tailwindcss` | Styling | — | Already |
-| `reactflow` | Canvas (current) | — | Already; rename import to `@xyflow/react` if on v12+ |
-| `react-router` | Routing | TanStack Router | Already; migration optional |
-| `zustand` | Client state | Jotai | Simple, unopinionated |
-| `@tanstack/react-query` | Server state | SWR | For anything hitting the API |
-| `react-hook-form` | Forms | — | Pair with zod resolver |
-| `@hookform/resolvers` | Zod resolver | — | Companion |
-| `lucide-react` | Icons | — | Paired with shadcn/ui |
-| `sonner` | Toasts | react-hot-toast | shadcn-recommended |
-| `date-fns` | Dates | dayjs | Tree-shakeable |
-| `cmdk` | Command palette | — | For ⌘K UX |
-| `embla-carousel-react` | Onboarding carousel | — | Lightweight |
-| `@dnd-kit/core` | Drag and drop | — | Where React Flow isn't enough |
-| `react-markdown` | Markdown rendering | — | Chat message rendering |
-| `remark-gfm` | GitHub-flavored md | — | With react-markdown |
-| `rehype-highlight` | Code highlight | shiki | For code in chat |
-| `framer-motion` | Animations | — | Sparingly, for delight |
+| Package                 | Purpose             | Alternative     | Notes                                                |
+| ----------------------- | ------------------- | --------------- | ---------------------------------------------------- |
+| `react`                 | UI                  | —               | Already                                              |
+| `react-dom`             | DOM renderer        | —               | Already                                              |
+| `vite`                  | Dev/build           | —               | Already                                              |
+| `typescript`            | Language            | —               | Already                                              |
+| `tailwindcss`           | Styling             | —               | Already                                              |
+| `reactflow`             | Canvas (current)    | —               | Already; rename import to `@xyflow/react` if on v12+ |
+| `react-router`          | Routing             | TanStack Router | Already; migration optional                          |
+| `zustand`               | Client state        | Jotai           | Simple, unopinionated                                |
+| `@tanstack/react-query` | Server state        | SWR             | For anything hitting the API                         |
+| `react-hook-form`       | Forms               | —               | Pair with zod resolver                               |
+| `@hookform/resolvers`   | Zod resolver        | —               | Companion                                            |
+| `lucide-react`          | Icons               | —               | Paired with shadcn/ui                                |
+| `sonner`                | Toasts              | react-hot-toast | shadcn-recommended                                   |
+| `date-fns`              | Dates               | dayjs           | Tree-shakeable                                       |
+| `cmdk`                  | Command palette     | —               | For ⌘K UX                                            |
+| `embla-carousel-react`  | Onboarding carousel | —               | Lightweight                                          |
+| `@dnd-kit/core`         | Drag and drop       | —               | Where React Flow isn't enough                        |
+| `react-markdown`        | Markdown rendering  | —               | Chat message rendering                               |
+| `remark-gfm`            | GitHub-flavored md  | —               | With react-markdown                                  |
+| `rehype-highlight`      | Code highlight      | shiki           | For code in chat                                     |
+| `framer-motion`         | Animations          | —               | Sparingly, for delight                               |
 
 ## 5.3 Shared UI layer (`packages/ui`)
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `shadcn/ui` (copied) | Component primitives | Not installed; source copied |
-| `@radix-ui/*` | Headless primitives | Underlies shadcn |
-| `class-variance-authority` | Variant API | Also underlies shadcn |
-| `clsx` + `tailwind-merge` | Class composition | Standard |
+| Package                    | Purpose              | Notes                        |
+| -------------------------- | -------------------- | ---------------------------- |
+| `shadcn/ui` (copied)       | Component primitives | Not installed; source copied |
+| `@radix-ui/*`              | Headless primitives  | Underlies shadcn             |
+| `class-variance-authority` | Variant API          | Also underlies shadcn        |
+| `clsx` + `tailwind-merge`  | Class composition    | Standard                     |
 
 ## 5.4 Dev tooling
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `pnpm` | Package manager | Monorepo-native |
-| `turbo` | Pipeline | Caching, parallel |
-| `vitest` | Unit testing | Fast, ESM-native |
-| `@testing-library/react` | Component testing | Standard |
-| `@testing-library/user-event` | User simulation | Companion |
-| `@playwright/test` | E2E | Demo-day confidence |
-| `msw` | Network mocking | CI hermeticity |
-| `@faker-js/faker` | Fixtures | TDD support |
-| `eslint` + `@typescript-eslint/*` | Linting | Standard |
-| `prettier` | Formatting | Standard |
-| `husky` | Git hooks | Pre-commit |
-| `lint-staged` | Staged-file hooks | With husky |
-| `tsx` or `tsup` | TS execution | For scripts |
-| `@types/*` | Type definitions | Per library |
-| `typedoc` | API docs | For core packages |
+| Package                           | Purpose           | Notes               |
+| --------------------------------- | ----------------- | ------------------- |
+| `pnpm`                            | Package manager   | Monorepo-native     |
+| `turbo`                           | Pipeline          | Caching, parallel   |
+| `vitest`                          | Unit testing      | Fast, ESM-native    |
+| `@testing-library/react`          | Component testing | Standard            |
+| `@testing-library/user-event`     | User simulation   | Companion           |
+| `@playwright/test`                | E2E               | Demo-day confidence |
+| `msw`                             | Network mocking   | CI hermeticity      |
+| `@faker-js/faker`                 | Fixtures          | TDD support         |
+| `eslint` + `@typescript-eslint/*` | Linting           | Standard            |
+| `prettier`                        | Formatting        | Standard            |
+| `husky`                           | Git hooks         | Pre-commit          |
+| `lint-staged`                     | Staged-file hooks | With husky          |
+| `tsx` or `tsup`                   | TS execution      | For scripts         |
+| `@types/*`                        | Type definitions  | Per library         |
+| `typedoc`                         | API docs          | For core packages   |
 
 ## 5.5 Surface A — Playable
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `pixi.js` | 2D WebGL renderer | Primary engine |
-| `matter-js` | 2D physics | When needed |
-| `yjs` | CRDT | Presence and multiplayer state |
-| `y-websocket` | Transport | With yjs |
-| `y-indexeddb` | Local persistence | With yjs |
-| `howler` | Audio | Game SFX and music |
-| `nanoid` | ID generation | For entities |
+| Package       | Purpose           | Notes                          |
+| ------------- | ----------------- | ------------------------------ |
+| `pixi.js`     | 2D WebGL renderer | Primary engine                 |
+| `matter-js`   | 2D physics        | When needed                    |
+| `yjs`         | CRDT              | Presence and multiplayer state |
+| `y-websocket` | Transport         | With yjs                       |
+| `y-indexeddb` | Local persistence | With yjs                       |
+| `howler`      | Audio             | Game SFX and music             |
+| `nanoid`      | ID generation     | For entities                   |
 
 ## 5.6 Surface B — Conductor
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `node-cron` | Scheduled triggers | Also in backend core |
-| `bullmq` | Queue | Optional, for production-grade scheduling |
-| `axios` or native fetch | HTTP calls | Prefer fetch |
-| Per-integration SDKs | See Part IV | Installed per integration |
-| `@slack/web-api` | Slack | Inside Slack MCP server |
-| `@notionhq/client` | Notion | Inside Notion MCP server |
-| `googleapis` | Google Workspace | Inside Google MCP servers |
-| `@octokit/rest` | GitHub | Inside GitHub MCP server |
+| Package                 | Purpose            | Notes                                     |
+| ----------------------- | ------------------ | ----------------------------------------- |
+| `node-cron`             | Scheduled triggers | Also in backend core                      |
+| `bullmq`                | Queue              | Optional, for production-grade scheduling |
+| `axios` or native fetch | HTTP calls         | Prefer fetch                              |
+| Per-integration SDKs    | See Part IV        | Installed per integration                 |
+| `@slack/web-api`        | Slack              | Inside Slack MCP server                   |
+| `@notionhq/client`      | Notion             | Inside Notion MCP server                  |
+| `googleapis`            | Google Workspace   | Inside Google MCP servers                 |
+| `@octokit/rest`         | GitHub             | Inside GitHub MCP server                  |
 
 ## 5.7 Surface C — Reel
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `@ffmpeg/ffmpeg` | FFmpeg WASM (browser) | Stitching |
-| `@ffmpeg/util` | FFmpeg utilities | Companion |
-| `fluent-ffmpeg` | FFmpeg (server) | Heavy stitching |
-| `@fal-ai/serverless-client` | fal.ai | Image/video gen |
-| `replicate` | Replicate | Image/video gen |
-| `elevenlabs` | TTS | Voice |
-| `openai` | Whisper for subtitles | Transcription |
-| `wavesurfer.js` | Audio waveform UI | Timeline visual |
-| `video.js` or `plyr` | Video playback | Preview |
+| Package                     | Purpose               | Notes           |
+| --------------------------- | --------------------- | --------------- |
+| `@ffmpeg/ffmpeg`            | FFmpeg WASM (browser) | Stitching       |
+| `@ffmpeg/util`              | FFmpeg utilities      | Companion       |
+| `fluent-ffmpeg`             | FFmpeg (server)       | Heavy stitching |
+| `@fal-ai/serverless-client` | fal.ai                | Image/video gen |
+| `replicate`                 | Replicate             | Image/video gen |
+| `elevenlabs`                | TTS                   | Voice           |
+| `openai`                    | Whisper for subtitles | Transcription   |
+| `wavesurfer.js`             | Audio waveform UI     | Timeline visual |
+| `video.js` or `plyr`        | Video playback        | Preview         |
 
 ## 5.8 Surface D — Forge
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `@webcontainer/api` | StackBlitz WebContainers | In-browser execution |
-| `esbuild-wasm` | Bundler (browser) | For building artifacts |
-| `monaco-editor` | Code editor | Via `@monaco-editor/react` |
-| `puppeteer` (server) | Lighthouse runs | Perf profiling |
-| `@anthropic-ai/sdk` | Claude for code | Via ai-sdk |
-| `magic-string` | Source transforms | For code manipulation |
-| `tree-sitter` wasm | Code parsing | AST for review blocks |
+| Package              | Purpose                  | Notes                      |
+| -------------------- | ------------------------ | -------------------------- |
+| `@webcontainer/api`  | StackBlitz WebContainers | In-browser execution       |
+| `esbuild-wasm`       | Bundler (browser)        | For building artifacts     |
+| `monaco-editor`      | Code editor              | Via `@monaco-editor/react` |
+| `puppeteer` (server) | Lighthouse runs          | Perf profiling             |
+| `@anthropic-ai/sdk`  | Claude for code          | Via ai-sdk                 |
+| `magic-string`       | Source transforms        | For code manipulation      |
+| `tree-sitter` wasm   | Code parsing             | AST for review blocks      |
 
 ## 5.9 Surface E — Scribe
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `@tiptap/react` | Rich text editor | Core of Prose blocks |
-| `@tiptap/starter-kit` | Tiptap bundle | Companion |
-| `@tiptap/extension-*` | Various extensions | Track changes, comments |
-| `prosemirror-*` | Underlying | Already transitive |
-| `epub-gen` or `epub-press` | EPUB generation | Export |
-| `pdfkit` | PDF generation | Export (server) |
-| `@react-pdf/renderer` | PDF generation | Alternative (React-based) |
-| `pagedjs` | Print CSS engine | With puppeteer |
-| `remark` + `rehype` | Markdown AST | Conversion |
-| `unified` | Pipeline | Parent of remark/rehype |
-| `reading-time` | Reading-time estimate | Chapter metadata |
-| `word-count` (or custom) | Word counts | Manuscript view |
+| Package                    | Purpose               | Notes                     |
+| -------------------------- | --------------------- | ------------------------- |
+| `@tiptap/react`            | Rich text editor      | Core of Prose blocks      |
+| `@tiptap/starter-kit`      | Tiptap bundle         | Companion                 |
+| `@tiptap/extension-*`      | Various extensions    | Track changes, comments   |
+| `prosemirror-*`            | Underlying            | Already transitive        |
+| `epub-gen` or `epub-press` | EPUB generation       | Export                    |
+| `pdfkit`                   | PDF generation        | Export (server)           |
+| `@react-pdf/renderer`      | PDF generation        | Alternative (React-based) |
+| `pagedjs`                  | Print CSS engine      | With puppeteer            |
+| `remark` + `rehype`        | Markdown AST          | Conversion                |
+| `unified`                  | Pipeline              | Parent of remark/rehype   |
+| `reading-time`             | Reading-time estimate | Chapter metadata          |
+| `word-count` (or custom)   | Word counts           | Manuscript view           |
 
 ## 5.10 Optional / stretch
 
-| Package | Purpose | When |
-|---|---|---|
-| `electrobun` | Native bundle | Week 14 stretch |
-| `sentry` | Error monitoring | Post-capstone |
-| `posthog-js` | Product analytics | Post-capstone |
-| `resend` | Email sending | Post-capstone |
-| `stripe` | Payments | Post-capstone |
+| Package      | Purpose           | When            |
+| ------------ | ----------------- | --------------- |
+| `electrobun` | Native bundle     | Week 14 stretch |
+| `sentry`     | Error monitoring  | Post-capstone   |
+| `posthog-js` | Product analytics | Post-capstone   |
+| `resend`     | Email sending     | Post-capstone   |
+| `stripe`     | Payments          | Post-capstone   |
 
 ## 5.11 Dependency hygiene rule
 
@@ -1145,20 +1146,20 @@ These six rituals account for the "95% of the guidance" Zachary asked about. The
 
 Nothing reaches `main` without passing these gates. Students cannot forget to run them because they run automatically.
 
-| Gate | When | Tool | Consequence |
-|---|---|---|---|
-| Pre-commit format | On commit | Husky + lint-staged + prettier | Commit aborted |
-| Pre-commit lint | On commit | Husky + eslint | Commit aborted |
-| Commit message | On commit | commitlint | Commit aborted |
-| PR title format | On push | GH Action | PR check fail |
-| Typecheck | On push | Turbo + tsc | PR check fail |
-| Unit tests | On push | Vitest | PR check fail |
-| E2E tests | On push (main-bound) | Playwright | PR check fail |
-| Coverage threshold | On push | Vitest + Codecov | PR check fail if regressed |
-| CODEOWNERS approval | Before merge | GitHub native | Merge blocked |
-| Required reviewers | Before merge | GitHub branch protection | Merge blocked |
-| No TODO(critical) | On push | GH Action grep | PR check fail |
-| Dependency justification | On push | GH Action (scans PR body) | PR check fail if new dep without explanation |
+| Gate                     | When                 | Tool                           | Consequence                                  |
+| ------------------------ | -------------------- | ------------------------------ | -------------------------------------------- |
+| Pre-commit format        | On commit            | Husky + lint-staged + prettier | Commit aborted                               |
+| Pre-commit lint          | On commit            | Husky + eslint                 | Commit aborted                               |
+| Commit message           | On commit            | commitlint                     | Commit aborted                               |
+| PR title format          | On push              | GH Action                      | PR check fail                                |
+| Typecheck                | On push              | Turbo + tsc                    | PR check fail                                |
+| Unit tests               | On push              | Vitest                         | PR check fail                                |
+| E2E tests                | On push (main-bound) | Playwright                     | PR check fail                                |
+| Coverage threshold       | On push              | Vitest + Codecov               | PR check fail if regressed                   |
+| CODEOWNERS approval      | Before merge         | GitHub native                  | Merge blocked                                |
+| Required reviewers       | Before merge         | GitHub branch protection       | Merge blocked                                |
+| No TODO(critical)        | On push              | GH Action grep                 | PR check fail                                |
+| Dependency justification | On push              | GH Action (scans PR body)      | PR check fail if new dep without explanation |
 
 Each of these is configured once in the repo-upgrade PR. After that, the team lives under the gates, and the gates enforce standards without the team having to remember.
 
@@ -1219,7 +1220,7 @@ Configure:
 
 ```
 GEMINI_API_KEY=AIza...
-GEMINI_DEFAULT_MODEL=gemini-2.0-flash
+GEMINI_DEFAULT_MODEL=gemini-2.5-pro
 ```
 
 ## Anthropic
@@ -1259,15 +1260,15 @@ In `packages/core/src/agent/routing.ts`, the default routing table maps capabili
 
 ```typescript
 export const defaultRouting = {
-  'reasoning-light': 'ollama:hermes3',
-  'reasoning-heavy': 'gemini:gemini-2.0-flash',
-  'coding': 'anthropic:claude-opus-4-7',
-  'vision': 'ollama:llama3.2-vision',
-  'image-gen': 'fal:flux-pro',
-  'video-gen': 'fal:runway-gen3',
-  'tts': 'elevenlabs:default',
-  'transcription': 'openai:whisper-1',
-}
+  "reasoning-light": "ollama:hermes3",
+  "reasoning-heavy": "gemini:gemini-2.5-pro",
+  coding: "anthropic:claude-opus-4-7",
+  vision: "ollama:llama3.2-vision",
+  "image-gen": "fal:flux-pro",
+  "video-gen": "fal:runway-gen3",
+  tts: "elevenlabs:default",
+  transcription: "openai:whisper-1",
+};
 ```
 
 ---
@@ -1339,24 +1340,24 @@ Every integrated server has a config file in `packages/agents/config/servers/<na
 
 Full list of `pnpm iem:*` scripts implemented in `scripts/cli/`. Each is one command, callable from anywhere in the monorepo.
 
-| Command | Purpose | Frequency |
-|---|---|---|
-| `pnpm iem:scaffold` | Initialize full monorepo scaffold | Once |
-| `pnpm iem:new-block` | Scaffold a new block | Per block |
-| `pnpm iem:new-mcp` | Scaffold a new MCP server | Per integration |
-| `pnpm iem:new-agent-persona` | Scaffold a new Custom Agent persona | As needed |
-| `pnpm iem:new-adr` | Open new ADR template in editor | Per decision |
-| `pnpm iem:new-surface` | Reserved for sixth surface | Rare |
-| `pnpm iem:daily-sync` | Rebase on main, brief on what changed | Daily per student |
-| `pnpm iem:pr-prep` | Full pre-PR check and body generation | Per PR |
-| `pnpm iem:triage-add` | Append entry to `TRIAGE.md` | Per agent or human observation |
-| `pnpm iem:triage-review` | Mentor walkthrough of open triage | Weekly (mentor) |
-| `pnpm iem:demo-tag` | Tag weekly release | Friday |
-| `pnpm iem:weekly-report` | Generate weekly report | Friday |
-| `pnpm iem:check-env` | Verify environment setup | On `pnpm dev` |
-| `pnpm iem:setup-ollama` | Pull all project default models | Onboarding |
-| `pnpm iem:seed-demo` | Populate DB with demo sessions | Onboarding |
-| `pnpm iem:health` | Comprehensive health check across all services | As needed |
+| Command                      | Purpose                                        | Frequency                      |
+| ---------------------------- | ---------------------------------------------- | ------------------------------ |
+| `pnpm iem:scaffold`          | Initialize full monorepo scaffold              | Once                           |
+| `pnpm iem:new-block`         | Scaffold a new block                           | Per block                      |
+| `pnpm iem:new-mcp`           | Scaffold a new MCP server                      | Per integration                |
+| `pnpm iem:new-agent-persona` | Scaffold a new Custom Agent persona            | As needed                      |
+| `pnpm iem:new-adr`           | Open new ADR template in editor                | Per decision                   |
+| `pnpm iem:new-surface`       | Reserved for sixth surface                     | Rare                           |
+| `pnpm iem:daily-sync`        | Rebase on main, brief on what changed          | Daily per student              |
+| `pnpm iem:pr-prep`           | Full pre-PR check and body generation          | Per PR                         |
+| `pnpm iem:triage-add`        | Append entry to `TRIAGE.md`                    | Per agent or human observation |
+| `pnpm iem:triage-review`     | Mentor walkthrough of open triage              | Weekly (mentor)                |
+| `pnpm iem:demo-tag`          | Tag weekly release                             | Friday                         |
+| `pnpm iem:weekly-report`     | Generate weekly report                         | Friday                         |
+| `pnpm iem:check-env`         | Verify environment setup                       | On `pnpm dev`                  |
+| `pnpm iem:setup-ollama`      | Pull all project default models                | Onboarding                     |
+| `pnpm iem:seed-demo`         | Populate DB with demo sessions                 | Onboarding                     |
+| `pnpm iem:health`            | Comprehensive health check across all services | As needed                      |
 
 Each command's source lives in `scripts/cli/commands/<name>.ts` and has unit tests in `scripts/cli/test/`. The scripts themselves are subject to the same review discipline as application code.
 
@@ -1391,6 +1392,7 @@ the active tasks, and any blockers.
 ## Boot Stage 3 — Rules
 
 Read, in order, every file in `.agent/rules/`:
+
 - triage.md
 - tdd.md
 - review.md

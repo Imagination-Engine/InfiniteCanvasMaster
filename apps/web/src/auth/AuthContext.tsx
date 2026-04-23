@@ -12,7 +12,7 @@ import { apiRequest } from "../lib/api";
 
 type User = {
   id: string;
-  username: string;
+  email: string;
   hasCompletedOnboarding: boolean;
 };
 
@@ -29,6 +29,7 @@ type AuthContextValue = {
   signup: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   completeOnboarding: () => void;
+  refresh: () => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const setSession = useCallback((response: AuthResponse) => {
     setAccessToken(response.accessToken);
     setUser(response.user);
+    return response.accessToken;
   }, []);
 
   const clearSession = useCallback(() => {
@@ -48,8 +50,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUser(null);
   }, []);
 
+  // Handle automatic token refresh
+  const handleRefresh = useCallback(async () => {
+    try {
+      const response = await apiRequest<AuthResponse>("/api/auth/refresh", {
+        method: "POST",
+      });
+      return setSession(response);
+    } catch (err) {
+      clearSession();
+      return null;
+    }
+  }, [clearSession, setSession]);
+
   const completeOnboarding = useCallback(() => {
-    setUser((prev) => (prev ? { ...prev, hasCompletedOnboarding: true } : null));
+    setUser((prev) =>
+      prev ? { ...prev, hasCompletedOnboarding: true } : null,
+    );
   }, []);
 
   const login = useCallback(
@@ -115,7 +132,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, [clearSession, setSession]);
 
-  const value = useMemo<AuthContextValue>(
+  const value = useMemo<
+    AuthContextValue & { refresh: () => Promise<string | null> }
+  >(
     () => ({
       user,
       accessToken,
@@ -124,8 +143,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signup,
       logout,
       completeOnboarding,
+      refresh: handleRefresh,
     }),
-    [user, accessToken, loading, login, signup, logout, completeOnboarding],
+    [
+      user,
+      accessToken,
+      loading,
+      login,
+      signup,
+      logout,
+      completeOnboarding,
+      handleRefresh,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

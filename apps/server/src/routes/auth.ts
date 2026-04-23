@@ -22,6 +22,7 @@ const getSecrets = (c: any) => {
 };
 
 authRouter.post("/signup", async (c) => {
+  console.log("[AUTH] Signup attempt start");
   const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
   const db = c.get("db") as any;
   const body = await c.req.json();
@@ -86,11 +87,18 @@ authRouter.post("/signup", async (c) => {
     );
   } catch (error) {
     console.error("Signup error:", error);
-    return c.json({ error: "An unexpected error occurred during signup. Please try again later." }, 500);
+    return c.json(
+      {
+        error:
+          "An unexpected error occurred during signup. Please try again later.",
+      },
+      500,
+    );
   }
 });
 
 authRouter.post("/login", async (c) => {
+  console.log("[AUTH] Login attempt start");
   const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
   const db = c.get("db") as any;
   const body = await c.req.json();
@@ -101,10 +109,7 @@ authRouter.post("/login", async (c) => {
   }
 
   try {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email));
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     if (!user) {
       return c.json({ error: "Invalid email or password" }, 401);
     }
@@ -148,7 +153,13 @@ authRouter.post("/login", async (c) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    return c.json({ error: "An unexpected error occurred during login. Please try again later." }, 500);
+    return c.json(
+      {
+        error:
+          "An unexpected error occurred during login. Please try again later.",
+      },
+      500,
+    );
   }
 });
 
