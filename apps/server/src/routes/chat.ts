@@ -55,12 +55,17 @@ chatRouter.post("/", async (c) => {
 
   const orchestrator = mastra.getAgent('orchestrator');
 
-  // Mastra handles persistence automatically via the PostgresStore we configured
-  const result = await orchestrator.stream(incomingMessages, {
-    threadId: sessionId,
-  });
+  try {
+    // Mastra handles persistence automatically via the PostgresStore we configured
+    const result = await orchestrator.stream(incomingMessages, {
+      memory: { thread: sessionId },
+    });
 
-  return result.toDataStreamResponse();
+    return result.toDataStreamResponse();
+  } catch (error) {
+    console.error("[MASTRA EXECUTION ERROR]:", error);
+    return c.json({ error: "Agent orchestration failed" }, 500);
+  }
 });
 
 export { chatRouter };
