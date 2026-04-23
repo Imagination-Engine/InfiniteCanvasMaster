@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { useUserStore } from "../../store/useUserStore";
 import { apiRequest } from "../../lib/api";
 import { useAuth } from "../../auth/AuthContext";
 
@@ -34,8 +33,7 @@ const slides = [
 export const OnboardingCarousel: React.FC = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const setCompleted = useUserStore((state) => state.setHasCompletedOnboarding);
-  const { accessToken } = useAuth();
+  const { accessToken, completeOnboarding } = useAuth();
   const [completing, setCompleting] = useState(false);
 
   const onSelect = useCallback(() => {
@@ -62,11 +60,11 @@ export const OnboardingCarousel: React.FC = () => {
         { method: "POST" },
         accessToken,
       );
-      setCompleted(true);
+      completeOnboarding();
     } catch (err) {
       console.error("Failed to complete onboarding:", err);
       // Even if it fails, let them proceed for now
-      setCompleted(true);
+      completeOnboarding();
     }
   };
 

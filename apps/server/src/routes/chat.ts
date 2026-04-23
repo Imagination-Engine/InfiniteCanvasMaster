@@ -5,12 +5,22 @@ import { workspaces } from "@iem/db";
 import jwt from "jsonwebtoken";
 
 const chatRouter = new Hono();
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret-fallback-key";
+
+const getSecrets = (c: any) => {
+  return {
+    JWT_SECRET:
+      c.env?.JWT_SECRET ||
+      process.env.JWT_SECRET ||
+      "super-secret-fallback-key",
+  };
+};
 
 // Auth Middleware
 chatRouter.use("*", async (c, next) => {
+  const { JWT_SECRET } = getSecrets(c);
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("[CHAT AUTH] Missing or invalid Authorization header");
     return c.json({ error: "Unauthorized" }, 401);
   }
   const token = authHeader.split(" ")[1];
@@ -19,6 +29,7 @@ chatRouter.use("*", async (c, next) => {
     c.set("user", payload);
     await next();
   } catch (err) {
+    console.error("[CHAT AUTH] JWT Verify failed:", err);
     return c.json({ error: "Invalid token" }, 401);
   }
 });
@@ -45,12 +56,11 @@ chatRouter.post("/", async (c) => {
   const orchestrator = mastra.getAgent('orchestrator');
 
   // Mastra handles persistence automatically via the PostgresStore we configured
-  const result = await orchestrator.stream({
-    messages: incomingMessages,
+  const result = await orchestrator.stream(incomingMessages, {
     threadId: sessionId,
   });
 
-  return result.toTextStreamResponse();
+  return result.toDataStreamResponse();
 });
 
 export { chatRouter };

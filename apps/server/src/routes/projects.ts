@@ -3,14 +3,23 @@ import { eq, desc, asc } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { workspaces, messages, canvases, nodes, edges } from "@iem/db";
 
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret-fallback-key";
-
 const projectsRouter = new Hono();
+
+const getSecrets = (c: any) => {
+  return {
+    JWT_SECRET:
+      c.env?.JWT_SECRET ||
+      process.env.JWT_SECRET ||
+      "super-secret-fallback-key",
+  };
+};
 
 // Auth Middleware
 projectsRouter.use("*", async (c, next) => {
+  const { JWT_SECRET } = getSecrets(c);
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("[PROJECTS AUTH] Missing or invalid Authorization header");
     return c.json({ error: "Unauthorized" }, 401);
   }
   const token = authHeader.split(" ")[1];
@@ -19,6 +28,7 @@ projectsRouter.use("*", async (c, next) => {
     c.set("user", payload);
     await next();
   } catch (err) {
+    console.error("[PROJECTS AUTH] JWT Verify failed:", err);
     return c.json({ error: "Invalid token" }, 401);
   }
 });
@@ -51,7 +61,7 @@ projectsRouter.get("/", async (c) => {
 projectsRouter.post("/", async (c) => {
   const db = c.get("db") as any;
   const user = c.get("user") as any;
-  const { name, story } = await c.req.json();
+  const { name } = await c.req.json();
 
   try {
     const [newWorkspace] = await db
@@ -61,15 +71,6 @@ projectsRouter.post("/", async (c) => {
         name: name || "New Project",
       })
       .returning();
-
-    // If a story is provided, seed it as the first message
-    if (story) {
-      await db.insert(messages).values({
-        workspaceId: newWorkspace.id,
-        role: "user",
-        content: story,
-      });
-    }
 
     return c.json(
       {
@@ -320,7 +321,7 @@ projectsRouter.post("/:id/execute", async (c) => {
 
   // 3. Execute via Mastra
   try {
-    const { runId, results } = await workflow.execute({ triggerData });
+    const { runId, results } = await workflow.execute({ triggerData } as any);
     return c.json({ success: true, runId, results }, 200);
   } catch (error) {
     console.error("Workflow execution failed:", error);

@@ -28,6 +28,7 @@ type AuthContextValue = {
   login: (username: string, password: string) => Promise<void>;
   signup: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  completeOnboarding: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -45,6 +46,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const clearSession = useCallback(() => {
     setAccessToken(null);
     setUser(null);
+  }, []);
+
+  const completeOnboarding = useCallback(() => {
+    setUser((prev) => (prev ? { ...prev, hasCompletedOnboarding: true } : null));
   }, []);
 
   const login = useCallback(
@@ -118,8 +123,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       login,
       signup,
       logout,
+      completeOnboarding,
     }),
-    [user, accessToken, loading, login, signup, logout],
+    [user, accessToken, loading, login, signup, logout, completeOnboarding],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
