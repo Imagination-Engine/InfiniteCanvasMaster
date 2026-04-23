@@ -76,6 +76,8 @@ export default function HomeStudio() {
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [localInput, setLocalInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -90,21 +92,47 @@ export default function HomeStudio() {
     },
   });
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior });
+    }
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        scrollContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      setShouldAutoScroll(isAtBottom);
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      if (shouldAutoScroll) {
+        requestAnimationFrame(() => scrollToBottom("auto"));
+      }
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [shouldAutoScroll, scrollToBottom]);
+
+  useEffect(() => {
+    if (shouldAutoScroll) {
+      scrollToBottom("smooth");
+    }
+  }, [messages, shouldAutoScroll, scrollToBottom]);
+
   const scrollToChat = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => {
       chatInputRef.current?.focus();
     }, 500);
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setLocalInput(e.target.value);
-  };
-
-  // Scroll chat to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  }, [messages, isLoading]);
 
   // Load Projects
   const loadProjects = useCallback(async () => {
@@ -228,6 +256,8 @@ export default function HomeStudio() {
       <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center max-w-4xl mx-auto px-6 py-12 relative">
         <div className="w-full flex-1 flex flex-col mb-8 overflow-hidden rounded-[32px] bg-white/[0.02] border border-white/5 shadow-2xl backdrop-blur-xl relative">
           <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
             className="flex-1 overflow-y-auto p-8 custom-scrollbar relative flex flex-col min-h-0"
             style={{ overflowAnchor: "none" }}
           >
