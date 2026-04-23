@@ -263,42 +263,52 @@ export const ChatShell: React.FC<ChatShellProps> = ({
 
                     {/* Tool Invocations / Suggestions */}
                     {m.toolInvocations?.map((toolInvocation: any) => {
-                      const { toolName, toolCallId, state, args } =
-                        toolInvocation;
+                      const { toolName, toolCallId, args } = toolInvocation;
 
                       if (toolName === "generate_canvas_blueprint") {
-                        const isResolved = state === "result";
+                        const { blueprint_name, description, nodes, edges } =
+                          args || {};
 
                         return (
                           <div
                             key={toolCallId}
-                            className="mt-6 p-5 rounded-2xl bg-black/40 border border-white/5 backdrop-blur-xl group/tool transition-all hover:border-brand-purple/30"
+                            className="mt-6 p-6 rounded-[24px] bg-black/40 border border-brand-cyan/20 backdrop-blur-xl group/tool transition-all hover:border-brand-cyan/50 hover:shadow-[0_0_30px_rgba(0,194,255,0.1)]"
                           >
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-brand-purple animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-purple">
-                                  Blueprint Synthesis
-                                </span>
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center shadow-inner">
+                                  <LayoutGrid
+                                    size={18}
+                                    className="text-brand-cyan animate-pulse"
+                                  />
+                                </div>
+                                <div>
+                                  <h4 className="text-white font-bold text-[11px] uppercase tracking-wider leading-tight">
+                                    {blueprint_name || "Neural Blueprint"}
+                                  </h4>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
+                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-emerald-400">
+                                      DAG Synthesis Ready
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                               <Sparkles
-                                size={12}
-                                className="text-brand-purple opacity-50 group-hover/tool:opacity-100 transition-opacity"
+                                size={14}
+                                className="text-brand-cyan/30 group-hover/tool:text-brand-cyan transition-colors"
                               />
                             </div>
-                            <h4 className="text-white font-bold text-sm mb-1">
-                              {args.blueprint_name}
-                            </h4>
-                            <p className="text-[11px] text-brand-text-muted leading-relaxed mb-3">
-                              {args.description}
+                            <p className="text-[10px] text-brand-text-muted leading-relaxed mb-4 line-clamp-2 font-medium">
+                              {description}
                             </p>
 
-                            <div className="flex gap-2 mb-5 flex-wrap">
-                              <span className="px-2 py-1 rounded bg-white/5 border border-white/10 text-[9px] text-white/50">
-                                {args.nodes?.length || 0} Nodes
+                            <div className="flex gap-2 mb-6">
+                              <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[8px] font-bold text-white/50 uppercase tracking-widest">
+                                {nodes?.length || 0} Blocks
                               </span>
-                              <span className="px-2 py-1 rounded bg-white/5 border border-white/10 text-[9px] text-white/50">
-                                {args.edges?.length || 0} Edges
+                              <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[8px] font-bold text-white/50 uppercase tracking-widest">
+                                {edges?.length || 0} Links
                               </span>
                             </div>
 
@@ -310,9 +320,9 @@ export const ChatShell: React.FC<ChatShellProps> = ({
                                   }),
                                 );
                               }}
-                              className="w-full py-3 bg-brand-purple hover:bg-brand-purple/80 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-brand-purple/20 transition-all active:scale-95 flex items-center justify-center gap-2 group/btn"
+                              className="w-full py-3 bg-white text-black hover:bg-brand-cyan hover:text-white rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 group/btn"
                             >
-                              Deploy Blueprint to Substrate
+                              Inject into Substrate
                               <ChevronRight
                                 size={12}
                                 className="group-hover/btn:translate-x-0.5 transition-transform"

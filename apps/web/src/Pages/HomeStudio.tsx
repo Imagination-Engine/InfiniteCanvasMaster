@@ -312,44 +312,74 @@ export default function HomeStudio() {
 
                         {(m?.toolInvocations || []).map((tool: any) => {
                           if (tool?.toolName === "generate_canvas_blueprint") {
+                            const {
+                              blueprint_name,
+                              description,
+                              nodes,
+                              edges,
+                            } = tool.args || {};
                             return (
                               <div
                                 key={tool?.toolCallId}
-                                className="mt-8 p-6 rounded-3xl bg-black/50 border border-brand-cyan/30 backdrop-blur-xl group transition-all hover:border-brand-cyan/60 hover:shadow-[0_0_30px_rgba(0,194,255,0.15)] relative overflow-hidden"
+                                className="mt-8 p-8 rounded-[32px] bg-black/40 border border-brand-cyan/20 backdrop-blur-2xl group transition-all hover:border-brand-cyan/50 hover:shadow-[0_0_50px_rgba(0,194,255,0.1)] relative overflow-hidden"
                               >
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-purple via-brand-cyan to-brand-purple opacity-50" />
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-purple via-brand-cyan to-brand-purple opacity-30 group-hover:opacity-100 transition-opacity" />
 
-                                <div className="flex items-center justify-between mb-4">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center">
+                                <div className="flex items-start justify-between mb-6">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center shadow-inner">
                                       <LayoutGrid
-                                        size={18}
-                                        className="text-brand-cyan"
+                                        size={24}
+                                        className="text-brand-cyan animate-pulse"
                                       />
                                     </div>
                                     <div>
-                                      <h4 className="text-white font-bold tracking-wide">
-                                        {tool?.args?.blueprint_name ||
-                                          "Canvas Blueprint"}
+                                      <h4 className="text-xl font-black text-white uppercase tracking-tight leading-none mb-1">
+                                        {blueprint_name || "Neural Blueprint"}
                                       </h4>
-                                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-cyan">
-                                        Ready for Deployment
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">
+                                          DAG Synthesis Complete
+                                        </span>
+                                      </div>
                                     </div>
+                                  </div>
+                                  <Sparkles
+                                    size={20}
+                                    className="text-brand-cyan/40 group-hover:text-brand-cyan transition-colors"
+                                  />
+                                </div>
+
+                                <p className="text-sm text-brand-text-muted leading-relaxed mb-8 font-medium">
+                                  {description ||
+                                    "Deconstruction successful. Your imagination is ready for spatial expression."}
+                                </p>
+
+                                <div className="flex gap-3 mb-8">
+                                  <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-white/70">
+                                    <span className="text-brand-cyan mr-2">
+                                      {nodes?.length || 0}
+                                    </span>{" "}
+                                    BLOCKS
+                                  </div>
+                                  <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-white/70">
+                                    <span className="text-brand-purple mr-2">
+                                      {edges?.length || 0}
+                                    </span>{" "}
+                                    LINKS
                                   </div>
                                 </div>
 
-                                <p className="text-xs text-brand-text-muted leading-relaxed mb-6">
-                                  {tool?.args?.description ||
-                                    "Blueprint generated successfully."}
-                                </p>
-
                                 <Link
                                   to={`/projects/${activeDraftId}`}
-                                  className="w-full py-4 bg-white text-black rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-brand-cyan hover:text-white transition-all active:scale-95 flex items-center justify-center gap-3"
+                                  className="w-full py-5 bg-white text-black rounded-2xl text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-brand-cyan hover:text-white transition-all active:scale-[0.98] flex items-center justify-center gap-3 group/btn"
                                 >
-                                  Go to Canvas
-                                  <ChevronRight size={14} />
+                                  Initialize Canvas
+                                  <ChevronRight
+                                    size={16}
+                                    className="group-hover/btn:translate-x-1 transition-transform"
+                                  />
                                 </Link>
                               </div>
                             );
