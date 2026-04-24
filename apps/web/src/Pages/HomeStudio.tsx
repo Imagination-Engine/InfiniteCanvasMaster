@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
@@ -67,6 +73,11 @@ export default function HomeStudio() {
   const { accessToken, user, logout, refresh } = useAuth();
   const navigate = useNavigate();
 
+  // --- Layout State ---
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // --- Dashboard State ---
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,26 +86,35 @@ export default function HomeStudio() {
   // --- Chat State ---
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [localInput, setLocalInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { messages, append, isLoading, error } = useChat({
+  const chatState = useChat({
     api: "/api/chat",
-    id: "home-studio-chat-stable", // Stabilized ID
-    body: { sessionId: activeDraftId },
+    id: "home-studio-chat-stable",
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    initialMessages: [], // Explicitly provided
+    initialMessages: [],
     onFinish: () => {
       loadProjects();
     },
   });
 
+  const { messages, isLoading, error } = chatState as any;
+
+  // Debug the exact contents of the hook return
+  useEffect(() => {
+    if (chatState) {
+      console.log("[DEBUG] useChat state:", chatState);
+      console.log("[DEBUG] useChat keys:", Object.keys(chatState));
+    }
+  }, [chatState]);
+
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior });
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      container.scrollTo({ top: container.scrollHeight, behavior });
     }
   }, []);
 
@@ -126,6 +146,10 @@ export default function HomeStudio() {
       scrollToBottom("smooth");
     }
   }, [messages, shouldAutoScroll, scrollToBottom]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setLocalInput(e.target.value);
+  };
 
   const scrollToChat = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -177,46 +201,58 @@ export default function HomeStudio() {
 
     if (!text || isLoading) return;
 
+    console.log(
+      "[UI] handleChatSubmit triggered for text:",
+      text.substring(0, 20) + "...",
+    );
     setLocalInput("");
 
-    let currentSessionId = activeDraftId;
-
-    // 1. Create project if it's the first message
-    if (!currentSessionId && accessToken) {
-      try {
-        const response = await apiRequest<{ project: Project }>(
-          "/api/projects",
-          {
-            method: "POST",
-            body: JSON.stringify({ name: "Untitled Canvas" }),
-            onUnauthorized: refresh,
-          },
-          accessToken,
-        );
-        currentSessionId = response.project.id;
-        // We set the activeDraftId for the next interaction,
-        // but we use currentSessionId directly in this append call to avoid race conditions.
-        setActiveDraftId(currentSessionId);
-      } catch (err) {
-        console.error("[UI] Failed to create project:", err);
-        setLocalInput(text);
-        return;
-      }
+    let sessionId = activeDraftId;
+    if (!sessionId) {
+      sessionId = "draft-" + Date.now();
+      setActiveDraftId(sessionId);
     }
 
-    // 2. Use append from the hook
     try {
-      await append(
+      console.log(
+        "[UI] handleChatSubmit triggered. Using substrate co-pilot...",
+      );
+      setLocalInput("");
+
+      let sessionId = activeDraftId;
+      if (!sessionId) {
+        sessionId = "draft-" + Date.now();
+        setActiveDraftId(sessionId);
+      }
+
+      // We use the definitive co-pilot function from the substrate
+      const state = chatState as any;
+      const coPilot =
+        state.append || state.sendMessage || state.reload || state.handleSubmit;
+
+      if (typeof coPilot !== "function") {
+        console.error(
+          "[UI] CRITICAL: Engine co-pilot not found in substrate.",
+          Object.keys(state),
+        );
+        throw new Error("Synchronization failure: Engine co-pilot offline.");
+      }
+
+      // We send the message and pass context in the options body
+      // This is the cleanest pattern for AI SDK v6+
+      await coPilot(
+        { role: "user", content: text },
         {
-          role: "user",
-          content: text,
-        },
-        {
-          body: { sessionId: currentSessionId },
+          body: { sessionId },
+          headers: accessToken
+            ? { Authorization: `Bearer ${accessToken}` }
+            : {},
         },
       );
+
+      console.log("[UI] co-pilot synchronization established.");
     } catch (err) {
-      console.error("[UI] Append failed:", err);
+      console.error("[UI] Synchronization failure:", err);
       setLocalInput(text);
     }
   };
@@ -261,7 +297,7 @@ export default function HomeStudio() {
             className="flex-1 overflow-y-auto p-8 custom-scrollbar relative flex flex-col min-h-0"
             style={{ overflowAnchor: "none" }}
           >
-            {messages.length === 0 ? (
+            {!messages || messages.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-12 animate-in fade-in zoom-in duration-1000">
                 <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-brand-purple/20 to-brand-cyan/20 border border-white/10 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(123,92,234,0.15)]">
                   <Sparkles className="w-10 h-10 text-brand-cyan drop-shadow-[0_0_10px_rgba(0,194,255,0.5)]" />
@@ -372,7 +408,7 @@ export default function HomeStudio() {
                                 </div>
 
                                 <Link
-                                  to={`/projects/${activeDraftId}`}
+                                  to={`/projects/${tool?.result?.projectId || activeDraftId}`}
                                   className="w-full py-5 bg-white text-black rounded-2xl text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-brand-cyan hover:text-white transition-all active:scale-[0.98] flex items-center justify-center gap-3 group/btn"
                                 >
                                   Initialize Canvas
@@ -401,7 +437,6 @@ export default function HomeStudio() {
                 </div>
               )}
             </div>
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Form */}
@@ -452,7 +487,7 @@ export default function HomeStudio() {
       {/* --- Section 2: Project Dashboard --- */}
       <div className="min-h-screen bg-brand-bg-page relative px-8 py-24">
         <div className="max-w-7xl mx-auto">
-          {/* Header Area */}
+          {/* Header Area --- Section 2: Project Dashboard --- */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
             <div className="space-y-4">
               <h2 className="text-5xl font-black text-white uppercase tracking-tighter">

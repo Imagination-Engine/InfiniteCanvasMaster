@@ -1,20 +1,7 @@
 import type { ComponentType } from "react";
 import type { NodeProps } from "@xyflow/react";
 
-export type NodeValueType =
-  | "text"
-  | "audio"
-  | "image"
-  | "json"
-  | "file"
-  | "code"
-  | "language"
-  | "meeting"
-  | "message"
-  | "email"
-  | "sheet"
-  | "trigger"
-  | "any";
+export type NodeValueType = string;
 
 export type SchemaField = NodeValueType | NodeValueType[];
 export type Schema = Record<string, SchemaField>;
@@ -51,11 +38,16 @@ export type NodeRegistry = Record<string, NodeRegistryEntry>;
 
 export const toSchemaTypes = (schema: Schema): Set<NodeValueType> => {
   const values = Object.values(schema);
-  const flattened = values.flatMap((value) => (Array.isArray(value) ? value : [value]));
+  const flattened = values.flatMap((value) =>
+    Array.isArray(value) ? value : [value],
+  );
   return new Set(flattened);
 };
 
-export const hasCompatibleSchemaTypes = (outputSchema: Schema, inputSchema: Schema): boolean => {
+export const hasCompatibleSchemaTypes = (
+  outputSchema: Schema,
+  inputSchema: Schema,
+): boolean => {
   const sourceTypes = toSchemaTypes(outputSchema);
   const targetTypes = toSchemaTypes(inputSchema);
 

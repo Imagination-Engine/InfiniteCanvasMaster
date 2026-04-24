@@ -107,11 +107,11 @@ describe("Knowledge-Primitive Blocks (Red/Green Phase)", () => {
     });
 
     it("successfully synthesizes an answer using LLM", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          choices: [{ message: { content: "Synthesized response" } }],
-        }),
+      const { agentRuntime } = await import("@iem/core");
+      vi.spyOn(agentRuntime, "chat").mockResolvedValueOnce({
+        content: "Synthesized response",
+        usage: { inputTokens: 10, outputTokens: 5 },
+        latencyMs: 100,
       });
 
       const output = await synthesisBlock.agent.invoke({
@@ -119,7 +119,6 @@ describe("Knowledge-Primitive Blocks (Red/Green Phase)", () => {
         contextChunks: ["c1"],
       });
       expect(output).toHaveProperty("answer", "Synthesized response");
-      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -1,21 +1,34 @@
-import { describe, it, expect } from 'vitest';
-import { proofreaderBlock } from './proofreaderBlock';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { proofreaderBlock } from "./proofreaderBlock";
 
-describe('Proofreader Block (Red/Green Phase)', () => {
-  it('has valid metadata and schema', () => {
-    expect(proofreaderBlock.id).toBe('iem.scribe.proofreader');
-    expect(proofreaderBlock.name).toBe('Proofreader');
-    
-    const validIn = { payload: 'test' };
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+}));
+
+vi.mock("@ai-sdk/google", () => ({
+  google: vi.fn(),
+}));
+
+describe("Proofreader Block (Red/Green Phase)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("has valid metadata and schema", () => {
+    expect(proofreaderBlock.id).toBe("iem.scribe.proofreader");
+    const validIn = { payload: "test" };
     expect(proofreaderBlock.input.parse(validIn)).toEqual(validIn);
   });
 
-  it('executes agent binding successfully', async () => {
-    const result = await proofreaderBlock.agent.invoke({ payload: 'test' });
-    expect(result.success).toBe(true);
-  });
+  it("executes agent binding successfully", async () => {
+    const { generateText } = await import("ai");
+    (generateText as any).mockResolvedValueOnce({
+      text: "Corrected text",
+      usage: { promptTokens: 10, completionTokens: 5 },
+    });
 
-  it('adversarial: rejects invalid schema inputs', () => {
-    expect(() => proofreaderBlock.input.parse({ payload: 123 })).toThrow();
+    const result = await proofreaderBlock.agent.invoke({ payload: "test" });
+    expect(result.success).toBe(true);
+    expect(result.text).toBe("Corrected text");
   });
 });

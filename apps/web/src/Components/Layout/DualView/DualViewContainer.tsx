@@ -38,10 +38,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     <div className="relative flex flex-1 overflow-hidden h-full">
       {/* Canvas View - Always visible in the background in this new mode */}
       <div className="absolute inset-0 z-0">
-        <Canvas
-          initialDocument={initialDocument}
-          onDocumentChange={saveCanvas}
-        />
+        <Canvas />
       </div>
 
       <NodeLibraryModal

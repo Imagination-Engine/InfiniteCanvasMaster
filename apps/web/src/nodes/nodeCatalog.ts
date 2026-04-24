@@ -1,4 +1,6 @@
+import { blockRegistry } from "@iem/core";
 import type { NodeCatalog, NodeCatalogEntry, Schema } from "./types";
+import { z } from "zod";
 
 const createEntry = (
   type: string,
@@ -30,7 +32,28 @@ const createEntry = (
   },
 });
 
-export const NODE_CATALOG: NodeCatalog = {
+// Helper to convert Zod schema to our simplified Schema type
+function zodToSimpleSchema(zodSchema: any): Schema {
+  if (!zodSchema || !(zodSchema instanceof z.ZodObject)) {
+    return {};
+  }
+
+  const shape = zodSchema.shape;
+  const simple: Schema = {};
+
+  for (const [key, value] of Object.entries(shape)) {
+    if (value instanceof z.ZodString) simple[key] = "text";
+    else if (value instanceof z.ZodNumber) simple[key] = "number";
+    else if (value instanceof z.ZodBoolean) simple[key] = "boolean";
+    else if (value instanceof z.ZodArray) simple[key] = "json";
+    else if (value instanceof z.ZodRecord) simple[key] = "json";
+    else simple[key] = "any";
+  }
+
+  return simple;
+}
+
+const BASE_CATALOG: NodeCatalog = {
   refiner: createEntry(
     "refiner",
     "creative",
@@ -927,6 +950,39 @@ export const NODE_CATALOG: NodeCatalog = {
     "action",
   ),
 };
+
+export const NODE_CATALOG: NodeCatalog = { ...BASE_CATALOG };
+
+// Dynamically populate from registry
+export function refreshCatalogFromRegistry() {
+  blockRegistry.list().forEach((block) => {
+    if (!NODE_CATALOG[block.id]) {
+      NODE_CATALOG[block.id] = {
+        category: (block.category as "creative" | "workflow") || "creative",
+        role: block.mode === "triggered" ? "action" : "tool",
+        inputSchema: zodToSimpleSchema(block.input),
+        outputSchema: zodToSimpleSchema(block.output),
+        defaultData: {
+          id: "",
+          type: block.id,
+          label: block.name,
+          description: block.description,
+          inputs: {},
+          outputs: {},
+          config: {},
+          metadata: {
+            category: block.category || "creative",
+            label: block.name,
+            description: block.description,
+          },
+        },
+      };
+    }
+  });
+}
+
+// Initial sync
+refreshCatalogFromRegistry();
 
 export const CREATIVE_NODE_TYPES = Object.keys(NODE_CATALOG).filter(
   (type) => NODE_CATALOG[type]?.category === "creative",

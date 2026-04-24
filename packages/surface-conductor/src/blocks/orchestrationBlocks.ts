@@ -23,16 +23,13 @@ export const ifBlock: BlockDefinition<any, any> = {
     toolName: "evaluate_condition",
     invoke: async (input) => {
       try {
-        // Use the common AI provider setup if available, or fallback to environment variables
-        const { generateText } = await import("ai");
-        const { google } = await import("@ai-sdk/google");
+        const { agentRuntime } = await import("@iem/core");
 
         const systemPrompt =
           "You are a precise evaluation engine. Evaluate the given condition based on the provided context. You MUST output ONLY the word 'true' or 'false'. Provide no explanations, markdown formatting, or any other text.";
         const userPrompt = `Context:\n${JSON.stringify(input.context, null, 2)}\n\nCondition: ${input.condition}`;
 
-        const { text } = await generateText({
-          model: google("gemini-2.5-pro"),
+        const response = await agentRuntime.chat({
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -41,7 +38,7 @@ export const ifBlock: BlockDefinition<any, any> = {
           maxTokens: 5,
         });
 
-        const content = text.trim().toLowerCase();
+        const content = response.content.trim().toLowerCase();
 
         let result = false;
         // Robust parsing of truthiness

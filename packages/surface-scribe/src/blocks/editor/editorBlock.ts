@@ -8,6 +8,7 @@ export const editorInput = z.object({
 
 export const editorOutput = z.object({
   success: z.boolean(),
+  text: z.string(),
 });
 
 export const editorBlock: BlockDefinition<
@@ -17,7 +18,7 @@ export const editorBlock: BlockDefinition<
   id: "iem.scribe.editor",
   name: "Editor",
   description: "Auto-generated Editor block",
-  category: "uncategorized",
+  category: "creative",
   input: editorInput,
   output: editorOutput,
   view: EditorView,
@@ -26,13 +27,16 @@ export const editorBlock: BlockDefinition<
     kind: "local",
     toolName: "execute_editor",
     invoke: async (input) => {
-      const { generateText } = await import("ai");
-      const { google } = await import("@ai-sdk/google");
-      const { text } = await generateText({
-        model: google("gemini-2.5-pro"),
-        prompt: `Act as a senior editor. Review and refine the following text: ${input.payload || ""}`,
+      const { agentRuntime } = await import("@iem/core");
+      const response = await agentRuntime.chat({
+        messages: [
+          {
+            role: "user",
+            content: `Act as a senior editor. Review and refine the following text: ${input.payload || ""}`,
+          },
+        ],
       });
-      return { success: true, text };
+      return { success: true, text: response.content };
     },
   },
 };

@@ -1,25 +1,37 @@
-import { z } from 'zod';
-import { BlockDefinition, MCPToolBinding } from '@iem/core';
-
-
+import { z } from "zod";
+import { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 export const chapterBlock: BlockDefinition<any, any> = {
-  id: 'iem.scribe.chapter',
-  name: 'Chapter',
-  description: 'Auto-generated Chapter block',
-  category: 'uncategorized',
+  id: "iem.scribe.chapter",
+  name: "Chapter",
+  description: "Auto-generated Chapter block",
+  category: "creative",
   input: z.object({
-    payload: z.string().optional()
+    title: z.string().optional(),
+    outline: z.string().optional(),
+    payload: z.string().optional(),
   }),
   output: z.object({
-    success: z.boolean()
+    success: z.boolean(),
+    text: z.string(),
   }),
-  mode: 'triggered',
+  mode: "triggered",
   agent: {
-    kind: 'local',
-    toolName: 'execute_chapter',
+    kind: "local",
+    toolName: "execute_chapter",
     invoke: async (input) => {
-      return { success: true };
-    }
-  }
+      const { agentRuntime } = await import("@iem/core");
+      const response = await agentRuntime.chat({
+        messages: [
+          {
+            role: "user",
+            content: `Draft a chapter for a story titled "${input.title || "Untitled"}". 
+            Outline: ${input.outline || "None"}. 
+            Additional Context: ${input.payload || "None"}.`,
+          },
+        ],
+      });
+      return { success: true, text: response.content };
+    },
+  },
 };

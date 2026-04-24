@@ -340,9 +340,20 @@ projectsRouter.post("/:id/execute", async (c) => {
 
 projectsRouter.delete("/:id", async (c) => {
   const db = c.get("db") as any;
+  const user = c.get("user") as any;
   const projectId = c.req.param("id");
 
   try {
+    // 1. Verify ownership
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, projectId));
+
+    if (!workspace || workspace.ownerId !== user.sub) {
+      return c.json({ error: "Unauthorized" }, 403);
+    }
+
     await db.delete(workspaces).where(eq(workspaces.id, projectId));
     return c.json({ success: true }, 200);
   } catch (error) {

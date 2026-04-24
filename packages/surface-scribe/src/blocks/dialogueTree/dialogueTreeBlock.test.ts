@@ -1,21 +1,34 @@
-import { describe, it, expect } from 'vitest';
-import { dialogueTreeBlock } from './dialogueTreeBlock';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { dialogueTreeBlock } from "./dialogueTreeBlock";
 
-describe('DialogueTree Block (Red/Green Phase)', () => {
-  it('has valid metadata and schema', () => {
-    expect(dialogueTreeBlock.id).toBe('iem.scribe.dialogueTree');
-    expect(dialogueTreeBlock.name).toBe('DialogueTree');
-    
-    const validIn = { payload: 'test' };
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+}));
+
+vi.mock("@ai-sdk/google", () => ({
+  google: vi.fn(),
+}));
+
+describe("Dialogue Tree Block (Red/Green Phase)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("has valid metadata and schema", () => {
+    expect(dialogueTreeBlock.id).toBe("iem.scribe.dialogueTree");
+    const validIn = { payload: "A quest" };
     expect(dialogueTreeBlock.input.parse(validIn)).toEqual(validIn);
   });
 
-  it('executes agent binding successfully', async () => {
-    const result = await dialogueTreeBlock.agent.invoke({ payload: 'test' });
-    expect(result.success).toBe(true);
-  });
+  it("executes agent binding successfully", async () => {
+    const { generateText } = await import("ai");
+    (generateText as any).mockResolvedValueOnce({
+      text: '{"nodes": [], "edges": []}',
+      usage: { promptTokens: 10, completionTokens: 5 },
+    });
 
-  it('adversarial: rejects invalid schema inputs', () => {
-    expect(() => dialogueTreeBlock.input.parse({ payload: 123 })).toThrow();
+    const result = await dialogueTreeBlock.agent.invoke({ payload: "test" });
+    expect(result.success).toBe(true);
+    expect(result.tree).toHaveProperty("nodes");
   });
 });

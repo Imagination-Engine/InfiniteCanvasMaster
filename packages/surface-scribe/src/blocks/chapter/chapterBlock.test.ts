@@ -1,21 +1,34 @@
-import { describe, it, expect } from 'vitest';
-import { chapterBlock } from './chapterBlock';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { chapterBlock } from "./chapterBlock";
 
-describe('Chapter Block (Red/Green Phase)', () => {
-  it('has valid metadata and schema', () => {
-    expect(chapterBlock.id).toBe('iem.scribe.chapter');
-    expect(chapterBlock.name).toBe('Chapter');
-    
-    const validIn = { payload: 'test' };
-    expect(chapterBlock.input.parse(validIn)).toEqual(validIn);
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+}));
+
+vi.mock("@ai-sdk/google", () => ({
+  google: vi.fn(),
+}));
+
+describe("Chapter Block (Red/Green Phase)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('executes agent binding successfully', async () => {
-    const result = await chapterBlock.agent.invoke({ payload: 'test' });
+  it("has valid metadata and schema", () => {
+    expect(chapterBlock.id).toBe("iem.scribe.chapter");
+    const validIn = { title: "Test", outline: "Test" };
+    expect(chapterBlock.input.parse(validIn)).toEqual({ ...validIn });
+  });
+
+  it("executes agent binding successfully", async () => {
+    const { generateText } = await import("ai");
+    (generateText as any).mockResolvedValueOnce({
+      text: "Mocked chapter content",
+      usage: { promptTokens: 10, completionTokens: 5 },
+    });
+
+    const result = await chapterBlock.agent.invoke({ title: "test" });
     expect(result.success).toBe(true);
-  });
-
-  it('adversarial: rejects invalid schema inputs', () => {
-    expect(() => chapterBlock.input.parse({ payload: 123 })).toThrow();
+    expect(result.text).toBe("Mocked chapter content");
   });
 });

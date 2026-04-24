@@ -34,15 +34,92 @@ export const generate_canvas_blueprint = createTool({
       }),
     ),
   }),
-  execute: async (inputData, { mastra }) => {
-    const { nodes, edges } = inputData as any;
+  execute: async (inputData, { mastra, ...context }) => {
+    const { blueprint_name, description, nodes, edges } = inputData as any;
 
-    // In a real execution, we would persist this to the database
-    // We can access the storage from mastra if needed, or use drizzle directly
-    const threadId = (mastra as any).threadId; // Mastra passes this in some contexts
+    // Extract userId from context (passed via handleChatStream params)
+    const userId = (context as any).userId;
 
-    // For now, returning it is enough as the Vercel AI SDK
-    // will receive the 'result' state of the tool invocation.
-    return { success: true, nodes, edges };
+    if (!userId) {
+      console.warn(
+        "[BLUEPRINT PERSISTENCE] No userId found in context. Project may fail to persist.",
+      );
+    }
+
+    // In the "Throughline" flow, this tool call is the signal to transition from
+    // conversational interplay to a persisted spatial canvas.
+
+    // We import the DB and schema dynamically to avoid circular dependencies if any
+    const {
+      db,
+      workspaces,
+      canvases,
+      nodes: nodesTable,
+      edges: edgesTable,
+    } = await import("@iem/db");
+
+    try {
+      // 1. Create the Workspace (Project)
+      const [workspace] = await db
+        .insert(workspaces)
+        .values({
+          name: blueprint_name || "Neural Blueprint",
+          ownerId: userId,
+        })
+        .returning();
+
+      // 2. Create the Canvas
+      const [canvas] = await db
+        .insert(canvases)
+        .values({
+          workspaceId: workspace.id,
+          name: "Main Canvas",
+        })
+        .returning();
+
+      // 3. Insert Nodes
+      if (nodes && nodes.length > 0) {
+        await db.insert(nodesTable).values(
+          nodes.map((n: any) => ({
+            id: n.id,
+            canvasId: canvas.id,
+            type: n.type,
+            data: n.data || {},
+            position: n.position || { x: 0, y: 0 },
+          })),
+        );
+      }
+
+      // 4. Insert Edges
+      if (edges && edges.length > 0) {
+        await db.insert(edgesTable).values(
+          edges.map((e: any) => ({
+            id: e.id,
+            canvasId: canvas.id,
+            sourceId: e.source,
+            targetId: e.target,
+            data: e.data || {},
+          })),
+        );
+      }
+
+      return {
+        success: true,
+        projectId: workspace.id,
+        blueprint_name,
+        description,
+        nodes,
+        edges,
+      };
+    } catch (error) {
+      console.error("[BLUEPRINT PERSISTENCE ERROR]:", error);
+      // Fallback to returning the data so the UI can still handle it if DB fails
+      return {
+        success: false,
+        nodes,
+        edges,
+        error: "Failed to persist to database",
+      };
+    }
   },
 });

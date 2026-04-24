@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { BlockDefinition, MCPToolBinding } from '@iem/core';
-
-
+import { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 function chunkText(
   text: string,
@@ -191,38 +189,20 @@ export const synthesisBlock: BlockDefinition<any, any> = {
     toolName: "llm_synthesize",
     invoke: async (input) => {
       try {
-        const llmApi =
-          process.env.LLM_CHAT_URL ||
-          "https://api.openai.com/v1/chat/completions";
-        const apiKey = process.env.OPENAI_API_KEY || "";
+        const { agentRuntime } = await import("@iem/core");
 
         const systemPrompt =
           "You are a helpful assistant. Use the provided context to answer the user's query. If you cannot answer based on the context, say so.";
         const userPrompt = `Context:\n${input.contextChunks.join("\n---\n")}\n\nQuery: ${input.query}`;
 
-        const response = await fetch(llmApi, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-          }),
+        const response = await agentRuntime.chat({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
         });
 
-        if (!response.ok) {
-          throw new Error(
-            `LLM synthesis failed: ${response.status} ${response.statusText}`,
-          );
-        }
-
-        const data = await response.json();
-        return { answer: data.choices[0].message.content };
+        return { answer: response.content };
       } catch (error) {
         throw new Error(
           error instanceof Error ? error.message : "Unknown synthesis error",

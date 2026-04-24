@@ -54,8 +54,9 @@ export const ChatShell: React.FC<ChatShellProps> = ({
 
   // Bottom-anchor scroll strategy
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior });
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      container.scrollTo({ top: container.scrollHeight, behavior });
     }
   }, []);
 

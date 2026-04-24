@@ -1,20 +1,21 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   ifBlock,
   forEachBlock,
   webhookTriggerBlock,
 } from "./orchestrationBlocks";
 
+// Mock the AI SDK
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+}));
+
+vi.mock("@ai-sdk/google", () => ({
+  google: vi.fn(),
+}));
+
 describe("Orchestration Blocks (Red/Green Phase)", () => {
-  let originalFetch: typeof global.fetch;
-
   beforeEach(() => {
-    originalFetch = global.fetch;
-    global.fetch = vi.fn();
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
     vi.clearAllMocks();
   });
 
@@ -26,9 +27,10 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
 
     it("successfully evaluates condition to true using LLM", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ choices: [{ message: { content: "true" } }] }),
+      const { generateText } = await import("ai");
+      (generateText as any).mockResolvedValueOnce({
+        text: "true",
+        usage: { promptTokens: 10, completionTokens: 5 },
       });
 
       const output = await ifBlock.agent.invoke({
@@ -37,13 +39,13 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
       });
       expect(output).toHaveProperty("branch", "truePath");
       expect(output.context).toEqual({ value: 10 });
-      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
     it("successfully evaluates condition to false using LLM", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ choices: [{ message: { content: "false" } }] }),
+      const { generateText } = await import("ai");
+      (generateText as any).mockResolvedValueOnce({
+        text: "false",
+        usage: { promptTokens: 10, completionTokens: 5 },
       });
 
       const output = await ifBlock.agent.invoke({
@@ -55,11 +57,10 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
 
     it("handles unexpected LLM output gracefully", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          choices: [{ message: { content: "I am not sure" } }],
-        }),
+      const { generateText } = await import("ai");
+      (generateText as any).mockResolvedValueOnce({
+        text: "I am not sure",
+        usage: { promptTokens: 10, completionTokens: 5 },
       });
 
       const output = await ifBlock.agent.invoke({

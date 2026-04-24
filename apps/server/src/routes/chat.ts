@@ -45,70 +45,113 @@ chatRouter.post("/", async (c) => {
     return c.json({ error: "Session ID is required" }, 400);
   }
 
+  console.log(
+    "[ENGINE-V2-STREAM] Incoming chat payload keys:",
+    Object.keys(body),
+  );
+
   // Handle various message formats from different SDKs
   let messagesToProcess: any[] = [];
 
-  if (Array.isArray(body.messages) && body.messages.length > 0) {
+  // 1. Standard AI SDK 'messages' array
+  if (Array.isArray(body.messages)) {
     messagesToProcess = body.messages;
-  } else if (body.messages && typeof body.messages === "object") {
-    messagesToProcess = [body.messages];
-  } else if (body.text || body.content || body.prompt) {
+  }
+  // 2. Single 'message' object
+  else if (body.message && typeof body.message === "object") {
+    messagesToProcess = [body.message];
+  }
+  // 3. Flat 'content' or 'text' in the body
+  else if (body.content || body.text || body.prompt) {
     messagesToProcess = [
       {
         role: body.role || "user",
-        content: body.text || body.content || body.prompt,
+        content: body.content || body.text || body.prompt,
       },
     ];
   }
 
-  // Final sanitization
-  messagesToProcess = messagesToProcess
+  // Final sanitization to ensure Mastra gets the right shape
+  const sanitizedMessages = messagesToProcess
     .map((m) => {
       if (typeof m === "string") return { role: "user", content: m };
-      const content =
-        m.content ||
-        m.text ||
-        m.body ||
-        (typeof m === "object" ? m.content || m.text : String(m));
+
+      // Extract content from any possible field
+      const contentValue = m.content || m.text || m.body || m.prompt;
+
       return {
-        role: m.role || m.type || "user",
-        content: String(content || ""),
+        role: m.role || "user",
+        content: String(contentValue || ""),
       };
     })
     .filter(
       (m) => m.content && m.content !== "undefined" && m.content !== "null",
     );
 
-  if (messagesToProcess.length === 0) {
-    return c.json({ error: "Messages array is required" }, 400);
+  if (sanitizedMessages.length === 0) {
+    console.error(
+      "[ENGINE] Extraction failed. Body received:",
+      JSON.stringify(body),
+    );
+    return c.json(
+      {
+        error: "Messages array is required",
+        receivedKeys: Object.keys(body),
+      },
+      400,
+    );
   }
 
-  // Verify session ownership
-  const [workspace] = await db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.id, sessionId));
+  console.log(
+    `[ENGINE] Processing ${sanitizedMessages.length} messages for session ${sessionId}`,
+  );
 
-  if (!workspace || workspace.ownerId !== user.sub) {
-    return c.json({ error: "Session not found or unauthorized" }, 403);
+  // Verify session ownership if it's not a transient draft
+  if (sessionId && !sessionId.startsWith("draft-")) {
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, sessionId));
+
+    if (!workspace || workspace.ownerId !== user.sub) {
+      return c.json({ error: "Session not found or unauthorized" }, 403);
+    }
   }
 
   try {
-    const { handleChatStream } = await import("@mastra/ai-sdk");
+    const agent = mastra.getAgent("orchestrator");
 
-    // handleChatStream is the canonical way to bridge Mastra to AI SDK 6.0
-    const stream = await handleChatStream({
-      mastra,
-      agentId: "orchestrator",
-      version: "v6",
-      params: {
-        messages: messagesToProcess,
-        memory: { thread: sessionId },
-      } as any,
+    // Manually trigger the stream from the agent
+    const result = await agent.stream(sanitizedMessages, {
+      threadId: sessionId,
+      resourceId: user.sub,
     });
 
-    const { createUIMessageStreamResponse } = await import("ai");
-    return createUIMessageStreamResponse({ stream });
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of result.textStream) {
+            // Write directly in AI SDK Data Stream Format: 0:"chunk"\n
+            const formattedChunk = `0:${JSON.stringify(chunk)}\n`;
+            controller.enqueue(encoder.encode(formattedChunk));
+          }
+        } catch (err: any) {
+          console.error("[STREAM ITERATION ERROR]:", err);
+          const errorChunk = `3:{"message":${JSON.stringify(err.message)}}\n`;
+          controller.enqueue(encoder.encode(errorChunk));
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "x-vercel-ai-data-stream": "v1",
+      },
+    });
   } catch (error: any) {
     console.error("[MASTRA EXECUTION ERROR]:", error.message);
     return c.json(

@@ -151,12 +151,17 @@ authRouter.post("/login", async (c) => {
         hasCompletedOnboarding: user.hasCompletedOnboarding,
       },
     });
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (error: any) {
+    console.error("Login error details:", {
+      message: error.message,
+      stack: error.stack,
+      email,
+    });
     return c.json(
       {
         error:
           "An unexpected error occurred during login. Please try again later.",
+        message: error.message,
       },
       500,
     );
@@ -173,9 +178,15 @@ authRouter.post("/refresh", async (c) => {
   }
 
   try {
-    const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as {
-      sub: string;
-    };
+    let payload;
+    try {
+      payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as {
+        sub: string;
+      };
+    } catch (jwtErr) {
+      console.error("[AUTH REFRESH] JWT Verify failed:", jwtErr);
+      return c.json({ error: "Invalid refresh token" }, 401);
+    }
 
     // Check if token exists in DB and is not expired
     const [session] = await db
@@ -183,15 +194,23 @@ authRouter.post("/refresh", async (c) => {
       .from(authSessions)
       .where(eq(authSessions.refreshToken, refreshToken));
 
-    if (!session || session.expiresAt < new Date()) {
-      return c.json({ error: "Invalid or expired refresh token" }, 401);
+    if (!session) {
+      console.warn("[AUTH REFRESH] Session not found in database");
+      return c.json({ error: "Session expired or revoked" }, 401);
+    }
+
+    if (session.expiresAt < new Date()) {
+      console.warn("[AUTH REFRESH] Session expired by date");
+      return c.json({ error: "Session expired" }, 401);
     }
 
     const [user] = await db
       .select()
       .from(users)
       .where(eq(users.id, payload.sub));
+
     if (!user) {
+      console.error("[AUTH REFRESH] User not found for valid token");
       return c.json({ error: "User not found" }, 401);
     }
 
@@ -209,9 +228,12 @@ authRouter.post("/refresh", async (c) => {
         hasCompletedOnboarding: user.hasCompletedOnboarding,
       },
     });
-  } catch (error) {
-    console.error("Refresh error:", error);
-    return c.json({ error: "Invalid refresh token" }, 401);
+  } catch (error: any) {
+    console.error("[AUTH REFRESH] Unexpected Error:", error);
+    return c.json(
+      { error: "Internal authentication failure", message: error.message },
+      500,
+    );
   }
 });
 

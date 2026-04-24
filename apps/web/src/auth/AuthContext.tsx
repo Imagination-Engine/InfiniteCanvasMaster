@@ -63,11 +63,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [clearSession, setSession]);
 
-  const completeOnboarding = useCallback(() => {
-    setUser((prev) =>
-      prev ? { ...prev, hasCompletedOnboarding: true } : null,
-    );
-  }, []);
+  const completeOnboarding = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      await apiRequest(
+        "/api/auth/complete-onboarding",
+        {
+          method: "POST",
+        },
+        accessToken,
+      );
+      setUser((prev) =>
+        prev ? { ...prev, hasCompletedOnboarding: true } : null,
+      );
+    } catch (err) {
+      console.error("Failed to complete onboarding", err);
+    }
+  }, [accessToken]);
 
   const login = useCallback(
     async (username: string, password: string) => {
