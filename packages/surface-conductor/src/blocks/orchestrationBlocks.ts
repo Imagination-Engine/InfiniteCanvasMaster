@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BlockDefinition, MCPToolBinding } from "@iem/core";
+import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 const MockView = () => null;
 
@@ -16,12 +16,11 @@ export const ifBlock: BlockDefinition<any, any> = {
     branch: z.enum(["truePath", "falsePath"]),
     context: z.record(z.any()),
   }),
-  view: MockView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "evaluate_condition",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       try {
         const { agentRuntime } = await import("@iem/core");
 
@@ -30,6 +29,7 @@ export const ifBlock: BlockDefinition<any, any> = {
         const userPrompt = `Context:\n${JSON.stringify(input.context, null, 2)}\n\nCondition: ${input.condition}`;
 
         const response = await agentRuntime.chat({
+          model: "gemini-2.5-pro",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -79,12 +79,11 @@ export const forEachBlock: BlockDefinition<any, any> = {
     items: z.array(z.any()),
     loopTarget: z.string().optional(),
   }),
-  view: MockView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "pass_through_collection",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       return { items: input.collection, loopTarget: input.loopTarget };
     },
   },
@@ -101,7 +100,6 @@ export const webhookTriggerBlock: BlockDefinition<any, any> = {
   output: z.object({
     payload: z.record(z.any()),
   }),
-  view: MockView,
   mode: "ambient",
   agent: {
     kind: "local",
@@ -121,7 +119,6 @@ export const scheduleTriggerBlock: BlockDefinition<any, any> = {
   output: z.object({
     time: z.string(),
   }),
-  view: MockView,
   mode: "ambient",
   agent: {
     kind: "local",

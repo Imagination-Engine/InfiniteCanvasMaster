@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BlockDefinition, MCPToolBinding } from "@iem/core";
+import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 export const proseBlock: BlockDefinition<any, any> = {
   id: "iem.scribe.prose",
@@ -17,9 +17,10 @@ export const proseBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "execute_prose",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",

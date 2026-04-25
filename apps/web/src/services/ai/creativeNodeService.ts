@@ -1,395 +1,50 @@
-import webScraper from "./nodeServices/webScrapperNode";
-import refinerNode from "./nodeServices/refinerNode";
+import { apiRequest } from "../../lib/api";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
+/**
+ * Unified Creative Node Runner
+ * This replaces all client-side Gemini calls and monolithic switch-cases.
+ * It executes the authoritative server-side logic for any block in the registry.
+ */
 export async function runCreativeNode(
   nodeType: string,
   inputs: Record<string, unknown>,
   config: Record<string, unknown>,
   accessToken?: string | null,
 ): Promise<Record<string, unknown>> {
-  await sleep(300);
+  try {
+    // 1. Map legacy frontend IDs to canonical reverse-DNS IDs if needed
+    // In a mature system, nodeType would always be the canonical ID (e.g. iem.core.refiner)
+    const blockId = nodeType.includes(".") ? nodeType : `iem.core.${nodeType}`;
 
-  switch (nodeType) {
-    case "summarizer": {
-      try {
-        const apiKey =
-          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
-          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
-        if (!apiKey) {
-          throw new Error(
-            "VITE_GOOGLE_API_KEY (or VITE_GEMINI_API_KEY) is not defined in the environment.",
-          );
-        }
+    console.log(`[EXECUTION] Dispatching ${blockId} to server...`);
 
-        const sourcesRaw = inputs.sources ?? inputs.source;
-        let sources: string[] = [];
+    // 2. Call the unified block execution endpoint
+    const response = await apiRequest<{
+      success: boolean;
+      output: Record<string, any>;
+      error?: string;
+    }>(
+      "/api/blocks/execute",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          blockId,
+          inputs: { ...inputs, ...config }, // Merge config into inputs for the agent
+        }),
+      },
+      accessToken,
+    );
 
-        if (Array.isArray(sourcesRaw)) {
-          sources = sourcesRaw.map((value) => String(value)).filter(Boolean);
-        } else if (sourcesRaw && typeof sourcesRaw === "object") {
-          const record = sourcesRaw as Record<string, unknown>;
-          sources = ["text", "image", "audio"]
-            .map((key) => record[key])
-            .filter((value): value is unknown => Boolean(value))
-            .map((value) => String(value));
-
-          if (sources.length === 0) {
-            sources = [JSON.stringify(record)];
-          }
-        } else {
-          const single = String(sourcesRaw ?? "");
-          sources = single ? [single] : [];
-        }
-
-        if (sources.length === 0) {
-          throw new Error("No sources provided to summarize.");
-        }
-
-        const additionalInstructions =
-          typeof config.additionalInstructions === "string"
-            ? config.additionalInstructions.trim()
-            : "";
-
-        const parts: any[] = [];
-
-        if (additionalInstructions) {
-          parts.push({
-            text: `Additional instructions: ${additionalInstructions}\n\n`,
-          });
-        }
-
-        parts.push({
-          text: 'Please summarize and analyze the following content. Return ONLY a JSON object with two fields: "summary" (a concise summary) and "analysis" (deeper insights, patterns, or notable points).\n\n',
-        });
-
-        sources.forEach((s, i) => {
-          parts.push({ text: `Source ${i + 1}:\n` });
-
-          if (s.startsWith("data:image/") || s.startsWith("data:audio/")) {
-            // It's a base64 image or audio
-            // Format: data:image/png;base64,iVBORw0KGgo...
-            // Or: data:audio/mp3;base64,...
-            const matches = s.match(
-              /^data:((?:image|audio)\/[a-zA-Z0-9+-]+);base64,(.+)$/,
-            );
-            if (matches && matches.length === 3) {
-              parts.push({
-                inlineData: {
-                  mimeType: matches[1],
-                  data: matches[2],
-                },
-              });
-              parts.push({ text: "\n\n" });
-            } else {
-              parts.push({ text: "[Invalid Media Data]\n\n" });
-            }
-          } else {
-            // It's text
-            parts.push({ text: `${s}\n\n` });
-          }
-        });
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: parts,
-                },
-              ],
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Gemini API error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const textResponse =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        let cleanJsonText = textResponse;
-
-        const jsonBlockMatch = textResponse.match(
-          /```(?:json)?\s*([\s\S]*?)\s*```/,
-        );
-        if (jsonBlockMatch && jsonBlockMatch[1]) {
-          cleanJsonText = jsonBlockMatch[1];
-        } else {
-          const firstBrace = textResponse.indexOf("{");
-          const lastBrace = textResponse.lastIndexOf("}");
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            cleanJsonText = textResponse.substring(firstBrace, lastBrace + 1);
-          }
-        }
-
-        const parsed = JSON.parse(cleanJsonText);
-
-        return {
-          summary: parsed.summary || "Summarization failed",
-          analysis: parsed.analysis || "Analysis failed",
-        };
-      } catch (error) {
-        console.error("Summarizer error:", error);
-        return {
-          summary: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-          analysis: "Error",
-        };
-      }
+    if (!response.success) {
+      throw new Error(response.error || "Execution failed on server");
     }
-    case "translator": {
-      try {
-        const apiKey =
-          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
-          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
-        if (!apiKey) {
-          throw new Error(
-            "VITE_GOOGLE_API_KEY (or VITE_GEMINI_API_KEY) is not defined in the environment.",
-          );
-        }
 
-        const source = String(inputs.source ?? "");
-        const targetLanguage = String(inputs.targetLanguage ?? "English");
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: `Detect the language of the following text and translate it to ${targetLanguage}.\nReturn ONLY a JSON object with two fields: "detectedLanguage" (the name of the source language) and "translation" (the translated text).\n\nText: ${source}`,
-                    },
-                  ],
-                },
-              ],
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Gemini API error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const textResponse =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        // Use a more robust regex to extract JSON anywhere in the response
-        let cleanJsonText = textResponse;
-
-        // First try to match anything inside ```json ... ``` blocks
-        const jsonBlockMatch = textResponse.match(
-          /```(?:json)?\s*([\s\S]*?)\s*```/,
-        );
-        if (jsonBlockMatch && jsonBlockMatch[1]) {
-          cleanJsonText = jsonBlockMatch[1];
-        } else {
-          // If no markdown block, try to find the first { and last }
-          const firstBrace = textResponse.indexOf("{");
-          const lastBrace = textResponse.lastIndexOf("}");
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            cleanJsonText = textResponse.substring(firstBrace, lastBrace + 1);
-          }
-        }
-
-        const parsed = JSON.parse(cleanJsonText);
-
-        return {
-          result: parsed.translation || "Translation failed",
-          detectedLanguage: parsed.detectedLanguage || "Unknown",
-        };
-      } catch (error) {
-        console.error("Translation error:", error);
-        return {
-          result: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-          detectedLanguage: "Error",
-        };
-      }
-    }
-    case "refiner":
-      return refinerNode(
-        { source: String(inputs.source ?? "") },
-        { style: String(config.style ?? "") },
-        accessToken,
-      );
-    case "colorSwapper": {
-      try {
-        const apiKey =
-          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
-          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
-        const image = String(inputs.imagePrimary ?? inputs.image ?? "");
-        const palette = String(inputs.imagePaletteSource ?? "");
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: `Describe how to transfer the color palette from the second image/description to the first one. For now, since I am a text-based AI, provide a detailed CSS filter or color transformation matrix that would achieve this effect.\n\nPrimary Image: ${image}\nPalette Source: ${palette}`,
-                    },
-                  ],
-                },
-              ],
-            }),
-          },
-        );
-
-        const data = await response.json();
-        const textResponse =
-          data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "Color swap analysis failed.";
-
-        return {
-          image: image,
-          transformation: textResponse,
-          status: "simulated",
-        };
-      } catch (error) {
-        return {
-          error: String(error),
-          image: inputs.imagePrimary ?? inputs.image,
-        };
-      }
-    }
-    case "filter": {
-      try {
-        const apiKey =
-          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
-          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
-        const source = JSON.stringify(inputs.source ?? inputs.data ?? {});
-        const conditions = String(inputs.conditions ?? "");
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: `Filter the following JSON data based on these conditions: ${conditions}.\nReturn ONLY the filtered JSON result.\n\nData: ${source}`,
-                    },
-                  ],
-                },
-              ],
-            }),
-          },
-        );
-
-        const data = await response.json();
-        let textResponse =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-
-        const jsonMatch =
-          textResponse.match(/```json\s*([\s\S]*?)\s*```/) ||
-          textResponse.match(/```\s*([\s\S]*?)\s*```/);
-        if (jsonMatch) textResponse = jsonMatch[1];
-
-        return {
-          filtered: JSON.parse(textResponse.trim()),
-        };
-      } catch (error) {
-        return { error: String(error), filtered: [] };
-      }
-    }
-    case "webScraper":
-      return webScraper({ url: String(inputs.url ?? "") }, accessToken);
-    case "formatter": {
-      try {
-        const apiKey =
-          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
-          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
-        const content = String(inputs.file ?? inputs.content ?? "");
-        const format = String(inputs.desiredFormat ?? "markdown");
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: `Reformat the following content into ${format}. Return ONLY the formatted content.\n\nContent: ${content}`,
-                    },
-                  ],
-                },
-              ],
-            }),
-          },
-        );
-
-        const data = await response.json();
-        const textResponse =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        return {
-          formattedFile: textResponse,
-        };
-      } catch (error) {
-        return { error: String(error), formattedFile: "" };
-      }
-    }
-    case "programmer": {
-      try {
-        const apiKey =
-          (import.meta.env.VITE_GOOGLE_API_KEY as string | undefined) ||
-          (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
-        const prompt = String(inputs.prompt ?? "");
-        const existingCode = String(inputs.code ?? "");
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: `Generate code based on this prompt: ${prompt}.\nExisting Context:\n${existingCode}\n\nReturn ONLY the code block.`,
-                    },
-                  ],
-                },
-              ],
-            }),
-          },
-        );
-
-        const data = await response.json();
-        const textResponse =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        return {
-          generatedCode: textResponse,
-        };
-      } catch (error) {
-        return { error: String(error), generatedCode: "" };
-      }
-    }
-    default:
-      return {
-        result: "No creative node implementation available for this type.",
-      };
+    return response.output;
+  } catch (error) {
+    console.error(`[EXECUTION ERROR] ${nodeType}:`, error);
+    return {
+      error: error instanceof Error ? error.message : "Unknown execution error",
+      status: "error",
+    };
   }
 }

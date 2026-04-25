@@ -1,11 +1,19 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
+import crypto from "crypto";
+import { Client } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 
 export const generate_canvas_blueprint = createTool({
   id: "generate_canvas_blueprint",
   description:
     "Deconstruct a user goal into a complete, interconnected canvas blueprint containing multiple blocks (nodes) and their relationships (edges). Use this to orchestrate complex solutions using the 50+ block system.",
   inputSchema: z.object({
+    owner_id: z
+      .string()
+      .describe(
+        "The user ID executing this request. Always pass the exact string provided in the system prompt.",
+      ),
     blueprint_name: z.string(),
     description: z.string(),
     nodes: z.array(
@@ -35,40 +43,30 @@ export const generate_canvas_blueprint = createTool({
     ),
   }),
   execute: async (inputData, { mastra, ...context }) => {
-    const { blueprint_name, description, nodes, edges } = inputData as any;
+    const { owner_id, blueprint_name, description, nodes, edges } =
+      inputData as any;
 
-    // Extract userId from context (passed via handleChatStream params)
-    const userId = (context as any).userId;
-
-    if (!userId) {
-      console.warn(
-        "[BLUEPRINT PERSISTENCE] No userId found in context. Project may fail to persist.",
-      );
-    }
-
-    // In the "Throughline" flow, this tool call is the signal to transition from
-    // conversational interplay to a persisted spatial canvas.
-
-    // We import the DB and schema dynamically to avoid circular dependencies if any
-    const {
-      db,
-      workspaces,
-      canvases,
-      nodes: nodesTable,
-      edges: edgesTable,
-    } = await import("@iem/db");
-
+    let dbClient;
     try {
-      // 1. Create the Workspace (Project)
+      const {
+        workspaces,
+        canvases,
+        nodes: nodesTable,
+        edges: edgesTable,
+      } = await import("@iem/db");
+
+      dbClient = new Client({ connectionString: process.env.DATABASE_URL });
+      await dbClient.connect();
+      const db = drizzle(dbClient);
+
       const [workspace] = await db
         .insert(workspaces)
         .values({
           name: blueprint_name || "Neural Blueprint",
-          ownerId: userId,
+          ownerId: owner_id,
         })
         .returning();
 
-      // 2. Create the Canvas
       const [canvas] = await db
         .insert(canvases)
         .values({
@@ -77,31 +75,55 @@ export const generate_canvas_blueprint = createTool({
         })
         .returning();
 
-      // 3. Insert Nodes
-      if (nodes && nodes.length > 0) {
-        await db.insert(nodesTable).values(
-          nodes.map((n: any) => ({
-            id: n.id,
-            canvasId: canvas.id,
-            type: n.type,
-            data: n.data || {},
-            position: n.position || { x: 0, y: 0 },
-          })),
-        );
+      // Map string IDs from AI to real UUIDs for Postgres
+      const idMap = new Map<string, string>();
+
+      const mappedNodes = (nodes || []).map((n: any) => {
+        const realId = crypto.randomUUID();
+        idMap.set(n.id, realId);
+        return {
+          id: realId,
+          canvasId: canvas.id,
+          type: n.type,
+          data: {
+            label: n.title,
+            description: n.description,
+            inputs: n.recommended_params || {},
+          },
+          positionX: 0,
+          positionY: 0,
+        };
+      });
+
+      if (mappedNodes.length > 0) {
+        await db.insert(nodesTable).values(mappedNodes);
       }
 
-      // 4. Insert Edges
-      if (edges && edges.length > 0) {
-        await db.insert(edgesTable).values(
-          edges.map((e: any) => ({
-            id: e.id,
+      // Map edges to use the real UUIDs
+      const mappedEdges = (edges || [])
+        .map((e: any) => {
+          const sourceId = idMap.get(e.source);
+          const targetId = idMap.get(e.target);
+
+          if (!sourceId || !targetId) return null;
+
+          return {
+            id: crypto.randomUUID(),
             canvasId: canvas.id,
-            sourceId: e.source,
-            targetId: e.target,
-            data: e.data || {},
-          })),
-        );
+            sourceId,
+            targetId,
+            data: e.condition ? { condition: e.condition } : {},
+          };
+        })
+        .filter(Boolean);
+
+      if (mappedEdges.length > 0) {
+        await db.insert(edgesTable).values(mappedEdges);
       }
+
+      console.log(
+        `[BLUEPRINT PERSISTENCE] Successfully created workspace ${workspace.id}`,
+      );
 
       return {
         success: true,
@@ -111,15 +133,18 @@ export const generate_canvas_blueprint = createTool({
         nodes,
         edges,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("[BLUEPRINT PERSISTENCE ERROR]:", error);
-      // Fallback to returning the data so the UI can still handle it if DB fails
       return {
         success: false,
         nodes,
         edges,
-        error: "Failed to persist to database",
+        error: error.message || "Failed to persist to database",
       };
+    } finally {
+      if (dbClient) {
+        await dbClient.end();
+      }
     }
   },
 });

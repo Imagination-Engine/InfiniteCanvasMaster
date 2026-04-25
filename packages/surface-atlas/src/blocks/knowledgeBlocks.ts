@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BlockDefinition, MCPToolBinding } from "@iem/core";
+import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 function chunkText(
   text: string,
@@ -75,7 +75,7 @@ export const ingestionBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "vector_ingest",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       try {
         const chunks = chunkText(input.content);
         const vectorDbUrl =
@@ -133,7 +133,7 @@ export const retrievalBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "vector_retrieve",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       try {
         const queryEmbedding = await getEmbedding(input.query);
         const vectorDbUrl =
@@ -187,7 +187,7 @@ export const synthesisBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "llm_synthesize",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       try {
         const { agentRuntime } = await import("@iem/core");
 
@@ -196,6 +196,7 @@ export const synthesisBlock: BlockDefinition<any, any> = {
         const userPrompt = `Context:\n${input.contextChunks.join("\n---\n")}\n\nQuery: ${input.query}`;
 
         const response = await agentRuntime.chat({
+          model: "gemini-2.5-pro",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },

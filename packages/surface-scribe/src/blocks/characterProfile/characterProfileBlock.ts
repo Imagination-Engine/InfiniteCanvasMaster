@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { CharacterProfileView } from "./CharacterProfileView";
 import type { BlockDefinition } from "@iem/core";
 
 export const characterProfileInput = z.object({
@@ -21,14 +20,14 @@ export const characterProfileBlock: BlockDefinition<
   category: "creative",
   input: characterProfileInput,
   output: characterProfileOutput,
-  view: CharacterProfileView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "execute_character_profile",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",

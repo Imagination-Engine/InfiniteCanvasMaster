@@ -63,6 +63,9 @@ importers:
       "@iem/surface-forge":
         specifier: workspace:^
         version: link:../../packages/surface-forge
+      "@iem/surface-playable":
+        specifier: workspace:^
+        version: link:../../packages/surface-playable
       "@iem/surface-reel":
         specifier: workspace:^
         version: link:../../packages/surface-reel
@@ -175,6 +178,24 @@ importers:
       "@iem/db":
         specifier: workspace:^
         version: link:../../packages/db
+      "@iem/surface-atlas":
+        specifier: workspace:^
+        version: link:../../packages/surface-atlas
+      "@iem/surface-conductor":
+        specifier: workspace:^
+        version: link:../../packages/surface-conductor
+      "@iem/surface-forge":
+        specifier: workspace:^
+        version: link:../../packages/surface-forge
+      "@iem/surface-playable":
+        specifier: workspace:^
+        version: link:../../packages/surface-playable
+      "@iem/surface-reel":
+        specifier: workspace:^
+        version: link:../../packages/surface-reel
+      "@iem/surface-scribe":
+        specifier: workspace:^
+        version: link:../../packages/surface-scribe
       "@liveblocks/client":
         specifier: ^3.18.4
         version: 3.18.4(@types/json-schema@7.0.15)
@@ -199,6 +220,9 @@ importers:
       ai:
         specifier: ^6.0.168
         version: 6.0.168(zod@3.25.76)
+      ajv:
+        specifier: ^8.12.0
+        version: 8.18.0
       axios:
         specifier: ^1.12.2
         version: 1.15.2
@@ -429,6 +453,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260423.1)(@types/pg@8.20.0)(pg@8.20.0)
+      express:
+        specifier: ^4.21.2
+        version: 4.22.1
       react:
         specifier: ^19.0.0
         version: 19.2.5
@@ -439,6 +466,9 @@ importers:
         specifier: ^3.25.2
         version: 3.25.2(zod@3.25.76)
     devDependencies:
+      "@types/express":
+        specifier: ^5.0.0
+        version: 5.0.6
       "@types/node":
         specifier: ^25.6.0
         version: 25.6.0

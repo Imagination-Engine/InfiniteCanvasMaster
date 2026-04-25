@@ -971,7 +971,7 @@ export function refreshCatalogFromRegistry() {
           outputs: {},
           config: {},
           metadata: {
-            category: block.category || "creative",
+            category: (block.category || "creative") as "creative" | "workflow",
             label: block.name,
             description: block.description,
           },

@@ -1,19 +1,19 @@
-import { z } from 'zod';
-import type { BlockDefinition, MCPToolBinding } from '../types/protocol';
+import { z } from "zod";
+import type { BlockDefinition, MCPToolBinding } from "../types/protocol";
 
 const noopAgent: MCPToolBinding = {
-  kind: 'local',
-  toolName: 'noop',
+  kind: "local",
+  toolName: "noop",
   invoke: async (input: unknown) => input,
 };
 
 const MockView = () => null;
 
 export const sceneBlock: BlockDefinition<any, any> = {
-  id: 'iem.playable.scene',
-  name: 'Scene',
-  description: 'A playable game scene',
-  category: 'game',
+  id: "iem.playable.scene",
+  name: "Scene",
+  description: "A playable game scene",
+  category: "game",
   input: z.object({
     background: z.string(),
     width: z.number().optional().default(800),
@@ -21,18 +21,17 @@ export const sceneBlock: BlockDefinition<any, any> = {
   }),
   output: z.object({
     sceneId: z.string(),
-    status: z.enum(['ready', 'running', 'stopped']),
+    status: z.enum(["ready", "running", "stopped"]),
   }),
-  view: MockView,
   agent: noopAgent,
-  mode: 'triggered',
+  mode: "triggered",
 };
 
 export const characterBlock: BlockDefinition<any, any> = {
-  id: 'iem.playable.character',
-  name: 'Character',
-  description: 'A playable character entity',
-  category: 'game',
+  id: "iem.playable.character",
+  name: "Character",
+  description: "A playable character entity",
+  category: "game",
   input: z.object({
     name: z.string(),
     asset: z.string(),
@@ -43,32 +42,30 @@ export const characterBlock: BlockDefinition<any, any> = {
     entityId: z.string(),
     state: z.string(),
   }),
-  view: MockView,
   agent: noopAgent,
-  mode: 'triggered',
+  mode: "triggered",
 };
 
 export const inputBlock: BlockDefinition<any, any> = {
-  id: 'iem.playable.input',
-  name: 'Input',
-  description: 'Maps keyboard/mouse inputs',
-  category: 'game',
+  id: "iem.playable.input",
+  name: "Input",
+  description: "Maps keyboard/mouse inputs",
+  category: "game",
   input: z.object({
     mapping: z.record(z.string(), z.string()),
   }),
   output: z.object({
     events: z.array(z.any()),
   }),
-  view: MockView,
   agent: noopAgent,
-  mode: 'streaming',
+  mode: "streaming",
 };
 
 export const ruleBlock: BlockDefinition<any, any> = {
-  id: 'iem.playable.rule',
-  name: 'Rule',
-  description: 'A logic rule for game behavior',
-  category: 'game',
+  id: "iem.playable.rule",
+  name: "Rule",
+  description: "A logic rule for game behavior",
+  category: "game",
   input: z.object({
     condition: z.string(),
     action: z.string(),
@@ -76,7 +73,6 @@ export const ruleBlock: BlockDefinition<any, any> = {
   output: z.object({
     result: z.any(),
   }),
-  view: MockView,
   agent: noopAgent,
-  mode: 'triggered',
+  mode: "triggered",
 };

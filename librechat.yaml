@@ -13,8 +13,6 @@ endpoints:
 
 mcpServers:
   imagination-engine:
-    # This instructs LibreChat to boot our CLI and bind to its stdio streams
-    type: stdio
-    command: node
-    args:
-      - /workspace/packages/core/dist/mcp/cli.js
+    # Use SSE to connect to the sibling Docker container "iem-mcp-server"
+    type: sse
+    url: http://iem-mcp-server:3002/sse

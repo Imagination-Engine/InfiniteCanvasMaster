@@ -1,7 +1,7 @@
 import { HTMLContainer, ShapeUtil } from "tldraw";
 import type { TLBaseShape } from "tldraw";
 import "tldraw/tldraw.css";
-import { NODE_CATALOG } from "../../nodes/nodeCatalog";
+import { NODE_CATALOG } from "../nodes/nodeCatalog";
 
 // Define the Tldraw shape for our Imagination Engine Blocks
 export type IemBlockShape = TLBaseShape<
@@ -16,7 +16,7 @@ export type IemBlockShape = TLBaseShape<
   }
 >;
 
-export class IemBlockShapeUtil extends ShapeUtil<IemBlockShape> {
+export class IemBlockShapeUtil extends ShapeUtil<any> {
   static override type = "iem-block" as const;
 
   override getDefaultProps(): IemBlockShape["props"] {

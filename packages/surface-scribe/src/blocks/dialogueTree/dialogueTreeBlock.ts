@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { DialogueTreeView } from "./DialogueTreeView";
 import type { BlockDefinition } from "@iem/core";
 
 export const dialogueTreeInput = z.object({
@@ -21,14 +20,14 @@ export const dialogueTreeBlock: BlockDefinition<
   category: "creative",
   input: dialogueTreeInput,
   output: dialogueTreeOutput,
-  view: DialogueTreeView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "execute_dialogue_tree",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ProofreaderView } from "./ProofreaderView";
 import type { BlockDefinition } from "@iem/core";
 
 export const proofreaderInput = z.object({
@@ -21,14 +20,14 @@ export const proofreaderBlock: BlockDefinition<
   category: "creative",
   input: proofreaderInput,
   output: proofreaderOutput,
-  view: ProofreaderView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "execute_proofreader",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",

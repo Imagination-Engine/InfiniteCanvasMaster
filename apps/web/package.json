@@ -28,6 +28,7 @@
     "@iem/surface-atlas": "workspace:^",
     "@iem/surface-reel": "workspace:^",
     "@iem/surface-forge": "workspace:^",
+    "@iem/surface-playable": "workspace:^",
     "@liveblocks/client": "^3.18.4",
     "@liveblocks/react": "^3.18.4",
     "@modelcontextprotocol/sdk": "^1.29.0",

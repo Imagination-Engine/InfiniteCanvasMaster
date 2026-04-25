@@ -171,8 +171,7 @@ export default function ProjectsPage() {
                 Venture Command
               </h1>
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-text-muted">
-                Operator:{" "}
-                <span className="text-brand-cyan">{user?.username}</span>
+                Operator: <span className="text-brand-cyan">{user?.email}</span>
               </p>
             </div>
           </div>

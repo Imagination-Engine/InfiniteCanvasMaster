@@ -8,7 +8,6 @@ import React, {
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
-import { useChat } from "@ai-sdk/react";
 import {
   Sparkles,
   ChevronRight,
@@ -34,7 +33,10 @@ interface Project {
 const OnboardingCarousel = () => {
   const { completeOnboarding } = useAuth();
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-bg-page/95 backdrop-blur-2xl p-6">
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-brand-bg-page/95 backdrop-blur-2xl p-6"
+      style={{ isolation: "isolate" }}
+    >
       <div className="max-w-xl w-full bg-brand-bg-surface border border-white/10 rounded-[40px] p-12 shadow-2xl relative overflow-hidden text-center">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-purple via-brand-cyan to-brand-purple" />
         <div className="w-20 h-20 rounded-3xl bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center mx-auto mb-8">
@@ -49,7 +51,7 @@ const OnboardingCarousel = () => {
         </p>
         <button
           onClick={completeOnboarding}
-          className="w-full py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest hover:bg-brand-cyan hover:text-white transition-all active:scale-95"
+          className="w-full py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest hover:bg-brand-cyan hover:text-white transition-all active:scale-95 cursor-pointer pointer-events-auto"
         >
           Initialize Synchronization
         </button>
@@ -91,25 +93,9 @@ export default function HomeStudio() {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const chatState = useChat({
-    api: "/api/chat",
-    id: "home-studio-chat-stable",
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    initialMessages: [],
-    onFinish: () => {
-      loadProjects();
-    },
-  });
-
-  const { messages, isLoading, error } = chatState as any;
-
-  // Debug the exact contents of the hook return
-  useEffect(() => {
-    if (chatState) {
-      console.log("[DEBUG] useChat state:", chatState);
-      console.log("[DEBUG] useChat keys:", Object.keys(chatState));
-    }
-  }, [chatState]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     if (scrollContainerRef.current) {
@@ -201,11 +187,9 @@ export default function HomeStudio() {
 
     if (!text || isLoading) return;
 
-    console.log(
-      "[UI] handleChatSubmit triggered for text:",
-      text.substring(0, 20) + "...",
-    );
     setLocalInput("");
+    setIsLoading(true);
+    setError(null);
 
     let sessionId = activeDraftId;
     if (!sessionId) {
@@ -213,47 +197,109 @@ export default function HomeStudio() {
       setActiveDraftId(sessionId);
     }
 
+    const newMessages = [
+      ...messages,
+      { id: Date.now().toString(), role: "user", content: text },
+    ];
+    setMessages(newMessages);
+
     try {
-      console.log(
-        "[UI] handleChatSubmit triggered. Using substrate co-pilot...",
-      );
-      setLocalInput("");
-
-      let sessionId = activeDraftId;
-      if (!sessionId) {
-        sessionId = "draft-" + Date.now();
-        setActiveDraftId(sessionId);
-      }
-
-      // We use the definitive co-pilot function from the substrate
-      const state = chatState as any;
-      const coPilot =
-        state.append || state.sendMessage || state.reload || state.handleSubmit;
-
-      if (typeof coPilot !== "function") {
-        console.error(
-          "[UI] CRITICAL: Engine co-pilot not found in substrate.",
-          Object.keys(state),
-        );
-        throw new Error("Synchronization failure: Engine co-pilot offline.");
-      }
-
-      // We send the message and pass context in the options body
-      // This is the cleanest pattern for AI SDK v6+
-      await coPilot(
-        { role: "user", content: text },
-        {
-          body: { sessionId },
-          headers: accessToken
-            ? { Authorization: `Bearer ${accessToken}` }
-            : {},
+      const res = await fetch("http://localhost:3001/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
-      );
+        body: JSON.stringify({
+          sessionId,
+          messages: newMessages,
+        }),
+      });
 
-      console.log("[UI] co-pilot synchronization established.");
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      if (!res.body) {
+        throw new Error("No response body");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      const aiMessageId = (Date.now() + 1).toString();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: aiMessageId,
+          role: "assistant",
+          content: "",
+          toolInvocations: [],
+        },
+      ]);
+
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse Vercel AI SDK lines (e.g. 0:"chunk" or 9:{"toolCall":...})
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("0:")) {
+            try {
+              const chunk = JSON.parse(line.slice(2));
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMessageId
+                    ? { ...m, content: m.content + chunk }
+                    : m,
+                ),
+              );
+            } catch (e) {
+              console.error("Failed to parse text chunk", line);
+            }
+          } else if (line.startsWith("9:")) {
+            try {
+              const toolData = JSON.parse(line.slice(2));
+              setMessages((prev) =>
+                prev.map((m) => {
+                  if (m.id === aiMessageId) {
+                    return {
+                      ...m,
+                      toolInvocations: [...(m.toolInvocations || []), toolData],
+                    };
+                  }
+                  return m;
+                }),
+              );
+            } catch (e) {
+              console.error("Failed to parse tool chunk", line);
+            }
+          } else if (line.startsWith("3:")) {
+            try {
+              const errData = JSON.parse(line.slice(2));
+              setError(
+                new Error(errData.message || "Stream returned an error"),
+              );
+            } catch (e) {}
+          }
+        }
+      }
+
+      // Load projects after stream is finished just in case a blueprint was made
+      loadProjects();
     } catch (err) {
       console.error("[UI] Synchronization failure:", err);
+      setError(err);
       setLocalInput(text);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -261,9 +307,14 @@ export default function HomeStudio() {
     p?.name?.toLowerCase().includes(searchQuery?.toLowerCase() || ""),
   );
 
+  // We explicitly check if user object exists AND hasCompletedOnboarding is false.
+  // If user hasn't loaded yet, we show nothing until auth state stabilizes.
+  const showOnboarding = user && user.hasCompletedOnboarding === false;
+
   return (
     <div className="h-screen overflow-y-auto bg-brand-bg-page text-brand-text-body font-sans selection:bg-brand-purple/30 selection:text-white custom-scrollbar relative">
-      {user?.hasCompletedOnboarding === false && <OnboardingCarousel />}
+      {showOnboarding && <OnboardingCarousel />}
+
       {/* Cinematic Background Glows */}
       <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-brand-purple/5 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute top-[40%] left-[-10%] w-[600px] h-[600px] bg-brand-cyan/5 rounded-full blur-[150px] pointer-events-none" />

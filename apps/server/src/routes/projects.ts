@@ -99,15 +99,25 @@ projectsRouter.get("/:id", async (c) => {
       .select()
       .from(workspaces)
       .where(eq(workspaces.id, projectId));
+
     if (!workspace || workspace.ownerId !== user.sub) {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    // Fetch messages from Mastra memory for consistent history
-    const { mastra } = await import("@iem/agents");
-    const thread = await mastra.storage?.getThreadById(projectId);
-    const history =
-      (await mastra.storage?.getMessages({ threadId: projectId })) || [];
+    let history: any[] = [];
+    try {
+      const { mastra } = await import("@iem/agents");
+      // Safely fetch messages, falling back if storage is uninitialized or missing tables
+      const fetchedHistory = await mastra.storage
+        ?.getMessages({ threadId: projectId })
+        .catch(() => []);
+      history = fetchedHistory || [];
+    } catch (mastraErr) {
+      console.warn(
+        "[PROJECTS] Mastra storage unavailable, defaulting to empty history.",
+        mastraErr,
+      );
+    }
 
     return c.json({
       project: {
@@ -125,16 +135,19 @@ projectsRouter.get("/:id", async (c) => {
           ? m.toolCalls.map((tc: any) => ({
               state: "result",
               toolCallId: tc.id,
-              toolName: tc.function.name,
-              args: JSON.parse(tc.function.arguments),
+              toolName: tc.function?.name || tc.toolName,
+              args:
+                typeof tc.function?.arguments === "string"
+                  ? JSON.parse(tc.function.arguments)
+                  : tc.args || {},
               result: { success: true },
             }))
           : undefined,
       })),
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Fetch project error:", error);
-    return c.json({ error: "Failed to fetch project" }, 500);
+    return c.json({ error: error.message || "Failed to fetch project" }, 500);
   }
 });
 

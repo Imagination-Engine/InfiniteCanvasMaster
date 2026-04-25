@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { EditorView } from "./EditorView";
 import type { BlockDefinition } from "@iem/core";
 
 export const editorInput = z.object({
@@ -21,14 +20,14 @@ export const editorBlock: BlockDefinition<
   category: "creative",
   input: editorInput,
   output: editorOutput,
-  view: EditorView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "execute_editor",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",

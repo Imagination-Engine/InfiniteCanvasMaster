@@ -5,11 +5,7 @@ WORKDIR /workspace
 # Enable corepack for pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Install dependencies
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
-COPY packages/core/package.json ./packages/core/
-COPY packages/agents/package.json ./packages/agents/
-# (We copy the rest of the workspace to ensure turborepo works)
+# We rely on the docker-compose bind mount for the codebase.
+# The host machine MUST run `pnpm install` and `pnpm --filter @iem/core build` first.
 
-# For MCP specifically, we just need to run the core CLI
 CMD ["pnpm", "--filter", "@iem/core", "run", "mcp"]

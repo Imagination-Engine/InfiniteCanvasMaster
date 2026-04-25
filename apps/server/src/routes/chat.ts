@@ -50,19 +50,13 @@ chatRouter.post("/", async (c) => {
     Object.keys(body),
   );
 
-  // Handle various message formats from different SDKs
   let messagesToProcess: any[] = [];
 
-  // 1. Standard AI SDK 'messages' array
   if (Array.isArray(body.messages)) {
     messagesToProcess = body.messages;
-  }
-  // 2. Single 'message' object
-  else if (body.message && typeof body.message === "object") {
+  } else if (body.message && typeof body.message === "object") {
     messagesToProcess = [body.message];
-  }
-  // 3. Flat 'content' or 'text' in the body
-  else if (body.content || body.text || body.prompt) {
+  } else if (body.content || body.text || body.prompt) {
     messagesToProcess = [
       {
         role: body.role || "user",
@@ -71,14 +65,10 @@ chatRouter.post("/", async (c) => {
     ];
   }
 
-  // Final sanitization to ensure Mastra gets the right shape
   const sanitizedMessages = messagesToProcess
     .map((m) => {
       if (typeof m === "string") return { role: "user", content: m };
-
-      // Extract content from any possible field
       const contentValue = m.content || m.text || m.body || m.prompt;
-
       return {
         role: m.role || "user",
         content: String(contentValue || ""),
@@ -89,24 +79,9 @@ chatRouter.post("/", async (c) => {
     );
 
   if (sanitizedMessages.length === 0) {
-    console.error(
-      "[ENGINE] Extraction failed. Body received:",
-      JSON.stringify(body),
-    );
-    return c.json(
-      {
-        error: "Messages array is required",
-        receivedKeys: Object.keys(body),
-      },
-      400,
-    );
+    return c.json({ error: "Messages array is required" }, 400);
   }
 
-  console.log(
-    `[ENGINE] Processing ${sanitizedMessages.length} messages for session ${sessionId}`,
-  );
-
-  // Verify session ownership if it's not a transient draft
   if (sessionId && !sessionId.startsWith("draft-")) {
     const [workspace] = await db
       .select()
@@ -121,8 +96,16 @@ chatRouter.post("/", async (c) => {
   try {
     const agent = mastra.getAgent("orchestrator");
 
-    // Manually trigger the stream from the agent
-    const result = await agent.stream(sanitizedMessages, {
+    // Prepend a system directive so the AI explicitly knows the owner ID for tool calls.
+    const finalMessages = [
+      {
+        role: "system",
+        content: `CRITICAL SYSTEM DIRECTIVE: The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_id' parameter when calling the 'generate_canvas_blueprint' tool. Failure to do so will result in a system crash.`,
+      },
+      ...sanitizedMessages,
+    ];
+
+    const result = await agent.stream(finalMessages, {
       threadId: sessionId,
       resourceId: user.sub,
     });
@@ -130,11 +113,66 @@ chatRouter.post("/", async (c) => {
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
+
         try {
           for await (const chunk of result.textStream) {
-            // Write directly in AI SDK Data Stream Format: 0:"chunk"\n
-            const formattedChunk = `0:${JSON.stringify(chunk)}\n`;
-            controller.enqueue(encoder.encode(formattedChunk));
+            controller.enqueue(encoder.encode(`0:${JSON.stringify(chunk)}\n`));
+          }
+
+          const rawToolCalls = await result.toolCalls;
+          const rawToolResults = await result.toolResults;
+          const steps = await (result as any).steps;
+
+          if (rawToolCalls && rawToolCalls.length > 0) {
+            for (const wrapper of rawToolCalls) {
+              const toolCall = wrapper.payload || wrapper;
+
+              const resultWrapper = rawToolResults?.find((r: any) => {
+                const resPayload = r.payload || r;
+                return resPayload.toolCallId === toolCall.toolCallId;
+              });
+
+              const toolResult = resultWrapper
+                ? resultWrapper.payload || resultWrapper
+                : undefined;
+
+              const uiToolPayload = {
+                toolCallId: toolCall.toolCallId,
+                toolName: toolCall.toolName,
+                args: toolCall.args,
+                result: toolResult ? toolResult.result : undefined,
+              };
+
+              controller.enqueue(
+                encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
+              );
+            }
+          } else if (steps && steps.length > 0) {
+            for (const step of steps) {
+              if (step.toolCalls && step.toolCalls.length > 0) {
+                for (const wrapper of step.toolCalls) {
+                  const toolCall = wrapper.payload || wrapper;
+                  const resultWrapper = step.toolResults?.find((r: any) => {
+                    const resPayload = r.payload || r;
+                    return resPayload.toolCallId === toolCall.toolCallId;
+                  });
+
+                  const toolResult = resultWrapper
+                    ? resultWrapper.payload || resultWrapper
+                    : undefined;
+
+                  const uiToolPayload = {
+                    toolCallId: toolCall.toolCallId,
+                    toolName: toolCall.toolName,
+                    args: toolCall.args,
+                    result: toolResult ? toolResult.result : undefined,
+                  };
+                  controller.enqueue(
+                    encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
+                  );
+                }
+              }
+            }
           }
         } catch (err: any) {
           console.error("[STREAM ITERATION ERROR]:", err);

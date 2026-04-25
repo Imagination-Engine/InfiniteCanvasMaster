@@ -4,6 +4,7 @@ import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { chatRouter } from "./routes/chat.js";
+import { blocksRouter } from "./routes/blocks.js";
 import { dbMiddleware } from "./db.js";
 
 const app = new Hono();
@@ -27,5 +28,6 @@ app.route("/api/health", healthRouter);
 app.route("/api/auth", authRouter);
 app.route("/api/projects", projectsRouter);
 app.route("/api/chat", chatRouter);
+app.route("/api/blocks", blocksRouter);
 
 export { app };

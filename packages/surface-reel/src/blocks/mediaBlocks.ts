@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { BlockDefinition, MCPToolBinding } from '@iem/core';
-
-
+import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 const MockView = () => null;
 
@@ -19,12 +17,11 @@ export const textToImageBlock: BlockDefinition<any, any> = {
   output: z.object({
     imageUrl: z.string().url(),
   }),
-  view: MockView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "generate_image",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       try {
         const apiKey =
           input.apiKey ||
@@ -98,12 +95,11 @@ export const textToSpeechBlock: BlockDefinition<any, any> = {
   output: z.object({
     audioUrl: z.string().url(),
   }),
-  view: MockView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "generate_audio",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       try {
         const apiKey = input.apiKey || process.env.ELEVENLABS_API_KEY || "";
         const voiceId = input.voiceId || "EXAVITQu4vr4xnSDxMaL";

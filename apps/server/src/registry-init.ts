@@ -1,11 +1,23 @@
-import { blockRegistry } from "@iem/core";
-import { proseBlock } from "@iem/surface-scribe";
-import { chapterBlock } from "@iem/surface-scribe";
-import { characterProfileBlock } from "@iem/surface-scribe";
-import { worldLoreBlock } from "@iem/surface-scribe";
-import { dialogueTreeBlock } from "@iem/surface-scribe";
-import { editorBlock } from "@iem/surface-scribe";
-import { proofreaderBlock } from "@iem/surface-scribe";
+import {
+  blockRegistry,
+  refinerBlock,
+  summarizerBlock,
+  translatorBlock,
+  colorSwapperBlock,
+  filterBlock,
+  webScraperBlock,
+  formatterBlock,
+  programmerBlock,
+} from "@iem/core";
+import {
+  proseBlock,
+  chapterBlock,
+  characterProfileBlock,
+  worldLoreBlock,
+  dialogueTreeBlock,
+  editorBlock,
+  proofreaderBlock,
+} from "@iem/surface-scribe";
 
 import {
   ifBlock,
@@ -38,6 +50,13 @@ import {
   graphKnowledgeBlock,
 } from "@iem/surface-atlas";
 
+import {
+  joystickBlock,
+  spriteBlock,
+  physicsEntityBlock,
+  colliderBlock,
+} from "@iem/surface-playable";
+
 // Helper to register multiple blocks
 const registerBlocks = (blocks: any[]) => {
   blocks.forEach((block) => {
@@ -45,9 +64,7 @@ const registerBlocks = (blocks: any[]) => {
     try {
       blockRegistry.register(block);
     } catch (e) {
-      console.warn(
-        `Block ${block.id} already registered or failed to register.`,
-      );
+      // Ignore
     }
   });
 };
@@ -81,6 +98,18 @@ export function initializeBlockRegistry() {
     vectorSearchBlock,
     indexerBlock,
     graphKnowledgeBlock,
+    refinerBlock,
+    summarizerBlock,
+    translatorBlock,
+    colorSwapperBlock,
+    filterBlock,
+    webScraperBlock,
+    formatterBlock,
+    programmerBlock,
+    joystickBlock,
+    spriteBlock,
+    physicsEntityBlock,
+    colliderBlock,
   ]);
 
   console.log(

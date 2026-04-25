@@ -1,10 +1,12 @@
-import { createTool } from '@mastra/core/tools';
-import type { BlockDefinition } from './protocol';
+import type { BlockDefinition } from "./protocol";
 
 /**
  * Adapter to convert an IEM BlockDefinition into a native Mastra Tool.
  */
-export function createMastraToolFromBlock(block: BlockDefinition<any, any>) {
+export async function createMastraToolFromBlock(
+  block: BlockDefinition<any, any>,
+) {
+  const { createTool } = await import("@mastra/core/tools");
   return createTool({
     id: block.id,
     description: block.description,

@@ -1,11 +1,10 @@
-import { z } from 'zod';
-import type { ComponentType } from 'react';
+import { z } from "zod";
 
-export type BlockExecutionMode = 'triggered' | 'streaming' | 'ambient';
+export type BlockExecutionMode = "triggered" | "streaming" | "ambient";
 
 export interface MCPToolBinding {
-  kind: 'local' | 'remote';
-  serverUrl?: string;           // for remote
+  kind: "local" | "remote";
+  serverUrl?: string; // for remote
   toolName: string;
   defaultArgs?: Record<string, unknown>;
   invoke: (input: unknown) => Promise<unknown>;
@@ -13,7 +12,7 @@ export interface MCPToolBinding {
 
 export interface BlockDefinition<
   TInput extends z.ZodTypeAny,
-  TOutput extends z.ZodTypeAny
+  TOutput extends z.ZodTypeAny,
 > {
   /** Unique identifier, reverse-DNS style, e.g. "iem.core.refiner" */
   id: string;
@@ -25,16 +24,22 @@ export interface BlockDefinition<
   description: string;
 
   /** Category for palette grouping */
-  category: 'text' | 'image' | 'audio' | 'video' | 'code' | 'data' | 'io' | 'meta' | string;
+  category:
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "code"
+    | "data"
+    | "io"
+    | "meta"
+    | string;
 
   /** Input schema. Validates what arrives on the input edge. */
   input: TInput;
 
   /** Output schema. Validates what leaves on the output edge. */
   output: TOutput;
-
-  /** React component rendered inside React Flow. */
-  view: ComponentType<BlockViewProps<z.infer<TInput>, z.infer<TOutput>>>;
 
   /** MCP binding that performs the actual work. */
   agent: MCPToolBinding;
@@ -55,7 +60,7 @@ export interface BlockViewProps<I, O> {
     params: Record<string, unknown>;
     input?: I;
     output?: O;
-    status: 'idle' | 'running' | 'streaming' | 'done' | 'error';
+    status: "idle" | "running" | "streaming" | "done" | "error";
     error?: string;
   };
   onParamsChange: (params: Record<string, unknown>) => void;

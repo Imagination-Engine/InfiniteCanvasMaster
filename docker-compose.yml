@@ -22,6 +22,10 @@ services:
       - MEILI_MASTER_KEY=Draculinchen
       - CONFIG_PATH=/app/librechat.yaml
       - ENDPOINTS=open_ai,anthropic,google
+      - ALLOW_IFRAME=true
+      - JWT_SECRET=super-secret-librechat-key
+      - CREDS_KEY=f34be427ebb29de8d88c107a71546019685ed8b241d8f2ed00a0efb3365df8f5
+      - CREDS_IV=e2341419ea3815c48b2645eb4516db8a
       # Students will inject their own keys via .env
     volumes:
       - type: bind
@@ -29,6 +33,7 @@ services:
         target: /app/librechat.yaml
       - ./images:/app/client/public/images
       - ./logs:/app/api/logs
+      - ./packages/core/dist:/workspace/packages/core/dist
 
   mongodb:
     container_name: chat-mongodb
@@ -58,5 +63,10 @@ services:
     container_name: iem-mcp-server
     environment:
       - NODE_ENV=development
+      - MCP_TRANSPORT=sse
+      - PORT=3002
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "3002:3002"
     volumes:
       - .:/workspace

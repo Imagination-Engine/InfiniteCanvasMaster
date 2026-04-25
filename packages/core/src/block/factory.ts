@@ -1,11 +1,6 @@
 import { z } from "zod";
 import type { BlockDefinition } from "./protocol";
 import { blockRegistry } from "./registry";
-import React from "react";
-
-// A minimal fallback view for auto-generated blocks
-const FallbackView = () =>
-  React.createElement("div", { className: "p-2" }, "Auto-generated block");
 
 // The Adamantium Factory
 // This utility allows rapid generation of standard LLM-backed Magnificent Blocks
@@ -26,7 +21,6 @@ export function createMagnificentBlock(config: {
     input: config.inputSchema,
     output: config.outputSchema,
     mode: "triggered",
-    view: FallbackView as any,
     agent: {
       kind: "local",
       toolName: config.id.replace(/\./g, "_"),

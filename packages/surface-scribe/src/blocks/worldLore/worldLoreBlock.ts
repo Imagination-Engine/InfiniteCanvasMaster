@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { WorldLoreView } from "./WorldLoreView";
 import type { BlockDefinition } from "@iem/core";
 
 export const worldLoreInput = z.object({
@@ -21,14 +20,14 @@ export const worldLoreBlock: BlockDefinition<
   category: "creative",
   input: worldLoreInput,
   output: worldLoreOutput,
-  view: WorldLoreView,
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "execute_world_lore",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",

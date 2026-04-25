@@ -76,7 +76,7 @@ export async function requestAgentGraph(
       return { nodes: [], edges: [] };
     }
 
-    return validated;
+    return validated as any;
   } catch (err) {
     console.error("Failed to generate agent graph:", err);
     // Fallback or empty state on error

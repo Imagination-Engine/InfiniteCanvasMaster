@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BlockDefinition, MCPToolBinding } from "@iem/core";
+import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 export const architectBlock: BlockDefinition<any, any> = {
   id: "iem.forge.architect",
@@ -17,9 +17,10 @@ export const architectBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "forge_architect",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
@@ -48,9 +49,10 @@ export const designerBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "forge_designer",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
@@ -80,9 +82,10 @@ export const builderBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "forge_builder",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
@@ -112,9 +115,10 @@ export const testerBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "forge_tester",
-    invoke: async (input) => {
+    invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
       const response = await agentRuntime.chat({
+        model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
