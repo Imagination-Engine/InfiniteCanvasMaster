@@ -28,11 +28,11 @@
 
 ## Phase 4: Component Implementation (TDD)
 
-- [ ] Task: Implement `ChatShell`, `ConversationViewport`, `ComposerDock`, and `EmptyState`.
-- [ ] Task: Implement `MessageList`, `AssistantMessage`, `UserMessage`, and `MessageActionBar`.
-- [ ] Task: Implement `GrowingTextarea`, `ScrollAnchor`, and `JumpToLatestButton`.
-- [ ] Task: Implement `ToolCallBlock` and `ArtifactPreview` (compact, expanded, dev views).
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Component Implementation' (Protocol in workflow.md)
+- [x] Task: Implement `ChatShell`, `ConversationViewport`, `ComposerDock`, and `EmptyState`.
+- [x] Task: Implement `MessageList`, `AssistantMessage`, `UserMessage`, and `MessageActionBar`.
+- [x] Task: Implement `GrowingTextarea`, `ScrollAnchor`, and `JumpToLatestButton`.
+- [x] Task: Implement `ToolCallBlock` and `ArtifactPreview` (compact, expanded, dev views).
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Component Implementation' (Protocol in workflow.md)
 
 ## Phase 5: Application Integration & E2E Validation
 
