@@ -2,6 +2,7 @@ import { HTMLContainer, ShapeUtil } from "tldraw";
 import type { TLBaseShape } from "tldraw";
 import "tldraw/tldraw.css";
 import { NODE_CATALOG } from "../nodes/nodeCatalog";
+import { BlockRenderer } from "./components/BlockRegistry";
 
 // Define the Tldraw shape for our Imagination Engine Blocks
 export type IemBlockShape = TLBaseShape<
@@ -21,8 +22,8 @@ export class IemBlockShapeUtil extends ShapeUtil<any> {
 
   override getDefaultProps(): IemBlockShape["props"] {
     return {
-      w: 240,
-      h: 120,
+      w: 320,
+      h: 240,
       blockId: "unknown",
       label: "Unknown Block",
       inputs: {},
@@ -56,30 +57,41 @@ export class IemBlockShapeUtil extends ShapeUtil<any> {
           fontFamily: "Inter, sans-serif",
         }}
       >
-        <div className="bg-black/40 px-3 py-2 font-bold text-sm border-b border-white/10 flex items-center justify-between">
+        <div className="bg-black/40 px-3 py-2 font-bold text-sm border-b border-white/10 flex items-center justify-between shrink-0">
           <span className="truncate">{shape.props.label}</span>
           <span className="text-[10px] opacity-50 uppercase tracking-widest">
             {catalogEntry?.category || "Block"}
           </span>
         </div>
 
-        <div className="flex-1 p-3 flex flex-col justify-between text-xs">
-          <div className="flex flex-col gap-1">
-            {Object.keys(shape.props.inputs || {}).map((key) => (
-              <div key={key} className="flex items-center gap-1.5 opacity-80">
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-cyan" />
-                <span>{key}</span>
-              </div>
-            ))}
+        <div className="flex-1 flex flex-col min-h-0 relative">
+          {/* Default Node I/O rendering */}
+          <div className="absolute inset-0 p-3 flex flex-col justify-between text-xs pointer-events-none opacity-40 z-0">
+            <div className="flex flex-col gap-1">
+              {Object.keys(shape.props.inputs || {}).map((key) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-cyan" />
+                  <span>{key}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-1 items-end">
+              {Object.keys(shape.props.outputs || {}).map((key) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <span>{key}</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1 items-end">
-            {Object.keys(shape.props.outputs || {}).map((key) => (
-              <div key={key} className="flex items-center gap-1.5 opacity-80">
-                <span>{key}</span>
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
-              </div>
-            ))}
+          {/* Custom production-ready block UI rendered here */}
+          <div className="relative z-10 flex-1 overflow-auto p-2">
+            <BlockRenderer
+              blockId={shape.props.blockId}
+              data={shape.props.inputs}
+            />
           </div>
         </div>
       </HTMLContainer>

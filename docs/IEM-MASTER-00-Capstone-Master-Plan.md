@@ -13,47 +13,24 @@
 ## Table of Contents
 
 **Part I — Foundation**
+
 1. The Mission
 2. Current-State Audit
 3. The North-Star Architecture
 4. The Unifying Thesis — Why Five Visions Are One Engine
 
-**Part II — The Common Substrate**
-5. The Block Protocol
-6. The Agent Runtime
-7. The Canvas Runtime
-8. The Chat Shell
-9. The Creations Drawer
-10. The Custom Agent Flow
-11. Data Model and Persistence
+**Part II — The Common Substrate** 5. The Block Protocol 6. The Agent Runtime 7. The Canvas Runtime 8. The Chat Shell 9. The Creations Drawer 10. The Custom Agent Flow 11. Data Model and Persistence
 
-**Part III — The Five Surfaces**
-12. Surface A — Playable (game studio)
-13. Surface B — Conductor (workflow orchestration)
-14. Surface C — Reel (generative media)
-15. Surface D — Forge (app builder)
-16. Surface E — Open Slot
+**Part III — The Five Surfaces** 12. Surface A — Playable (game studio) 13. Surface B — Conductor (workflow orchestration) 14. Surface C — Reel (generative media) 15. Surface D — Forge (app builder) 16. Surface E — Writers cove (writing and prose)
 
-**Part IV — The Development Collaboration System**
-17. Monorepo Layout and Ownership
-18. Local Development Setup
-19. Branch, PR, and Conflict Resolution Workflow
-20. Agent-Assisted Bug Triage
-21. TDD Harness — Red, Green, Refactor, Adversarial
-22. Code Review and Hardening Gates
+**Part IV — The Development Collaboration System** 17. Monorepo Layout and Ownership 18. Local Development Setup 19. Branch, PR, and Conflict Resolution Workflow 20. Agent-Assisted Bug Triage 21. TDD Harness — Red, Green, Refactor, Adversarial 22. Code Review and Hardening Gates
 
-**Part V — The Documentation Repo**
-23. README-at-Every-Juncture
-24. The Agent Primer System
-25. Semantic Document Map
+**Part V — The Documentation Repo** 23. README-at-Every-Juncture 24. The Agent Primer System 25. Semantic Document Map
 
-**Part VI — The Demo**
-26. The Target Demo Experience
-27. Per-Student Demo Scripts
-28. Faculty Presentation Framing
-29. Beyond the Capstone
+**Part VI — The Demo** 26. The Target Demo Experience 27. Per-Student Demo Scripts 28. Faculty Presentation Framing 29. Beyond the Capstone
 
 **Appendices**
+
 - A. Dependency Inventory and Upgrade List
 - B. MCP Primer for the Team
 - C. The Block-Agent-Canvas Recursion, Explained Three Ways
@@ -139,7 +116,7 @@ These are real working nodes. They are proof the team understands the basic prim
 
 React + Vite + TypeScript + Tailwind. Keep. Modern, fast, well-documented, the right choice.
 
-React Flow. Keep. Do not migrate to tldraw in six weeks. React Flow is sufficient for everything the capstone needs, and the team already knows it. tldraw is a later-phase consideration for the sovereign Balnce product, not for this.
+React Flow. Replace. Use TLDraw or Affine as benchmarks to create the world class canvas the capstone needs.
 
 PostgreSQL with migrations. Keep. Add Drizzle ORM on top for type-safe queries and schema-as-code. Do not migrate to SurrealDB. Scope discipline.
 
@@ -250,9 +227,9 @@ Four rules govern every engineering decision in this project. Any change that vi
 
 Two things this capstone is **not**:
 
-It is not Balnce-proper. VLAD, PLOG, AURA, MUON, Zenoh, Liquid networks, the Sublation Engine, the Universal Hyper-Artifact's WASM+SDUI+CRDT tripartite compile target in full form... all of these are the grown-up conversation. The capstone borrows their shape but uses simpler primitives. JWT instead of VLAD. Postgres event log instead of PLOG. Direct model calls instead of AURA metering. A minimal iframe sandbox instead of a full WASM logic core.
+It is not a startup MVP aimed at paying customers. It is a thesis-quality engineering artifact that demonstrates what five mentored undergraduates can do in six weeks when given the right substrate and agent tooling. The standard is faculty-jaw-dropping, and customer-ready.
 
-It is not a startup MVP aimed at paying customers. It is a thesis-quality engineering artifact that demonstrates what five mentored undergraduates can do in six weeks when given the right substrate and agent tooling. The standard is faculty-jaw-dropping, not customer-ready.
+It is not some side project, it is the ultimate expression of what ingenious, driven stidents learning how to create and build will be able to do. The team, and you the Agentic engineer, should be proud of this project and every line of code you write, which means an unparalleld level of attention to detail, nuance, and critical thinking.
 
 Holding these two boundaries keeps the team from both oversimplifying (losing the soul) and overscoping (shipping nothing).
 
@@ -270,7 +247,7 @@ Consider what each vision actually requires:
 
 **Software / App Builder (Surface D).** Requires chains of agent blocks (architect, designer, builder, tester). Requires the output to be a runnable artifact, not just a chat transcript. Requires the artifact to live in the Creations drawer and be launchable. The substrate capability is **the artifact registry and the compilation target.**
 
-**Surface E (open slot).** Whatever the fifth student chose. See Section 16 for how to map any fifth vision to a substrate capability. Likely candidates: collaborative knowledge graph, music studio, coaching/fitness companion, personal CRM, etc.
+**Surface E (Writers Studio).** Whatever the fifth student chose. See Section 16 for how to map any fifth vision to a substrate capability. Likely candidates: collaborative knowledge graph, music studio, coaching/fitness companion, personal CRM, etc.
 
 Each student extends one substrate capability. Their extension is visible to and usable by the other four surfaces the day they merge it. The game studio's presence layer becomes available to the workflow conductor, so two people can build a workflow together in real time. The workflow's DAG executor becomes available to the anime studio, so a scene-generation pipeline can run as a proper graph. The media pipeline's streaming primitive becomes available to the game studio, so live video can be a game texture. And so on.
 
@@ -307,61 +284,70 @@ Every block in the system implements `BlockDefinition<I, O>`:
 ```typescript
 // packages/core/src/block/protocol.ts
 
-import { z } from 'zod'
-import type { ComponentType } from 'react'
-import type { MCPToolBinding } from '@iem/core/mcp'
+import { z } from "zod";
+import type { ComponentType } from "react";
+import type { MCPToolBinding } from "@iem/core/mcp";
 
-export type BlockExecutionMode = 'triggered' | 'streaming' | 'ambient'
+export type BlockExecutionMode = "triggered" | "streaming" | "ambient";
 
 export interface BlockDefinition<
   TInput extends z.ZodTypeAny,
-  TOutput extends z.ZodTypeAny
+  TOutput extends z.ZodTypeAny,
 > {
   /** Unique identifier, reverse-DNS style, e.g. "iem.core.refiner" */
-  id: string
+  id: string;
 
   /** Human-readable display name */
-  name: string
+  name: string;
 
   /** One-line description for palette and AI discovery */
-  description: string
+  description: string;
 
   /** Category for palette grouping */
-  category: 'text' | 'image' | 'audio' | 'video' | 'code' | 'data' | 'io' | 'meta' | string
+  category:
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "code"
+    | "data"
+    | "io"
+    | "meta"
+    | string;
 
   /** Input schema. Validates what arrives on the input edge. */
-  input: TInput
+  input: TInput;
 
   /** Output schema. Validates what leaves on the output edge. */
-  output: TOutput
+  output: TOutput;
 
   /** React component rendered inside React Flow. */
-  view: ComponentType<BlockViewProps<z.infer<TInput>, z.infer<TOutput>>>
+  view: ComponentType<BlockViewProps<z.infer<TInput>, z.infer<TOutput>>>;
 
   /** MCP binding that performs the actual work. */
-  agent: MCPToolBinding
+  agent: MCPToolBinding;
 
   /** How this block participates in execution. */
-  mode: BlockExecutionMode
+  mode: BlockExecutionMode;
 
   /** Optional: default parameters the user can override in the inspector. */
-  defaults?: Record<string, unknown>
+  defaults?: Record<string, unknown>;
 
   /** Optional: capability tags for the AI to reason about composition. */
-  capabilities?: string[]
+  capabilities?: string[];
 }
 
 export interface BlockViewProps<I, O> {
-  id: string
+  id: string;
   data: {
-    params: Record<string, unknown>
-    input?: I
-    output?: O
-    status: 'idle' | 'running' | 'streaming' | 'done' | 'error'
-    error?: string
-  }
-  onParamsChange: (params: Record<string, unknown>) => void
-  onRun: () => void
+    params: Record<string, unknown>;
+    input?: I;
+    output?: O;
+    status: "idle" | "running" | "streaming" | "done" | "error";
+    error?: string;
+  };
+  onParamsChange: (params: Record<string, unknown>) => void;
+  onRun: () => void;
 }
 ```
 
@@ -374,32 +360,32 @@ This is the only interface a student writes against when adding a new block. The
 ```typescript
 // packages/core/src/block/registry.ts
 
-import type { BlockDefinition } from './protocol'
+import type { BlockDefinition } from "./protocol";
 
 class BlockRegistry {
-  private blocks = new Map<string, BlockDefinition<any, any>>()
+  private blocks = new Map<string, BlockDefinition<any, any>>();
 
   register(def: BlockDefinition<any, any>): void {
     if (this.blocks.has(def.id)) {
-      throw new Error(`Block ${def.id} already registered`)
+      throw new Error(`Block ${def.id} already registered`);
     }
-    this.blocks.set(def.id, def)
+    this.blocks.set(def.id, def);
   }
 
   get(id: string): BlockDefinition<any, any> | undefined {
-    return this.blocks.get(id)
+    return this.blocks.get(id);
   }
 
   list(): BlockDefinition<any, any>[] {
-    return Array.from(this.blocks.values())
+    return Array.from(this.blocks.values());
   }
 
   byCategory(category: string): BlockDefinition<any, any>[] {
-    return this.list().filter((b) => b.category === category)
+    return this.list().filter((b) => b.category === category);
   }
 }
 
-export const blockRegistry = new BlockRegistry()
+export const blockRegistry = new BlockRegistry();
 ```
 
 Surfaces register their blocks on import. The Canvas palette reads from the registry. The AI, when proposing a new block on the canvas, queries the registry. The MCP surface of the Canvas exposes the registry to external agents.
@@ -413,40 +399,44 @@ Illustrative migration, the Refiner:
 ```typescript
 // packages/core/src/blocks/refiner.ts
 
-import { z } from 'zod'
-import { RefinerView } from './refiner.view'
-import { createOllamaAgent } from '@iem/core/agent'
-import type { BlockDefinition } from '../block/protocol'
+import { z } from "zod";
+import { RefinerView } from "./refiner.view";
+import { createOllamaAgent } from "@iem/core/agent";
+import type { BlockDefinition } from "../block/protocol";
 
 const RefinerInput = z.object({
   text: z.string(),
-  style: z.enum(['formal', 'casual', 'academic', 'marketing', 'poetic']),
-})
+  style: z.enum(["formal", "casual", "academic", "marketing", "poetic"]),
+});
 
 const RefinerOutput = z.object({
   text: z.string(),
   model: z.string(),
   latencyMs: z.number(),
-})
+});
 
-export const refinerBlock: BlockDefinition<typeof RefinerInput, typeof RefinerOutput> = {
-  id: 'iem.core.refiner',
-  name: 'Refiner',
-  description: 'Refine text into a specific writing style.',
-  category: 'text',
+export const refinerBlock: BlockDefinition<
+  typeof RefinerInput,
+  typeof RefinerOutput
+> = {
+  id: "iem.core.refiner",
+  name: "Refiner",
+  description: "Refine text into a specific writing style.",
+  category: "text",
   input: RefinerInput,
   output: RefinerOutput,
   view: RefinerView,
-  mode: 'triggered',
+  mode: "triggered",
   agent: createOllamaAgent({
-    systemPrompt: 'You are a skilled editor. Rewrite text in the requested style with no commentary.',
-    tool: 'refine_text',
+    systemPrompt:
+      "You are a skilled editor. Rewrite text in the requested style with no commentary.",
+    tool: "refine_text",
   }),
-  defaults: { style: 'formal' },
-  capabilities: ['text-transformation', 'style-transfer'],
-}
+  defaults: { style: "formal" },
+  capabilities: ["text-transformation", "style-transfer"],
+};
 
-blockRegistry.register(refinerBlock)
+blockRegistry.register(refinerBlock);
 ```
 
 All nine legacy nodes get this treatment as task IEM-MIGR-001 through IEM-MIGR-009 in the backlog.
@@ -481,31 +471,31 @@ The runtime provides three things:
 // packages/core/src/agent/provider.ts
 
 export interface ModelProvider {
-  id: string
-  name: string
-  supportedModels: string[]
-  chat(request: ChatRequest): Promise<ChatResponse>
-  stream(request: ChatRequest): AsyncIterable<ChatChunk>
-  supportsTools: boolean
+  id: string;
+  name: string;
+  supportedModels: string[];
+  chat(request: ChatRequest): Promise<ChatResponse>;
+  stream(request: ChatRequest): AsyncIterable<ChatChunk>;
+  supportsTools: boolean;
 }
 
 export interface ChatRequest {
-  model: string
-  messages: ChatMessage[]
-  tools?: MCPToolDescriptor[]
-  temperature?: number
-  maxTokens?: number
+  model: string;
+  messages: ChatMessage[];
+  tools?: MCPToolDescriptor[];
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface ChatResponse {
-  content: string
-  toolCalls?: ToolCall[]
-  usage: { inputTokens: number; outputTokens: number }
-  latencyMs: number
+  content: string;
+  toolCalls?: ToolCall[];
+  usage: { inputTokens: number; outputTokens: number };
+  latencyMs: number;
 }
 ```
 
-`OllamaProvider` and `GeminiProvider` both implement this interface. A block's `agent` field points to a provider and a prompt, not to a raw API call. Swapping Gemini for Claude later is a one-line change.
+`OllamaProvider` and `GeminiProvider` both implement this interface, Mastra becomes the underlying multi-agent orchestration and capabilities layer. A block's `agent` field points to a provider and a prompt, not to a raw API call. Swapping Gemini for Claude later is a one-line change.
 
 ### 6.3 The MCP client
 
@@ -515,11 +505,11 @@ The runtime wraps `@modelcontextprotocol/sdk` for TypeScript. A block's agent bi
 // packages/core/src/agent/mcp-binding.ts
 
 export interface MCPToolBinding {
-  kind: 'local' | 'remote'
-  serverUrl?: string           // for remote
-  toolName: string
-  defaultArgs?: Record<string, unknown>
-  invoke: (input: unknown) => Promise<unknown>
+  kind: "local" | "remote";
+  serverUrl?: string; // for remote
+  toolName: string;
+  defaultArgs?: Record<string, unknown>;
+  invoke: (input: unknown) => Promise<unknown>;
 }
 ```
 
@@ -553,7 +543,7 @@ The runtime must ship with:
 
 ## 7. The Canvas Runtime
 
-The Canvas Runtime is React Flow, enriched. It stays React Flow at the rendering layer. It gains four capabilities on top:
+The Canvas Runtime is a highly dynamic, beautifully engineered, highly enriched 60 +FPS environment where blocks can be dragged, dropped, moved, and arranged seamlessly against the advanced phyics and benchmarks of, and by taking it directly from TLDraw and Affine rendering layer. It gains four capabilities on top:
 
 1. **Presence** — who else is looking at this canvas, where their cursor is, what block they're editing (Surface A extends this).
 2. **DAG execution** — the scheduler that runs a graph in topological order, respecting async and streaming blocks (Surface B extends this).
@@ -564,7 +554,7 @@ The Canvas Runtime is React Flow, enriched. It stays React Flow at the rendering
 
 Presence is opt-in per canvas. When enabled, the client maintains a websocket connection to a presence server. Cursor positions, selections, and block-edit locks broadcast at a throttled rate.
 
-Technology choice for capstone: **`y-websocket` with Yjs** for CRDT-backed presence, or **`@liveblocks/client`** if the team prefers managed. Recommendation: **Yjs** because it is free, well-understood, and sets the team up for proper CRDT-native sync later.
+Technology choice for capstone: **`y-websocket` with Yjs** for CRDT-backed presence, or **`@liveblocks/client`** if the team prefers managed. Recommendation: **Yjs** because it is free, well-understood, and sets the team up for proper CRDT-native sync later. Remove the liveblocks dependency, it is not needed and we can engineer a solid system for local demonstration with yjs.
 
 Presence is a Surface A responsibility to build out to full multiplayer game state. The base layer (cursors + selections) ships in `@iem/core`.
 
@@ -576,21 +566,24 @@ The scheduler takes a canvas graph and executes it:
 // packages/core/src/canvas/scheduler.ts
 
 export class CanvasScheduler {
-  async run(canvas: CanvasGraph, startBlockId?: string): Promise<ExecutionResult> {
+  async run(
+    canvas: CanvasGraph,
+    startBlockId?: string,
+  ): Promise<ExecutionResult> {
     const subgraph = startBlockId
       ? canvas.subgraphRootedAt(startBlockId)
-      : canvas.toposort()
+      : canvas.toposort();
 
     for (const block of subgraph) {
-      const inputs = canvas.resolveInputs(block.id)
-      const validated = block.def.input.parse(inputs)
-      const output = await block.def.agent.invoke(validated)
-      const validatedOut = block.def.output.parse(output)
-      canvas.setOutput(block.id, validatedOut)
-      canvas.emit('block.done', { id: block.id, output: validatedOut })
+      const inputs = canvas.resolveInputs(block.id);
+      const validated = block.def.input.parse(inputs);
+      const output = await block.def.agent.invoke(validated);
+      const validatedOut = block.def.output.parse(output);
+      canvas.setOutput(block.id, validatedOut);
+      canvas.emit("block.done", { id: block.id, output: validatedOut });
     }
 
-    return canvas.snapshot()
+    return canvas.snapshot();
   }
 }
 ```
@@ -623,9 +616,9 @@ The Chat Shell is the front door. Zachary specified this clearly and the spec fo
 
 ### 8.1 Behavior
 
-After login, the user lands on the Chat Shell. Not the Canvas. The Chat Shell is a clean conversation UI, single-pane, with a prominent input at the bottom. Above the input, a minimal strip: model selector, a "new chat" button, a "toggle canvas view" button.
+After login, the user lands on the Chat Shell. Not the Canvas. The Chat Shell is a clean conversation UI, single-pane, inspored by and taking UI/UX and adapting to our project directly from Libre Chat. The Libre Chat components and UI/UX will supply all the advanced interactions, stream states, flows, controls, compinents, states, etc, we will need to make this world-class.
 
-A new Chat creates a new Session. A Session is the continuity object. The Session has a Canvas lazily attached the moment the conversation escalates beyond pure text... the first time the assistant suggests a block, or generates an image, or produces a file, or a tool call happens, the Canvas is materialized in the background.
+A new Chat creates a new Session. A Session is the continuity object. The Session has a Canvas lazily attached the moment the conversation escalates beyond pure text... the first time the assistant suggests a block, or generates an image, or produces a file, or a tool call happens, or it creates a "Blueprint", the Canvas is materialized in the background.
 
 The user is gently informed the first time this happens, with a small inline affordance: "I created a canvas for this. Open canvas?"
 
@@ -633,11 +626,12 @@ Subsequent canvas events update the existing canvas for that session.
 
 ### 8.2 Library choice
 
-Do not import LibreChat wholesale. It is an entire product. We want its *shape*, not its code.
+Do not import LibreChat wholesale. It is an entire product. We want its _shape_, and its code where applicable to adapt.
 
 Build the Chat Shell in house using:
 
-- **Vercel AI SDK (`ai` package)** for streaming-chat primitives (`useChat` hook, `streamText` server utilities). This is the fastest path from zero to a working streaming chat.
+- **Vercel AI SDK (`ai` package)** for streaming-chat primitives (`research the latest API structure and calls using your search tool). This is the fastest path from zero to a working streaming chat.
+- **Assistant UI** (https://github.com/assistant-ui/assistant-ui) for rapid and expert overlay of all chat microinteractions, the claude clone Ui for example: https://www.assistant-ui.com/examples/claude
 - **shadcn/ui** for the message bubbles, input, and controls. Clean, composable, copy-paste source.
 - **react-markdown** + **remark-gfm** for message rendering.
 
@@ -833,7 +827,7 @@ Every surface follows the same primer structure:
 
 ### 12.1 Vision
 
-A game studio on the canvas, where a designer can sketch a playable experience in blocks (a room, a character, a rule, a friend joining) and a friend can hop in live. The game *is* the canvas. Playtest happens on the canvas. Export ships a playable embed.
+A game studio on the canvas, where a designer can sketch a playable experience in blocks (a room, a character, a rule, a friend joining) and a friend can hop in live. The game _is_ the canvas. Playtest happens on the canvas. Export ships a playable embed.
 
 ### 12.2 What it extends in core
 
@@ -861,6 +855,7 @@ A game studio on the canvas, where a designer can sketch a playable experience i
 ### 12.5 Demo spec
 
 Onstage, Student A:
+
 1. Signs up, completes onboarding.
 2. Starts a new chat, types "I want to build a game where two friends run around a room collecting stars."
 3. Assistant creates a canvas with Scene, Character, Character, Item blocks wired up.
@@ -908,6 +903,7 @@ Chain blocks together to accomplish real work across real tools. Pull a calendar
 ### 13.5 Demo spec
 
 Onstage, Student B:
+
 1. Starts a new chat, types "I want a workflow that pulls my GitHub issues, summarizes the P0s, and posts to Slack every weekday morning."
 2. Assistant generates a canvas. Student B tweaks the schedule to 9am, picks the channel.
 3. Clicks "Run Now." Runs live. Real issues are fetched. Real summary is generated by Gemini. Real message is posted.
@@ -952,6 +948,7 @@ An anime movie, one scene at a time, on the canvas. Prompt a character. Prompt a
 ### 14.5 Demo spec
 
 Onstage, Student C:
+
 1. New chat: "I want to make a one-minute anime scene where a cat detective solves a mystery in a rainy Tokyo street."
 2. Assistant generates a canvas with four Scene blocks. Toggle to timeline view.
 3. Student C plays the timeline. The scenes render, text-to-speech narration plays, cuts transition.
@@ -998,6 +995,7 @@ This is the closest surface to the full Balnce Imagination Engineering Team (IET
 ### 15.5 Demo spec
 
 Onstage, Student D:
+
 1. New chat: "Build me a todo list that syncs between two browsers and has priorities."
 2. Assistant generates a canvas with the four agent blocks. The `BuildSpec` block auto-populates from the user's prompt.
 3. Student D hits "Run." Watches the build log stream. Architect produces a spec. Designer produces a layout. Builder generates code. Tester runs it and passes.
@@ -1187,13 +1185,17 @@ Set `IEM_MOCK_MODELS=1` to run against mocked model providers. Tests use this by
 
 ```markdown
 ## What this PR does
+
 One paragraph. Written for a human reader who is not you.
 
 ## Why this PR does it
+
 Link to the backlog item, or the surface milestone it advances, or the bug it fixes.
 
 ## What surface(s) it touches
+
 Check all that apply:
+
 - [ ] core
 - [ ] ui
 - [ ] db
@@ -1205,17 +1207,21 @@ Check all that apply:
 - [ ] surface-e
 
 ## Tests
+
 - [ ] Red-green-refactor honored
 - [ ] Adversarial test included
 - [ ] All CI checks passing
 
 ## Screenshots / Demo clips
+
 If UI-visible.
 
 ## Risk
+
 One sentence: what might break.
 
 ## For the reviewer
+
 What should they look at first?
 ```
 
@@ -1263,6 +1269,7 @@ Zachary's directive: the agent should be able to identify issues outside its own
 ## Open
 
 ### [2026-04-20] Cursor flicker on React Flow zoom
+
 - Source: agent (Claude Code, session a3f9)
 - Surface: core (canvas runtime)
 - Severity: low
@@ -1273,6 +1280,7 @@ Zachary's directive: the agent should be able to identify issues outside its own
   requestAnimationFrame coalescing.
 
 ### [2026-04-21] Refiner block tests flaky under load
+
 - Source: CI run #847
 - ...
 
@@ -1289,7 +1297,7 @@ Zachary's directive: the agent should be able to identify issues outside its own
 
 > **Triage Rule.** If during your work you notice a bug, dead code, a broken test, a performance regression, a security issue, or any other concern that is **outside the scope of your current task**, append an entry to `docs/backlog/TRIAGE.md` in the Open section. Follow the format. Do not derail your current task to fix it. Your entry should take under 30 seconds to write. Date entries with the current date.
 
-This makes the agents *curators of quality*, not just producers of code. Over six weeks, this backlog becomes a rich signal of system-wide health.
+This makes the agents _curators of quality_, not just producers of code. Over six weeks, this backlog becomes a rich signal of system-wide health.
 
 ### 20.3 The weekly promotion script
 
@@ -1382,7 +1390,7 @@ jobs:
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
-        ports: ['5432:5432']
+        ports: ["5432:5432"]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -1707,7 +1715,7 @@ Suggested opening beats:
 
 **Beat 4 — The setup for the first demo.** "Student A is going to show you a game built on a canvas. Watch for the moment when a second browser joins live. That moment is presence. Presence was built into the core substrate, which means every other student's surface inherits it for free. You will see that inheritance in action across the next four demos."
 
-The mentor does not have to pitch Balnce here. The engine pitches itself. The *architectural restraint* is what impresses faculty... they have seen flashy demos. They have not seen undergraduate teams with this level of architectural coherence.
+The mentor does not have to pitch Balnce here. The engine pitches itself. The _architectural restraint_ is what impresses faculty... they have seen flashy demos. They have not seen undergraduate teams with this level of architectural coherence.
 
 `docs/demo/faculty-brief.md` is a one-pager distributed to faculty before demo day with:
 
@@ -1737,47 +1745,47 @@ The architecture mirrors Balnce enough that the best students might, with care a
 
 ### A.1 Dependencies to keep
 
-| Current | Use | Verdict |
-|---|---|---|
-| React 18+ | UI | Keep |
-| Vite | Dev server, build | Keep |
-| TypeScript 5+ | Language | Keep |
-| Tailwind CSS | Styling | Keep |
-| React Flow | Canvas | Keep |
-| React Router | Routing | Keep, may migrate to TanStack Router later |
-| Express | Backend | Keep |
-| PostgreSQL | DB | Keep |
-| bcrypt | Passwords | Keep |
-| jsonwebtoken | JWT auth | Keep |
-| Ollama (service) | Local LLM | Keep |
-| Google Gemini SDK | Cloud LLM | Keep |
+| Current           | Use               | Verdict                                    |
+| ----------------- | ----------------- | ------------------------------------------ |
+| React 18+         | UI                | Keep                                       |
+| Vite              | Dev server, build | Keep                                       |
+| TypeScript 5+     | Language          | Keep                                       |
+| Tailwind CSS      | Styling           | Keep                                       |
+| React Flow        | Canvas            | Keep                                       |
+| React Router      | Routing           | Keep, may migrate to TanStack Router later |
+| Express           | Backend           | Keep                                       |
+| PostgreSQL        | DB                | Keep                                       |
+| bcrypt            | Passwords         | Keep                                       |
+| jsonwebtoken      | JWT auth          | Keep                                       |
+| Ollama (service)  | Local LLM         | Keep                                       |
+| Google Gemini SDK | Cloud LLM         | Keep                                       |
 
 ### A.2 Dependencies to add
 
-| Package | Use | Why |
-|---|---|---|
-| `pnpm` | Package manager | Monorepo-friendly, fast |
-| `turbo` | Build pipeline | Caching, parallel builds |
-| `drizzle-orm` + `drizzle-kit` | ORM | Type-safe, TypeScript-native |
-| `@modelcontextprotocol/sdk` | MCP client/server | The substrate |
-| `zod` | Schema validation | Block Protocol depends on it |
-| `ai` (Vercel AI SDK) | Chat streaming | Chat Shell |
-| `shadcn/ui` components (copied) | UI kit | Clean, owned, themeable |
-| `yjs` + `y-websocket` | Presence (CRDT) | Surface A foundation |
-| `pgvector` | Vector search | Custom Agent context |
-| `vitest` | Unit/integration tests | Modern, fast |
-| `@playwright/test` | E2E tests | Demo-day confidence |
-| `msw` | Network mocking | CI hermeticity |
-| `husky` + `lint-staged` | Pre-commit hooks | Prevents bad commits |
-| `prettier` + `eslint` | Formatting/linting | Team consistency |
-| `@faker-js/faker` | Test fixtures | TDD support |
-| `react-markdown` + `remark-gfm` | Chat rendering | Markdown in chat |
-| `embla-carousel-react` | Onboarding | Lightweight, accessible |
+| Package                         | Use                    | Why                          |
+| ------------------------------- | ---------------------- | ---------------------------- |
+| `pnpm`                          | Package manager        | Monorepo-friendly, fast      |
+| `turbo`                         | Build pipeline         | Caching, parallel builds     |
+| `drizzle-orm` + `drizzle-kit`   | ORM                    | Type-safe, TypeScript-native |
+| `@modelcontextprotocol/sdk`     | MCP client/server      | The substrate                |
+| `zod`                           | Schema validation      | Block Protocol depends on it |
+| `ai` (Vercel AI SDK)            | Chat streaming         | Chat Shell                   |
+| `shadcn/ui` components (copied) | UI kit                 | Clean, owned, themeable      |
+| `yjs` + `y-websocket`           | Presence (CRDT)        | Surface A foundation         |
+| `pgvector`                      | Vector search          | Custom Agent context         |
+| `vitest`                        | Unit/integration tests | Modern, fast                 |
+| `@playwright/test`              | E2E tests              | Demo-day confidence          |
+| `msw`                           | Network mocking        | CI hermeticity               |
+| `husky` + `lint-staged`         | Pre-commit hooks       | Prevents bad commits         |
+| `prettier` + `eslint`           | Formatting/linting     | Team consistency             |
+| `@faker-js/faker`               | Test fixtures          | TDD support                  |
+| `react-markdown` + `remark-gfm` | Chat rendering         | Markdown in chat             |
+| `embla-carousel-react`          | Onboarding             | Lightweight, accessible      |
 
 ### A.3 Dependencies to consider removing or archiving
 
-| Package | Current use | Action |
-|---|---|---|
+| Package                    | Current use       | Action                                                                                      |
+| -------------------------- | ----------------- | ------------------------------------------------------------------------------------------- |
 | Microsoft Autogen (Python) | Agent exploration | Archive in `autogen_exploration/` with a README explaining what was learned. Do not extend. |
 
 ### A.4 Stretch: Electrobun bundle
@@ -1809,7 +1817,7 @@ A block in our Imagination Engine is the UI embodiment of one MCP tool. The bloc
 
 ### B.3 What "the canvas is an MCP server" means
 
-The Canvas itself is also an MCP server. Its tools are `addBlock`, `connect`, `run`, `describe`, etc. An external agent can *talk to the canvas* through MCP. It can look at the canvas, understand its graph, add blocks, wire them up, run them.
+The Canvas itself is also an MCP server. Its tools are `addBlock`, `connect`, `run`, `describe`, etc. An external agent can _talk to the canvas_ through MCP. It can look at the canvas, understand its graph, add blocks, wire them up, run them.
 
 This means: the Chat Shell's assistant, when it "generates a canvas," is actually just calling MCP tools on the Canvas. The canvas isn't special; it's an MCP client and server, exchanging tool calls with the chat's agent.
 

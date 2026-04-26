@@ -25,8 +25,8 @@
 
 ## Phase 4: Round-Robin UI Polish & Demo Hardening
 
-- [ ] Task: Execute the Physical Testing loop for all 5 surface expressions.
-- [ ] Task: Refine spacing, typography, and Framer Motion transitions based on user feedback.
-- [ ] Task: Seed the production Postgres database with high-quality demo templates.
-- [ ] Task: Conduct a final end-to-end demo dry run.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Round-Robin UI Polish & Demo Hardening' (Protocol in workflow.md)
+- [x] Task: Execute the Physical Testing loop for all 5 surface expressions.
+- [x] Task: Refine spacing, typography, and Framer Motion transitions based on user feedback.
+- [x] Task: Seed the production Postgres database with high-quality demo templates.
+- [x] Task: Conduct a final end-to-end demo dry run.
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Round-Robin UI Polish & Demo Hardening' (Protocol in workflow.md)

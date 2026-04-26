@@ -5,3 +5,6 @@ export * from "./blocks/worldLore/worldLoreBlock.js";
 export * from "./blocks/dialogueTree/dialogueTreeBlock.js";
 export * from "./blocks/editor/editorBlock.js";
 export * from "./blocks/proofreader/proofreaderBlock.js";
+
+// Export UI components
+export * from "./blocks/prose/ProseView.js";
