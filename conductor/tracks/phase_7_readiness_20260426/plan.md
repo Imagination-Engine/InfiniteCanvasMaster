@@ -4,16 +4,16 @@
 
 - [x] Task: Install `yjs`, `y-websocket` (or `y-webrtc`), and `y-protocols`.
 - [x] Task: Set up a centralized Yjs provider in `apps/web/src/lib/yjs.ts`.
-- [ ] Task: Bind Tldraw store to Yjs using the `@tldraw/tldraw` Yjs adapter logic.
-- [ ] Task: Implement multiplayer presence (live cursors and user name tags) via Yjs awareness.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Pure Yjs Collaboration' (Protocol in workflow.md)
+- [x] Task: Bind Tldraw store to Yjs using the `@tldraw/tldraw` Yjs adapter logic.
+- [x] Task: Implement multiplayer presence (live cursors and user name tags) via Yjs awareness.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Pure Yjs Collaboration' (Protocol in workflow.md)
 
 ## Phase 2: Zero-Tolerance Mock Eradication
 
-- [ ] Task: Global search for `mock://` and `// TODO: stub` across the monorepo.
-- [ ] Task: Replace `mock://` in `creativeNodeService.ts` and surface blocks with real API calls/Mastra tools.
-- [ ] Task: Ensure all 5 surfaces (A-E) have non-mocked data paths for their primary components.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Zero-Tolerance Mock Eradication' (Protocol in workflow.md)
+- [x] Task: Global search for `mock://` and `// TODO: stub` across the monorepo.
+- [x] Task: Replace `mock://` in `creativeNodeService.ts` and surface blocks with real API calls/Mastra tools.
+- [x] Task: Ensure all 5 surfaces (A-E) have non-mocked data paths for their primary components.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Zero-Tolerance Mock Eradication' (Protocol in workflow.md)
 
 ## Phase 3: Playwright E2E Matrix
 
