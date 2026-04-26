@@ -2,8 +2,8 @@
 
 ## Phase 1: Pure Yjs Collaboration (Spatial Sync)
 
-- [ ] Task: Install `yjs`, `y-websocket` (or `y-webrtc`), and `y-protocols`.
-- [ ] Task: Set up a centralized Yjs provider in `apps/web/src/lib/yjs.ts`.
+- [x] Task: Install `yjs`, `y-websocket` (or `y-webrtc`), and `y-protocols`.
+- [x] Task: Set up a centralized Yjs provider in `apps/web/src/lib/yjs.ts`.
 - [ ] Task: Bind Tldraw store to Yjs using the `@tldraw/tldraw` Yjs adapter logic.
 - [ ] Task: Implement multiplayer presence (live cursors and user name tags) via Yjs awareness.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Pure Yjs Collaboration' (Protocol in workflow.md)
