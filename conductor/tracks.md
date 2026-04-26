@@ -121,8 +121,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Phase 7 Readiness & Final Polish**
       _Link: [./tracks/phase_7_readiness_20260426/](./tracks/phase_7_readiness_20260426/)_
-
----
-
-- [x] **Track: Balnce Imagination Canvas Extraction**
-      _Link: [./tracks/imagination_canvas_extraction_20260426/](./tracks/imagination_canvas_extraction_20260426/)_
