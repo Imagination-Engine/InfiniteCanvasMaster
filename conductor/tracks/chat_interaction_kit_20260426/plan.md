@@ -2,16 +2,16 @@
 
 ## Phase 1: UX/UI Extraction Documentation
 
-- [ ] Task: Create `/docs/chat-ux-extraction/` directory.
-- [ ] Task: Generate `01-layout-shell-audit.md` (App shell, viewport, docking).
-- [ ] Task: Generate `02-composer-micro-ux.md` (Textarea, submit/stop, shortcuts).
-- [ ] Task: Generate `03-message-lifecycle.md` (States, streaming, errors).
-- [ ] Task: Generate `04-scroll-and-streaming-behavior.md` (Auto-scroll, anchoring).
-- [ ] Task: Generate `05-tool-artifact-rendering.md` (Hierarchy, previews, JSON view).
-- [ ] Task: Generate `06-design-token-map.md` (Spacing, typography, motion).
-- [ ] Task: Generate `07-component-implementation-plan.md` (Components, hooks, contracts).
-- [ ] Task: Generate `08-gap-list.md` (Current vs Target state).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: UX/UI Extraction Documentation' (Protocol in workflow.md)
+- [x] Task: Create `/docs/chat-ux-extraction/` directory.
+- [x] Task: Generate `01-layout-shell-audit.md` (App shell, viewport, docking).
+- [x] Task: Generate `02-composer-micro-ux.md` (Textarea, submit/stop, shortcuts).
+- [x] Task: Generate `03-message-lifecycle.md` (States, streaming, errors).
+- [x] Task: Generate `04-scroll-and-streaming-behavior.md` (Auto-scroll, anchoring).
+- [x] Task: Generate `05-tool-artifact-rendering.md` (Hierarchy, previews, JSON view).
+- [x] Task: Generate `06-design-token-map.md` (Spacing, typography, motion).
+- [x] Task: Generate `07-component-implementation-plan.md` (Components, hooks, contracts).
+- [x] Task: Generate `08-gap-list.md` (Current vs Target state).
+- [x] Task: Conductor - User Manual Verification 'Phase 1: UX/UI Extraction Documentation' (Protocol in workflow.md)
 
 ## Phase 2: Package Initialization & Type Contracts
 
