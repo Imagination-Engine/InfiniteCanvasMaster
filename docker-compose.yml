@@ -54,6 +54,19 @@ services:
       - ./meili_data_v1.7:/meili_data
 
   # ---------------------------------------------------------
+  # OpenTelemetry - Jaeger
+  # ---------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: iem-jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  # ---------------------------------------------------------
   # Imagination Engine - The Substrate & MCP Server
   # ---------------------------------------------------------
   iem-mcp:
