@@ -40,14 +40,14 @@
   - [x] Implement the `BlockDefinition` wrappers for remaining nodes.
   - [x] Refactor to ensure consistency across all legacy blocks.
   - [x] Write adversarial tests for each block with invalid inputs.
-- [ ] Task: Generate Substrate and Custom Agent Blocks
-  - [ ] Write failing tests for base I/O blocks and Custom Agent templates.
-  - [ ] Implement the blocks per the `IEM-MASTER-00` specification.
-  - [ ] Refactor block rendering components for the new TLDraw/Affine canvas.
-  - [ ] Write adversarial tests ensuring blocks handle missing MCP endpoints.
-- [ ] Task: Generate Surface-Specific Blocks
-  - [ ] Write failing tests for Playable, Conductor, Reel, and Forge core blocks.
-  - [ ] Implement the blocks (e.g., Scene, Rule, WebhookTrigger, TextToImage).
-  - [ ] Refactor to ensure they correctly bind to the Agent Runtime.
-  - [ ] Write adversarial tests for edge-case parameters in surface blocks.
-- [ ] Task: Conductor - User Manual Verification 'Block Generation and Protocol Migration' (Protocol in workflow.md)
+- [x] Task: Generate Substrate and Custom Agent Blocks
+  - [x] Write failing tests for base I/O blocks and Custom Agent templates.
+  - [x] Implement the blocks per the `IEM-MASTER-00` specification.
+  - [x] Refactor block rendering components for the new TLDraw/Affine canvas.
+  - [x] Write adversarial tests ensuring blocks handle missing MCP endpoints.
+- [x] Task: Generate Surface-Specific Blocks
+  - [x] Write failing tests for Playable, Conductor, Reel, and Forge core blocks.
+  - [x] Implement the blocks (e.g., Scene, Rule, WebhookTrigger, TextToImage).
+  - [x] Refactor to ensure they correctly bind to the Agent Runtime.
+  - [x] Write adversarial tests for edge-case parameters in surface blocks.
+- [x] Task: Conductor - User Manual Verification 'Block Generation and Protocol Migration' (Protocol in workflow.md)
