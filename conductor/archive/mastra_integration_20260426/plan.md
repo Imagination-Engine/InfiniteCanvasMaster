@@ -40,7 +40,7 @@
 
 ## Phase 6: Evals, Cleanup & Legacy Deprecation
 
-- [ ] Task: Establish benchmark suite (`evals/`) with 5 user intent stories.
-- [ ] Task: Implement Mastra Evals to score orchestration accuracy against the benchmarks.
-- [ ] Task: Safely deprecate and remove legacy `CanvasScheduler`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 6: Evals, Cleanup & Legacy Deprecation' (Protocol in workflow.md)
+- [x] Task: Establish benchmark suite (`evals/`) with 5 user intent stories.
+- [x] Task: Implement Mastra Evals to score orchestration accuracy against the benchmarks.
+- [x] Task: Safely deprecate and remove legacy `CanvasScheduler`.
+- [x] Task: Conductor - User Manual Verification 'Phase 6: Evals, Cleanup & Legacy Deprecation' (Protocol in workflow.md)
