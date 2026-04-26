@@ -36,7 +36,7 @@
 
 ## Phase 5: Application Integration & E2E Validation
 
-- [ ] Task: Replace existing Chat implementation in `apps/web` with the new kit.
-- [ ] Task: Ensure zero "mock", "stub", or "TODO: real implementation" remain in the kit or integration layer.
-- [ ] Task: Update Playwright E2E tests to validate auto-scroll, stop generation, and tool call visibility.
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: Application Integration' (Protocol in workflow.md)
+- [x] Task: Replace existing Chat implementation in `apps/web` with the new kit.
+- [x] Task: Ensure zero "mock", "stub", or "TODO: real implementation" remain in the kit or integration layer.
+- [x] Task: Update Playwright E2E tests to validate auto-scroll, stop generation, and tool call visibility.
+- [x] Task: Conductor - User Manual Verification 'Phase 5: Application Integration' (Protocol in workflow.md)

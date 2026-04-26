@@ -1,8 +1,14 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../../auth/AuthContext";
 import { Markdown } from "./Markdown";
-import { Bot, ChevronRight, ArrowUp } from "lucide-react";
+import { Bot, ChevronRight, ArrowUp, Square } from "lucide-react";
+import {
+  GrowingTextarea,
+  ToolCallBlock,
+  useAutoScroll,
+  useComposerSubmit,
+} from "@iem/chat-interaction-kit";
 
 interface ChatShellProps {
   projectId: string;
@@ -18,21 +24,33 @@ export const ChatShell: React.FC<ChatShellProps> = ({
   const { accessToken } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } =
-    useChat({
-      api: "http://localhost:3001/api/chat",
-      headers: {
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      },
-      body: {
-        sessionId: projectId,
-      },
-      initialMessages: initialMessages as any,
-    });
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+    stop,
+  } = useChat({
+    api: "http://localhost:3001/api/chat",
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: {
+      sessionId: projectId,
+    },
+    initialMessages: initialMessages as any,
+  });
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Automatically scroll to bottom as new messages stream in
+  useAutoScroll(messagesEndRef, [messages]);
+
+  const { handleKeyDown, handleButtonClick } = useComposerSubmit({
+    onSubmit: () => handleSubmit(new Event("submit") as any),
+    onStop: stop,
+    isStreaming: isLoading,
+  });
 
   return (
     <div
@@ -72,17 +90,12 @@ export const ChatShell: React.FC<ChatShellProps> = ({
                   className={`p-4 rounded-2xl text-sm leading-relaxed shadow-lg ${!isAssistant ? "bg-brand-purple/10 border border-brand-purple/20 text-white rounded-tr-sm" : "bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm w-full"}`}
                 >
                   <Markdown content={m.content} />
-                  {/* Tool invocations mapping */}
+                  {/* Native Tool invocations mapping using Kit */}
                   {m.toolInvocations?.map((tool: any, idx: number) => (
-                    <div
+                    <ToolCallBlock
                       key={idx}
-                      className="mt-4 p-3 rounded-xl bg-black/40 border border-brand-cyan/20 flex flex-col gap-2"
-                    >
-                      <div className="flex items-center gap-2 text-brand-cyan text-xs font-mono font-bold">
-                        <div className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse" />
-                        Executing: {tool.toolName}
-                      </div>
-                    </div>
+                      tool={{ ...tool, state: tool.state || "completed" }}
+                    />
                   ))}
                 </div>
               </div>
@@ -100,7 +113,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
             </span>
           </div>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-px" />
       </div>
 
       {error && (
@@ -111,25 +124,24 @@ export const ChatShell: React.FC<ChatShellProps> = ({
 
       <div className="p-4 bg-white/[0.02] border-t border-white/5">
         <form onSubmit={handleSubmit} className="relative flex items-end group">
-          <textarea
+          <GrowingTextarea
             value={input}
             onChange={handleInputChange}
             placeholder="Instruct the engine..."
-            className="w-full bg-white/10 border border-white/20 rounded-[20px] py-3 pl-5 pr-14 text-white placeholder:text-white/40 focus:outline-none focus:border-brand-cyan/50 focus:bg-white/15 transition-all resize-none text-sm"
-            rows={1}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
+            className="w-full bg-white/10 border border-white/20 rounded-[20px] py-3 pl-5 pr-14 text-white placeholder:text-white/40 focus:bg-white/15 transition-all text-sm"
+            onKeyDown={handleKeyDown as any}
           />
           <button
-            type="submit"
-            disabled={!input.trim() || isLoading}
+            type="button"
+            onClick={handleButtonClick}
+            disabled={!input.trim() && !isLoading}
             className="absolute right-2 bottom-2 w-8 h-8 flex items-center justify-center bg-brand-purple hover:bg-brand-cyan text-white rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-brand-purple"
           >
-            <ArrowUp size={16} strokeWidth={3} />
+            {isLoading ? (
+              <Square size={14} fill="currentColor" />
+            ) : (
+              <ArrowUp size={16} strokeWidth={3} />
+            )}
           </button>
         </form>
       </div>
