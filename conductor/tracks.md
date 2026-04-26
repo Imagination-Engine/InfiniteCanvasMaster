@@ -119,11 +119,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Canvas Architecture and Block Generation**
-      _Link: [./tracks/canvas_arch_blocks_20260424/](./tracks/canvas_arch_blocks_20260424/)_
-
----
-
 - [ ] **Track: Mastra Integration & LibreChat UI Convergence**
       _Link: [./tracks/mastra_integration_20260426/](./tracks/mastra_integration_20260426/)_
 
