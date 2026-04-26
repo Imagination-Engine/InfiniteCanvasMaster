@@ -6,3 +6,4 @@ export * from "./filter";
 export * from "./webScraper";
 export * from "./formatter";
 export * from "./programmer";
+export * from "./fileUpload";
