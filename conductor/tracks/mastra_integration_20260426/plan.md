@@ -32,11 +32,11 @@
 
 ## Phase 5: The LibreChat UI/UX Extraction
 
-- [ ] Task: Script shallow clone of `danny-avila/LibreChat` to `temp/` for analysis.
-- [ ] Task: Extract and port LibreChat message streaming and advanced markdown parsing.
-- [ ] Task: Extract and port LibreChat "Agent is thinking..." and tool invocation visualizers.
-- [ ] Task: Refactor `ChatShell.tsx` integrating these transplants while maintaining Dual-View stability.
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: The LibreChat UI/UX Extraction' (Protocol in workflow.md)
+- [x] Task: Script shallow clone of `danny-avila/LibreChat` to `temp/` for analysis.
+- [x] Task: Extract and port LibreChat message streaming and advanced markdown parsing.
+- [x] Task: Extract and port LibreChat "Agent is thinking..." and tool invocation visualizers.
+- [x] Task: Refactor `ChatShell.tsx` integrating these transplants while maintaining Dual-View stability.
+- [x] Task: Conductor - User Manual Verification 'Phase 5: The LibreChat UI/UX Extraction' (Protocol in workflow.md)
 
 ## Phase 6: Evals, Cleanup & Legacy Deprecation
 
