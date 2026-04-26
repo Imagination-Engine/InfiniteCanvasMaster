@@ -15,9 +15,9 @@
 
 ## Phase 2: Package Initialization & Type Contracts
 
-- [ ] Task: Scaffold `/packages/chat-interaction-kit` using Turbo/pnpm.
-- [ ] Task: Implement typed contracts: `ChatMessage`, `StreamEvent`, `MessageLifecycle`, `ToolCall`, `Artifact`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Package Initialization & Type Contracts' (Protocol in workflow.md)
+- [x] Task: Scaffold `/packages/chat-interaction-kit` using Turbo/pnpm.
+- [x] Task: Implement typed contracts: `ChatMessage`, `StreamEvent`, `MessageLifecycle`, `ToolCall`, `Artifact`.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Package Initialization & Type Contracts' (Protocol in workflow.md)
 
 ## Phase 3: Hooks Implementation (TDD)
 
