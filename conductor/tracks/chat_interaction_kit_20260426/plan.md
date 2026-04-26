@@ -21,10 +21,10 @@
 
 ## Phase 3: Hooks Implementation (TDD)
 
-- [ ] Task: Implement `useAutoScroll` and `useGrowingTextarea`.
-- [ ] Task: Implement `useStreamingMessage` and `useComposerSubmit` (with stop handling).
-- [ ] Task: Implement `useMessageActions`, `useKeyboardShortcuts`, and `useToolDisclosure`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Hooks Implementation' (Protocol in workflow.md)
+- [x] Task: Implement `useAutoScroll` and `useGrowingTextarea`.
+- [x] Task: Implement `useStreamingMessage` and `useComposerSubmit` (with stop handling).
+- [x] Task: Implement `useMessageActions`, `useKeyboardShortcuts`, and `useToolDisclosure`.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Hooks Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Component Implementation (TDD)
 
