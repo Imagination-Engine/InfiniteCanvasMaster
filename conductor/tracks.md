@@ -119,7 +119,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Canvas Architecture and Block Generation**
+- [x] **Track: Canvas Architecture and Block Generation**
       _Link: [./tracks/canvas_arch_blocks_20260424/](./tracks/canvas_arch_blocks_20260424/)_
 
 ---
