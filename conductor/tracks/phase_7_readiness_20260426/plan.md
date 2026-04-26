@@ -17,11 +17,11 @@
 
 ## Phase 3: Playwright E2E Matrix
 
-- [ ] Task: Configure Playwright in the project root and create `tests/e2e/`.
-- [ ] Task: Write E2E test for the "Intent-to-Blueprint" flow: Prompt -> Mastra DAG -> Tldraw Rendering.
-- [ ] Task: Write E2E test for Dual-View toggling and spatial sync verification.
-- [ ] Task: Integrate Playwright into the `iem:pr-prep` script for automated gating.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Playwright E2E Matrix' (Protocol in workflow.md)
+- [x] Task: Configure Playwright in the project root and create `tests/e2e/`.
+- [x] Task: Write E2E test for the "Intent-to-Blueprint" flow: Prompt -> Mastra DAG -> Tldraw Rendering.
+- [x] Task: Write E2E test for Dual-View toggling and spatial sync verification.
+- [x] Task: Integrate Playwright into the `iem:pr-prep` script for automated gating.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Playwright E2E Matrix' (Protocol in workflow.md)
 
 ## Phase 4: Round-Robin UI Polish & Demo Hardening
 
