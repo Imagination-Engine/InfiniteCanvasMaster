@@ -1,6 +1,9 @@
 import { NODE_CATALOG } from "../nodes/nodeCatalog";
 import { createNodeFromType, createNodeId } from "../nodes/nodeFactory";
-import type { UnifiedCanvasEdge, UnifiedCanvasNode } from "../nodes/canvasTypes";
+import type {
+  UnifiedCanvasEdge,
+  UnifiedCanvasNode,
+} from "../nodes/canvasTypes";
 import type { PlannerGraph } from "./schemas";
 
 export type ParsedAgentGraph = {
@@ -8,7 +11,11 @@ export type ParsedAgentGraph = {
   edges: UnifiedCanvasEdge[];
 };
 
-export function parseAgentGraph(input: PlannerGraph, startX = 80, startY = 80): ParsedAgentGraph {
+export function parseAgentGraph(
+  input: PlannerGraph,
+  startX = 80,
+  startY = 80,
+): ParsedAgentGraph {
   const idMap = new Map<string, string>();
 
   const nodes: UnifiedCanvasNode[] = input.nodes
@@ -63,4 +70,36 @@ export function parseAgentGraph(input: PlannerGraph, startX = 80, startY = 80): 
   }
 
   return { nodes, edges };
+}
+
+/**
+ * Compiles the React Flow / Tldraw canvas state into a JSON payload
+ * that the Mastra backend can dynamically execute.
+ */
+export function compileToMastraWorkflow(
+  nodes: any[],
+  edges: any[],
+  initialTriggerData = {},
+) {
+  const workflowName = `wf-${Date.now()}`;
+
+  // Format for the backend execution runner
+  return {
+    workflowName,
+    triggerData: initialTriggerData,
+    document: {
+      nodes: nodes.map((n) => ({
+        id: n.id,
+        type: n.data?.type || n.props?.blockId,
+        config: n.data?.config || n.props?.config || {},
+        inputs: n.data?.inputs || n.props?.inputs || {},
+      })),
+      edges: edges.map((e) => ({
+        id: e.id,
+        source: e.source || e.fromId,
+        target: e.target || e.toId,
+        data: e.data || e.props || {},
+      })),
+    },
+  };
 }
