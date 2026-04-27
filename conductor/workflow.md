@@ -17,8 +17,10 @@ Every new feature, block, and MCP tool must follow the strict four-step rhythm d
 - **Test Coverage Requirement:** >85%. Code cannot be considered complete until this threshold is demonstrably met.
 - **Required Tests per Tool:** Every MCP tool/block requires a request-schema test, a response-schema test, a happy-path test, and an error-path test.
 
-## 3. Version Control & Commits
+## 3. Version Control, Branching & Commits
 
+- **Branching Strategy:** All new features, integrations, and tracks MUST be developed on an isolated feature branch (e.g., `feature/descriptive-name`). Do NOT commit directly to `main`.
+- **Pull Request (PR) Flow:** Once a feature branch is functionally complete and the workspace is clean, it must be pushed to the remote repository. A Pull Request must then be opened against the `main` branch. This allows the team to review, engage, and validate the code before adopting it into the core repository.
 - **Commit Frequency:** Commits are required **Per Phase** (after an entire phase of tasks is completed).
 - **Task Summaries:** Task and phase summaries must be recorded directly in the **Commit Messages** (e.g., in the commit body).
 - **PR Gates:** No PR is merged unless the commit history visibly reflects the Red/Green/Refactor/Adversarial cycle.
