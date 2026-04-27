@@ -6,11 +6,6 @@ import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
 import type { UnifiedCanvasDocument } from "../nodes/canvasTypes";
 import { DualViewContainer } from "../Components/Layout/DualView/DualViewContainer";
-import {
-  LiveblocksProvider,
-  RoomProvider,
-  ClientSideSuspense,
-} from "@liveblocks/react";
 import logo from "../assets/logo.svg";
 
 type CanvasResponse = {
@@ -123,65 +118,61 @@ export default function SessionPage() {
     );
   }
 
-  const liveblocksKey = import.meta.env.VITE_LIVEBLOCKS_PUBLIC_KEY || "pk_demo";
-
   return (
-    <LiveblocksProvider publicApiKey={liveblocksKey}>
-      <RoomProvider
-        id={`project-${projectId}`}
-        initialPresence={{ cursor: null, selection: [] }}
-      >
-        <ClientSideSuspense fallback={<div>Loading Realtime Context...</div>}>
-          <ReactFlowProvider>
-            <div className="flex h-screen w-screen flex-col bg-brand-bg-page text-brand-text-body font-sans relative overflow-hidden">
-              {/* Header */}
-              <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-brand-bg-page/60 backdrop-blur-2xl px-6 relative z-10">
-                <div className="flex items-center gap-6">
-                  <Link
-                    to="/projects"
-                    className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors group"
-                  >
-                    <ArrowLeft
-                      size={14}
-                      className="group-hover:-translate-x-0.5 transition-transform"
-                    />
-                    Dashboard
-                  </Link>
-                  <div className="h-4 w-px bg-white/10" />
-                  <h1 className="text-sm font-bold tracking-widest text-white uppercase">
-                    {projectName}
-                  </h1>
-                </div>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={logo}
-                    alt="Balnce AI"
-                    width={24}
-                    height={24}
-                    className="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(123,92,234,0.3)]"
-                  />
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
-                    Imagination{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-cyan">
-                      Engine
-                    </span>
-                  </p>
-                </div>
-              </div>
+    <ReactFlowProvider>
+      <div className="flex h-screen w-screen flex-col bg-brand-bg-page text-brand-text-body font-sans relative overflow-hidden">
+        {/* Header */}
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-brand-bg-page/60 backdrop-blur-2xl px-6 relative z-10">
+          <div className="flex items-center gap-6">
+            <Link
+              to="/projects"
+              className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-brand-text-muted hover:text-white transition-colors group"
+            >
+              <ArrowLeft
+                size={14}
+                className="group-hover:-translate-x-0.5 transition-transform"
+              />
+              Dashboard
+            </Link>
+            <div className="h-4 w-px bg-white/10" />
+            <h1 className="text-sm font-bold tracking-widest text-white uppercase">
+              {projectName}
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <img
+              src={logo}
+              alt="Balnce AI"
+              width={24}
+              height={24}
+              className="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(123,92,234,0.3)]"
+            />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
+              Imagination{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-cyan">
+                Engine
+              </span>
+            </p>
+            <div className="h-4 w-px bg-white/10 mx-2" />
+            <Link
+              to="/projects"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
+            >
+              Exit
+            </Link>
+          </div>
+        </div>
 
-              <div className="flex min-h-0 flex-1 relative">
-                <DualViewContainer
-                  projectId={projectId}
-                  initialDocument={document}
-                  initialMessages={initialMessages}
-                  projectName={projectName}
-                  saveCanvas={saveCanvas}
-                />
-              </div>
-            </div>
-          </ReactFlowProvider>
-        </ClientSideSuspense>
-      </RoomProvider>
-    </LiveblocksProvider>
+        <div className="flex min-h-0 flex-1 relative">
+          <DualViewContainer
+            projectId={projectId}
+            initialDocument={document}
+            initialMessages={initialMessages}
+            projectName={projectName}
+            saveCanvas={saveCanvas}
+          />
+        </div>
+      </div>
+    </ReactFlowProvider>
   );
 }

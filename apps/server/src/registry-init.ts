@@ -24,8 +24,13 @@ import {
   forEachBlock,
   webhookTriggerBlock,
   scheduleTriggerBlock,
-} from "@iem/surface-conductor";
-import {
+  saasBlock,
+  agentBlock,
+  routerBlock,
+  delayBlock,
+  stateBlock,
+  errorBoundaryBlock,
+  subGraphBlock,
   webFetchBlock,
   slackPostBlock,
   notionCreateBlock,
@@ -38,9 +43,18 @@ import {
   testerBlock,
 } from "@iem/surface-forge";
 
-import { timelineBlock } from "@iem/surface-reel";
-import { exportBlock } from "@iem/surface-reel";
-import { textToImageBlock, textToSpeechBlock } from "@iem/surface-reel";
+import {
+  timelineBlock,
+  exportBlock,
+  sceneBlock,
+  characterBlock as reelCharacterBlock,
+  dialogueBlock,
+  cameraBlock as reelCameraBlock,
+  lightingBlock as reelLightingBlock,
+  transitionBlock,
+  vfxBlock,
+  audioTrackBlock,
+} from "@iem/surface-reel";
 
 import {
   documentLoaderBlock,
@@ -48,6 +62,10 @@ import {
   vectorSearchBlock,
   indexerBlock,
   graphKnowledgeBlock,
+  queryBlock,
+  embedBlock,
+  upsertBlock,
+  semanticRouterBlock,
 } from "@iem/surface-atlas";
 
 import {
@@ -55,6 +73,15 @@ import {
   spriteBlock,
   physicsEntityBlock,
   colliderBlock,
+  cameraBlock,
+  lightingBlock,
+  audioBlock,
+  particleBlock,
+  scoreBlock,
+  spawnerBlock,
+  timerBlock,
+  inputBlock,
+  ruleBlock,
 } from "@iem/surface-playable";
 
 // Helper to register multiple blocks
@@ -64,13 +91,14 @@ const registerBlocks = (blocks: any[]) => {
     try {
       blockRegistry.register(block);
     } catch (e) {
-      // Ignore
+      // Ignore duplicates
     }
   });
 };
 
 export function initializeBlockRegistry() {
   registerBlocks([
+    // Scribe
     proseBlock,
     chapterBlock,
     characterProfileBlock,
@@ -78,26 +106,53 @@ export function initializeBlockRegistry() {
     dialogueTreeBlock,
     editorBlock,
     proofreaderBlock,
+
+    // Conductor
     ifBlock,
     forEachBlock,
     webhookTriggerBlock,
     scheduleTriggerBlock,
+    saasBlock,
+    agentBlock,
+    routerBlock,
+    delayBlock,
+    stateBlock,
+    errorBoundaryBlock,
+    subGraphBlock,
     webFetchBlock,
     slackPostBlock,
     notionCreateBlock,
+
+    // Forge
     architectBlock,
     designerBlock,
     builderBlock,
     testerBlock,
+
+    // Reel
     timelineBlock,
     exportBlock,
-    textToImageBlock,
-    textToSpeechBlock,
+    sceneBlock,
+    reelCharacterBlock,
+    dialogueBlock,
+    reelCameraBlock,
+    reelLightingBlock,
+    transitionBlock,
+    vfxBlock,
+    audioTrackBlock,
+
+    // Atlas
     documentLoaderBlock,
     chunkerBlock,
     vectorSearchBlock,
     indexerBlock,
     graphKnowledgeBlock,
+    queryBlock,
+    embedBlock,
+    upsertBlock,
+    semanticRouterBlock,
+
+    // Core
     refinerBlock,
     summarizerBlock,
     translatorBlock,
@@ -106,13 +161,24 @@ export function initializeBlockRegistry() {
     webScraperBlock,
     formatterBlock,
     programmerBlock,
+
+    // Playable
     joystickBlock,
     spriteBlock,
     physicsEntityBlock,
     colliderBlock,
+    cameraBlock,
+    lightingBlock,
+    audioBlock,
+    particleBlock,
+    scoreBlock,
+    spawnerBlock,
+    timerBlock,
+    inputBlock,
+    ruleBlock,
   ]);
 
   console.log(
-    `[REGISTRY] Initialized with ${blockRegistry.list().length} blocks.`,
+    `[REGISTRY] Initialized with ${blockRegistry.list().length} unique semantic blocks.`,
   );
 }

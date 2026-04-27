@@ -19,8 +19,8 @@ interface PhysicsOutput {
 
 export const PhysicsEntityView: React.FC<
   BlockViewProps<PhysicsInput, PhysicsOutput>
-> = ({ data, onParamsChange }) => {
-  const { input, output } = data;
+> = ({ data = {}, onParamsChange }) => {
+  const { input = {} as any, output = {} as any } = data;
   const mass = input?.mass ?? 1;
   const gravityScale = input?.gravityScale ?? 1;
   const friction = input?.friction ?? 0.1;
@@ -127,8 +127,8 @@ export const PhysicsEntityView: React.FC<
               <span>Velocity</span>
               <span className="text-brand-cyan">
                 {(
-                  Math.abs(output?.velocity.x || 0) +
-                  Math.abs(output?.velocity.y || 0)
+                  Math.abs(output?.velocity?.x || 0) +
+                  Math.abs(output?.velocity?.y || 0)
                 ).toFixed(1)}{" "}
                 u/s
               </span>
@@ -137,7 +137,7 @@ export const PhysicsEntityView: React.FC<
               <div
                 className="h-full bg-brand-cyan transition-all duration-300"
                 style={{
-                  width: `${Math.min((Math.abs(output?.velocity.x || 0) + Math.abs(output?.velocity.y || 0)) * 10, 100)}%`,
+                  width: `${Math.min((Math.abs(output?.velocity?.x || 0) + Math.abs(output?.velocity?.y || 0)) * 10, 100)}%`,
                 }}
               />
             </div>

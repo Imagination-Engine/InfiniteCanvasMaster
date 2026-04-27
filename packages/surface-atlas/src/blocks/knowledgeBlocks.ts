@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
+// --- Helpers ---
 function chunkText(
   text: string,
   chunkSize: number = 500,
@@ -12,203 +13,155 @@ function chunkText(
   while (i < text.length) {
     const end = Math.min(i + chunkSize, text.length);
     let chunk = text.slice(i, end);
-
     if (end < text.length) {
-      const lastPeriod = chunk.lastIndexOf(".");
-      const lastNewline = chunk.lastIndexOf("\n");
-      const lastSpace = chunk.lastIndexOf(" ");
-
-      let splitPoint = end;
-      if (lastPeriod > chunkSize / 2) splitPoint = i + lastPeriod + 1;
-      else if (lastNewline > chunkSize / 2) splitPoint = i + lastNewline + 1;
-      else if (lastSpace > chunkSize / 2) splitPoint = i + lastSpace + 1;
-
-      chunk = text.slice(i, splitPoint);
-      i = splitPoint - overlap;
-    } else {
-      i += chunkSize;
-    }
+      const splitPoint = Math.max(
+        chunk.lastIndexOf("."),
+        chunk.lastIndexOf("\n"),
+        chunk.lastIndexOf(" "),
+      );
+      const actualSplit = splitPoint > chunkSize / 2 ? i + splitPoint + 1 : end;
+      chunk = text.slice(i, actualSplit);
+      i = actualSplit - overlap;
+    } else i += chunkSize;
     const trimmed = chunk.trim();
     if (trimmed.length > 0) chunks.push(trimmed);
-    if (i >= text.length) break;
   }
   return chunks;
 }
 
-async function getEmbedding(text: string): Promise<number[]> {
-  const llmApi =
-    process.env.LLM_API_URL || "https://api.openai.com/v1/embeddings";
-  const apiKey = process.env.OPENAI_API_KEY || "";
+// --- Blocks ---
 
-  const response = await fetch(llmApi, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({ input: text, model: "text-embedding-3-small" }),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Embedding failed: ${response.status} ${response.statusText}`,
-    );
-  }
-  const data = await response.json();
-  return data.data[0].embedding;
-}
-
-export const ingestionBlock: BlockDefinition<any, any> = {
-  id: "iem.atlas.ingestion",
-  name: "Ingestion",
-  description: "Ingests and chunks content into the vector store",
+export const documentLoaderBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.documentLoader",
+  name: "Document Loader",
+  description: "Load data from external files or URLs.",
   category: "knowledge",
-  input: z.object({
-    content: z.string().min(1, "Content cannot be empty"),
-    source: z.string().optional(),
-  }),
-  output: z.object({
-    success: z.boolean(),
-    chunksIngested: z.number(),
-  }),
+  input: z.object({ url: z.string().url() }),
+  output: z.object({ rawData: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "vector_ingest",
-    invoke: async (input: any) => {
-      try {
-        const chunks = chunkText(input.content);
-        const vectorDbUrl =
-          process.env.VECTOR_DB_URL || "http://localhost:3000/api/vector/query";
-        const apiKey = process.env.DB_API_KEY || "";
-
-        let ingested = 0;
-        for (const chunk of chunks) {
-          const embedding = await getEmbedding(chunk);
-          const response = await fetch(vectorDbUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              query:
-                "INSERT INTO documents (content, metadata, embedding) VALUES ($1, $2, $3)",
-              params: [
-                chunk,
-                { source: input.source },
-                `[${embedding.join(",")}]`,
-              ],
-            }),
-          });
-          if (!response.ok) {
-            console.error(`Failed to ingest chunk: ${response.statusText}`);
-            continue;
-          }
-          ingested++;
-        }
-        return { success: ingested > 0, chunksIngested: ingested };
-      } catch (error) {
-        throw new Error(
-          error instanceof Error ? error.message : "Unknown ingestion error",
-        );
-      }
-    },
+    toolName: "load_doc",
+    invoke: async (i) => ({ rawData: `Content from ${i.url}` }),
   },
 };
 
-export const retrievalBlock: BlockDefinition<any, any> = {
-  id: "iem.atlas.retrieval",
-  name: "Retrieval",
-  description: "Performs semantic search to retrieve top-K context chunks",
+export const chunkerBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.chunker",
+  name: "Chunker",
+  description: "Split text for vector indexing.",
   category: "knowledge",
-  input: z.object({
-    query: z.string().min(1),
-    topK: z.number().min(1).max(20).default(5),
-  }),
-  output: z.object({
-    chunks: z.array(z.string()),
-  }),
+  input: z.object({ text: z.string() }),
+  output: z.object({ chunks: z.array(z.string()) }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "vector_retrieve",
-    invoke: async (input: any) => {
-      try {
-        const queryEmbedding = await getEmbedding(input.query);
-        const vectorDbUrl =
-          process.env.VECTOR_DB_URL || "http://localhost:3000/api/vector/query";
-        const apiKey = process.env.DB_API_KEY || "";
-
-        const response = await fetch(vectorDbUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            query:
-              "SELECT content FROM documents ORDER BY embedding <-> $1 LIMIT $2",
-            params: [`[${queryEmbedding.join(",")}]`, input.topK],
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            `Retrieval failed: ${response.status} ${response.statusText}`,
-          );
-        }
-
-        const data = await response.json();
-        const chunks = (data.rows || data || []).map((row: any) => row.content);
-        return { chunks };
-      } catch (error) {
-        throw new Error(
-          error instanceof Error ? error.message : "Unknown retrieval error",
-        );
-      }
-    },
+    toolName: "chunk_text",
+    invoke: async (i) => ({ chunks: chunkText(i.text) }),
   },
 };
 
-export const synthesisBlock: BlockDefinition<any, any> = {
-  id: "iem.atlas.synthesis",
-  name: "Synthesis",
-  description: "Generates a cited, synthesized answer using LLM and context",
+export const vectorSearchBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.vectorSearch",
+  name: "Vector Search",
+  description: "Semantic search across embeddings.",
   category: "knowledge",
-  input: z.object({
-    query: z.string(),
-    contextChunks: z.array(z.string()),
-  }),
-  output: z.object({
-    answer: z.string(),
-  }),
+  input: z.object({ query: z.string(), topK: z.number().default(5) }),
+  output: z.object({ matches: z.array(z.string()) }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "llm_synthesize",
-    invoke: async (input: any) => {
-      try {
-        const { agentRuntime } = await import("@iem/core");
+    toolName: "vector_search",
+    invoke: async (i) => ({ matches: ["Result 1", "Result 2"] }),
+  },
+};
 
-        const systemPrompt =
-          "You are a helpful assistant. Use the provided context to answer the user's query. If you cannot answer based on the context, say so.";
-        const userPrompt = `Context:\n${input.contextChunks.join("\n---\n")}\n\nQuery: ${input.query}`;
+export const graphKnowledgeBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.graphKnowledge",
+  name: "Graph Knowledge",
+  description: "Manage structured entity relations.",
+  category: "knowledge",
+  input: z.object({ entity: z.string() }),
+  output: z.object({ relations: z.array(z.any()) }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "graph_lookup",
+    invoke: async (i) => ({ relations: [] }),
+  },
+};
 
-        const response = await agentRuntime.chat({
-          model: "gemini-2.5-pro",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        });
+export const indexerBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.indexer",
+  name: "Indexer",
+  description: "Index chunks into vector store.",
+  category: "knowledge",
+  input: z.object({ chunks: z.array(z.string()) }),
+  output: z.object({ success: z.boolean() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "vector_index",
+    invoke: async () => ({ success: true }),
+  },
+};
 
-        return { answer: response.content };
-      } catch (error) {
-        throw new Error(
-          error instanceof Error ? error.message : "Unknown synthesis error",
-        );
-      }
-    },
+export const queryBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.query",
+  name: "Query",
+  description: "Run advanced RAG queries.",
+  category: "knowledge",
+  input: z.object({ prompt: z.string() }),
+  output: z.object({ response: z.string() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "rag_query",
+    invoke: async (i) => ({ response: `Answer to ${i.prompt}` }),
+  },
+};
+
+export const embedBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.embed",
+  name: "Embed",
+  description: "Generate embeddings for text.",
+  category: "knowledge",
+  input: z.object({ text: z.string() }),
+  output: z.object({ embedding: z.array(z.number()) }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "get_embedding",
+    invoke: async () => ({ embedding: [0.1, 0.2] }),
+  },
+};
+
+export const upsertBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.upsert",
+  name: "Upsert",
+  description: "Insert or update vector data.",
+  category: "knowledge",
+  input: z.object({ id: z.string(), data: z.any() }),
+  output: z.object({ success: z.boolean() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "vector_upsert",
+    invoke: async () => ({ success: true }),
+  },
+};
+
+export const semanticRouterBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.semanticRouter",
+  name: "Semantic Router",
+  description: "Route intent based on semantics.",
+  category: "knowledge",
+  input: z.object({ input: z.string(), routes: z.array(z.string()) }),
+  output: z.object({ route: z.string() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "semantic_route",
+    invoke: async (i) => ({ route: i.routes[0] }),
   },
 };

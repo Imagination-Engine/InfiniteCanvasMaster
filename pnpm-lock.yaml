@@ -184,6 +184,9 @@ importers:
       "@iem/db":
         specifier: workspace:^
         version: link:../../packages/db
+      "@iem/imagination-canvas-kit":
+        specifier: workspace:^
+        version: link:../../packages/imagination-canvas-kit
       "@iem/surface-atlas":
         specifier: workspace:^
         version: link:../../packages/surface-atlas
@@ -202,12 +205,6 @@ importers:
       "@iem/surface-scribe":
         specifier: workspace:^
         version: link:../../packages/surface-scribe
-      "@liveblocks/client":
-        specifier: ^3.18.4
-        version: 3.18.4(@types/json-schema@7.0.15)
-      "@liveblocks/react":
-        specifier: ^3.18.4
-        version: 3.18.4(@types/json-schema@7.0.15)(@types/react-dom@19.2.3)(@types/react@19.2.14)(react@19.2.5)
       "@modelcontextprotocol/sdk":
         specifier: ^1.29.0
         version: 1.29.0(zod@3.25.76)
@@ -434,12 +431,18 @@ importers:
       "@mastra/evals":
         specifier: ^1.2.1
         version: 1.2.1(@mastra/core@1.27.0)(zod@3.25.76)
+      "@mastra/memory":
+        specifier: ^1.17.1
+        version: 1.17.1(@mastra/core@1.27.0)(zod@3.25.76)
       "@mastra/observability":
         specifier: ^1.10.0
         version: 1.10.0(@mastra/core@1.27.0)
       "@mastra/pg":
         specifier: latest
         version: 1.9.2(@mastra/core@1.27.0)
+      pg:
+        specifier: ^8.20.0
+        version: 8.20.0
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -447,6 +450,9 @@ importers:
       "@types/node":
         specifier: ^25.6.0
         version: 25.6.0
+      "@types/pg":
+        specifier: ^8.20.0
+        version: 8.20.0
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -2776,52 +2782,6 @@ packages:
       "@jridgewell/resolve-uri": 3.1.2
       "@jridgewell/sourcemap-codec": 1.5.5
 
-  /@liveblocks/client@3.18.4(@types/json-schema@7.0.15):
-    resolution:
-      {
-        integrity: sha512-ARz21wluGQg4PNhTQYWVcsOWhOn0eStKIXGXEv9hBODSWDOQB20U7FjaS9EDRsYSstWnN9Q7FqBIn4w9BNfWpQ==,
-      }
-    dependencies:
-      "@liveblocks/core": 3.18.4(@types/json-schema@7.0.15)
-    transitivePeerDependencies:
-      - "@types/json-schema"
-    dev: false
-
-  /@liveblocks/core@3.18.4(@types/json-schema@7.0.15):
-    resolution:
-      {
-        integrity: sha512-Pw8vHlUAH0GQmErBG/swq5Jkd6XCKKM9M3uiVZOBEBajaPt7mKSAUWnIT9cFhzdwWjo9TbDhd5/mfJ4JTTNOYQ==,
-      }
-    peerDependencies:
-      "@types/json-schema": ^7
-    dependencies:
-      "@types/json-schema": 7.0.15
-    dev: false
-
-  /@liveblocks/react@3.18.4(@types/json-schema@7.0.15)(@types/react-dom@19.2.3)(@types/react@19.2.14)(react@19.2.5):
-    resolution:
-      {
-        integrity: sha512-KRenW5ilS5QsWrCVjXriDqE6aWhqBh5CxUs1rfkGRRy+ImcDHVGEPKLT1YCB55/ImmxkxnVNIrt3tstkZ1JafQ==,
-      }
-    peerDependencies:
-      "@types/react": ^18 || ^19
-      "@types/react-dom": ^18 || ^19
-      react: ^18 || ^19 || ^19.0.0-rc
-    peerDependenciesMeta:
-      "@types/react":
-        optional: true
-      "@types/react-dom":
-        optional: true
-    dependencies:
-      "@liveblocks/client": 3.18.4(@types/json-schema@7.0.15)
-      "@liveblocks/core": 3.18.4(@types/json-schema@7.0.15)
-      "@types/react": 19.2.14
-      "@types/react-dom": 19.2.3(@types/react@19.2.14)
-      react: 19.2.5
-    transitivePeerDependencies:
-      - "@types/json-schema"
-    dev: false
-
   /@lukeed/csprng@1.1.0:
     resolution:
       {
@@ -2922,6 +2882,30 @@ packages:
       sentiment: 5.0.2
       string-similarity: 4.0.4
       zod: 3.25.76
+    dev: false
+
+  /@mastra/memory@1.17.1(@mastra/core@1.27.0)(zod@3.25.76):
+    resolution:
+      {
+        integrity: sha512-+g/lAqrmVStETkW++JG3qXgtcQedZ2l6hrVNng51ykjIAa2EDI2++Nm7Z8kJquVtUzT++c0rH6kpQG4033m0sQ==,
+      }
+    engines: { node: ">=22.13.0" }
+    peerDependencies:
+      "@mastra/core": ">=1.4.1-0 <2.0.0-0"
+      zod: ^3.24.1
+    dependencies:
+      "@mastra/core": 1.27.0(@standard-community/standard-json@0.3.5)(@standard-community/standard-openapi@0.2.9)(@types/json-schema@7.0.15)(openapi-types@12.1.3)(zod@3.25.76)
+      "@mastra/schema-compat": 1.2.9(zod@3.25.76)
+      async-mutex: 0.5.0
+      image-size: 2.0.2
+      json-schema: 0.4.0
+      lru-cache: 11.3.5
+      probe-image-size: 7.2.3
+      tokenx: 1.3.0
+      xxhash-wasm: 1.1.0
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /@mastra/observability@1.10.0(@mastra/core@1.27.0):
@@ -8862,6 +8846,20 @@ packages:
       ms: 2.0.0
     dev: false
 
+  /debug@3.2.7:
+    resolution:
+      {
+        integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==,
+      }
+    peerDependencies:
+      supports-color: "*"
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
+    dependencies:
+      ms: 2.1.3
+    dev: false
+
   /debug@4.4.3:
     resolution:
       {
@@ -10691,6 +10689,15 @@ packages:
       }
     engines: { node: ">= 4" }
 
+  /image-size@2.0.2:
+    resolution:
+      {
+        integrity: sha512-IRqXKlaXwgSMAMtpNzZa1ZAe8m+Sa1770Dhk8VkSsP9LS+iHD62Zd8FQKs8fbPiagBE7BzoFX23cxFnwshpV6w==,
+      }
+    engines: { node: ">=16.x" }
+    hasBin: true
+    dev: false
+
   /import-fresh@3.3.1:
     resolution:
       {
@@ -11503,7 +11510,6 @@ packages:
       {
         integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==,
       }
-    dev: true
 
   /lodash.once@4.1.1:
     resolution:
@@ -12543,6 +12549,21 @@ packages:
       }
     dev: true
 
+  /needle@2.9.1:
+    resolution:
+      {
+        integrity: sha512-6R9fqJ5Zcmf+uYaFgdIHmLwNldn5HbK8L5ybn7Uz+ylX/rnOsSp1AHcvQSrCaFN+qNM1wpymHqD7mVasEOlHGQ==,
+      }
+    engines: { node: ">= 4.4.x" }
+    hasBin: true
+    dependencies:
+      debug: 3.2.7
+      iconv-lite: 0.4.24
+      sax: 1.6.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
   /negotiator@0.6.3:
     resolution:
       {
@@ -13168,6 +13189,19 @@ packages:
     engines: { node: ">=18" }
     dependencies:
       parse-ms: 4.0.0
+    dev: false
+
+  /probe-image-size@7.2.3:
+    resolution:
+      {
+        integrity: sha512-HubhG4Rb2UH8YtV4ba0Vp5bQ7L78RTONYu/ujmCu5nBI8wGv24s4E9xSKBi0N1MowRpxk76pFCpJtW0KPzOK0w==,
+      }
+    dependencies:
+      lodash.merge: 4.6.2
+      needle: 2.9.1
+      stream-parser: 0.3.1
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /process-nextick-args@2.0.1:
@@ -14120,6 +14154,14 @@ packages:
       }
     dev: false
 
+  /sax@1.6.0:
+    resolution:
+      {
+        integrity: sha512-6R3J5M4AcbtLUdZmRv2SygeVaM7IhrLXu9BmnOGmmACak8fiUtOsYNWUS4uK7upbmHIBbLBeFeI//477BKLBzA==,
+      }
+    engines: { node: ">=11.0.0" }
+    dev: false
+
   /saxes@6.0.0:
     resolution:
       {
@@ -14488,6 +14530,17 @@ packages:
         integrity: sha512-Rq7ybcX2RuC55r9oaPVEW7/xu3tj8u4GeBYHBWCychFtzMIr86A7e3PPEBPT37sHStKX3+TiX/Fr/ACmJLVlLQ==,
       }
     dev: true
+
+  /stream-parser@0.3.1:
+    resolution:
+      {
+        integrity: sha512-bJ/HgKq41nlKvlhccD5kaCr/P+Hu0wPNKPJOH7en+YrJu/9EgqUF+88w5Jb6KNcjOFMhfX4B2asfeAtIGuHObQ==,
+      }
+    dependencies:
+      debug: 2.6.9
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /streamx@2.25.0:
     resolution:

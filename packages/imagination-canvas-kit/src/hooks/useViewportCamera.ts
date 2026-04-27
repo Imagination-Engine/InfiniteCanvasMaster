@@ -16,20 +16,31 @@ export function useViewportCamera() {
 
   const zoomAt = useCallback(
     (delta: number, centerX: number, centerY: number) => {
-      const scaleFactor = delta > 0 ? 0.9 : 1.1;
-      const newZoom = Math.min(Math.max(viewport.zoom * scaleFactor, 0.1), 10);
+      // Much more sensitive zoom factor for pinch (touch) and wheel
+      // A delta of 100 will scale by ~1.5x
+      const scaleFactor = Math.exp(-delta * 0.005);
 
-      // Zoom math to keep the point under the mouse stable
-      const dx = (centerX - viewport.x) * (1 - scaleFactor);
-      const dy = (centerY - viewport.y) * (1 - scaleFactor);
+      const nextZoom = Math.min(
+        Math.max(viewport.zoom * scaleFactor, 0.05),
+        20,
+      );
+
+      // Effective scale factor after clamping
+      const effectiveScale = nextZoom / viewport.zoom;
+
+      // The point under the mouse (centerX, centerY) in viewport coordinates
+      // must remain at the same position after scaling.
+      // NewX = centerX - (centerX - OldX) * scale
+      const nextX = centerX - (centerX - viewport.x) * effectiveScale;
+      const nextY = centerY - (centerY - viewport.y) * effectiveScale;
 
       updateViewport({
-        x: viewport.x + dx,
-        y: viewport.y + dy,
-        zoom: newZoom,
+        x: nextX,
+        y: nextY,
+        zoom: nextZoom,
       });
     },
-    [viewport.x, viewport.y, viewport.zoom, updateViewport],
+    [viewport, updateViewport],
   );
 
   return {

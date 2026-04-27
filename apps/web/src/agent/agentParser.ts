@@ -18,6 +18,10 @@ export function parseAgentGraph(
 ): ParsedAgentGraph {
   const idMap = new Map<string, string>();
 
+  if (!input || !input.nodes) {
+    return { nodes: [], edges: [] };
+  }
+
   const nodes: UnifiedCanvasNode[] = input.nodes
     .filter((node) => Boolean(NODE_CATALOG[node.type]))
     .map((node, index) => {

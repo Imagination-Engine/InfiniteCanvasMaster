@@ -44,8 +44,8 @@ const PRESET_SPRITES = [
 
 export const SpriteView: React.FC<
   BlockViewProps<SpriteInput, SpriteOutput>
-> = ({ data, onParamsChange }) => {
-  const { input, output } = data;
+> = ({ data = {}, onParamsChange }) => {
+  const { input = {} as any, output = {} as any } = data;
   const url = input?.url || "";
   const width = input?.width || 64;
   const height = input?.height || 64;

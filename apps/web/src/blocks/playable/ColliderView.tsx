@@ -25,8 +25,8 @@ interface ColliderOutput {
 
 export const ColliderView: React.FC<
   BlockViewProps<ColliderInput, ColliderOutput>
-> = ({ data, onParamsChange }) => {
-  const { input, output } = data;
+> = ({ data = {}, onParamsChange }) => {
+  const { input = {} as any, output = {} as any } = data;
   const shape = input?.shape || "rectangle";
   const isTrigger = input?.isTrigger || false;
 
@@ -129,11 +129,11 @@ export const ColliderView: React.FC<
             Active Overlaps
           </span>
           <span className="text-[10px] font-bold text-brand-orange">
-            {output?.activeOverlaps.length || 0}
+            {output?.activeOverlaps?.length || 0}
           </span>
         </div>
         <div className="flex flex-wrap gap-1">
-          {output?.activeOverlaps.map((id) => (
+          {output?.activeOverlaps?.map((id: string) => (
             <span
               key={id}
               className="text-[8px] font-bold bg-brand-orange/20 text-brand-orange px-1.5 py-0.5 rounded border border-brand-orange/20"

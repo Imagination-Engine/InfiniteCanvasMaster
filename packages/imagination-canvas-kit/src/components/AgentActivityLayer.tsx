@@ -3,10 +3,13 @@ import { useCanvasStore } from "../state/canvasStore";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const AgentActivityLayer: React.FC = () => {
-  const activeObjects = useCanvasStore((s) =>
-    Object.values(s.objects).filter(
-      (obj) => obj.status === "thinking" || obj.status === "generating",
-    ),
+  const objects = useCanvasStore((s) => s.objects);
+  const activeObjects = React.useMemo(
+    () =>
+      Object.values(objects).filter(
+        (obj) => obj.status === "thinking" || obj.status === "generating",
+      ),
+    [objects],
   );
 
   return (

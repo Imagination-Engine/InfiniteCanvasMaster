@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
@@ -9,6 +10,7 @@ import { dbMiddleware } from "./db.js";
 
 const app = new Hono();
 
+app.use("*", logger());
 app.use(
   "*",
   cors({

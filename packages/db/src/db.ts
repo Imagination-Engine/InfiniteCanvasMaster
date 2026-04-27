@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import * as schema from "./schema";
+import * as schema from "./schema/index.js";
 
 // Create a singleton pool that can be used across packages
 export const getConnectionString = () => {

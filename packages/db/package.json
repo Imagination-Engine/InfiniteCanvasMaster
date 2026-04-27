@@ -2,6 +2,7 @@
   "name": "@iem/db",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "## Description <!-- What lives here and why --> Provide a brief description of this package/app.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

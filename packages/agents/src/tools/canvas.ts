@@ -1,8 +1,15 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import crypto from "crypto";
-import { Client } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
+import * as dbModule from "@iem/db";
+
+const {
+  db,
+  workspaces,
+  canvases,
+  nodes: nodesTable,
+  edges: edgesTable,
+} = dbModule as any;
 
 export const generate_canvas_blueprint = createTool({
   id: "generate_canvas_blueprint",
@@ -13,6 +20,12 @@ export const generate_canvas_blueprint = createTool({
       .string()
       .describe(
         "The user ID executing this request. Always pass the exact string provided in the system prompt.",
+      ),
+    session_id: z
+      .string()
+      .optional()
+      .describe(
+        "The current session ID (thread ID) from the system prompt, used to link this blueprint to the ongoing conversation.",
       ),
     blueprint_name: z.string(),
     description: z.string(),
@@ -28,7 +41,7 @@ export const generate_canvas_blueprint = createTool({
           ),
         title: z.string(),
         description: z.string(),
-        recommended_params: z.record(z.string(), z.any()).optional(),
+        recommended_params: z.record(z.any()).optional(),
       }),
     ),
     edges: z.array(
@@ -42,45 +55,109 @@ export const generate_canvas_blueprint = createTool({
       }),
     ),
   }),
-  execute: async (inputData, { mastra, ...context }) => {
-    const { owner_id, blueprint_name, description, nodes, edges } =
-      inputData as any;
+  execute: async (args: any) => {
+    const input = args.input || args;
+    const { owner_id, session_id, blueprint_name, description, nodes, edges } =
+      input;
 
-    let dbClient;
     try {
-      const {
-        workspaces,
-        canvases,
-        nodes: nodesTable,
-        edges: edgesTable,
-      } = await import("@iem/db");
-
-      dbClient = new Client({ connectionString: process.env.DATABASE_URL });
-      await dbClient.connect();
-      const db = drizzle(dbClient);
+      // Create the workspace using the current chat session_id to maintain continuity.
+      // If the session_id is a UUID we use it, otherwise we fall back to a new one.
+      const isValidUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          session_id || "",
+        );
+      const finalWorkspaceId = isValidUUID ? session_id : crypto.randomUUID();
 
       const [workspace] = await db
         .insert(workspaces)
         .values({
+          id: finalWorkspaceId,
           name: blueprint_name || "Neural Blueprint",
           ownerId: owner_id,
         })
+        .onConflictDoNothing() // In case it was already created somehow
         .returning();
+
+      // If onConflictDoNothing returned empty, we fetch the existing one to get the ID back
+      let activeWorkspaceId = workspace?.id;
+      if (!activeWorkspaceId) {
+        const [existing] = await db
+          .select()
+          .from(workspaces)
+          .where(dbModule.eq(workspaces.id, finalWorkspaceId));
+        activeWorkspaceId = existing.id;
+      }
 
       const [canvas] = await db
         .insert(canvases)
         .values({
-          workspaceId: workspace.id,
+          workspaceId: activeWorkspaceId,
           name: "Main Canvas",
         })
         .returning();
 
+      // Topological/Hierarchical DAG layout calculation
+      const safeNodes = nodes || [];
+      const safeEdges = edges || [];
+
+      const nodeLevels: Record<string, number> = {};
+      safeNodes.forEach((n: any) => (nodeLevels[n.id] = 0));
+
+      // Calculate levels based on edges (longest path from root)
+      let changed = true;
+      let iterations = 0;
+      while (changed && iterations < 100) {
+        changed = false;
+        safeEdges.forEach((edge: any) => {
+          if (
+            nodeLevels[edge.source] !== undefined &&
+            nodeLevels[edge.target] !== undefined
+          ) {
+            if (nodeLevels[edge.target] <= nodeLevels[edge.source]) {
+              nodeLevels[edge.target] = nodeLevels[edge.source] + 1;
+              changed = true;
+            }
+          }
+        });
+        iterations++;
+      }
+
+      // Group nodes by level
+      const levels: Record<number, string[]> = {};
+      safeNodes.forEach((n: any) => {
+        const lvl = nodeLevels[n.id] || 0;
+        if (!levels[lvl]) levels[lvl] = [];
+        levels[lvl].push(n.id);
+      });
+
+      // Assign positions
+      const positions: Record<string, { x: number; y: number }> = {};
+      const X_SPACING = 450;
+      const Y_SPACING = 300;
+
+      Object.entries(levels).forEach(([lvlStr, nodeIds]) => {
+        const lvl = parseInt(lvlStr);
+        const count = nodeIds.length;
+        const totalHeight = (count - 1) * Y_SPACING;
+        const startY = -(totalHeight / 2);
+
+        nodeIds.forEach((id, index) => {
+          positions[id] = {
+            x: lvl * X_SPACING + 100, // offset slightly from 0
+            y: startY + index * Y_SPACING + 100,
+          };
+        });
+      });
+
       // Map string IDs from AI to real UUIDs for Postgres
       const idMap = new Map<string, string>();
 
-      const mappedNodes = (nodes || []).map((n: any) => {
+      const mappedNodes = safeNodes.map((n: any) => {
         const realId = crypto.randomUUID();
         idMap.set(n.id, realId);
+        const pos = positions[n.id] || { x: 0, y: 0 };
+
         return {
           id: realId,
           canvasId: canvas.id,
@@ -90,8 +167,8 @@ export const generate_canvas_blueprint = createTool({
             description: n.description,
             inputs: n.recommended_params || {},
           },
-          positionX: 0,
-          positionY: 0,
+          positionX: pos.x,
+          positionY: pos.y,
         };
       });
 
@@ -99,8 +176,7 @@ export const generate_canvas_blueprint = createTool({
         await db.insert(nodesTable).values(mappedNodes);
       }
 
-      // Map edges to use the real UUIDs
-      const mappedEdges = (edges || [])
+      const mappedEdges = safeEdges
         .map((e: any) => {
           const sourceId = idMap.get(e.source);
           const targetId = idMap.get(e.target);
@@ -115,19 +191,19 @@ export const generate_canvas_blueprint = createTool({
             data: e.condition ? { condition: e.condition } : {},
           };
         })
-        .filter(Boolean);
+        .filter((e): e is NonNullable<typeof e> => e !== null);
 
       if (mappedEdges.length > 0) {
         await db.insert(edgesTable).values(mappedEdges);
       }
 
       console.log(
-        `[BLUEPRINT PERSISTENCE] Successfully created workspace ${workspace.id}`,
+        `[BLUEPRINT PERSISTENCE] Successfully created workspace ${activeWorkspaceId} with DAG layout`,
       );
 
       return {
         success: true,
-        projectId: workspace.id,
+        projectId: activeWorkspaceId,
         blueprint_name,
         description,
         nodes,
@@ -141,10 +217,6 @@ export const generate_canvas_blueprint = createTool({
         edges,
         error: error.message || "Failed to persist to database",
       };
-    } finally {
-      if (dbClient) {
-        await dbClient.end();
-      }
     }
   },
 });

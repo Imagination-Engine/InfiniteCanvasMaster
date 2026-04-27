@@ -1,162 +1,152 @@
 import { z } from "zod";
 import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
-const MockView = () => null;
-
-export const textToImageBlock: BlockDefinition<any, any> = {
-  id: "iem.reel.textToImage",
-  name: "Text to Image",
-  description:
-    "Generates an image from text using Nanobanana (or compatible API)",
+export const timelineBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.timeline",
+  name: "Timeline",
+  description: "Sequence video events.",
   category: "media",
-  input: z.object({
-    prompt: z.string().min(1, "Prompt is required"),
-    style: z.string().optional(),
-    apiKey: z.string().optional(), // Allow key in input
-  }),
-  output: z.object({
-    imageUrl: z.string().url(),
-  }),
+  input: z.object({ events: z.array(z.any()) }),
+  output: z.object({ sequenceId: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "generate_image",
-    invoke: async (input: any) => {
-      try {
-        const apiKey =
-          input.apiKey ||
-          process.env.NANOBANANA_API_KEY ||
-          process.env.IMAGE_API_KEY ||
-          "";
-        const apiUrl =
-          process.env.NANOBANANA_API_URL ||
-          "https://api.nanobanana.ai/v1/images/generations";
-
-        if (!apiKey) {
-          throw new Error(
-            "Missing API key for image generation. Provide it in input.apiKey or NANOBANANA_API_KEY env var.",
-          );
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            prompt: input.prompt,
-            style: input.style || "default",
-            n: 1,
-            size: "1024x1024",
-          }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "Unknown error");
-          throw new Error(`Image API error ${response.status}: ${errorText}`);
-        }
-
-        const data = await response.json();
-        const imageUrl = data.data?.[0]?.url || data.imageUrl;
-
-        if (!imageUrl) {
-          throw new Error("API response did not contain an image URL.");
-        }
-
-        return { imageUrl };
-      } catch (error) {
-        throw new Error(
-          error instanceof Error
-            ? error.message
-            : "Unknown image generation error",
-        );
-      }
-    },
+    toolName: "seq_events",
+    invoke: async () => ({ sequenceId: "seq_1" }),
   },
 };
 
-export const textToSpeechBlock: BlockDefinition<any, any> = {
-  id: "iem.reel.textToSpeech",
-  name: "Text to Speech",
-  description: "Generates audio from text using ElevenLabs",
+export const exportBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.export",
+  name: "Export",
+  description: "Final render and export pipeline.",
   category: "media",
-  input: z.object({
-    text: z.string().min(1, "Text is required"),
-    voiceId: z.string().default("EXAVITQu4vr4xnSDxMaL"), // Default to standard ElevenLabs voice ID
-    apiKey: z.string().optional(), // Allow key in input
-  }),
-  output: z.object({
-    audioUrl: z.string().url(),
-  }),
+  input: z.object({ format: z.enum(["mp4", "gif", "mov"]) }),
+  output: z.object({ fileUrl: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "generate_audio",
-    invoke: async (input: any) => {
-      try {
-        const apiKey = input.apiKey || process.env.ELEVENLABS_API_KEY || "";
-        const voiceId = input.voiceId || "EXAVITQu4vr4xnSDxMaL";
-        const apiUrl =
-          process.env.ELEVENLABS_API_URL ||
-          `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+    toolName: "render",
+    invoke: async () => ({ fileUrl: "http://export.mp4" }),
+  },
+};
 
-        if (!apiKey) {
-          throw new Error(
-            "Missing ElevenLabs API key. Provide it in input.apiKey or ELEVENLABS_API_KEY env var.",
-          );
-        }
+export const sceneBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.scene",
+  name: "Scene",
+  description: "Define visual environment.",
+  category: "media",
+  input: z.object({ description: z.string() }),
+  output: z.object({ sceneData: z.any() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "gen_scene",
+    invoke: async () => ({ sceneData: {} }),
+  },
+};
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+export const characterBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.character",
+  name: "Character",
+  description: "Visual character in scene.",
+  category: "media",
+  input: z.object({ prompt: z.string() }),
+  output: z.object({ characterId: z.string() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "gen_char",
+    invoke: async () => ({ characterId: "char_1" }),
+  },
+};
 
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "xi-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            text: input.text,
-            model_id: "eleven_monolingual_v1",
-            voice_settings: {
-              stability: 0.5,
-              similarity_boost: 0.5,
-            },
-          }),
-          signal: controller.signal,
-        });
+export const dialogueBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.dialogue",
+  name: "Dialogue",
+  description: "Scripted character speech.",
+  category: "media",
+  input: z.object({ text: z.string(), characterId: z.string() }),
+  output: z.object({ audioUrl: z.string() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "tts",
+    invoke: async () => ({ audioUrl: "http://audio.mp3" }),
+  },
+};
 
-        clearTimeout(timeoutId);
+export const cameraBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.camera",
+  name: "Camera",
+  description: "Camera angles and movement.",
+  category: "media",
+  input: z.object({ angle: z.string(), movement: z.string() }),
+  output: z.object({ settings: z.any() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "cam_op",
+    invoke: async () => ({ settings: {} }),
+  },
+};
 
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "Unknown error");
-          throw new Error(
-            `ElevenLabs API error ${response.status}: ${errorText}`,
-          );
-        }
+export const lightingBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.lighting",
+  name: "Lighting",
+  description: "Visual atmosphere and lights.",
+  category: "media",
+  input: z.object({ intensity: z.number(), color: z.string() }),
+  output: z.object({ state: z.any() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "light_op",
+    invoke: async () => ({ state: {} }),
+  },
+};
 
-        // ElevenLabs returns binary audio data. We convert it to a base64 data URI
-        // to conform to the z.string().url() output schema without needing local disk writes.
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const base64Data = buffer.toString("base64");
-        const audioUrl = `data:audio/mpeg;base64,${base64Data}`;
+export const transitionBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.transition",
+  name: "Transition",
+  description: "Visual scene transitions.",
+  category: "media",
+  input: z.object({ type: z.string() }),
+  output: z.object({ success: z.boolean() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "trans_op",
+    invoke: async () => ({ success: true }),
+  },
+};
 
-        return { audioUrl };
-      } catch (error) {
-        throw new Error(
-          error instanceof Error
-            ? error.message
-            : "Unknown text-to-speech error",
-        );
-      }
-    },
+export const vfxBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.vfx",
+  name: "VFX",
+  description: "Visual effect overlay.",
+  category: "media",
+  input: z.object({ effect: z.string() }),
+  output: z.object({ success: z.boolean() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "vfx_op",
+    invoke: async () => ({ success: true }),
+  },
+};
+
+export const audioTrackBlock: BlockDefinition<any, any> = {
+  id: "iem.reel.audioTrack",
+  name: "Audio Track",
+  description: "Background music or soundscape.",
+  category: "media",
+  input: z.object({ genre: z.string(), mood: z.string() }),
+  output: z.object({ trackUrl: z.string() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "gen_audio",
+    invoke: async () => ({ trackUrl: "http://bgm.mp3" }),
   },
 };

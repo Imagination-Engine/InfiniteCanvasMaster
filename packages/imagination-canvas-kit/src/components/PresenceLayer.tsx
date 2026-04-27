@@ -3,7 +3,8 @@ import { usePresenceStore } from "../state/presenceStore";
 import { MousePointer2 } from "lucide-react";
 
 export const PresenceLayer: React.FC = () => {
-  const users = usePresenceStore((s) => Object.values(s.users));
+  const usersRecord = usePresenceStore((s) => s.users);
+  const users = React.useMemo(() => Object.values(usersRecord), [usersRecord]);
 
   return (
     <div className="absolute inset-0 pointer-events-none z-50">

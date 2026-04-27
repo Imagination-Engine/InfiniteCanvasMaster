@@ -8,7 +8,6 @@ import {
   Trash2,
   Undo2,
   Redo2,
-  Zap,
 } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useSelectionStore } from "../state/selectionStore";
@@ -19,7 +18,7 @@ export const CanvasToolbar: React.FC = () => {
   const addObject = useCanvasStore((s) => s.addObject);
   const { selectedIds, clearSelection } = useSelectionStore();
   const removeObject = useCanvasStore((s) => s.removeObject);
-  const { capture, undo, redo } = useCanvasHistory();
+  const { undo, redo, capture } = useCanvasHistory();
 
   const handleAddNote = () => {
     capture();
@@ -33,23 +32,9 @@ export const CanvasToolbar: React.FC = () => {
       height: 100,
       zIndex: 1,
       metadata: { text: "New Note" },
+      status: "idle",
+      rotation: 0,
     });
-  };
-
-  const handleStressTest = () => {
-    capture();
-    for (let i = 0; i < 5000; i++) {
-      addObject({
-        id: `stress-${i}-${Date.now()}`,
-        type: "shape",
-        x: Math.random() * 10000 - 5000,
-        y: Math.random() * 10000 - 5000,
-        width: 100,
-        height: 100,
-        zIndex: 0,
-        metadata: {},
-      });
-    }
   };
 
   const handleDelete = () => {
@@ -64,7 +49,7 @@ export const CanvasToolbar: React.FC = () => {
   };
 
   return (
-    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50">
+    <div className="absolute bottom-8 left-8 flex flex-col items-center gap-2 p-2 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50">
       <button
         onClick={undo}
         style={buttonStyle}
@@ -79,7 +64,9 @@ export const CanvasToolbar: React.FC = () => {
       >
         <Redo2 size={20} />
       </button>
-      <div className="w-px h-6 bg-white/10 mx-1" />
+
+      <div className="h-px w-6 bg-white/10 my-1" />
+
       <button
         style={buttonStyle}
         className="flex items-center justify-center text-white/50 hover:text-brand-cyan hover:bg-white/5 rounded-xl transition-all"
@@ -92,7 +79,9 @@ export const CanvasToolbar: React.FC = () => {
       >
         <Hand size={20} />
       </button>
-      <div className="w-px h-6 bg-white/10 mx-1" />
+
+      <div className="h-px w-6 bg-white/10 my-1" />
+
       <button
         onClick={handleAddNote}
         style={buttonStyle}
@@ -112,16 +101,9 @@ export const CanvasToolbar: React.FC = () => {
       >
         <Square size={20} />
       </button>
-      <div className="w-px h-6 bg-white/10 mx-1" />
-      <button
-        onClick={handleStressTest}
-        style={buttonStyle}
-        title="Stress Test (5k objects)"
-        className="flex items-center justify-center text-amber-500/50 hover:text-amber-500 hover:bg-white/5 rounded-xl transition-all"
-      >
-        <Zap size={20} />
-      </button>
-      <div className="w-px h-6 bg-white/10 mx-1" />
+
+      <div className="h-px w-6 bg-white/10 my-1" />
+
       <button
         onClick={handleDelete}
         disabled={selectedIds.length === 0}

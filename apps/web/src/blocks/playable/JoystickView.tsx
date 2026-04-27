@@ -16,8 +16,8 @@ interface JoystickOutput {
 
 export const JoystickView: React.FC<
   BlockViewProps<JoystickInput, JoystickOutput>
-> = ({ id, data, onParamsChange }) => {
-  const { input, output } = data;
+> = ({ id, data = {}, onParamsChange }) => {
+  const { input = {} as any, output = {} as any } = data;
   const scheme = input?.control_scheme || "d-pad";
 
   // Local interaction state for the UI preview

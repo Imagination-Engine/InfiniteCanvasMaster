@@ -2,10 +2,12 @@ import React from "react";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { SideInspector } from "./SideInspector";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { ComponentRegistry } from "./ObjectRenderer";
 
-export const CanvasShell: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const CanvasShell: React.FC<{
+  children: React.ReactNode;
+  registry?: ComponentRegistry;
+}> = ({ children, registry }) => {
   useKeyboardShortcuts();
 
   return (
@@ -14,7 +16,15 @@ export const CanvasShell: React.FC<{ children: React.ReactNode }> = ({
       role="application"
       aria-label="Imagination Canvas"
     >
-      <div className="absolute inset-0 z-0">{children}</div>
+      <div className="absolute inset-0 z-0">
+        {React.Children.map(children, (child) => {
+          if (React.isValidElement(child)) {
+            // Forward registry to InfiniteViewport if that's the child
+            return React.cloneElement(child, { registry } as any);
+          }
+          return child;
+        })}
+      </div>
       <CanvasToolbar />
       <SideInspector />
     </div>

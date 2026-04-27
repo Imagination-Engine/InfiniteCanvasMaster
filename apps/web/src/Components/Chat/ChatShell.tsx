@@ -9,6 +9,10 @@ import {
   useAutoScroll,
   useComposerSubmit,
 } from "@iem/chat-interaction-kit";
+import {
+  useCanvasStore,
+  useConnectionStore,
+} from "@iem/imagination-canvas-kit";
 
 interface ChatShellProps {
   projectId: string;
@@ -23,6 +27,8 @@ export const ChatShell: React.FC<ChatShellProps> = ({
 }) => {
   const { accessToken } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { objects } = useCanvasStore();
+  const { connections } = useConnectionStore();
 
   const {
     messages,
@@ -39,12 +45,20 @@ export const ChatShell: React.FC<ChatShellProps> = ({
     },
     body: {
       sessionId: projectId,
+      canvasContext: {
+        nodes: Object.values(objects).map((n) => ({
+          id: n.id,
+          type: n.type,
+          data: n.metadata,
+        })),
+        edges: Object.values(connections),
+      },
     },
     initialMessages: initialMessages as any,
   });
 
   // Automatically scroll to bottom as new messages stream in
-  useAutoScroll(messagesEndRef, [messages]);
+  useAutoScroll(messagesEndRef, [messages, isLoading, error]);
 
   const { handleKeyDown, handleButtonClick } = useComposerSubmit({
     onSubmit: () => handleSubmit(new Event("submit") as any),
@@ -123,26 +137,33 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       )}
 
       <div className="p-4 bg-white/[0.02] border-t border-white/5">
-        <form onSubmit={handleSubmit} className="relative flex items-end group">
+        <form onSubmit={handleSubmit} className="flex items-end group w-full">
           <GrowingTextarea
             value={input}
             onChange={handleInputChange}
             placeholder="Instruct the engine..."
-            className="w-full bg-white/10 border border-white/20 rounded-[20px] py-3 pl-5 pr-14 text-white placeholder:text-white/40 focus:bg-white/15 transition-all text-sm"
             onKeyDown={handleKeyDown as any}
+            onEnter={() => handleSubmit(new Event("submit") as any)}
+            onFileSelect={(files) => console.log("Files selected:", files)}
+            actions={
+              <button
+                type="button"
+                onClick={handleButtonClick}
+                disabled={!(input || "").trim() && !isLoading}
+                className="w-10 h-10 flex items-center justify-center bg-brand-purple hover:bg-brand-cyan text-white rounded-full transition-all disabled:opacity-50 disabled:hover:bg-brand-purple"
+              >
+                {isLoading ? (
+                  <Square size={14} fill="currentColor" />
+                ) : (
+                  <ArrowUp
+                    size={18}
+                    strokeWidth={3}
+                    className="transition-transform group-hover:-translate-y-0.5"
+                  />
+                )}
+              </button>
+            }
           />
-          <button
-            type="button"
-            onClick={handleButtonClick}
-            disabled={!input.trim() && !isLoading}
-            className="absolute right-2 bottom-2 w-8 h-8 flex items-center justify-center bg-brand-purple hover:bg-brand-cyan text-white rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-brand-purple"
-          >
-            {isLoading ? (
-              <Square size={14} fill="currentColor" />
-            ) : (
-              <ArrowUp size={16} strokeWidth={3} />
-            )}
-          </button>
         </form>
       </div>
     </div>

@@ -5,20 +5,27 @@ import {
   characterProfileBlock,
   worldLoreBlock,
   dialogueTreeBlock,
-  proofreaderBlock,
   editorBlock,
+  proofreaderBlock,
 } from "@iem/surface-scribe";
+
 import {
   ifBlock,
   forEachBlock,
   webhookTriggerBlock,
+  scheduleTriggerBlock,
+  saasBlock,
+  agentBlock,
+  routerBlock,
+  delayBlock,
+  stateBlock,
+  errorBoundaryBlock,
+  subGraphBlock,
+  webFetchBlock,
+  slackPostBlock,
+  notionCreateBlock,
 } from "@iem/surface-conductor";
-import {
-  ingestionBlock,
-  retrievalBlock,
-  synthesisBlock,
-} from "@iem/surface-atlas";
-import { textToImageBlock, textToSpeechBlock } from "@iem/surface-reel";
+
 import {
   architectBlock,
   designerBlock,
@@ -26,36 +33,127 @@ import {
   testerBlock,
 } from "@iem/surface-forge";
 
+import {
+  timelineBlock,
+  exportBlock,
+  sceneBlock,
+  characterBlock as reelCharacterBlock,
+  dialogueBlock,
+  cameraBlock as reelCameraBlock,
+  lightingBlock as reelLightingBlock,
+  transitionBlock,
+  vfxBlock,
+  audioTrackBlock,
+} from "@iem/surface-reel";
+
+import {
+  documentLoaderBlock,
+  chunkerBlock,
+  vectorSearchBlock,
+  indexerBlock,
+  graphKnowledgeBlock,
+  queryBlock,
+  embedBlock,
+  upsertBlock,
+  semanticRouterBlock,
+} from "@iem/surface-atlas";
+
+import {
+  joystickBlock,
+  spriteBlock,
+  physicsEntityBlock,
+  colliderBlock,
+  cameraBlock,
+  lightingBlock,
+  audioBlock,
+  particleBlock,
+  scoreBlock,
+  spawnerBlock,
+  timerBlock,
+  inputBlock,
+  ruleBlock,
+} from "@iem/surface-playable";
+
 export function initializeWebRegistry() {
   generateCoreCapabilities(); // Spin up the dynamic blocks
 
   const blocks = [
+    // Scribe
     proseBlock,
     chapterBlock,
     characterProfileBlock,
     worldLoreBlock,
     dialogueTreeBlock,
-    proofreaderBlock,
     editorBlock,
+    proofreaderBlock,
+
+    // Conductor
     ifBlock,
     forEachBlock,
     webhookTriggerBlock,
-    ingestionBlock,
-    retrievalBlock,
-    synthesisBlock,
-    textToImageBlock,
-    textToSpeechBlock,
+    scheduleTriggerBlock,
+    saasBlock,
+    agentBlock,
+    routerBlock,
+    delayBlock,
+    stateBlock,
+    errorBoundaryBlock,
+    subGraphBlock,
+    webFetchBlock,
+    slackPostBlock,
+    notionCreateBlock,
+
+    // Forge
     architectBlock,
     designerBlock,
     builderBlock,
     testerBlock,
+
+    // Reel
+    timelineBlock,
+    exportBlock,
+    sceneBlock,
+    reelCharacterBlock,
+    dialogueBlock,
+    reelCameraBlock,
+    reelLightingBlock,
+    transitionBlock,
+    vfxBlock,
+    audioTrackBlock,
+
+    // Atlas
+    documentLoaderBlock,
+    chunkerBlock,
+    vectorSearchBlock,
+    indexerBlock,
+    graphKnowledgeBlock,
+    queryBlock,
+    embedBlock,
+    upsertBlock,
+    semanticRouterBlock,
+
+    // Playable
+    joystickBlock,
+    spriteBlock,
+    physicsEntityBlock,
+    colliderBlock,
+    cameraBlock,
+    lightingBlock,
+    audioBlock,
+    particleBlock,
+    scoreBlock,
+    spawnerBlock,
+    timerBlock,
+    inputBlock,
+    ruleBlock,
   ];
 
   blocks.forEach((block) => {
+    if (!block || !block.id) return;
     try {
       blockRegistry.register(block);
     } catch (e) {
-      // Ignore already registered blocks
+      // Ignore
     }
   });
 

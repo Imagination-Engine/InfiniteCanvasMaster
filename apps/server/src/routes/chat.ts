@@ -82,7 +82,8 @@ chatRouter.post("/", async (c) => {
     return c.json({ error: "Messages array is required" }, 400);
   }
 
-  if (sessionId && !sessionId.startsWith("draft-")) {
+  // Only enforce workspace existence if this is not marked as a draft session
+  if (sessionId && !sessionId.startsWith("draft-") && !body.isDraft) {
     const [workspace] = await db
       .select()
       .from(workspaces)
@@ -94,19 +95,37 @@ chatRouter.post("/", async (c) => {
   }
 
   try {
-    const agent = mastra.getAgent("orchestrator");
+    const { createOrchestrator, mastra } = await import("@iem/agents");
+    const agent = await createOrchestrator(mastra.storage);
 
-    // Prepend a system directive so the AI explicitly knows the owner ID for tool calls.
+    let canvasSystemPrompt = "";
+    if (body.canvasContext) {
+      canvasSystemPrompt = `\n\nCURRENT CANVAS STATE:\nNodes: ${JSON.stringify(body.canvasContext.nodes)}\nEdges: ${JSON.stringify(body.canvasContext.edges)}\nBe aware of these existing nodes and connections when suggesting changes, discussing the workspace, or generating blueprints. You are contiguous with the canvas experience.`;
+    }
+
+    // Pass the user's latest message, but Mastra will fetch the history automatically because of the threadId!
+    const latestUserMessage =
+      sanitizedMessages[sanitizedMessages.length - 1]?.content;
+
+    // We can still inject our powerful system prompt dynamically.
     const finalMessages = [
       {
         role: "system",
-        content: `CRITICAL SYSTEM DIRECTIVE: The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_id' parameter when calling the 'generate_canvas_blueprint' tool. Failure to do so will result in a system crash.`,
+        content: `You are the Imagination Engine Orchestrator. 
+CRITICAL MISSION: When a user describes a goal, idea, or request, you MUST deconstruct it into a functional architecture and call the 'generate_canvas_blueprint' tool to place blocks on the canvas. 
+
+The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_id' parameter of every tool call. Also, pass the session thread ID "${sessionId}" to the 'session_id' parameter if generating a blueprint to link history.
+
+Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.${canvasSystemPrompt}`,
       },
-      ...sanitizedMessages,
+      {
+        role: "user",
+        content: latestUserMessage,
+      },
     ];
 
     const result = await agent.stream(finalMessages, {
-      threadId: sessionId,
+      threadId: sessionId, // This tells Mastra to load history and save this turn!
       resourceId: user.sub,
     });
 

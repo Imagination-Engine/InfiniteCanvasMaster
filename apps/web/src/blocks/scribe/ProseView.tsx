@@ -4,15 +4,21 @@ import type { BlockViewProps } from "@iem/core";
 
 export const ProseView: React.FC<
   BlockViewProps<{ payload?: string }, { text: string }>
-> = ({ id, data, onParamsChange, onRun }) => {
-  const { status, input, output, error } = data;
+> = ({ id, data = {} as any, onParamsChange, onRun }) => {
+  const {
+    status,
+    input = {} as any,
+    output = {} as any,
+    error,
+    params = {} as any,
+  } = data;
 
   return (
     <div className="flex flex-col gap-4">
       {/* Editor Area */}
       <div className="relative group">
         <textarea
-          value={(data.params.payload as string) || input?.payload || ""}
+          value={(params?.payload as string) || input?.payload || ""}
           onChange={(e) => onParamsChange({ payload: e.target.value })}
           placeholder="Write your seed or prompt here..."
           className="w-full min-h-[120px] rounded-xl bg-white/[0.03] border border-white/10 p-4 text-[13px] font-medium leading-relaxed text-white outline-none focus:border-brand-purple/50 transition-all placeholder:text-brand-text-muted/30 resize-none custom-scrollbar"
