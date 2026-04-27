@@ -17,9 +17,13 @@ export const BalnceBlockKindSchema = z.enum([
   "plog-provenance",
   "edge-twin",
   "device-mesh",
+  "openclaw-block",
+  "openclaw.agent_group",
 ]);
 
 export type BalnceBlockKind = z.infer<typeof BalnceBlockKindSchema>;
+
+export * from "./openclaw";
 
 export const CanvasObjectSchema = z.object({
   id: z.string(),

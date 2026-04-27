@@ -6,3 +6,5 @@ export * from "./blocks/creative/index";
 export * from "./agent/provider";
 export * from "./agent/runtime";
 export * from "./chain/ChainExecutor";
+export * from "./bus/protocol";
+export * from "./bus/MessageBus";

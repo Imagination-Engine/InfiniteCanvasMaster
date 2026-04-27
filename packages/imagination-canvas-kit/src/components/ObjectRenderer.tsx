@@ -8,6 +8,8 @@ import { useConnectionStore } from "../state/connectionStore";
 import { NoteBlock } from "./blocks/NoteBlock";
 import { RichTextBlock } from "./blocks/RichTextBlock";
 import { AgentBlock } from "./blocks/AgentBlock";
+import { OpenClawBlock as OpenClawBlockComponent } from "./blocks/OpenClawBlock";
+import { OpenClawAgentGroupBlock } from "./blocks/OpenClawAgentGroupBlock";
 import { CommonBlockView } from "./blocks/CommonBlockView";
 import {
   Settings,
@@ -26,6 +28,9 @@ const defaultRegistry: ComponentRegistry = {
   note: NoteBlock as any,
   "rich-text": RichTextBlock as any,
   agent: AgentBlock as any,
+  "openclaw-block": OpenClawBlockComponent as any,
+  "openclaw.block": OpenClawBlockComponent as any,
+  "openclaw.agent_group": OpenClawAgentGroupBlock as any,
 };
 
 export const ObjectRenderer: React.FC<{
@@ -118,8 +123,9 @@ export const ObjectRenderer: React.FC<{
     output: object.metadata.outputs || {},
   };
 
-  const blockTypeLabel = object.type.split(".").pop();
-  const displayLabel = object.metadata?.label || blockTypeLabel;
+  const blockTypeLabel = object.type.split(".").pop() || "";
+  const displayLabel =
+    object.metadata?.label || object.metadata?.title || blockTypeLabel;
 
   return (
     <div
@@ -166,11 +172,11 @@ export const ObjectRenderer: React.FC<{
               className="text-white/20 opacity-0 group-hover/header:opacity-100 transition-opacity shrink-0"
             />
             <span className="text-[10px] font-black uppercase tracking-widest text-brand-cyan truncate">
-              {displayLabel}
+              {String(displayLabel)}
             </span>
             {displayLabel !== blockTypeLabel && (
               <span className="text-[8px] font-bold uppercase tracking-widest text-brand-text-muted truncate ml-1 px-1.5 py-0.5 rounded bg-white/5">
-                {blockTypeLabel}
+                {String(blockTypeLabel)}
               </span>
             )}
           </div>

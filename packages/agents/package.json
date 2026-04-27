@@ -15,6 +15,7 @@
     "@ai-sdk/google": "^3.0.64",
     "@iem/core": "workspace:^",
     "@iem/db": "workspace:^",
+    "@iem/imagination-canvas-kit": "workspace:^",
     "@mastra/core": "latest",
     "@mastra/evals": "^1.2.1",
     "@mastra/memory": "^1.17.1",
