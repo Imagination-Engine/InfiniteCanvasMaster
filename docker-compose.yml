@@ -83,3 +83,19 @@ services:
       - "3002:3002"
     volumes:
       - .:/workspace
+
+  # ---------------------------------------------------------
+  # Relational Database - PostgreSQL
+  # ---------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: iem-postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=imagination_canvas
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data

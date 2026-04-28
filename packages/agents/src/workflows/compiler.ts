@@ -1,8 +1,11 @@
-import { Workflow, createStep } from '@mastra/core/workflows';
-import { blockRegistry } from '@iem/core';
-import { z } from 'zod';
+import { Workflow, createStep } from "@mastra/core/workflows";
+import { blockRegistry } from "@iem/core";
+import { z } from "zod";
 
-export function compileGraphToWorkflow(graph: { nodes: any[]; edges: any[] }) {
+export function compileGraphToWorkflow(graph: {
+  nodes: any[];
+  edges: any[];
+}): any {
   const workflow = new Workflow({
     id: `canvas-workflow-${Date.now()}`,
     inputSchema: z.record(z.string(), z.any()).optional(),
@@ -15,21 +18,30 @@ export function compileGraphToWorkflow(graph: { nodes: any[]; edges: any[] }) {
   for (const node of graph.nodes) {
     const blockDef = blockRegistry.get(node.type || node.blockId);
     if (!blockDef) {
-      console.warn(`Block definition not found for node type: ${node.type || node.blockId}`);
+      console.warn(
+        `Block definition not found for node type: ${node.type || node.blockId}`,
+      );
       continue;
     }
 
     const step = createStep({
       id: node.id,
-      description: blockDef.description || 'Canvas Block',
+      description: blockDef.description || "Canvas Block",
       inputSchema: z.any(),
       outputSchema: z.any(),
-      execute: async ({ inputData, mastra, getStepResult, getInitData }: any) => {
+      execute: async ({
+        inputData,
+        mastra,
+        getStepResult,
+        getInitData,
+      }: any) => {
         // Gather inputs from previous steps based on graph edges
-        const incomingEdges = graph.edges.filter((e: any) => e.target === node.id || e.targetId === node.id);
-        
+        const incomingEdges = graph.edges.filter(
+          (e: any) => e.target === node.id || e.targetId === node.id,
+        );
+
         let mergedInput = { ...(node.data?.inputs || node.data?.params || {}) };
-        
+
         // Merge outputs from upstream dependencies
         for (const edge of incomingEdges) {
           const sourceId = edge.source || edge.sourceId;
@@ -38,7 +50,7 @@ export function compileGraphToWorkflow(graph: { nodes: any[]; edges: any[] }) {
             mergedInput = { ...mergedInput, ...sourceResult };
           }
         }
-        
+
         // If this is a root node (no incoming edges), merge in the triggerData
         const triggerData = getInitData();
         if (incomingEdges.length === 0 && triggerData) {

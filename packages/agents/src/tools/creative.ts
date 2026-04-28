@@ -10,7 +10,8 @@ export const summarizer = createTool({
     sources: z.array(z.string()),
     additionalInstructions: z.string().optional(),
   }),
-  execute: async ({ input }) => {
+  execute: async (args: any) => {
+    const input = args.input || args;
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
       prompt: `Summarize and analyze the following content. Return ONLY a JSON object with two fields: "summary" (a concise summary) and "analysis" (deeper insights, patterns, or notable points).
@@ -32,7 +33,8 @@ export const translator = createTool({
     source: z.string(),
     targetLanguage: z.string().default("English"),
   }),
-  execute: async ({ input }) => {
+  execute: async (args: any) => {
+    const input = args.input || args;
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
       prompt: `Translate the following text to ${input.targetLanguage}. Return ONLY a JSON object with two fields: "detectedLanguage" and "translation".
@@ -55,7 +57,8 @@ export const programmer = createTool({
     language: z.string().default("typescript"),
     context: z.string().optional(),
   }),
-  execute: async ({ input }) => {
+  execute: async (args: any) => {
+    const input = args.input || args;
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
       prompt: `You are an elite software engineer. Generate a high-quality ${input.language} code snippet for the following requirement: ${input.prompt}. 
@@ -75,7 +78,8 @@ export const colorSwapper = createTool({
     targetColor: z.string(),
     replacementColor: z.string(),
   }),
-  execute: async ({ input }) => {
+  execute: async (args: any) => {
+    const input = args.input || args;
     // For now, we simulate the color swap via description as we don't have a direct pixel manipulation tool yet
     // In a production environment, this would call a specialized image processing service.
     return {
@@ -94,7 +98,8 @@ export const formatter = createTool({
     content: z.string(),
     targetFormat: z.string(),
   }),
-  execute: async ({ input }) => {
+  execute: async (args: any) => {
+    const input = args.input || args;
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
       prompt: `Format the following content into ${input.targetFormat}. Ensure it is valid and clean.\n\nContent: ${input.content}`,
@@ -110,7 +115,8 @@ export const filter = createTool({
     data: z.any(),
     conditions: z.string(),
   }),
-  execute: async ({ input }) => {
+  execute: async (args: any) => {
+    const input = args.input || args;
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
       prompt: `Filter the following data based on these conditions: ${input.conditions}.\n\nData: ${JSON.stringify(input.data)}\n\nReturn ONLY the filtered JSON result.`,

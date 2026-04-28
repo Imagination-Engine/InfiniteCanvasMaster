@@ -18,7 +18,7 @@ export const ifBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "eval_cond",
-    invoke: async (i) => ({ branch: "truePath", context: i.context }),
+    invoke: async (i: any) => ({ branch: "truePath", context: i.context }),
   },
 };
 
@@ -33,7 +33,7 @@ export const forEachBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "loop",
-    invoke: async (i) => ({ items: i.collection }),
+    invoke: async (i: any) => ({ items: i.collection }),
   },
 };
 
@@ -142,7 +142,7 @@ export const stateBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "state_op",
-    invoke: async (i) => ({ current: i.value }),
+    invoke: async (i: any) => ({ current: i.value }),
   },
 };
 

@@ -191,7 +191,7 @@ export const generate_canvas_blueprint = createTool({
             data: e.condition ? { condition: e.condition } : {},
           };
         })
-        .filter((e): e is NonNullable<typeof e> => e !== null);
+        .filter((e: any): e is NonNullable<typeof e> => e !== null);
 
       if (mappedEdges.length > 0) {
         await db.insert(edgesTable).values(mappedEdges);

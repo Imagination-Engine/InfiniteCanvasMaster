@@ -119,7 +119,7 @@ export const ObjectRenderer: React.FC<{
   };
 
   const blockTypeLabel = object.type.split(".").pop();
-  const displayLabel = object.metadata?.label || blockTypeLabel;
+  const displayLabel = String(object.metadata?.label || blockTypeLabel);
 
   return (
     <div

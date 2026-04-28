@@ -95,8 +95,8 @@ chatRouter.post("/", async (c) => {
   }
 
   try {
-    const { createOrchestrator, mastra } = await import("@iem/agents");
-    const agent = await createOrchestrator(mastra.storage);
+    const { createOrchestrator, storage } = await import("@iem/agents");
+    const agent = await createOrchestrator(storage);
 
     let canvasSystemPrompt = "";
     if (body.canvasContext) {
@@ -125,8 +125,7 @@ Identify the best blocks from the registry (scribe, playable, reel, forge, atlas
     ];
 
     const result = await agent.stream(finalMessages, {
-      threadId: sessionId, // This tells Mastra to load history and save this turn!
-      resourceId: user.sub,
+      runId: sessionId, // This tells Mastra to load history and save this turn!
     });
 
     const stream = new ReadableStream({

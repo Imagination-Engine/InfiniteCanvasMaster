@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
     "@iem/core": "workspace:^",
+    "ai": "latest",
     "@iem/db": "workspace:^",
     "@mastra/core": "latest",
     "@mastra/evals": "^1.2.1",

@@ -57,7 +57,7 @@ export const CommonBlockView: React.FC<{ object: CanvasObject }> = ({
           </div>
           <div className="min-w-0">
             <h4 className="text-sm font-black text-white uppercase tracking-tighter truncate leading-none mb-1">
-              {label}
+              {String(label)}
             </h4>
             <div className="flex items-center gap-2">
               <span className="text-[8px] font-bold text-white/30 uppercase tracking-widest px-1.5 py-0.5 rounded bg-black/40 border border-white/5">
@@ -77,7 +77,7 @@ export const CommonBlockView: React.FC<{ object: CanvasObject }> = ({
 
       <div className="flex-1 min-h-0 bg-black/20 rounded-xl p-3 border border-white/5 overflow-auto custom-scrollbar">
         <p className="text-[11px] text-white/60 leading-relaxed font-medium mb-3">
-          {description}
+          {String(description)}
         </p>
 
         {/* Render simple metadata values if present */}
