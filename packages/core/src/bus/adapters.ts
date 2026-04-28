@@ -103,3 +103,30 @@ export class LegacyAdditionalInstructionsAdapter implements NodeInputAdapter {
     return mergedInput;
   }
 }
+
+/**
+ * Adapter for OpenClaw task schemas.
+ */
+export class OpenClawTaskAdapter implements NodeInputAdapter {
+  toolName = "openclaw_task";
+
+  fromEnvelopeBatch(args: {
+    envelopes: BalnceEnvelope[];
+    baseInput: any;
+  }): any {
+    const { envelopes, baseInput } = args;
+    const mergedInput = { ...baseInput };
+
+    // OpenClaw expects a specific "taskDescription" or "context" field
+    const context = envelopes
+      .map((e) => e.payload?.result || e.payload?.summary)
+      .filter(Boolean)
+      .join("\n\n");
+
+    if (context) {
+      mergedInput.taskContext = context;
+    }
+
+    return mergedInput;
+  }
+}
