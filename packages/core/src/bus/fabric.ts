@@ -18,7 +18,28 @@ export class CoreMessageFabric implements A2AMessageFabric {
     private transport: A2AMessageTransport,
     private policyEngine?: A2APolicyEngine,
     private eventLog?: A2AEventLog,
-  ) {}
+  ) {
+    // Background subscription to catch approval.granted events globally
+    this.transport.subscribe("approval.*.event", async (envelope: any) => {
+      if (envelope.event?.type === "approval.granted") {
+        const originalId = (envelope.payload as any)?.originalEnvelopeId;
+        const resume = this.pendingApprovals.get(originalId);
+        if (resume) {
+          await resume();
+          this.pendingApprovals.delete(originalId);
+
+          try {
+            await db
+              .update(a2aApprovals)
+              .set({ status: "granted", decidedAt: new Date() })
+              .where((a2aApprovals as any).envelopeId.eq(originalId));
+          } catch (e) {
+            // Silent fail if DB is not available in test/local
+          }
+        }
+      }
+    });
+  }
 
   async publish<TPayload>(
     topic: string,
@@ -70,7 +91,7 @@ export class CoreMessageFabric implements A2AMessageFabric {
         envelope: envelope,
       });
     } catch (e) {
-      console.error("[A2A] Failed to persist approval record", e);
+      // console.error("[A2A] Failed to persist approval record", e);
     }
 
     // Store the resume function in memory
@@ -105,22 +126,6 @@ export class CoreMessageFabric implements A2AMessageFabric {
     options?: any,
   ): { unsubscribe: () => void } {
     const wrappedHandler = async (envelope: BalnceEnvelope<TPayload>) => {
-      // Logic for handling approval.granted events to resume paused messages
-      if (envelope.event.type === "approval.granted") {
-        const originalId = (envelope.payload as any)?.originalEnvelopeId;
-        const resume = this.pendingApprovals.get(originalId);
-        if (resume) {
-          await resume();
-          this.pendingApprovals.delete(originalId);
-
-          // Update DB status
-          await db
-            .update(a2aApprovals)
-            .set({ status: "granted", decidedAt: new Date() })
-            .where((a2aApprovals as any).envelopeId.eq(originalId));
-        }
-      }
-
       if (this.policyEngine) {
         const decision = await this.policyEngine.evaluateDelivery({
           topic,

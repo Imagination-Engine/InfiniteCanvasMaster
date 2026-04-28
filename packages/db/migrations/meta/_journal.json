@@ -15,6 +15,13 @@
       "when": 1776838070047,
       "tag": "0001_opposite_amphibian",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777345865247,
+      "tag": "0002_deep_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }

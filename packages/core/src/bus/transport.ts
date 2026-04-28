@@ -12,7 +12,22 @@ export class LocalEventEmitterTransport implements A2AMessageTransport {
     topic: string,
     envelope: BalnceEnvelope<TPayload>,
   ): Promise<void> {
+    // Emit to the exact topic
     this.emitter.emit(topic, envelope);
+
+    // Emit to wildcard topics (e.g., if someone subscribed to "dag.*.event", and we publish "dag.123.event")
+    const parts = topic.split(".");
+    for (let i = 0; i < parts.length; i++) {
+      const wildcardTopic = [
+        ...parts.slice(0, i),
+        "*",
+        ...parts.slice(i + 1),
+      ].join(".");
+      this.emitter.emit(wildcardTopic, envelope);
+    }
+
+    // Support multi-level wildcard if needed (e.g., #)
+    this.emitter.emit("#", envelope);
   }
 
   subscribe<TPayload>(
