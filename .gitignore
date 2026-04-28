@@ -60,4 +60,10 @@ temp/
 postgres_data/
 data-node/
 
+# Turborepo
+.turbo/
+
+# TypeScript cache
+*.tsbuildinfo
+
 
