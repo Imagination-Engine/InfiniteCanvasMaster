@@ -1,6 +1,7 @@
 import { A2APolicyEngine, BalnceEnvelope, PolicyDecision } from "./protocol";
 import * as dbModule from "@iem/db";
 import { eq } from "drizzle-orm";
+import { redactPayload } from "./redaction";
 
 const { db, customAgents } = dbModule as any;
 
@@ -9,9 +10,18 @@ export class DatabasePolicyEngine implements A2APolicyEngine {
     topic: string;
     envelope: BalnceEnvelope;
   }): Promise<PolicyDecision> {
-    const { envelope } = args;
+    let { envelope } = args;
 
-    // 1. Redaction logic based on sensitivity
+    // 1. Redaction logic based on policy.redaction
+    if (envelope.policy?.redaction && envelope.policy.redaction !== "none") {
+      envelope = {
+        ...envelope,
+        payload: redactPayload(envelope.payload, envelope.policy.redaction),
+      };
+      return { allowed: true, modifiedEnvelope: envelope };
+    }
+
+    // 2. Redaction logic based on sensitivity fallback
     if (envelope.policy?.sensitivity === "secret") {
       // If we're publishing a secret, we might want to redact the payload for general topics
       if (args.topic.includes("broadcast") || args.topic.includes("canvas")) {
@@ -25,7 +35,7 @@ export class DatabasePolicyEngine implements A2APolicyEngine {
       }
     }
 
-    // 2. Capability check for agents
+    // 3. Capability check for agents
     if (envelope.source.type === "agent") {
       try {
         const [agent] = await db

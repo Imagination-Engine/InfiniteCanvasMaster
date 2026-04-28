@@ -6,11 +6,9 @@ import { BALNCE_A2A_PROTOCOL, BALNCE_A2A_VERSION } from "./protocol";
 vi.mock("@iem/db", () => ({
   db: {
     insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue([]) }),
-    update: vi
-      .fn()
-      .mockReturnValue({
-        set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
-      }),
+    update: vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
+    }),
   },
   a2aApprovals: {
     envelopeId: { eq: vi.fn() },
@@ -122,6 +120,25 @@ describe("A2A Message Fabric Infrastructure", () => {
       await fabric.publish("approval.run-2.event", grantEnvelope as any);
 
       expect(handler).toHaveBeenCalledWith(approvalEnvelope);
+    });
+
+    it("should apply provenance signatures when provenance_required class is set", async () => {
+      const transport = new LocalEventEmitterTransport();
+      const fabric = new CoreMessageFabric(transport);
+      const handler = vi.fn();
+
+      const provenanceEnvelope = {
+        ...mockEnvelope,
+        id: "prov-1",
+        delivery: { class: "provenance_required" },
+      };
+
+      fabric.subscribe("fabric.topic", handler);
+      await fabric.publish("fabric.topic", provenanceEnvelope);
+
+      expect(handler).toHaveBeenCalled();
+      const received = handler.mock.calls[0][0];
+      expect(received.provenance?.signature).toBeDefined();
     });
   });
 });

@@ -8,6 +8,7 @@ import {
   Topics,
 } from "./protocol";
 import * as dbModule from "@iem/db";
+import { signEnvelope } from "./provenance";
 
 const { db, a2aApprovals } = dbModule as any;
 
@@ -63,6 +64,19 @@ export class CoreMessageFabric implements A2AMessageFabric {
     // Event Logging
     if (this.eventLog) {
       await this.eventLog.append(envelope);
+    }
+
+    // Provenance Signing
+    if (envelope.delivery?.class === "provenance_required") {
+      const secret = process.env.A2A_SIGNING_SECRET || "internal-secret";
+      const signature = signEnvelope(envelope, secret);
+      envelope = {
+        ...envelope,
+        provenance: {
+          ...envelope.provenance,
+          signature,
+        },
+      };
     }
 
     // Approval Gating
