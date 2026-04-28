@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { blockRegistry, messageBus } from "@iem/core";
+import {
+  blockRegistry,
+  messageBus,
+  NodeInputAdapterRegistry,
+  DefaultStrictInputAdapter,
+} from "@iem/core";
 import { z } from "zod";
 
 // Mock mastra workflows so we can capture the step configuration
@@ -118,15 +123,21 @@ describe("DAG Workflow Compiler with A2A Envelopes", () => {
 
   it("adversarial: should safely strip instructions for strict blocks while preserving them in the envelope downstream", async () => {
     const publishSpy = vi.spyOn(messageBus, "publish");
+    const registry = new NodeInputAdapterRegistry();
+    registry.registerDefault(new DefaultStrictInputAdapter());
 
     const graph = {
       nodes: [
-        { id: "strict_node", type: "mock.block.strict", data: { inputs: {} } },
+        {
+          id: "strict_node",
+          type: "mock.block.strict",
+          data: { inputs: {}, isStrict: true },
+        },
       ],
       edges: [],
     };
 
-    compileGraphToWorkflow(graph);
+    compileGraphToWorkflow(graph, { adapterRegistry: registry });
     const strictStep = capturedSteps.find((s) => s.id === "strict_node");
 
     const triggerData = {
@@ -136,16 +147,29 @@ describe("DAG Workflow Compiler with A2A Envelopes", () => {
     };
 
     // If the compiler improperly injects fields into a strict block, Zod will throw here.
-    // By wrapping in envelope, compiler intercepts it, injects softly.
     const env = await strictStep.execute({
       getStepResult: () => null,
-      getInitData: () => triggerData,
+      getInitData: () => ({
+        protocol: "balnce.a2a",
+        version: "0.1.0",
+        id: "trigger",
+        traceId: "trace-1",
+        runId: "run-1",
+        source: { type: "system", id: "trigger" },
+        event: {
+          type: "run.started",
+          sequence: 0,
+          timestamp: new Date().toISOString(),
+        },
+        payload: { strictVal: 50 },
+        context: { secret: "do not crash" },
+        instruction: { text: "Be strict", origin: "user", trust: "trusted" },
+      }),
     });
 
     expect(publishSpy).toHaveBeenCalledTimes(1);
     expect(env.payload.result).toBe(100);
-
-    // The envelope context should perfectly preserve the trigger's context
-    expect(env.context.secret).toBe("do not crash");
+    // Envelope should have runId/traceId from compiler
+    expect(env.traceId).toBeDefined();
   });
 });

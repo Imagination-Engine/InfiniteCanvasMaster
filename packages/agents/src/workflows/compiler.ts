@@ -2,13 +2,35 @@ import { Workflow, createStep } from "@mastra/core/workflows";
 import {
   blockRegistry,
   messageBus,
-  wrapInEnvelope,
-  serializeEnvelope,
+  Topics,
+  BALNCE_A2A_PROTOCOL,
+  BALNCE_A2A_VERSION,
+  NodeInputAdapterRegistry,
+  DefaultStrictInputAdapter,
+  LegacyAdditionalInstructionsAdapter,
 } from "@iem/core";
 import { z } from "zod";
+import crypto from "crypto";
 
-export function compileGraphToWorkflow(graph: { nodes: any[]; edges: any[] }) {
-  const runId = Date.now().toString();
+export type CompileWorkflowOptions = {
+  messageFabric?: any;
+  adapterRegistry?: NodeInputAdapterRegistry;
+  runId?: string;
+};
+
+export function compileGraphToWorkflow(
+  graph: { nodes: any[]; edges: any[] },
+  options: CompileWorkflowOptions = {},
+) {
+  const runId = options.runId || Date.now().toString();
+  const fabric = options.messageFabric || messageBus;
+  const registry = options.adapterRegistry || new NodeInputAdapterRegistry();
+
+  // Ensure default adapters are present if none registered
+  if (!(registry as any).defaultAdapter) {
+    registry.registerDefault(new LegacyAdditionalInstructionsAdapter());
+  }
+
   const workflow = new Workflow({
     id: `canvas-workflow-${runId}`,
     inputSchema: z.record(z.string(), z.any()).optional(),
@@ -38,90 +60,69 @@ export function compileGraphToWorkflow(graph: { nodes: any[]; edges: any[] }) {
         getStepResult,
         getInitData,
       }: any) => {
-        // Gather inputs from previous steps based on graph edges
+        // Collect upstream envelopes
         const incomingEdges = graph.edges.filter(
           (e: any) => e.target === node.id || e.targetId === node.id,
         );
 
-        let mergedInput = { ...(node.data?.inputs || node.data?.params || {}) };
-        let mergedContext = {};
-        let incomingInstructions: string[] = [];
+        const envelopes: any[] = [];
 
-        // Merge outputs from upstream dependencies (unwrapping the BalnceEnvelope)
+        // Fetch envelopes from Mastra step results
         for (const edge of incomingEdges) {
           const sourceId = edge.source || edge.sourceId;
-          const sourceEnvelope = getStepResult(sourceId);
-          if (sourceEnvelope) {
-            // Assume sourceEnvelope is a BalnceEnvelope
-            if (sourceEnvelope.payload) {
-              mergedInput = { ...mergedInput, ...sourceEnvelope.payload };
-            } else {
-              // Fallback if upstream wasn't an envelope (e.g. legacy block)
-              mergedInput = { ...mergedInput, ...sourceEnvelope };
-            }
-            if (sourceEnvelope.context) {
-              mergedContext = { ...mergedContext, ...sourceEnvelope.context };
-            }
-            if (sourceEnvelope.instruction) {
-              incomingInstructions.push(sourceEnvelope.instruction);
-            }
+          const result = getStepResult(sourceId);
+          if (result) {
+            // Mastra returns the step result, which we've wrapped in an envelope
+            envelopes.push(result);
           }
         }
 
-        // If this is a root node (no incoming edges), merge in the triggerData
+        // Add trigger data if it's an envelope
         const triggerData = getInitData();
         if (incomingEdges.length === 0 && triggerData) {
-          // Unwrap if the trigger data is an envelope
-          if (triggerData.payload) {
-            mergedInput = { ...mergedInput, ...(triggerData.payload as any) };
-            mergedContext = {
-              ...mergedContext,
-              ...((triggerData.context as any) || {}),
-            };
-          } else {
-            mergedInput = { ...mergedInput, ...(triggerData as any) };
+          if (triggerData.protocol === BALNCE_A2A_PROTOCOL) {
+            envelopes.push(triggerData);
           }
         }
 
-        // Validate first so strict schemas don't fail on injected A2A fields
-        const validatedInput = blockDef.input.parse(mergedInput);
+        // Use Adapter Registry instead of universal mutation
+        const baseInput = { ...(node.data?.inputs || node.data?.params || {}) };
+        const adaptedInput = await registry.adapt({
+          envelopes,
+          baseInput,
+          nodeSpec: node,
+          runContext: { runId },
+        });
 
-        // Optional: Provide the collected context and instructions to the block's generative capability.
-        // We inject it softly AFTER validation so blocks that support it can use it, while strict schema blocks ignore it
-        // during parsing but might still receive it in their underlying tool implementation.
-        if (typeof validatedInput === "object" && validatedInput !== null) {
-          if (incomingInstructions.length > 0) {
-            if (!("additionalInstructions" in validatedInput)) {
-              (validatedInput as any).additionalInstructions =
-                incomingInstructions.join("\\n");
-            }
-            (validatedInput as any)._instructions =
-              incomingInstructions.join("\\n");
-          }
-          if (Object.keys(mergedContext).length > 0) {
-            if (!("context" in validatedInput)) {
-              (validatedInput as any).context = JSON.stringify(mergedContext);
-            }
-            (validatedInput as any)._context = mergedContext;
-          }
-        }
+        // Validate
+        const validatedInput = blockDef.input.parse(adaptedInput);
 
+        // Execute block
         const rawOutput = await blockDef.agent.invoke(validatedInput);
         const parsedOutput = blockDef.output.parse(rawOutput);
 
-        // Wrap the output in a BalnceEnvelope
-        const envelope = wrapInEnvelope({
+        // Wrap the output in a BalnceEnvelope complying with the new protocol
+        const envelope = {
+          protocol: BALNCE_A2A_PROTOCOL,
+          version: BALNCE_A2A_VERSION,
+          id: crypto.randomUUID(),
           traceId: runId,
-          sourceId: node.id,
-          context: mergedContext, // Pass context downstream
+          runId: runId,
+          source: { type: "block", id: node.id },
+          event: {
+            type: "node.output",
+            sequence: 0, // In a real system, we'd increment this
+            timestamp: new Date().toISOString(),
+          },
           payload: parsedOutput,
-        });
+          debug: {
+            compilerNodeId: node.id,
+            mastraWorkflowId: `canvas-workflow-${runId}`,
+          },
+        };
 
-        // Publish to the native Message Bus
-        messageBus.publish(
-          `dag.${runId}.block.${node.id}.output`,
-          serializeEnvelope(envelope),
-        );
+        // Publish to the Message Fabric
+        await fabric.publish(Topics.dagNodeOutput(runId, node.id), envelope);
 
         return envelope;
       },

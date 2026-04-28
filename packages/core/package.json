@@ -16,6 +16,7 @@
     "@ai-sdk/google": "^3.0.64",
     "@mastra/core": "latest",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@iem/db": "workspace:*",
     "ai": "^6.0.168",
     "drizzle-orm": "^0.45.2",
     "react": "^19.0.0",

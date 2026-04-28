@@ -1,41 +1,33 @@
-import { EventEmitter } from "events";
+import { LocalEventEmitterTransport } from "./transport";
+import { CoreMessageFabric } from "./fabric";
+import { BasicPolicyEngine } from "./policy";
+import { InMemoryEventLog } from "./log";
 
-export interface MessageBus {
-  publish(topic: string, message: string): void;
-  subscribe(topic: string, callback: (message: any) => void): () => void;
-}
+// Initialize the default local production fabric
+export const localTransport = new LocalEventEmitterTransport();
+export const localPolicyEngine = new BasicPolicyEngine();
+export const localEventLog = new InMemoryEventLog();
 
-class LocalMessageBus implements MessageBus {
-  private emitter = new EventEmitter();
+export const messageBus = new CoreMessageFabric(
+  localTransport,
+  localPolicyEngine,
+  localEventLog,
+);
 
-  constructor() {
-    // Increase limit for DAG edge density
-    this.emitter.setMaxListeners(100);
-  }
-
-  publish(topic: string, message: string): void {
-    this.emitter.emit(topic, message);
-  }
-
-  subscribe(topic: string, callback: (message: any) => void): () => void {
-    const wrappedCallback = (message: string) => {
-      try {
-        const parsed = JSON.parse(message);
-        callback(parsed);
-      } catch (err) {
-        console.error(
-          `[MessageBus] Failed to parse message on topic ${topic}`,
-          err,
-        );
-      }
-    };
-
-    this.emitter.on(topic, wrappedCallback);
-
-    return () => {
-      this.emitter.off(topic, wrappedCallback);
-    };
-  }
-}
-
-export const messageBus = new LocalMessageBus();
+// Backward compatibility for anything expecting the old MessageBus interface
+// which had publish(topic, string) and subscribe(topic, callback)
+export const legacyMessageBus = {
+  publish: (topic: string, message: string) => {
+    try {
+      const parsed = JSON.parse(message);
+      messageBus.publish(topic, parsed);
+    } catch (e) {
+      console.error("[A2A] Failed to parse legacy publish message", e);
+    }
+  },
+  subscribe: (topic: string, callback: (message: any) => void) => {
+    return messageBus.subscribe(topic, (envelope) => {
+      callback(envelope);
+    }).unsubscribe;
+  },
+};

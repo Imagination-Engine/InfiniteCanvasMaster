@@ -6,6 +6,7 @@ import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { chatRouter } from "./routes/chat.js";
 import { blocksRouter } from "./routes/blocks.js";
+import { a2aRouter } from "./routes/a2a.js";
 import { dbMiddleware } from "./db.js";
 
 const app = new Hono();
@@ -31,5 +32,6 @@ app.route("/api/auth", authRouter);
 app.route("/api/projects", projectsRouter);
 app.route("/api/chat", chatRouter);
 app.route("/api/blocks", blocksRouter);
+app.route("/api/a2a", a2aRouter);
 
 export { app };
