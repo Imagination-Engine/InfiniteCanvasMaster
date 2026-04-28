@@ -134,11 +134,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: A2A Canvas Observation & UI Bridge**
-      _Link: [./tracks/a2a_canvas_ui_bridge_20260427/](./tracks/a2a_canvas_ui_bridge_20260427/)_
-
----
-
 - [ ] **Track: A2A Hardened Governance & Provenance**
       _Link: [./tracks/a2a_hardened_governance_20260427/](./tracks/a2a_hardened_governance_20260427/)_
 
