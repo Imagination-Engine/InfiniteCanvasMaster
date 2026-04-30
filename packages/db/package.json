@@ -1,0 +1,27 @@
+{
+  "name": "@iem/db",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "## Description <!-- What lives here and why --> Provide a brief description of this package/app.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}

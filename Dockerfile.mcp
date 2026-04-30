@@ -1,0 +1,11 @@
+FROM node:22.17.1-alpine
+
+WORKDIR /workspace
+
+# Enable corepack for pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# We rely on the docker-compose bind mount for the codebase.
+# The host machine MUST run `pnpm install` and `pnpm --filter @iem/core build` first.
+
+CMD ["pnpm", "--filter", "@iem/core", "run", "mcp"]

@@ -1,0 +1,18 @@
+version: 1.1.4
+
+cache: true
+
+endpoints:
+  custom:
+    - name: "Imagination Engine"
+      apiKey: "${GEMINI_API_KEY}" # Uses Gemini as the reasoning engine for the tools
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+      models:
+        default: ["gemini-2.5-pro"]
+        fetch: false
+
+mcpServers:
+  imagination-engine:
+    # Use SSE to connect to the sibling Docker container "iem-mcp-server"
+    type: sse
+    url: http://iem-mcp-server:3002/sse

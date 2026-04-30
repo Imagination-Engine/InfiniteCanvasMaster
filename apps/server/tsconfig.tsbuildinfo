@@ -1,0 +1,1 @@
+{"root":["./src/app.ts","./src/custom_agents.ts","./src/db.ts","./src/index.ts","./src/logging.ts","./src/routes/auth.ts","./src/routes/chat.ts","./src/routes/health.ts","./src/routes/projects.ts"],"errors":true,"version":"6.0.3"}
