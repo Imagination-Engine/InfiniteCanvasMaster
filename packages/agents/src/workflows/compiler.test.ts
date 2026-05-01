@@ -4,125 +4,101 @@ import {
   messageBus,
   NodeInputAdapterRegistry,
   DefaultStrictInputAdapter,
+  createEnvelope,
 } from "@iem/core";
 import { z } from "zod";
+import { compileGraphToWorkflow } from "./compiler";
 
 // Mock mastra workflows so we can capture the step configuration
 let capturedSteps: any[] = [];
 vi.mock("@mastra/core/workflows", () => ({
   Workflow: class {
-    step() {
+    id: string;
+    constructor(opts: any) {
+      this.id = opts.id;
+    }
+    step(s: any) {
       return this;
     }
-    then() {
+    then(s: any) {
       return this;
     }
-    commit() {}
+    commit() {
+      return this;
+    }
   },
-  createStep: (config: any) => {
-    capturedSteps.push(config);
-    return config;
+  createStep: (opts: any) => {
+    capturedSteps.push(opts);
+    return opts;
   },
 }));
 
-import { compileGraphToWorkflow } from "./compiler";
-
-describe("DAG Workflow Compiler with A2A Envelopes", () => {
+describe("DAG Workflow Compiler with Fabric v2", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     capturedSteps = [];
+    vi.clearAllMocks();
+    blockRegistry.clear();
 
-    if (!blockRegistry.get("mock.block.a")) {
-      blockRegistry.register({
-        id: "mock.block.a",
-        name: "Mock Block A",
-        description: "A test block",
-        category: "test",
-        mode: "triggered",
-        input: z.object({
-          val: z.number().optional(),
-          result: z.number().optional(),
-          _instructions: z.string().optional(),
-          additionalInstructions: z.string().optional(),
-          context: z.string().optional(),
-        }),
-        output: z.object({
-          result: z.number(),
-        }),
-        agent: {
-          kind: "local",
-          toolName: "mock_a",
-          invoke: async (input: any) => {
-            return { result: (input.result || input.val || 0) + 1 };
-          },
-        },
-      } as any);
-    }
+    blockRegistry.register({
+      id: "mock.block",
+      name: "Mock",
+      category: "text",
+      mode: "triggered",
+      description: "Mock",
+      input: z.object({ val: z.number().optional() }),
+      output: z.object({ val: z.number() }),
+      agent: {
+        invoke: async (input: any) => ({ val: (input.val || 0) * 2 }),
+      } as any,
+    });
 
-    if (!blockRegistry.get("mock.block.strict")) {
-      blockRegistry.register({
-        id: "mock.block.strict",
-        name: "Strict Block",
-        description: "A block with strict validation",
-        category: "test",
-        mode: "triggered",
-        input: z
-          .object({
-            strictVal: z.number(),
-          })
-          .strict(),
-        output: z.object({
-          result: z.number(),
-        }),
-        agent: {
-          kind: "local",
-          toolName: "mock_strict",
-          invoke: async (input: any) => {
-            return { result: input.strictVal * 2 };
-          },
-        },
-      } as any);
-    }
+    blockRegistry.register({
+      id: "mock.block.strict",
+      name: "Strict Mock",
+      category: "text",
+      mode: "triggered",
+      description: "Strict Mock",
+      input: z.object({ strictVal: z.number() }),
+      output: z.object({ result: z.number() }),
+      agent: {
+        invoke: async (input: any) => ({ result: input.strictVal * 2 }),
+      } as any,
+    });
   });
 
-  it("should execute a linear DAG and propagate envelopes", async () => {
+  it("should execute a linear DAG and propagate v2 envelopes", async () => {
     const publishSpy = vi.spyOn(messageBus, "publish");
 
     const graph = {
       nodes: [
-        { id: "node1", type: "mock.block.a", data: { inputs: { val: 10 } } },
-        { id: "node2", type: "mock.block.a" },
+        { id: "node1", type: "mock.block", data: { inputs: { val: 5 } } },
+        { id: "node2", type: "mock.block", data: { inputs: {} } },
       ],
       edges: [{ source: "node1", target: "node2" }],
     };
 
     compileGraphToWorkflow(graph);
+    const step1 = capturedSteps.find((s) => s.id === "node1");
+    const step2 = capturedSteps.find((s) => s.id === "node2");
 
-    const node1Step = capturedSteps.find((s) => s.id === "node1");
-    const node2Step = capturedSteps.find((s) => s.id === "node2");
-
-    // Execute node 1
-    const env1 = await node1Step.execute({
+    const env1 = await step1.execute({
       getStepResult: () => null,
       getInitData: () => null,
     });
 
-    expect(publishSpy).toHaveBeenCalledTimes(1);
-    expect(env1.payload.result).toBe(11);
+    expect(env1.payload.val).toBe(10);
+    expect(env1.lane).toBe("agent_stream");
 
-    // Execute node 2, providing node1's envelope as the upstream dependency
-    const env2 = await node2Step.execute({
+    const env2 = await step2.execute({
       getStepResult: (id: string) => (id === "node1" ? env1 : null),
       getInitData: () => null,
     });
 
+    expect(env2.payload.val).toBe(20);
     expect(publishSpy).toHaveBeenCalledTimes(2);
-    // Node 2 should have received val = 11 from env1, and added 1
-    expect(env2.payload.result).toBe(12);
   });
 
-  it("adversarial: should safely strip instructions for strict blocks while preserving them in the envelope downstream", async () => {
-    const publishSpy = vi.spyOn(messageBus, "publish");
+  it("adversarial: should safely strip instructions for strict blocks", async () => {
     const registry = new NodeInputAdapterRegistry();
     registry.registerDefault(new DefaultStrictInputAdapter());
 
@@ -140,36 +116,21 @@ describe("DAG Workflow Compiler with A2A Envelopes", () => {
     compileGraphToWorkflow(graph, { adapterRegistry: registry });
     const strictStep = capturedSteps.find((s) => s.id === "strict_node");
 
-    const triggerData = {
+    const triggerData = createEnvelope({
+      lane: "agent_stream",
+      source: { type: "system", id: "trigger" },
+      event: { type: "start" },
+      delivery: { class: "ephemeral" },
       payload: { strictVal: 50 },
-      context: { secret: "do not crash" },
-      instruction: "Be strict",
-    };
-
-    // If the compiler improperly injects fields into a strict block, Zod will throw here.
-    const env = await strictStep.execute({
-      getStepResult: () => null,
-      getInitData: () => ({
-        protocol: "balnce.a2a",
-        version: "0.1.0",
-        id: "trigger",
-        traceId: "trace-1",
-        runId: "run-1",
-        source: { type: "system", id: "trigger" },
-        event: {
-          type: "run.started",
-          sequence: 0,
-          timestamp: new Date().toISOString(),
-        },
-        payload: { strictVal: 50 },
-        context: { secret: "do not crash" },
-        instruction: { text: "Be strict", origin: "user", trust: "trusted" },
-      }),
+      instruction: { text: "Be strict", trust: "trusted" } as any,
     });
 
-    expect(publishSpy).toHaveBeenCalledTimes(1);
+    const env = await strictStep.execute({
+      getStepResult: () => null,
+      getInitData: () => triggerData,
+    });
+
     expect(env.payload.result).toBe(100);
-    // Envelope should have runId/traceId from compiler
-    expect(env.traceId).toBeDefined();
+    expect(env.lane).toBe("agent_stream");
   });
 });

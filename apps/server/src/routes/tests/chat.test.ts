@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { chatRouter } from "../chat";
+import { chatRouter } from "../chat.js";
 
 // Mock Mastra and Agent
 vi.mock("@iem/agents", () => ({

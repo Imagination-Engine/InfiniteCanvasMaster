@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
-import { messageBus, BALNCE_A2A_PROTOCOL } from "@iem/core";
+import { messageBus, BalnceFabricLane } from "@iem/core";
 import jwt from "jsonwebtoken";
 
 const a2aRouter = new Hono();
@@ -14,7 +14,7 @@ const getSecrets = (c: any) => {
   };
 };
 
-// SSE Endpoint for A2A Fabric Observation
+// SSE Endpoint for Fabric UI Projection
 a2aRouter.get("/stream", async (c) => {
   const { JWT_SECRET } = getSecrets(c);
   const token = c.req.query("token");
@@ -29,19 +29,21 @@ a2aRouter.get("/stream", async (c) => {
     return c.json({ error: "Invalid token" }, 401);
   }
 
-  const topicFilter = c.req.query("topic") || "#"; // # is wildcard for some systems, our local bus is EventEmitter
+  const lanes = (c.req.query("lanes")?.split(",") as BalnceFabricLane[]) || [
+    "agent_stream",
+    "workflow_trace",
+    "ui_projection",
+  ];
+  const runId = c.req.query("runId");
 
   return streamSSE(c, async (stream) => {
-    console.log(`[A2A-BRIDGE] UI Connected to topic: ${topicFilter}`);
+    console.log(
+      `[FABRIC-PROJECTION] UI Connected for lanes: ${lanes.join(", ")}`,
+    );
 
-    // Subscribe to everything on the local fabric
-    // Note: LocalEventEmitterTransport uses literal topics, so for # we'd need a different approach
-    // For now, let's assume specific topics or a 'global' emitter we can tap into.
-    // In our current LocalEventEmitterTransport, it's just an EventEmitter.
-
-    const { unsubscribe } = messageBus.subscribe(
-      topicFilter,
-      async (envelope) => {
+    const unsubscribe = await (messageBus as any).subscribe(
+      { lanes, runId },
+      async (envelope: any) => {
         // Security Boundary: Check visibility
         if (envelope.policy?.visibility === "private") {
           return;
@@ -56,8 +58,10 @@ a2aRouter.get("/stream", async (c) => {
     );
 
     stream.onAbort(() => {
-      console.log("[A2A-BRIDGE] UI Disconnected");
-      unsubscribe();
+      console.log("[FABRIC-PROJECTION] UI Disconnected");
+      if (typeof unsubscribe === "function") unsubscribe();
+      else if (unsubscribe && (unsubscribe as any).unsubscribe)
+        (unsubscribe as any).unsubscribe();
     });
 
     // Keep-alive
@@ -66,6 +70,21 @@ a2aRouter.get("/stream", async (c) => {
       await stream.writeSSE({ data: "ping", event: "ping" });
     }
   });
+});
+
+// A2A History Endpoint
+a2aRouter.get("/history", async (c) => {
+  const traceId = c.req.query("traceId");
+  const runId = c.req.query("runId");
+
+  // In our promoted fabric, the router might have a replay method or we query the log directly
+  // For now, keep it simple and query the messageBus if it supports replay
+  if ((messageBus as any).replay) {
+    const history = await (messageBus as any).replay({ traceId, runId });
+    return c.json(history);
+  }
+
+  return c.json([]);
 });
 
 export { a2aRouter };

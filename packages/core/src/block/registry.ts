@@ -1,4 +1,4 @@
-import type { BlockDefinition } from './protocol';
+import type { BlockDefinition } from "./protocol";
 
 class BlockRegistry {
   private blocks = new Map<string, BlockDefinition<any, any>>();
@@ -20,6 +20,10 @@ class BlockRegistry {
 
   byCategory(category: string): BlockDefinition<any, any>[] {
     return this.list().filter((b) => b.category === category);
+  }
+
+  clear(): void {
+    this.blocks.clear();
   }
 }
 

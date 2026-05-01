@@ -69,6 +69,7 @@ export class DatabasePolicyEngine implements A2APolicyEngine {
     envelope: BalnceEnvelope;
     subscriber?: any;
   }): Promise<PolicyDecision> {
+    const { envelope } = args;
     // Visibility checks
     const visibility = envelope.policy?.visibility || "workspace";
 

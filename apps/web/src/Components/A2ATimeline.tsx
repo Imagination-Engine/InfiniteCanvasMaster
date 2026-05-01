@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useA2AHistory, useA2ASubscription } from "../hooks/useA2A";
-import { BalnceEnvelope } from "@iem/core";
+import type { BalnceEnvelope } from "@iem/core";
 
 export interface A2ATimelineProps {
   runId: string;

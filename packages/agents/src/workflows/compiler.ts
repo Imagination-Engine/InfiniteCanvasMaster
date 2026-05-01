@@ -2,12 +2,11 @@ import { Workflow, createStep } from "@mastra/core/workflows";
 import {
   blockRegistry,
   messageBus,
-  Topics,
-  BALNCE_A2A_PROTOCOL,
-  BALNCE_A2A_VERSION,
   NodeInputAdapterRegistry,
   DefaultStrictInputAdapter,
   LegacyAdditionalInstructionsAdapter,
+  createEnvelope,
+  FabricTopics,
 } from "@iem/core";
 import { z } from "zod";
 import crypto from "crypto";
@@ -28,7 +27,7 @@ export function compileGraphToWorkflow(
 
   // Ensure default adapters are present if none registered
   if (!(registry as any).defaultAdapter) {
-    registry.registerDefault(new LegacyAdditionalInstructionsAdapter());
+    registry.registerDefault(new DefaultStrictInputAdapter());
   }
 
   const workflow = new Workflow({
@@ -72,7 +71,6 @@ export function compileGraphToWorkflow(
           const sourceId = edge.source || edge.sourceId;
           const result = getStepResult(sourceId);
           if (result) {
-            // Mastra returns the step result, which we've wrapped in an envelope
             envelopes.push(result);
           }
         }
@@ -80,7 +78,7 @@ export function compileGraphToWorkflow(
         // Add trigger data if it's an envelope
         const triggerData = getInitData();
         if (incomingEdges.length === 0 && triggerData) {
-          if (triggerData.protocol === BALNCE_A2A_PROTOCOL) {
+          if (triggerData.protocol === "balnce.fabric") {
             envelopes.push(triggerData);
           }
         }
@@ -91,7 +89,7 @@ export function compileGraphToWorkflow(
           envelopes,
           baseInput,
           nodeSpec: node,
-          runContext: { runId },
+          traceId: runId, // Using runId as traceId for now
         });
 
         // Validate
@@ -101,28 +99,25 @@ export function compileGraphToWorkflow(
         const rawOutput = await blockDef.agent.invoke(validatedInput);
         const parsedOutput = blockDef.output.parse(rawOutput);
 
-        // Wrap the output in a BalnceEnvelope complying with the new protocol
-        const envelope = {
-          protocol: BALNCE_A2A_PROTOCOL,
-          version: BALNCE_A2A_VERSION,
-          id: crypto.randomUUID(),
+        // Wrap the output in a BalnceEnvelope v2
+        const envelope = createEnvelope({
+          lane: "agent_stream",
           traceId: runId,
           runId: runId,
-          source: { type: "block", id: node.id },
+          source: {
+            type: "block",
+            id: node.id,
+            topic: FabricTopics.workflowNodeOutput(runId, node.id),
+          },
           event: {
             type: "node.output",
-            sequence: 0, // In a real system, we'd increment this
-            timestamp: new Date().toISOString(),
           },
+          delivery: { class: "replayable" },
           payload: parsedOutput,
-          debug: {
-            compilerNodeId: node.id,
-            mastraWorkflowId: `canvas-workflow-${runId}`,
-          },
-        };
+        });
 
         // Publish to the Message Fabric
-        await fabric.publish(Topics.dagNodeOutput(runId, node.id), envelope);
+        await fabric.publish(envelope);
 
         return envelope;
       },

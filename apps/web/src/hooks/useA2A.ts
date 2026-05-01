@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { BalnceEnvelope } from "@iem/core";
 
 export interface UseA2ASubscriptionOptions {
-  topic: string;
+  lanes?: string[];
+  topic?: string;
   enabled?: boolean;
   onMessage?: (envelope: BalnceEnvelope) => void;
 }
 
 export function useA2ASubscription(options: UseA2ASubscriptionOptions) {
-  const { topic, enabled = true, onMessage } = options;
+  const { topic, lanes, enabled = true, onMessage } = options;
   const [lastEnvelope, setLastEnvelope] = useState<BalnceEnvelope | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -18,7 +19,8 @@ export function useA2ASubscription(options: UseA2ASubscriptionOptions) {
 
     // In a real app, you'd get the token from auth store
     const token = localStorage.getItem("auth_token") || "dummy";
-    const url = `/api/a2a/stream?topic=${encodeURIComponent(topic)}&token=${token}`;
+    const lanesQuery = lanes ? `&lanes=${lanes.join(",")}` : "";
+    const url = `/api/a2a/stream?topic=${encodeURIComponent(topic || "#")}${lanesQuery}&token=${token}`;
 
     const eventSource = new EventSource(url);
 
