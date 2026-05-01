@@ -60,7 +60,7 @@ To handle both standard web requests and heavy AI workloads, the backend utilize
 
 - **Core Application Server:** Node.js + Hono. Provides the HTTP layer for API endpoints and WebSocket handlers.
 - **Mastra Orchestration (`@mastra/core`):** The primary brain of the Imagination Engine. Mastra manages Agent instantiation, handles dynamic workflow DAG compilation (`compileGraphToWorkflow`), and persists session thread memory.
-- **A2A Message Fabric:** A semantic messaging layer with typed envelopes, policy-aware routing, and durable event logging, serving as the foundational communication protocol for agents, blocks, and observers.
+- **Balnce Message Fabric:** A highly structured messaging layer utilizing typed `v2` envelopes, strict semantic routing lanes, and a dedicated `FabricRouter`. It orchestrates multiple specialized transports (In-Process, SSE Projection) and enforces boundaries between standard execution, collaborative document state, and durable event logging.
 - **Distributed Edge Mesh:** The A2A Fabric is extended with a robust `A2AGateway` router and `RedisA2ATransport` abstractions, enabling seamless cross-process and cloud-to-edge message delivery.
 - **Vercel AI SDK:** Retained primarily as the Edge-compatible transport and streaming layer, utilized on the frontend (`useChat`) and integrated within Mastra.
 - **Model Context Protocol (MCP) & Mastra Tools:** TypeScript + `zod`. Legacy blocks have been bridged into native Mastra Tools via the `createMastraToolFromBlock` adapter, ensuring strict input/output validation.
