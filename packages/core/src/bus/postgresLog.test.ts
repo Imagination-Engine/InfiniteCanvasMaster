@@ -66,4 +66,33 @@ describe("PostgresEventLog", () => {
     await log.append(mockEnvelope("replayable"));
     expect(mockInsert).toHaveBeenCalled();
   });
+
+  it("should append approval_required envelopes", async () => {
+    const log = new PostgresEventLog();
+    await log.append(mockEnvelope("approval_required"));
+    expect(mockInsert).toHaveBeenCalled();
+  });
+
+  it("should append provenance_required envelopes", async () => {
+    const log = new PostgresEventLog();
+    await log.append(mockEnvelope("provenance_required"));
+    expect(mockInsert).toHaveBeenCalled();
+  });
+
+  it("adversarial: should handle database failures gracefully without crashing the fabric", async () => {
+    mockInsert.mockImplementationOnce(() => {
+      throw new Error("DB Connection Lost");
+    });
+    const log = new PostgresEventLog();
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Should not throw
+    await expect(log.append(mockEnvelope("durable"))).resolves.not.toThrow();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to append envelope"),
+      expect.any(Error),
+    );
+
+    consoleSpy.mockRestore();
+  });
 });

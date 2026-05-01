@@ -141,3 +141,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: A2A Edge Mesh & Advanced Routing**
       _Link: [./tracks/a2a_edge_mesh_routing_20260427/](./tracks/a2a_edge_mesh_routing_20260427/)_
+
+---
+
+- [x] **Track: Balnce Message Fabric Refactor**
+      _Link: [./tracks/balnce_fabric_refactor_20260427/](./tracks/balnce_fabric_refactor_20260427/)_

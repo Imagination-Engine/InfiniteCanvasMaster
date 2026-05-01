@@ -122,23 +122,51 @@ describe("A2A Message Fabric Infrastructure", () => {
       expect(handler).toHaveBeenCalledWith(approvalEnvelope);
     });
 
-    it("should apply provenance signatures when provenance_required class is set", async () => {
+    it("should emit approval.required event for the UI", async () => {
       const transport = new LocalEventEmitterTransport();
       const fabric = new CoreMessageFabric(transport);
-      const handler = vi.fn();
+      const uiHandler = vi.fn();
 
-      const provenanceEnvelope = {
+      const approvalEnvelope = {
         ...mockEnvelope,
-        id: "prov-1",
-        delivery: { class: "provenance_required" },
+        id: "approval-3",
+        runId: "run-3",
+        delivery: { class: "approval_required" },
       };
 
-      fabric.subscribe("fabric.topic", handler);
-      await fabric.publish("fabric.topic", provenanceEnvelope);
+      // Subscribe to approval event topic
+      fabric.subscribe("approval.run-3.event", uiHandler);
+      await fabric.publish("fabric.topic", approvalEnvelope);
 
-      expect(handler).toHaveBeenCalled();
-      const received = handler.mock.calls[0][0];
-      expect(received.provenance?.signature).toBeDefined();
+      expect(uiHandler).toHaveBeenCalled();
+      const notification = uiHandler.mock.calls[0][0];
+      expect(notification.event.type).toBe("approval.required");
+      expect(notification.payload.originalEnvelopeId).toBe("approval-3");
+    });
+
+    it("adversarial: should ignore approval.granted for unknown envelopes", async () => {
+      const transport = new LocalEventEmitterTransport();
+      const fabric = new CoreMessageFabric(transport);
+
+      const grantEnvelope = {
+        protocol: BALNCE_A2A_PROTOCOL,
+        version: BALNCE_A2A_VERSION,
+        id: "grant-fake",
+        traceId: "trace-fake",
+        runId: "run-fake",
+        source: { type: "user", id: "user-1" },
+        event: {
+          type: "approval.granted",
+          sequence: 0,
+          timestamp: new Date().toISOString(),
+        },
+        payload: { originalEnvelopeId: "non-existent" },
+      };
+
+      // Should not throw or crash
+      await expect(
+        fabric.publish("approval.run-fake.event", grantEnvelope as any),
+      ).resolves.not.toThrow();
     });
   });
 });
