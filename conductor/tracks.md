@@ -129,11 +129,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: A2A Durable Persistence & Replay**
-      _Link: [./tracks/a2a_durable_persistence_20260427/](./tracks/a2a_durable_persistence_20260427/)_
-
----
-
 - [x] **Track: A2A Hardened Governance & Provenance**
       _Link: [./tracks/a2a_hardened_governance_20260427/](./tracks/a2a_hardened_governance_20260427/)_
 
