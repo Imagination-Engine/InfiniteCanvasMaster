@@ -53,7 +53,7 @@ authRouter.post("/signup", async (c) => {
     const accessToken = jwt.sign(
       { sub: newUser.id, email: newUser.email },
       JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: "1d" },
     );
     const refreshToken = jwt.sign({ sub: newUser.id }, REFRESH_TOKEN_SECRET, {
       expiresIn: "7d",
@@ -122,7 +122,7 @@ authRouter.post("/login", async (c) => {
     const accessToken = jwt.sign(
       { sub: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: "1d" },
     );
     const refreshToken = jwt.sign({ sub: user.id }, REFRESH_TOKEN_SECRET, {
       expiresIn: "7d",
@@ -217,7 +217,7 @@ authRouter.post("/refresh", async (c) => {
     const accessToken = jwt.sign(
       { sub: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: "1d" },
     );
 
     return c.json({
