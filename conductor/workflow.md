@@ -49,3 +49,9 @@ Before attempting to write new files to nested paths in Planning Mode, the agent
 3. Write the file contents directly via the script.
 4. Execute the script using a terminal/shell command.
 5. Delete the scaffolding script immediately after successful execution.
+
+### Gemini CLI File Modification Bug (Cannot read properties of undefined (reading 'type'))
+
+**The Issue:** When attempting to use `replace` or `write_file` tools, the agent might receive an error: `Cannot read properties of undefined (reading 'type')`. This causes the tool execution to fail.
+
+**The Workaround:** If `replace` or `write_file` fails with this error, the agent must fallback to using `run_shell_command` with tools like `cat`, `sed`, `awk`, or a temporary Python script to perform the file modifications.
