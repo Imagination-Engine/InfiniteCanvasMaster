@@ -1,17 +1,19 @@
-export * from "./block/protocol";
-export * from "./block/registry";
-export * from "./block/adapter";
-export * from "./block/factory";
-export * from "./blocks/creative/index";
-export * from "./agent/provider";
-export * from "./agent/runtime";
-export * from "./chain/ChainExecutor";
-export * from "./bus/protocol";
-export * from "./bus/MessageBus";
-export * from "./bus/transport";
-export * from "./bus/fabric";
-export * from "./bus/policy";
-export * from "./bus/databasePolicy";
-export * from "./bus/log";
-export * from "./bus/postgresLog";
-export * from "./bus/adapters";
+export * from "./block/protocol.js";
+export * from "./block/registry.js";
+export * from "./block/adapter.js";
+export * from "./block/factory.js";
+export * from "./blocks/creative/index.js";
+export * from "./agent/provider.js";
+export * from "./agent/runtime.js";
+export * from "./chain/ChainExecutor.js";
+
+// Export from bus/protocol selectively to avoid collision with fabric
+export {
+  BALNCE_A2A_PROTOCOL,
+  BALNCE_A2A_VERSION,
+  Topics,
+  wrapInEnvelope,
+  serializeEnvelope,
+} from "./bus/protocol.js";
+
+export * from "./fabric/index.js";

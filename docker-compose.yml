@@ -83,3 +83,22 @@ services:
       - "3002:3002"
     volumes:
       - .:/workspace
+
+  # ---------------------------------------------------------
+  # Postgres Database (with pgvector for RAG)
+  # ---------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: iem-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=imagination_canvas
+    volumes:
+      - iem-postgres-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  iem-postgres-data:
