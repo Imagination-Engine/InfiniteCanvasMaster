@@ -3,3 +3,7 @@
 - [Specification](./spec.md)
 - [Implementation Plan](./plan.md)
 - [Metadata](./metadata.json)
+
+## Knowledge Sources
+
+- [15 — Gap List Finalization](../../../docs/imagination-canvas-extraction/15-gap-list.md)
