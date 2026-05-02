@@ -11,12 +11,12 @@
 
 ## Phase 2: Camera State & Animation
 
-- [ ] Task: Enhance `viewportStore` with mode and history support.
-  - [ ] Sub-task: Implement `mode` (free, focus, locked, etc.) and `previous` state.
-  - [ ] Sub-task: Add animation/transition support using `framer-motion` or standard interpolation.
-  - [ ] Sub-task: Red (Tests for state transitions and history stack).
-  - [ ] Sub-task: Green (Update `viewportStore.ts`).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Camera State' (Protocol in workflow.md)
+- [x] Task: Enhance `viewportStore` with mode and history support.
+  - [x] Sub-task: Implement `mode` (free, focus, locked, etc.) and `previous` state.
+  - [x] Sub-task: Add animation/transition support using `framer-motion` or standard interpolation.
+  - [x] Sub-task: Red (Tests for state transitions and history stack).
+  - [x] Sub-task: Green (Update `viewportStore.ts`).
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Camera State' (Protocol in workflow.md)
 
 ## Phase 3: Viewport Gestures & Keybindings
 
