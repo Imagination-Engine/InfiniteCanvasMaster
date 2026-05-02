@@ -7,5 +7,5 @@
 
 ## Phase 2: Foundational Stores
 
-- [ ] Task: Implement canvasStore and viewportStore with local persistence.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Foundational Stores' (Protocol in workflow.md)
+- [x] Task: Implement canvasStore and viewportStore with local persistence.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Foundational Stores' (Protocol in workflow.md)

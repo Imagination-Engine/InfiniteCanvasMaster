@@ -1,25 +1,29 @@
 import { create } from "zustand";
-import { CanvasViewport } from "../contracts";
+import { persist } from "zustand/middleware";
+import { CanvasViewport } from "../contracts/index";
 
-interface ViewportState {
-  viewport: CanvasViewport;
-  updateViewport: (patch: Partial<CanvasViewport>) => void;
-  resetViewport: () => void;
+interface ViewportState extends Omit<CanvasViewport, "width" | "height"> {
+  width?: number;
+  height?: number;
+  setCamera: (camera: Partial<CanvasViewport>) => void;
+  pan: (dx: number, dy: number) => void;
+  zoomTo: (zoom: number) => void;
+  resize: (width: number, height: number) => void;
 }
 
-const DEFAULT_VIEWPORT: CanvasViewport = {
-  id: "default",
-  x: 0,
-  y: 0,
-  zoom: 1,
-  mode: "free",
-};
-
-export const useViewportStore = create<ViewportState>((set) => ({
-  viewport: DEFAULT_VIEWPORT,
-  updateViewport: (patch) =>
-    set((state) => ({
-      viewport: { ...state.viewport, ...patch },
-    })),
-  resetViewport: () => set({ viewport: DEFAULT_VIEWPORT }),
-}));
+export const useViewportStore = create<ViewportState>()(
+  persist(
+    (set) => ({
+      x: 0,
+      y: 0,
+      zoom: 1,
+      setCamera: (camera) => set((state) => ({ ...state, ...camera })),
+      pan: (dx, dy) => set((state) => ({ x: state.x + dx, y: state.y + dy })),
+      zoomTo: (zoom) => set({ zoom }),
+      resize: (width, height) => set({ width, height }),
+    }),
+    {
+      name: "iem-viewport-storage",
+    },
+  ),
+);

@@ -1,46 +1,46 @@
 import { create } from "zustand";
-import { CanvasObject } from "../contracts";
+import { persist } from "zustand/middleware";
+import { CanvasObject, CanvasConnection } from "../contracts/index";
 
 interface CanvasState {
-  objects: Record<string, CanvasObject>;
+  objects: CanvasObject[];
+  connections: CanvasConnection[];
   addObject: (obj: CanvasObject) => void;
-  updateObject: (id: string, patch: Partial<CanvasObject>) => void;
-  batchUpdateObjects: (patches: Record<string, Partial<CanvasObject>>) => void;
+  updateObject: (id: string, updates: Partial<CanvasObject>) => void;
   removeObject: (id: string) => void;
+  addConnection: (conn: CanvasConnection) => void;
+  removeConnection: (id: string) => void;
 }
 
-/**
- * Global Canvas Store (Zustand)
- * Manages the state of all spatial objects on the Command Surface.
- */
-export const useCanvasStore = create<CanvasState>((set) => ({
-  objects: {},
-  addObject: (obj) =>
-    set((state) => ({
-      objects: { ...state.objects, [obj.id]: obj },
-    })),
-  updateObject: (id, patch) =>
-    set((state) => ({
-      objects: {
-        ...state.objects,
-        [id]: state.objects[id]
-          ? { ...state.objects[id], ...patch }
-          : state.objects[id],
-      },
-    })),
-  batchUpdateObjects: (patches) =>
-    set((state) => {
-      const newObjects = { ...state.objects };
-      for (const [id, patch] of Object.entries(patches)) {
-        if (newObjects[id]) {
-          newObjects[id] = { ...newObjects[id], ...patch };
-        }
-      }
-      return { objects: newObjects };
+export const useCanvasStore = create<CanvasState>()(
+  persist(
+    (set) => ({
+      objects: [],
+      connections: [],
+      addObject: (obj) =>
+        set((state) => ({ objects: [...state.objects, obj] })),
+      updateObject: (id, updates) =>
+        set((state) => ({
+          objects: state.objects.map((obj) =>
+            obj.id === id ? { ...obj, ...updates } : obj,
+          ),
+        })),
+      removeObject: (id) =>
+        set((state) => ({
+          objects: state.objects.filter((obj) => obj.id !== id),
+          connections: state.connections.filter(
+            (c) => c.sourceId !== id && c.targetId !== id,
+          ),
+        })),
+      addConnection: (conn) =>
+        set((state) => ({ connections: [...state.connections, conn] })),
+      removeConnection: (id) =>
+        set((state) => ({
+          connections: state.connections.filter((c) => c.id !== id),
+        })),
     }),
-  removeObject: (id) =>
-    set((state) => {
-      const { [id]: _, ...remaining } = state.objects;
-      return { objects: remaining };
-    }),
-}));
+    {
+      name: "iem-canvas-storage",
+    },
+  ),
+);
