@@ -20,7 +20,7 @@ The backend is powered by `@mastra/core` and `gemini-2.5-pro`. It acts as a **DA
 
 To realize this vision, the development sprints executed the following core architectural pillars:
 
-1. **Imagination Canvas Kit:** Transitioned from a generic UI-first canvas to a sovereign, production-grade spatial engine (`@iem/imagination-canvas-kit`). This kit provides a heavily typed object model, fluid pointer-anchored camera math, and a dispatching renderer capable of scaling to 1,000+ interactive blocks.
+1. **Imagination Canvas Kit Core Architecture:** Established the sovereign, production-grade spatial engine (`@iem/imagination-canvas-kit`) with a formal architecture. This includes a robust, heavily typed object model (CanvasObject, CanvasBlock, etc.) and foundational state management via persisted Zustand stores, ensuring a scalable and reliable substrate for all future canvas interactions.
 2. **Mastra Brain & Memory:** Transitioned from manual Vercel AI SDK loops to a formal Mastra `Agent` equipped with Postgres Memory persistence and OpenTelemetry observability.
 3. **Workflow Compilation:** Eliminated client-side block scheduling. Canvases are now dynamically compiled into native Mastra `Workflows` and executed securely on the backend.
 4. **The 51-Block System:** Scaffolded, validated, and implemented exactly 51 distinct blocks across 5 surfaces (Scribe, Playable, Atlas, Reel, Conductor/Forge). Every block strictly implements a universal `BlockDefinition` and natively bridges to Mastra Tools.
