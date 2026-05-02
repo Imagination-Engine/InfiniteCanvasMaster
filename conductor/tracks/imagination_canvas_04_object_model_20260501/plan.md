@@ -2,10 +2,10 @@
 
 ## Phase 1: Core Schemas and Descriptors
 
-- [ ] Task: Define foundational schema descriptors.
-  - [ ] Sub-task: Red (Tests for `ExpansionDescriptor` and `ProvenanceDescriptor` validation).
-  - [ ] Sub-task: Green (Implement schemas in `packages/imagination-canvas-kit/src/contracts/index.ts`).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Core Schemas' (Protocol in workflow.md)
+- [x] Task: Define foundational schema descriptors.
+  - [x] Sub-task: Red (Tests for `ExpansionDescriptor` and `ProvenanceDescriptor` validation).
+  - [x] Sub-task: Green (Implement schemas in `packages/imagination-canvas-kit/src/contracts/index.ts`).
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Core Schemas' (Protocol in workflow.md)
 
 ## Phase 2: Base Object and Taxonomy
 

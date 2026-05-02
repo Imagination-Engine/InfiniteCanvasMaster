@@ -24,6 +24,7 @@ export const CanvasBlockSchema = CanvasObjectSchema.extend({
   blockType: z.string(),
   data: z.record(z.any()),
   status: z.enum(["idle", "loading", "error", "active"]).default("idle"),
+  metadata: z.record(z.any()).optional(),
 });
 
 export type CanvasBlock = z.infer<typeof CanvasBlockSchema>;
@@ -81,3 +82,50 @@ export const CanvasEventSchema = z.object({
 });
 
 export type CanvasEvent = z.infer<typeof CanvasEventSchema>;
+
+/**
+ * Descriptor for block expansion state.
+ */
+export const ExpansionDescriptorSchema = z.object({
+  mode: z.enum([
+    "none",
+    "peek",
+    "inline-expanded",
+    "side-panel",
+    "focus-region",
+    "modal",
+    "fullscreen",
+    "route",
+    "presentation",
+  ]),
+  surfaceId: z.string().optional(),
+  config: z.record(z.any()).optional(),
+});
+
+export type ExpansionDescriptor = z.infer<typeof ExpansionDescriptorSchema>;
+
+/**
+ * Descriptor for agent/system provenance.
+ */
+export const ProvenanceDescriptorSchema = z
+  .object({
+    source: z.enum(["user", "agent", "system"]),
+    agentId: z.string().optional(),
+    model: z.string().optional(),
+    prompt: z.string().optional(),
+    timestamp: z.string(),
+    confidence: z.number().min(0).max(1).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.source === "agent") {
+        return !!data.agentId && !!data.model;
+      }
+      return true;
+    },
+    {
+      message: "agentId and model are required when source is 'agent'",
+    },
+  );
+
+export type ProvenanceDescriptor = z.infer<typeof ProvenanceDescriptorSchema>;
