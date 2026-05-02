@@ -3,3 +3,7 @@
 - [Specification](./spec.md)
 - [Implementation Plan](./plan.md)
 - [Metadata](./metadata.json)
+
+## Knowledge Sources
+
+- [10 — Agent and AI Behaviors on Canvas](../../../docs/imagination-canvas-extraction/10-agent-and-ai-behaviors-on-canvas.md)
