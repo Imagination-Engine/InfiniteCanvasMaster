@@ -30,10 +30,10 @@
 
 ## Phase 4: Fit & Focus Commands
 
-- [ ] Task: Implement fitting and focusing logic.
-  - [ ] Sub-task: `fitToContent` logic (bounding box calculation).
-  - [ ] Sub-task: `zoomToSelection` logic.
-  - [ ] Sub-task: `focusRegion` logic with return path.
-  - [ ] Sub-task: Red (Tests for bounding box accuracy and zoom levels).
-  - [ ] Sub-task: Green (Implementation in `viewportStore` or specialized hook).
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Fit & Focus' (Protocol in workflow.md)
+- [x] Task: Implement fitting and focusing logic.
+  - [x] Sub-task: `fitToContent` logic (bounding box calculation).
+  - [x] Sub-task: `zoomToSelection` logic.
+  - [x] Sub-task: `focusRegion` logic with return path.
+  - [x] Sub-task: Red (Tests for bounding box accuracy and zoom levels).
+  - [x] Sub-task: Green (Implementation in `viewportStore` or specialized hook).
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Fit & Focus' (Protocol in workflow.md)
