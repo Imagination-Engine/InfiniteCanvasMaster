@@ -10,10 +10,10 @@
 
 ## Phase 2: Top Bar & Command Zone
 
-- [ ] Task: Implement `TopWorkspaceBar` and `BottomCommandZone`.
-  - [ ] Sub-task: Red (Tests for rendering required elements and responsiveness).
-  - [ ] Sub-task: Green (Build the components and pin them to `CanvasShell`).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Top Bar & Command Zone' (Protocol in workflow.md)
+- [x] Task: Implement `TopWorkspaceBar` and `BottomCommandZone`.
+  - [x] Sub-task: Red (Tests for rendering required elements and responsiveness).
+  - [x] Sub-task: Green (Build the components and pin them to `CanvasShell`).
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Top Bar & Command Zone' (Protocol in workflow.md)
 
 ## Phase 3: Tool Dock & Inspector
 
