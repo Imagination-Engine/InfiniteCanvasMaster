@@ -3,3 +3,7 @@
 - [Specification](./spec.md)
 - [Implementation Plan](./plan.md)
 - [Metadata](./metadata.json)
+
+## Knowledge Sources
+
+- [04 — Object Model and Content Grammar](../../../docs/imagination-canvas-extraction/04-object-model-and-content-grammar.md)

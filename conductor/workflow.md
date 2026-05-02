@@ -50,6 +50,17 @@ Before attempting to write new files to nested paths in Planning Mode, the agent
 4. Execute the script using a terminal/shell command.
 5. Delete the scaffolding script immediately after successful execution.
 
+### 17. No-Stub Scaffolding Protocol
+
+**The Issue:** Automated mass-scaffolding of tracks can lead to "hollow" or "stubbed" tracks where `spec.md` and `plan.md` contain only one-line placeholders instead of detailed requirements.
+
+**The Rule:**
+
+1.  **Source-Driven Content:** Every `spec.md` and `plan.md` MUST be derived from its corresponding source documentation.
+2.  **No Generic Tasks:** Tasks like "- [ ] Task: Execute requirements" are strictly forbidden.
+3.  **Contextual Indexing:** Every track`s `index.md` must link to the original source/knowledge documents in the project`s documentation folder.
+4.  **Batch Limitation:** Do not scaffold more than 3 tracks in a single tool call.
+
 ### Gemini CLI File Modification Bug (Cannot read properties of undefined (reading 'type'))
 
 **The Issue:** When attempting to use `replace` or `write_file` tools, the agent might receive an error: `Cannot read properties of undefined (reading 'type')`. This causes the tool execution to fail.
