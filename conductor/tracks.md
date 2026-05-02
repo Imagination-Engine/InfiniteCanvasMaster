@@ -9,11 +9,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Imagination Canvas Extraction: 01 - Core Architecture & Target State**
-      _Link: [./tracks/imagination_canvas_01_core_arch_20260501/](./tracks/imagination_canvas_01_core_arch_20260501/)_
-
----
-
 - [ ] **Track: Imagination Canvas Extraction: 02 - Shell and Layout Architecture**
       _Link: [./tracks/imagination_canvas_02_shell_layout_20260501/](./tracks/imagination_canvas_02_shell_layout_20260501/)_
 
