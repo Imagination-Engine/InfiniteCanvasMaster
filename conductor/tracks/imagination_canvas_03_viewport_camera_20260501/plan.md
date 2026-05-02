@@ -20,13 +20,13 @@
 
 ## Phase 3: Viewport Gestures & Keybindings
 
-- [ ] Task: Implement pan and zoom handlers.
-  - [ ] Sub-task: Mouse wheel (zoom), Middle-mouse/Space+Drag (pan).
-  - [ ] Sub-task: Trackpad pinch and two-finger pan.
-  - [ ] Sub-task: Touch gestures (one-finger pan, two-finger pinch).
-  - [ ] Sub-task: Red (Tests for gesture detection and application).
-  - [ ] Sub-task: Green (Implement `useViewportGestures` hook).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Viewport Gestures' (Protocol in workflow.md)
+- [x] Task: Implement pan and zoom handlers.
+  - [x] Sub-task: Mouse wheel (zoom), Middle-mouse/Space+Drag (pan).
+  - [x] Sub-task: Trackpad pinch and two-finger pan.
+  - [x] Sub-task: Touch gestures (one-finger pan, two-finger pinch).
+  - [x] Sub-task: Red (Tests for gesture detection and application).
+  - [x] Sub-task: Green (Implement `useViewportGestures` hook).
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Viewport Gestures' (Protocol in workflow.md)
 
 ## Phase 4: Fit & Focus Commands
 
