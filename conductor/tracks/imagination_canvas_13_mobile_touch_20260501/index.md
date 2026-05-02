@@ -3,3 +3,7 @@
 - [Specification](./spec.md)
 - [Implementation Plan](./plan.md)
 - [Metadata](./metadata.json)
+
+## Knowledge Sources
+
+- [13 — Mobile, Touch, and Stylus Rules](../../../docs/imagination-canvas-extraction/13-mobile-touch-and-stylus-rules.md)
