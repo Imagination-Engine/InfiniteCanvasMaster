@@ -2,11 +2,11 @@
 
 ## Phase 1: Core Shell & Layering
 
-- [ ] Task: Implement the `CanvasShell` container.
-  - [ ] Sub-task: Red (Tests for layout mode toggling and class generation).
-  - [ ] Sub-task: Green (Implement `CanvasShell` component with Z-index constraints).
-  - [ ] Sub-task: Refactor (Extract mode state into a local or Zustand store).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Core Shell & Layering' (Protocol in workflow.md)
+- [x] Task: Implement the `CanvasShell` container.
+  - [x] Sub-task: Red (Tests for layout mode toggling and class generation).
+  - [x] Sub-task: Green (Implement `CanvasShell` component with Z-index constraints).
+  - [x] Sub-task: Refactor (Extract mode state into a local or Zustand store).
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Core Shell & Layering' (Protocol in workflow.md)
 
 ## Phase 2: Top Bar & Command Zone
 

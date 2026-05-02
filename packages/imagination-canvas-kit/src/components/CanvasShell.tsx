@@ -1,32 +1,50 @@
 import React from "react";
-import { CanvasToolbar } from "./CanvasToolbar";
-import { SideInspector } from "./SideInspector";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-import { ComponentRegistry } from "./ObjectRenderer";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { useShellStore } from "../state/shellStore";
 
-export const CanvasShell: React.FC<{
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export type CanvasMode =
+  | "canvas"
+  | "focus"
+  | "presentation"
+  | "split"
+  | "immersive";
+
+export interface CanvasShellProps {
+  canvasId: string;
+  mode?: CanvasMode;
+  className?: string;
   children: React.ReactNode;
-  registry?: ComponentRegistry;
-}> = ({ children, registry }) => {
-  useKeyboardShortcuts();
+}
+
+/**
+ * Root wrapper for the Imagination Canvas shell.
+ * Manages layout modes and Z-index layering.
+ */
+export const CanvasShell: React.FC<CanvasShellProps> = ({
+  canvasId,
+  mode: controlledMode,
+  className,
+  children,
+}) => {
+  const storeMode = useShellStore((state) => state.mode);
+  const mode = controlledMode ?? storeMode;
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden bg-brand-bg-page select-none"
-      role="application"
-      aria-label="Imagination Canvas"
+      id={`canvas-shell-${canvasId}`}
+      data-testid="canvas-shell"
+      className={cn(
+        "relative w-full h-full overflow-hidden bg-brand-bg-page text-brand-text-primary",
+        `mode-${mode}`,
+        className,
+      )}
     >
-      <div className="absolute inset-0 z-0">
-        {React.Children.map(children, (child) => {
-          if (React.isValidElement(child)) {
-            // Forward registry to InfiniteViewport if that's the child
-            return React.cloneElement(child, { registry } as any);
-          }
-          return child;
-        })}
-      </div>
-      <CanvasToolbar />
-      <SideInspector />
+      {children}
     </div>
   );
 };
