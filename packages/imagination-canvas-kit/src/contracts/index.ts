@@ -1,68 +1,83 @@
 import { z } from "zod";
 
-export const BalnceBlockKindSchema = z.enum([
-  "chat",
-  "agent",
-  "goal",
-  "artifact",
-  "memory-cluster",
-  "research-stream",
-  "intent",
-  "offer-commerce",
-  "identity-wallet",
-  "workflow",
-  "knowledge-pod",
-  "app",
-  "aura",
-  "plog-provenance",
-  "edge-twin",
-  "device-mesh",
-  "openclaw-block",
-  "openclaw.agent_group",
-]);
-
-export type BalnceBlockKind = z.infer<typeof BalnceBlockKindSchema>;
-
-export * from "./openclaw";
-
+/**
+ * Base spatial object on the canvas.
+ */
 export const CanvasObjectSchema = z.object({
   id: z.string(),
   type: z.string(),
-  kind: BalnceBlockKindSchema.optional(),
   x: z.number(),
   y: z.number(),
   width: z.number(),
   height: z.number(),
-  rotation: z.number().default(0),
   zIndex: z.number().default(0),
-  status: z
-    .enum([
-      "idle",
-      "active",
-      "thinking",
-      "generating",
-      "waiting-for-user",
-      "running",
-      "complete",
-      "error",
-      "paused",
-    ])
-    .default("idle"),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.any()).optional(),
 });
 
 export type CanvasObject = z.infer<typeof CanvasObjectSchema>;
 
-export interface CanvasViewport {
-  id: string;
-  x: number;
-  y: number;
-  zoom: number;
-  mode: "free" | "focus" | "presentation" | "follow" | "locked";
-}
+/**
+ * A specialized object representing a content block.
+ */
+export const CanvasBlockSchema = CanvasObjectSchema.extend({
+  type: z.literal("block"),
+  blockType: z.string(),
+  data: z.record(z.any()),
+  status: z.enum(["idle", "loading", "error", "active"]).default("idle"),
+});
 
-export type CanvasEvent =
-  | { type: "canvas.loaded"; canvasId: string }
-  | { type: "object.created"; object: CanvasObject }
-  | { type: "object.updated"; id: string; patch: Partial<CanvasObject> }
-  | { type: "viewport.changed"; viewport: CanvasViewport };
+export type CanvasBlock = z.infer<typeof CanvasBlockSchema>;
+
+/**
+ * A connection between two objects.
+ */
+export const CanvasConnectionSchema = z.object({
+  id: z.string(),
+  sourceId: z.string(),
+  targetId: z.string(),
+  type: z.enum(["semantic", "flow", "data"]).default("semantic"),
+  metadata: z.record(z.any()).optional(),
+});
+
+export type CanvasConnection = z.infer<typeof CanvasConnectionSchema>;
+
+/**
+ * The state of the infinite viewport.
+ */
+export const CanvasViewportSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  zoom: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+
+export type CanvasViewport = z.infer<typeof CanvasViewportSchema>;
+
+/**
+ * Current selection state.
+ */
+export const CanvasSelectionSchema = z.object({
+  objectIds: z.array(z.string()),
+  marquee: z
+    .object({
+      startX: z.number(),
+      startY: z.number(),
+      endX: z.number(),
+      endY: z.number(),
+    })
+    .optional(),
+});
+
+export type CanvasSelection = z.infer<typeof CanvasSelectionSchema>;
+
+/**
+ * Events occurring on the canvas.
+ */
+export const CanvasEventSchema = z.object({
+  type: z.string(),
+  timestamp: z.string(),
+  payload: z.any(),
+});
+
+export type CanvasEvent = z.infer<typeof CanvasEventSchema>;
