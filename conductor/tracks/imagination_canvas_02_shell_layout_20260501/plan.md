@@ -17,7 +17,7 @@
 
 ## Phase 3: Tool Dock & Inspector
 
-- [ ] Task: Implement `LeftToolDock` and `RightInspector`.
-  - [ ] Sub-task: Red (Tests for open/close states and mobile bottom-sheet fallback).
-  - [ ] Sub-task: Green (Implement the panels with dynamic sizing).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Tool Dock & Inspector' (Protocol in workflow.md)
+- [x] Task: Implement `LeftToolDock` and `RightInspector`.
+  - [x] Sub-task: Red (Tests for open/close states and mobile bottom-sheet fallback).
+  - [x] Sub-task: Green (Implement the panels with dynamic sizing).
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Tool Dock & Inspector' (Protocol in workflow.md)
