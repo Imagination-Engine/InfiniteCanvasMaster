@@ -6,33 +6,9 @@ import jwt from "jsonwebtoken";
 
 const chatRouter = new Hono();
 
-const getSecrets = (c: any) => {
-  return {
-    JWT_SECRET:
-      c.env?.JWT_SECRET ||
-      process.env.JWT_SECRET ||
-      "super-secret-fallback-key",
-  };
-};
+import { authMiddleware } from "../middleware/auth.js";
 
-// Auth Middleware
-chatRouter.use("*", async (c, next) => {
-  const { JWT_SECRET } = getSecrets(c);
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.error("[CHAT AUTH] Missing or invalid Authorization header");
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    c.set("user", payload);
-    await next();
-  } catch (err) {
-    console.error("[CHAT AUTH] JWT Verify failed:", err);
-    return c.json({ error: "Invalid token" }, 401);
-  }
-});
+chatRouter.use("*", authMiddleware);
 
 chatRouter.post("/", async (c) => {
   const db = c.get("db") as any;

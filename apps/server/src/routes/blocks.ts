@@ -4,32 +4,9 @@ import jwt from "jsonwebtoken";
 
 const blocksRouter = new Hono();
 
-const getSecrets = (c: any) => {
-  return {
-    JWT_SECRET:
-      c.env?.JWT_SECRET ||
-      process.env.JWT_SECRET ||
-      "super-secret-fallback-key",
-  };
-};
+import { authMiddleware } from "../middleware/auth.js";
 
-// Auth Middleware (Optional but recommended for execution)
-blocksRouter.use("*", async (c, next) => {
-  const { JWT_SECRET } = getSecrets(c);
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    // We might allow public execution for some blocks, but for now, strict.
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    c.set("user", payload);
-    await next();
-  } catch (err) {
-    return c.json({ error: "Invalid token" }, 401);
-  }
-});
+blocksRouter.use("*", authMiddleware);
 
 /**
  * Single Block Execution Endpoint

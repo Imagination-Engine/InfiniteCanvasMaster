@@ -8,7 +8,7 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import { apiRequest } from "../lib/api";
+import { apiRequest, setUnauthorizedCallback } from "../lib/api";
 
 type User = {
   id: string;
@@ -116,6 +116,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       clearSession();
     }
   }, [accessToken, clearSession]);
+
+  useEffect(() => {
+    setUnauthorizedCallback(handleRefresh);
+  }, [handleRefresh]);
 
   useEffect(() => {
     let mounted = true;

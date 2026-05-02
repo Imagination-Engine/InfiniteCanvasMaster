@@ -5,30 +5,12 @@ import jwt from "jsonwebtoken";
 
 const a2aRouter = new Hono();
 
-const getSecrets = (c: any) => {
-  return {
-    JWT_SECRET:
-      c.env?.JWT_SECRET ||
-      process.env.JWT_SECRET ||
-      "super-secret-fallback-key",
-  };
-};
+import { authMiddleware } from "../middleware/auth.js";
+
+a2aRouter.use("*", authMiddleware);
 
 // SSE Endpoint for Fabric UI Projection
 a2aRouter.get("/stream", async (c) => {
-  const { JWT_SECRET } = getSecrets(c);
-  const token = c.req.query("token");
-
-  if (!token) {
-    return c.json({ error: "Missing token" }, 401);
-  }
-
-  try {
-    jwt.verify(token, JWT_SECRET);
-  } catch (err) {
-    return c.json({ error: "Invalid token" }, 401);
-  }
-
   const lanes = (c.req.query("lanes")?.split(",") as BalnceFabricLane[]) || [
     "agent_stream",
     "workflow_trace",

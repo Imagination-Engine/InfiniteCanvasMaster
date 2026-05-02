@@ -18,12 +18,16 @@ const getSecrets = (c: any) => {
       c.env?.REFRESH_TOKEN_SECRET ||
       process.env.REFRESH_TOKEN_SECRET ||
       "super-secret-refresh-key",
+    JWT_EXPIRES_IN:
+      c.env?.JWT_EXPIRES_IN ||
+      process.env.JWT_EXPIRES_IN ||
+      (process.env.NODE_ENV === "development" ? "24h" : "15m"),
   };
 };
 
 authRouter.post("/signup", async (c) => {
   console.log("[AUTH] Signup attempt start");
-  const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
+  const { JWT_SECRET, REFRESH_TOKEN_SECRET, JWT_EXPIRES_IN } = getSecrets(c);
   const db = c.get("db") as any;
   const body = await c.req.json();
   const { email, password } = body;
@@ -53,7 +57,7 @@ authRouter.post("/signup", async (c) => {
     const accessToken = jwt.sign(
       { sub: newUser.id, email: newUser.email },
       JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: JWT_EXPIRES_IN },
     );
     const refreshToken = jwt.sign({ sub: newUser.id }, REFRESH_TOKEN_SECRET, {
       expiresIn: "7d",
@@ -99,7 +103,7 @@ authRouter.post("/signup", async (c) => {
 
 authRouter.post("/login", async (c) => {
   console.log("[AUTH] Login attempt start");
-  const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
+  const { JWT_SECRET, REFRESH_TOKEN_SECRET, JWT_EXPIRES_IN } = getSecrets(c);
   const db = c.get("db") as any;
   const body = await c.req.json();
   const { email, password } = body;
@@ -122,7 +126,7 @@ authRouter.post("/login", async (c) => {
     const accessToken = jwt.sign(
       { sub: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: JWT_EXPIRES_IN },
     );
     const refreshToken = jwt.sign({ sub: user.id }, REFRESH_TOKEN_SECRET, {
       expiresIn: "7d",
@@ -169,7 +173,7 @@ authRouter.post("/login", async (c) => {
 });
 
 authRouter.post("/refresh", async (c) => {
-  const { JWT_SECRET, REFRESH_TOKEN_SECRET } = getSecrets(c);
+  const { JWT_SECRET, REFRESH_TOKEN_SECRET, JWT_EXPIRES_IN } = getSecrets(c);
   const db = c.get("db") as any;
   const refreshToken = getCookie(c, "refresh_token");
 
@@ -217,7 +221,7 @@ authRouter.post("/refresh", async (c) => {
     const accessToken = jwt.sign(
       { sub: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: JWT_EXPIRES_IN },
     );
 
     return c.json({

@@ -14,15 +14,5 @@ export {
   wrapInEnvelope,
   serializeEnvelope,
 } from "./bus/protocol.js";
-// Explicitly export key bus members that were lost
-export * from "./bus/MessageBus.js";
-export * from "./bus/policy.js";
-export * from "./bus/databasePolicy.js";
-export * from "./bus/log.js";
-export * from "./bus/postgresLog.js";
-export * from "./bus/adapters.js";
-export * from "./bus/redisTransport.js";
-export * from "./bus/gateway.js";
-export * from "./bus/redaction.js";
-export * from "./bus/provenance.js";
 export * from "./fabric/index.js";
+export * from "./bus/MessageBus.js";

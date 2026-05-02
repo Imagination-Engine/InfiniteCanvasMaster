@@ -2,9 +2,14 @@ export type ApiError = {
   error: string;
 };
 
-type ApiRequestOptions = RequestInit & {
-  onUnauthorized?: () => Promise<string | null>;
-};
+type ApiRequestOptions = RequestInit;
+
+let unauthorizedCallback: (() => Promise<string | null>) | null = null;
+let refreshPromise: Promise<string | null> | null = null;
+
+export function setUnauthorizedCallback(cb: () => Promise<string | null>) {
+  unauthorizedCallback = cb;
+}
 
 export async function apiRequest<TResponse>(
   path: string,
@@ -36,16 +41,19 @@ export async function apiRequest<TResponse>(
     );
   }
 
-  // Handle 401 Unauthorized by attempting to refresh the token
-  if (response.status === 401 && options.onUnauthorized) {
-    const newToken = await options.onUnauthorized();
+  // Handle 401 Unauthorized globally using the callback
+  if (response.status === 401 && unauthorizedCallback) {
+    // If a refresh is already in progress, wait for it
+    if (!refreshPromise) {
+      refreshPromise = unauthorizedCallback().finally(() => {
+        refreshPromise = null;
+      });
+    }
+
+    const newToken = await refreshPromise;
     if (newToken) {
       // Retry the original request with the new token
-      return apiRequest(
-        path,
-        { ...options, onUnauthorized: undefined },
-        newToken,
-      );
+      return apiRequest(path, options, newToken);
     }
   }
 
