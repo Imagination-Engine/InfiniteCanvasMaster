@@ -14,7 +14,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Imagination Canvas Extraction: 03 - Viewport and Camera Behavior**
+- [x] **Track: Imagination Canvas Extraction: 03 - Viewport and Camera Behavior**
       _Link: [./tracks/imagination_canvas_03_viewport_camera_20260501/](./tracks/imagination_canvas_03_viewport_camera_20260501/)_
 
 ---
