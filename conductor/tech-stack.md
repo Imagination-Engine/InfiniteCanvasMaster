@@ -5,7 +5,7 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 ## Frontend & Presentation Layer
 
 - **Core Framework:** React + Vite + TypeScript. This provides a fast, modern, and type-safe SPA experience.
-- **Imagination Canvas Kit (`@iem/imagination-canvas-kit`):** A sovereign, production-grade spatial engine implementing a **Rich Semantic Object Model**, foundational state management (Zustand), a modular shell architecture, a specialized Viewport Engine, and a high-fidelity **Selection & Transformation Engine** supporting marquee logic and transactional object manipulation.
+- **Imagination Canvas Kit (`@iem/imagination-canvas-kit`):** A sovereign, production-grade spatial engine implementing a **Rich Semantic Object Model**, foundational state management (Zustand), a modular shell architecture, a specialized Viewport Engine, a high-fidelity **Selection & Transformation Engine**, and robust **Native Interactions** supporting seamless object creation via paste, drop, and collision-aware agentic insertion hooks.
 - **Styling:** Tailwind CSS for rapid, utility-first UI development that aligns with our vibrant and accessible design guidelines.
 - **Chat Interaction Kit:** A dedicated, internal package (`@iem/chat-interaction-kit`) providing a production-grade extraction of mature chat UX paradigms (e.g., LibreChat). This ensures stable auto-scrolling, native Markdown parsing, smooth composer growth, and dynamic tool-call visualizers, completely replacing iframe-based legacy approaches.
 - **Chat Primitives:** **Vercel AI SDK** (`ai` package) mapped through our custom `ChatShell` for streaming text and tool payloads.
