@@ -21,8 +21,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Imagination Canvas Extraction: 12 - Collaboration, Presence, and Comments**
-      _Link: [./tracks/imagination_canvas_12_collaboration_presence_20260501/](./tracks/imagination_canvas_12_collaboration_presence_20260501/)_
+- [~] **Track: Imagination Canvas Extraction: 12 - Collaboration, Presence, and Comments**
+  _Link: [./tracks/imagination_canvas_12_collaboration_presence_20260501/](./tracks/imagination_canvas_12_collaboration_presence_20260501/)_
 
 ---
 
