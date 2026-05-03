@@ -9,11 +9,11 @@
 
 ## Phase 2: Base Object and Taxonomy
 
-- [ ] Task: Expand the `CanvasObject` model.
-  - [ ] Sub-task: Define the exhaustive `CanvasObjectState` and `CanvasBlockCapabilities` types.
-  - [ ] Sub-task: Red (Tests for expanded `BaseCanvasObject` and specific subtypes).
-  - [ ] Sub-task: Green (Implement schemas and update existing `CanvasObjectSchema` union).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Base Object and Taxonomy' (Protocol in workflow.md)
+- [x] Task: Expand the `CanvasObject` model.
+  - [x] Sub-task: Define the exhaustive `CanvasObjectState` and `CanvasBlockCapabilities` types.
+  - [x] Sub-task: Red (Tests for expanded `BaseCanvasObject` and specific subtypes).
+  - [x] Sub-task: Green (Implement schemas and update existing `CanvasObjectSchema` union).
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Base Object and Taxonomy' (Protocol in workflow.md)
 
 ## Phase 3: Semantic Connections and Bindings
 
