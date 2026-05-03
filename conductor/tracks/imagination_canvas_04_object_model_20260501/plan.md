@@ -17,7 +17,7 @@
 
 ## Phase 3: Semantic Connections and Bindings
 
-- [ ] Task: Implement advanced relationships.
-  - [ ] Sub-task: Red (Tests for semantic `CanvasConnection` and persistent `CanvasBinding` schemas).
-  - [ ] Sub-task: Green (Implement schemas and integrate into `canvasStore` state definition).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Connections and Bindings' (Protocol in workflow.md)
+- [x] Task: Implement advanced relationships.
+  - [x] Sub-task: Red (Tests for semantic `CanvasConnection` and persistent `CanvasBinding` schemas).
+  - [x] Sub-task: Green (Implement schemas and integrate into `canvasStore` state definition).
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Connections and Bindings' (Protocol in workflow.md)

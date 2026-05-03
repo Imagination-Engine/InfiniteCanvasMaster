@@ -158,17 +158,6 @@ export const CanvasObjectSchema = z.union([
 export type CanvasObject = z.infer<typeof CanvasObjectSchema>;
 
 /**
- * Legacy/Simple CanvasBlock for compatibility (if needed).
- */
-export const CanvasBlockSchema = BaseCanvasObjectSchema.extend({
-  type: z.literal("block"),
-  blockType: z.string(),
-  data: z.record(z.any()),
-});
-
-export type CanvasBlock = z.infer<typeof CanvasBlockSchema>;
-
-/**
  * A connection between two objects.
  */
 export const CanvasConnectionSchema = z.object({
@@ -176,10 +165,25 @@ export const CanvasConnectionSchema = z.object({
   sourceId: z.string(),
   targetId: z.string(),
   type: z.enum(["semantic", "flow", "data"]).default("semantic"),
+  label: z.string().optional(),
   metadata: z.record(z.any()).optional(),
 });
 
 export type CanvasConnection = z.infer<typeof CanvasConnectionSchema>;
+
+/**
+ * A persistent behavioral relationship.
+ */
+export const CanvasBindingSchema = z.object({
+  id: z.string(),
+  actorId: z.string(),
+  targetId: z.string(),
+  type: z.enum(["follow", "stick", "observe", "lock-to"]),
+  config: z.record(z.any()).optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+export type CanvasBinding = z.infer<typeof CanvasBindingSchema>;
 
 /**
  * The state of the infinite viewport.
@@ -221,3 +225,14 @@ export const CanvasEventSchema = z.object({
 });
 
 export type CanvasEvent = z.infer<typeof CanvasEventSchema>;
+
+/**
+ * Legacy/Simple CanvasBlock for compatibility (if needed).
+ */
+export const CanvasBlockSchema = BaseCanvasObjectSchema.extend({
+  type: z.literal("block"),
+  blockType: z.string(),
+  data: z.record(z.any()),
+});
+
+export type CanvasBlock = z.infer<typeof CanvasBlockSchema>;
