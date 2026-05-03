@@ -18,12 +18,14 @@ interface SelectionState {
   selectedIds: string[];
   hoveredId: string | null;
   selectionMode: SelectionMode;
+  editingId: string | null;
 
   select: (id: string, options?: SelectionOptions) => void;
   setSelection: (ids: string[]) => void;
   clearSelection: () => void;
   setHovered: (id: string | null) => void;
   setSelectionMode: (mode: SelectionMode) => void;
+  setEditing: (id: string | null) => void;
   selectInRect: (rect: Rect, objects: BoundingBoxed[]) => void;
 }
 
@@ -76,11 +78,14 @@ export const useSelectionStore = create<SelectionState>((set) => ({
     set({
       selectedIds: [],
       selectionMode: "none",
+      editingId: null,
     }),
 
   setHovered: (id) => set({ hoveredId: id }),
 
   setSelectionMode: (mode) => set({ selectionMode: mode }),
+
+  setEditing: (id) => set({ editingId: id }),
   selectInRect: (rect, objects) =>
     set(() => {
       const ids = getIdsInRect(rect, objects);

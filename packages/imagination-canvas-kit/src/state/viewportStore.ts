@@ -1,3 +1,4 @@
+import { useSelectionStore } from "./selectionStore";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CanvasViewport, CanvasObject } from "../contracts/index";
@@ -51,8 +52,16 @@ export const useViewportStore = create<ViewportState>()(
       zoom: 1,
       mode: "free",
 
-      setCamera: (camera) => set((state) => ({ ...state, ...camera })),
-      pan: (dx, dy) => set((state) => ({ x: state.x + dx, y: state.y + dy })),
+      setCamera: (camera) =>
+        set((state) => {
+          if (useSelectionStore.getState().editingId) return state;
+          return { ...state, ...camera };
+        }),
+      pan: (dx, dy) =>
+        set((state) => {
+          if (useSelectionStore.getState().editingId) return state;
+          return { x: state.x + dx, y: state.y + dy };
+        }),
       zoomTo: (zoom) => set({ zoom }),
       resize: (width, height) => set({ width, height }),
       setMode: (mode) => set({ mode }),
