@@ -22,6 +22,12 @@ interface CanvasState {
   addBinding: (binding: CanvasBinding) => void;
   updateBinding: (id: string, updates: Partial<CanvasBinding>) => void;
   removeBinding: (id: string) => void;
+  moveObjects: (ids: string[], deltaX: number, deltaY: number) => void;
+  resizeObject: (id: string, deltaWidth: number, deltaHeight: number) => void;
+  updateZOrder: (
+    id: string,
+    action: "front" | "back" | "forward" | "backward",
+  ) => void;
 }
 
 export const useCanvasStore = create<CanvasState>()(
@@ -69,6 +75,60 @@ export const useCanvasStore = create<CanvasState>()(
             b.id === id ? { ...b, ...updates } : b,
           ),
         })),
+      moveObjects: (ids, deltaX, deltaY) =>
+        set((state) => ({
+          objects: state.objects.map((obj) => {
+            if (ids.includes(obj.id) && obj.capabilities?.canMove !== false) {
+              return { ...obj, x: obj.x + deltaX, y: obj.y + deltaY };
+            }
+            return obj;
+          }),
+        })),
+
+      resizeObject: (id, deltaWidth, deltaHeight) =>
+        set((state) => ({
+          objects: state.objects.map((obj) => {
+            if (obj.id === id && obj.capabilities?.canResize !== false) {
+              return {
+                ...obj,
+                width: Math.max(10, obj.width + deltaWidth),
+                height: Math.max(10, obj.height + deltaHeight),
+              };
+            }
+            return obj;
+          }),
+        })),
+
+      updateZOrder: (id, action) =>
+        set((state) => {
+          const sortedObjects = [...state.objects].sort(
+            (a, b) => (a.zIndex || 0) - (b.zIndex || 0),
+          );
+          const index = sortedObjects.findIndex((obj) => obj.id === id);
+          if (index === -1) return state;
+
+          const newSorted = [...sortedObjects];
+          const [removed] = newSorted.splice(index, 1);
+
+          if (action === "front") {
+            newSorted.push(removed);
+          } else if (action === "back") {
+            newSorted.unshift(removed);
+          } else if (action === "forward") {
+            newSorted.splice(Math.min(newSorted.length, index + 1), 0, removed);
+          } else if (action === "backward") {
+            newSorted.splice(Math.max(0, index - 1), 0, removed);
+          }
+
+          // Re-assign z-indexes based on new order
+          const updatedObjects = state.objects.map((obj) => {
+            const newIndex = newSorted.findIndex((so) => so.id === obj.id);
+            return { ...obj, zIndex: newIndex };
+          });
+
+          return { objects: updatedObjects };
+        }),
+
       removeBinding: (id) =>
         set((state) => ({
           bindings: state.bindings.filter((b) => b.id !== id),

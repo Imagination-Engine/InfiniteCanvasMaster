@@ -19,7 +19,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Imagination Canvas Extraction: 05 - Selection, Manipulation, and Transformations**
+- [x] **Track: Imagination Canvas Extraction: 05 - Selection, Manipulation, and Transformations**
       _Link: [./tracks/imagination_canvas_05_selection_transform_20260501/](./tracks/imagination_canvas_05_selection_transform_20260501/)_
 
 ---
