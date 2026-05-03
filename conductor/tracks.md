@@ -19,11 +19,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Imagination Canvas Extraction: 07 - Rich Editing and Embedded Content**
-      _Link: [./tracks/imagination_canvas_07_rich_editing_20260501/](./tracks/imagination_canvas_07_rich_editing_20260501/)_
-
----
-
 - [ ] **Track: Imagination Canvas Extraction: 08 - Connections, Clusters, and Spatial Organization**
       _Link: [./tracks/imagination_canvas_08_connections_clusters_20260501/](./tracks/imagination_canvas_08_connections_clusters_20260501/)_
 
