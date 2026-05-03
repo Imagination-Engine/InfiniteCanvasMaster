@@ -28,7 +28,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Imagination Canvas Extraction: 14 - Design Token Map**
+- [x] **Track: Imagination Canvas Extraction: 14 - Design Token Map**
       _Link: [./tracks/imagination_canvas_14_design_tokens_20260501/](./tracks/imagination_canvas_14_design_tokens_20260501/)_
 
 ---
