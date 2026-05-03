@@ -19,11 +19,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Imagination Canvas Extraction: 04 - Object Model and Content Grammar**
-      _Link: [./tracks/imagination_canvas_04_object_model_20260501/](./tracks/imagination_canvas_04_object_model_20260501/)_
-
----
-
 - [ ] **Track: Imagination Canvas Extraction: 05 - Selection, Manipulation, and Transformations**
       _Link: [./tracks/imagination_canvas_05_selection_transform_20260501/](./tracks/imagination_canvas_05_selection_transform_20260501/)_
 
