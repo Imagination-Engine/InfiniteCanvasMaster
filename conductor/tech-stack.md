@@ -5,7 +5,7 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
 ## Frontend & Presentation Layer
 
 - **Core Framework:** React + Vite + TypeScript. This provides a fast, modern, and type-safe SPA experience.
-- **Imagination Canvas Kit (`@iem/imagination-canvas-kit`):** A sovereign, production-grade spatial engine implementing a typed object model, foundational state management (Zustand), a modular shell architecture, and a specialized Viewport Engine for high-performance spatial navigation and coordinate transformations.
+- **Imagination Canvas Kit (`@iem/imagination-canvas-kit`):** A sovereign, production-grade spatial engine implementing a **Rich Semantic Object Model**, foundational state management (Zustand), a modular shell architecture, and a specialized Viewport Engine for high-performance spatial navigation and coordinate transformations.
 - **Styling:** Tailwind CSS for rapid, utility-first UI development that aligns with our vibrant and accessible design guidelines.
 - **Chat Interaction Kit:** A dedicated, internal package (`@iem/chat-interaction-kit`) providing a production-grade extraction of mature chat UX paradigms (e.g., LibreChat). This ensures stable auto-scrolling, native Markdown parsing, smooth composer growth, and dynamic tool-call visualizers, completely replacing iframe-based legacy approaches.
 - **Chat Primitives:** **Vercel AI SDK** (`ai` package) mapped through our custom `ChatShell` for streaming text and tool payloads.
@@ -19,7 +19,7 @@ The Imagination Engine capstone project employs a modern, hybrid architecture de
   - **Dependency Atlas Governance:** Strict adherence to the monorepo dependency ledger (`docs/DEPENDENCIES.md`), enforced by the agent rules framework to prevent module bloat.
 - **Animation:** **Framer Motion** will be utilized to deliver the fluid, playful, and engaging UX required by the product guidelines.
 - **State Management:** **Zustand** is utilized for lightweight, high-performance state management within the Imagination Canvas Kit, including local persistence for canvas, viewport, and shell layout states.
-- **Schema Validation:** **Zod** is used for strict runtime validation of canvas entities and contracts.
+- **Schema Validation:** **Zod** is used for strict runtime validation of the entire canvas taxonomy, including expansion modes, provenance descriptors, and complex semantic relationships.
 - **Desktop Wrapper (Stretch Goal):** **Electrobun** is utilized to scaffold the baseline build configuration to wrap the Vite frontend and embed the local Node.js backend.
 - **Advanced Game Engine (Surface A):**
   - **Phaser 4 & WebGL 2:** Core engine for high-performance game rendering.
