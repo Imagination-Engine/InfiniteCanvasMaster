@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "db:push": "cd packages/db && npx drizzle-kit push",
+    "predev": "pnpm db:push",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
