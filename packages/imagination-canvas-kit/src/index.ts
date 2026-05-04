@@ -38,3 +38,5 @@ BlockRegistry.register("memory-cluster", MemoryClusterBlock as any);
 
 import { AppBlock } from "./components/blocks/AppBlock";
 BlockRegistry.register("app", AppBlock as any);
+
+export * from "./components/BlockLibraryDrawer";

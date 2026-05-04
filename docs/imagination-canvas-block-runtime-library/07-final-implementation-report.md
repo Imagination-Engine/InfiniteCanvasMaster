@@ -15,7 +15,7 @@ Pending Execution
 
 ## Core UI
 
-- Library drawer: Pending
+- Library drawer: Complete (BlockLibraryDrawer.tsx)
 - Canvas blocks: Pending
 - Immersive modal: Pending
 - Orchestrator chat: Pending
