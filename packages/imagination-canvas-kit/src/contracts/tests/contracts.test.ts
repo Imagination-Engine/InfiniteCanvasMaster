@@ -11,11 +11,13 @@ describe("Canvas Core Contracts", () => {
     const validObject = {
       id: "obj-1",
       type: "block",
+      blockKind: "note",
       x: 100,
       y: 100,
       width: 200,
       height: 150,
       zIndex: 1,
+      data: { content: "test" },
       metadata: {},
     };
     const result = CanvasObjectSchema.safeParse(validObject);

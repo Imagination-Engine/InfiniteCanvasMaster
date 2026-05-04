@@ -6,7 +6,7 @@ import { useViewportStore } from "../../state/viewportStore";
 export const MemoryClusterBlock: React.FC<{ object: CanvasObject }> = ({
   object,
 }) => {
-  const zoom = useViewportStore((s) => s.viewport.zoom);
+  const zoom = useViewportStore((s) => s.zoom);
   const summary =
     (object.metadata?.summary as string) || "Empty Memory Cluster";
   const itemsCount = (object.metadata?.itemsCount as number) || 0;

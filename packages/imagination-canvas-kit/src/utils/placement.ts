@@ -5,9 +5,12 @@ import { CanvasViewport } from "../contracts";
  * Calculates the center of the visible viewport in world coordinates.
  */
 export const getCenterOfViewport = (
-  viewport: CanvasViewport,
+  viewport: Partial<CanvasViewport> & { x: number; y: number; zoom: number },
 ): { x: number; y: number } => {
-  const { x, y, width, height, zoom } = viewport;
+  const { x, y, zoom } = viewport;
+  const width = viewport.width || 1000;
+  const height = viewport.height || 1000;
+
   return {
     x: x + width / 2 / zoom,
     y: y + height / 2 / zoom,

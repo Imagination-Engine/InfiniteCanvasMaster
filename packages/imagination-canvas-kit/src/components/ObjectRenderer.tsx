@@ -41,16 +41,16 @@ export const ObjectRenderer: React.FC<{
   const { selectedIds, setSelection, setHovered, hoveredId } =
     useSelectionStore();
   const { setExpansion } = useExpansionStore();
-  const viewport = useViewportStore((s) => s.viewport);
+  const { x: viewportX, y: viewportY, zoom: viewportZoom } = useViewportStore();
   const updateObject = useCanvasStore((s) => s.updateObject);
   const addConnection = useConnectionStore((s) => s.addConnection);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const screenW = window.innerWidth / viewport.zoom;
-  const screenH = window.innerHeight / viewport.zoom;
-  const canvasViewportX = -viewport.x / viewport.zoom;
-  const canvasViewportY = -viewport.y / viewport.zoom;
+  const screenW = window.innerWidth / viewportZoom;
+  const screenH = window.innerHeight / viewportZoom;
+  const canvasViewportX = -viewportX / viewportZoom;
+  const canvasViewportY = -viewportY / viewportZoom;
 
   const isVisible =
     object.x + object.width > canvasViewportX - 1500 &&
@@ -91,8 +91,8 @@ export const ObjectRenderer: React.FC<{
     const initialObjY = object.y;
 
     const onMove = (moveEvent: PointerEvent) => {
-      const dx = (moveEvent.clientX - startX) / viewport.zoom;
-      const dy = (moveEvent.clientY - startY) / viewport.zoom;
+      const dx = (moveEvent.clientX - startX) / viewportZoom;
+      const dy = (moveEvent.clientY - startY) / viewportZoom;
       updateObject(object.id, { x: initialObjX + dx, y: initialObjY + dy });
     };
 

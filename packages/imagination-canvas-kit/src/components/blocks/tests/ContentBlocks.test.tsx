@@ -11,8 +11,10 @@ import { MemoryClusterBlock } from "../MemoryClusterBlock";
 // Mock viewport store for semantic zoom tests
 let mockZoom = 1;
 vi.mock("../../../state/viewportStore", () => ({
-  useViewportStore: (selector: any) =>
-    selector({ viewport: { x: 0, y: 0, zoom: mockZoom } }),
+  useViewportStore: (selector: any) => {
+    const state = { x: 0, y: 0, zoom: mockZoom };
+    return selector ? selector(state) : state;
+  },
 }));
 
 describe("Content Blocks Adversarial", () => {

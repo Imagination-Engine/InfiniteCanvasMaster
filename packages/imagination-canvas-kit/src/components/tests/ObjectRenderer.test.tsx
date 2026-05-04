@@ -21,10 +21,13 @@ vi.mock("../../state/expansionStore", () => ({
     setExpansion: vi.fn(),
   }),
 }));
+
+const mockViewportState = { x: 0, y: 0, zoom: 1 };
 vi.mock("../../state/viewportStore", () => ({
   useViewportStore: (selector: any) =>
-    selector({ viewport: { x: 0, y: 0, zoom: 1 } }),
+    selector ? selector(mockViewportState) : mockViewportState,
 }));
+
 vi.mock("../../state/canvasStore", () => ({
   useCanvasStore: () => ({
     updateObject: vi.fn(),

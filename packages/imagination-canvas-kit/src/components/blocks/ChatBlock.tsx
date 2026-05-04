@@ -4,7 +4,7 @@ import { MessageSquare, Send } from "lucide-react";
 import { useViewportStore } from "../../state/viewportStore";
 
 export const ChatBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
-  const zoom = useViewportStore((s) => s.viewport.zoom);
+  const zoom = useViewportStore((s) => s.zoom);
   const messages = (object.metadata?.messages as any[]) || [];
 
   const isFarOut = zoom < 0.3;

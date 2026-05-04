@@ -6,7 +6,7 @@ import { useViewportStore } from "../../state/viewportStore";
 export const ArtifactBlock: React.FC<{ object: CanvasObject }> = ({
   object,
 }) => {
-  const zoom = useViewportStore((s) => s.viewport.zoom);
+  const zoom = useViewportStore((s) => s.zoom);
   const title = (object.metadata?.title as string) || "Untitled Artifact";
   const content = (object.metadata?.content as string) || "";
 
