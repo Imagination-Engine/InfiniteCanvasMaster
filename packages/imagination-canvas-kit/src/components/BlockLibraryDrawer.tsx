@@ -49,7 +49,7 @@ export const BlockLibraryDrawer: React.FC = () => {
       )}
 
       {isOpen && (
-        <div className="absolute left-0 top-0 bottom-0 w-80 bg-brand-bg-page/95 backdrop-blur-3xl border-r border-white/10 z-50 flex flex-col shadow-2xl">
+        <div className="absolute left-0 top-0 bottom-0 w-[450px] bg-brand-bg-page/95 backdrop-blur-3xl border-r border-white/10 z-50 flex flex-col shadow-2xl">
           <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 text-brand-cyan">
               <Library size={18} />
@@ -120,13 +120,14 @@ export const BlockLibraryDrawer: React.FC = () => {
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData("application/reactflow", block.id);
+                    e.dataTransfer.setData("text/plain", block.id);
                     e.dataTransfer.effectAllowed = "copy";
                   }}
-                  className="group relative p-3 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-brand-cyan/30 rounded-xl transition-all cursor-grab active:cursor-grabbing flex flex-col gap-2"
+                  className="group relative p-3 bg-white/[0.05] shadow-[0_0_30px_rgba(0,0,0,0.5)] hover:bg-white/[0.04] border border-white/5 hover:border-brand-cyan/30 rounded-xl transition-all cursor-grab active:cursor-grabbing flex flex-col gap-2"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-brand-cyan/10 rounded-lg text-brand-cyan group-hover:bg-brand-cyan group-hover:text-black transition-colors">
+                      <div className="p-2 bg-black/40 border border-white/10 rounded-xl text-brand-cyan group-hover:border-brand-cyan/50 group-hover:shadow-[0_0_15px_rgba(0,194,255,0.3)] transition-all">
                         {IconComponent && <IconComponent size={14} />}
                       </div>
                       <h3 className="text-xs font-bold text-white tracking-wide">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createTLStore, defaultShapeUtils, TLStore } from "tldraw";
+import { createTLStore, defaultShapeUtils, type TLStore } from "tldraw";
 import { setupYjsProvider } from "../lib/yjs";
 import * as Y from "yjs";
 import { IemBlockShapeUtil } from "../canvas/IemBlockShape";

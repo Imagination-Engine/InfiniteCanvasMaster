@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CanvasObject } from "../../contracts";
+import type { CanvasObject } from "../../contracts";
 import { AppWindow, RefreshCw, ShieldAlert } from "lucide-react";
 
 export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {

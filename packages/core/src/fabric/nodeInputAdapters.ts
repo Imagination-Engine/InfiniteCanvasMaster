@@ -1,4 +1,4 @@
-import { BalnceEnvelope } from "./envelope";
+import type { BalnceEnvelope } from "./envelope";
 
 export interface NodeInputAdapter<TInput = unknown> {
   readonly id: string;

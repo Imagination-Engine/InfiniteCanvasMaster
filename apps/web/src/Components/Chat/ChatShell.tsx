@@ -46,7 +46,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
     body: {
       sessionId: projectId,
       canvasContext: {
-        nodes: Object.values(objects).map((n) => ({
+        nodes: Object.values(objects).map((n: any) => ({
           id: n.id,
           type: n.type,
           data: n.metadata,

@@ -1,5 +1,5 @@
 import React, { memo, useRef, useState } from "react";
-import { CanvasObject } from "../contracts";
+import type { CanvasObject } from "../contracts";
 import { useSelectionStore } from "../state/selectionStore";
 import { useExpansionStore } from "../state/expansionStore";
 import { useViewportStore } from "../state/viewportStore";
@@ -107,7 +107,7 @@ export const ObjectRenderer: React.FC<{
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpanded(object.id, "modal"); // or 'immersive'
+    setExpanded(object.id, "fullscreen"); // or 'immersive'
   };
 
   // Polyfill data bridging for block registry views
@@ -134,12 +134,12 @@ export const ObjectRenderer: React.FC<{
 
   return (
     <div
-      className={`absolute transition-shadow duration-200 ${isSelected ? "ring-2 ring-brand-cyan shadow-[0_0_20px_rgba(0,194,255,0.2)]" : ""} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""}`}
+      className={`absolute transition-shadow duration-200 border-2 border-red-500/50 ${isSelected ? "ring-2 ring-brand-cyan shadow-[0_0_20px_rgba(0,194,255,0.2)]" : ""} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""}`}
       style={{
         left: object.x,
         top: object.y,
         zIndex: object.zIndex,
-        transform: `rotate(${object.rotation}deg)`,
+        transform: `rotate(${(object as any).rotation || 0}deg)`,
       }}
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}

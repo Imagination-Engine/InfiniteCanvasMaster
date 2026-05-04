@@ -1,13 +1,23 @@
 import React, { useMemo } from "react";
 import { useCanvasStore } from "../state/canvasStore";
+import { useConnectionStore } from "../state/connectionStore";
 import { useViewportStore } from "../state/viewportStore";
 
 export const ConnectorLayer: React.FC = () => {
-  const connections = useCanvasStore((s) => s.connections);
+  const connectionsRecord = useConnectionStore((s) => s.connections);
+  const connections = useMemo(
+    () => Object.values(connectionsRecord),
+    [connectionsRecord],
+  );
   const objectsRecord = useCanvasStore((s) => s.objects);
   const zoom = useViewportStore((s) => s.zoom);
 
   const objects = useMemo(() => {
+    const raw = (
+      Array.isArray(objectsRecord)
+        ? objectsRecord
+        : Object.values(objectsRecord)
+    ) as any[];
     return Array.isArray(objectsRecord)
       ? objectsRecord
       : Object.values(objectsRecord);
@@ -34,8 +44,8 @@ export const ConnectorLayer: React.FC = () => {
       </defs>
 
       {connections.map((conn) => {
-        const sourceObj = objects.find((o) => o.id === conn.sourceId);
-        const targetObj = objects.find((o) => o.id === conn.targetId);
+        const sourceObj = objects.find((o) => o.id === conn.fromId);
+        const targetObj = objects.find((o) => o.id === conn.toId);
 
         if (!sourceObj || !targetObj) return null;
 

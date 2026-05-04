@@ -42,7 +42,7 @@ export const documentLoaderBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "load_doc",
-    invoke: async (i) => ({ rawData: `Content from ${i.url}` }),
+    invoke: async (i: any) => ({ rawData: `Content from ${i.url}` }),
   },
 };
 
@@ -57,7 +57,7 @@ export const chunkerBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "chunk_text",
-    invoke: async (i) => ({ chunks: chunkText(i.text) }),
+    invoke: async (i: any) => ({ chunks: chunkText(i.text) }),
   },
 };
 
@@ -72,7 +72,7 @@ export const vectorSearchBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "vector_search",
-    invoke: async (i) => ({ matches: ["Result 1", "Result 2"] }),
+    invoke: async (i: any) => ({ matches: ["Result 1", "Result 2"] }),
   },
 };
 
@@ -87,7 +87,7 @@ export const graphKnowledgeBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "graph_lookup",
-    invoke: async (i) => ({ relations: [] }),
+    invoke: async (i: any) => ({ relations: [] }),
   },
 };
 
@@ -117,7 +117,7 @@ export const queryBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "rag_query",
-    invoke: async (i) => ({ response: `Answer to ${i.prompt}` }),
+    invoke: async (i: any) => ({ response: `Answer to ${i.prompt}` }),
   },
 };
 
@@ -162,6 +162,6 @@ export const semanticRouterBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "semantic_route",
-    invoke: async (i) => ({ route: i.routes[0] }),
+    invoke: async (i: any) => ({ route: i.routes[0] }),
   },
 };

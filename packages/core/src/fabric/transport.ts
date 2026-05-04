@@ -1,5 +1,5 @@
-import { BalnceFabricLane } from "./lanes";
-import { BalnceEnvelope } from "./envelope";
+import type { BalnceFabricLane } from "./lanes";
+import type { BalnceEnvelope } from "./envelope";
 
 export interface FabricSubscriptionFilter {
   lanes?: BalnceFabricLane[];

@@ -2,7 +2,7 @@ import { useSelectionStore } from "./selectionStore";
 import { create } from "zustand";
 import { usePresenceStore } from "./presenceStore";
 import { persist } from "zustand/middleware";
-import { CanvasViewport, CanvasObject } from "../contracts/index";
+import { type CanvasViewport, type CanvasObject } from "../contracts/index";
 import { useCanvasStore } from "./canvasStore";
 
 export type ViewportMode =
@@ -129,19 +129,21 @@ export const useViewportStore = create<ViewportState>()(
 
       fitToContent: (padding = 40) => {
         const { objects } = useCanvasStore.getState();
-        if (objects.length === 0) {
+        if (Object.keys(objects).length === 0) {
           set({ x: 0, y: 0, zoom: 1 });
           return;
         }
         get().zoomToSelection(
-          objects.map((o) => o.id),
+          Object.values(objects).map((o: any) => o.id),
           padding,
         );
       },
 
       zoomToSelection: (objectIds, padding = 40) => {
         const { objects } = useCanvasStore.getState();
-        const selected = objects.filter((o) => objectIds.includes(o.id));
+        const selected = Object.values(objects).filter((o: any) =>
+          objectIds.includes(o.id),
+        );
         if (selected.length === 0) return;
 
         let minX = Infinity,

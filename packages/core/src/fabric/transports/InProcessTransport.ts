@@ -1,5 +1,5 @@
 import EventEmitter from "eventemitter3";
-import { BalnceEnvelope } from "../envelope";
+import type { BalnceEnvelope } from "../envelope";
 import {
   FabricTransport,
   FabricSubscriptionFilter,

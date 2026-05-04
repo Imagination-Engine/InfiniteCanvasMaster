@@ -85,12 +85,13 @@ export const FloatingOrchestratorChat: React.FC = () => {
   return (
     <motion.div
       drag
-      dragMomentum={false}
-      dragElastic={0}
+      dragMomentum={true}
+      dragElastic={0.1}
+      dragTransition={{ power: 0.2, timeConstant: 200 }}
       initial={{ x: window.innerWidth - 400, y: 80 }}
       className={
-        "absolute z-50 flex flex-col bg-brand-bg-surface/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 " +
-        (isMinimized ? "w-64 h-12" : "w-80 h-96")
+        "absolute z-[100] flex flex-col bg-brand-bg-surface/80 backdrop-blur-3xl border border-white/10 hover:border-brand-cyan/30 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 " +
+        (isMinimized ? "w-64 h-12" : "w-[350px] h-[85vh]")
       }
     >
       <div className="h-12 border-b border-white/5 bg-gradient-to-r from-brand-cyan/10 to-transparent flex items-center justify-between px-3 shrink-0 cursor-grab active:cursor-grabbing group">
@@ -167,7 +168,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask orchestrator to build..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-3 pr-10 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-brand-cyan/50 focus:ring-1 focus:ring-brand-cyan/50 transition-all"
+                className="w-full bg-white/5 border border-white/10 hover:border-brand-cyan/30 rounded-xl pl-3 pr-10 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-brand-cyan/50 focus:ring-1 focus:ring-brand-cyan/50 transition-all"
                 onPointerDown={(e) => e.stopPropagation()}
               />
               <button

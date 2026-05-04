@@ -1,3 +1,4 @@
+@source "../../packages/**/*.{ts,tsx}";
 @import "tailwindcss";
 
 @theme {

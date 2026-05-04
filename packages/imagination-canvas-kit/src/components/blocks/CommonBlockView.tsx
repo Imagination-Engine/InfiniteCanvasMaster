@@ -1,5 +1,5 @@
 import React from "react";
-import { CanvasObject } from "../../contracts";
+import type { CanvasObject } from "../../contracts";
 import {
   Sparkles,
   Zap,
@@ -49,13 +49,13 @@ export const CommonBlockView: React.FC<{ object: CanvasObject }> = ({
 
   return (
     <div
-      className="bg-brand-bg-surface/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl flex flex-col gap-4 overflow-hidden group transition-all hover:border-white/20"
+      className="bg-black/60 backdrop-blur-3xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.6)] rounded-2xl p-5 shadow-2xl flex flex-col gap-4 overflow-hidden group transition-all hover:border-white/20"
       style={{ width: object.width, height: object.height }}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center ${colorClass}`}
+            className={`w-10 h-10 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner ${colorClass}`}
           >
             <Icon size={20} />
           </div>
@@ -79,7 +79,7 @@ export const CommonBlockView: React.FC<{ object: CanvasObject }> = ({
         />
       </div>
 
-      <div className="flex-1 min-h-0 bg-black/20 rounded-xl p-3 border border-white/5 overflow-auto custom-scrollbar">
+      <div className="flex-1 min-h-0 bg-white/[0.02] rounded-xl p-4 border border-white/5 shadow-inner overflow-auto custom-scrollbar">
         <p className="text-[11px] text-white/60 leading-relaxed font-medium mb-3">
           {String(description)}
         </p>

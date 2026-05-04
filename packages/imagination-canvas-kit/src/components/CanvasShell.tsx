@@ -3,6 +3,10 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useShellStore } from "../state/shellStore";
 
+import { BlockLibraryDrawer } from "./BlockLibraryDrawer";
+import { ImmersiveBlockModal } from "./ImmersiveBlockModal";
+import { FloatingOrchestratorChat } from "./FloatingOrchestratorChat";
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -15,7 +19,7 @@ export type CanvasMode =
   | "immersive";
 
 export interface CanvasShellProps {
-  canvasId: string;
+  canvasId?: string;
   mode?: CanvasMode;
   className?: string;
   children: React.ReactNode;
@@ -26,7 +30,7 @@ export interface CanvasShellProps {
  * Manages layout modes and Z-index layering.
  */
 export const CanvasShell: React.FC<CanvasShellProps> = ({
-  canvasId,
+  canvasId = "default",
   mode: controlledMode,
   className,
   children,
@@ -44,6 +48,13 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
         className,
       )}
     >
+      <div className="absolute top-0 left-0 right-0 h-1 bg-brand-cyan z-[10000] shadow-[0_0_20px_rgba(0,194,255,1)]" />
+      <div className="absolute top-4 right-4 z-[10001] bg-brand-cyan text-black px-4 py-2 rounded-full font-black uppercase text-[10px] shadow-2xl">
+        Imagination Engine: Rescue Pass Active
+      </div>
+      <BlockLibraryDrawer />
+      <FloatingOrchestratorChat />
+      <ImmersiveBlockModal />
       {children}
     </div>
   );

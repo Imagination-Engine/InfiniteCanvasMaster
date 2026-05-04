@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BalnceEnvelope } from "@iem/core";
+import type { BalnceEnvelope } from "@iem/core";
 
 export interface UseA2ASubscriptionOptions {
   lanes?: string[];

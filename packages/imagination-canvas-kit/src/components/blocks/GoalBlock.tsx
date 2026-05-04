@@ -1,5 +1,5 @@
 import React from "react";
-import { CanvasObject } from "../../contracts";
+import type { CanvasObject } from "../../contracts";
 import { Target, CheckCircle2, Clock } from "lucide-react";
 
 export const GoalBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
@@ -11,7 +11,7 @@ export const GoalBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
 
   return (
     <div
-      className="p-4 bg-brand-bg-surface border border-brand-cyan/30 rounded-2xl shadow-2xl text-white flex flex-col gap-3 backdrop-blur-xl"
+      className="p-4 bg-black/60 border border-brand-cyan/40 shadow-[0_0_30px_rgba(0,194,255,0.1)] hover:border-brand-cyan transition-all duration-500 rounded-2xl shadow-2xl text-white flex flex-col gap-3 backdrop-blur-xl"
       style={{ width: object.width, height: object.height }}
     >
       <div className="flex items-center justify-between">
@@ -35,7 +35,7 @@ export const GoalBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
           <span>Progress</span>
           <span>{Math.round(progress * 100)}%</span>
         </div>
-        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5 shadow-inner">
           <div
             className="h-full bg-brand-cyan transition-all duration-500 shadow-[0_0_8px_rgba(0,194,255,0.4)]"
             style={{ width: (progress * 100).toString() + "%" }}

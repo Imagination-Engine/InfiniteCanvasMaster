@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CanvasObject } from "../../contracts";
+import type { CanvasObject } from "../../contracts";
 import { useCanvasStore } from "../../state/canvasStore";
 import { useSelectionStore } from "../../state/selectionStore";
 

@@ -1,5 +1,5 @@
 import { createEnvelope } from "../envelope";
-import { FabricRouter } from "../transport";
+import type { FabricRouter } from "../transport";
 import { FabricTopics } from "../topics";
 
 export class DurableEventAdapter {

@@ -1,6 +1,6 @@
 import React from "react";
-import { OpenClawAgentGroup } from "../../contracts/openclaw";
-import { CanvasObject } from "../../contracts";
+import type { OpenClawAgentGroup } from "../../contracts/openclaw";
+import type { CanvasObject } from "../../contracts";
 import { Users, Target, Play, Pause, Square, Activity } from "lucide-react";
 import { useOpenClawGroupControl } from "../../hooks/useOpenClawGroupControl";
 import { clsx, type ClassValue } from "clsx";
@@ -13,7 +13,9 @@ function cn(...inputs: ClassValue[]) {
 export const OpenClawAgentGroupBlock: React.FC<{ object: CanvasObject }> = ({
   object,
 }) => {
-  const data = (object.metadata as unknown as OpenClawAgentGroup) || {};
+  //
+  const data = (object.metadata as any) || {};
+  // removed double decl
   const status = data.state?.status || "idle";
   const memberCount = data.memberBlockIds?.length || 0;
 

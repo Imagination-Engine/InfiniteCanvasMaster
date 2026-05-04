@@ -17,7 +17,7 @@ export const ImmersiveBlockModal: React.FC = () => {
     return objects[activeExpansionId] || null;
   }, [activeExpansionId, objects]);
 
-  if (!activeObject || activeMode !== "fullscreen") return null;
+  if (!activeObject || activeMode === "none") return null;
 
   const displayLabel =
     activeObject.metadata?.label ||
@@ -31,6 +31,7 @@ export const ImmersiveBlockModal: React.FC = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        key={activeObject.id}
         className="fixed inset-4 z-[9999] bg-brand-bg-page border border-white/10 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden"
       >
         {/* Modal Header */}

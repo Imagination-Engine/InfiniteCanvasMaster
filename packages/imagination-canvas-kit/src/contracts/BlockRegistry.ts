@@ -1,5 +1,5 @@
 import React from "react";
-import { CanvasObject } from "./index";
+import type { CanvasObject } from "./index";
 
 export type BlockComponentProps = {
   object: CanvasObject;

@@ -1,5 +1,5 @@
 import React from "react";
-import { CanvasObject } from "../../contracts";
+import type { CanvasObject } from "../../contracts";
 import { MessageSquare, Send } from "lucide-react";
 import { useViewportStore } from "../../state/viewportStore";
 

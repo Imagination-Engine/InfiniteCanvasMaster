@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { BalnceEnvelope } from "@iem/core";
+import type { BalnceEnvelope } from "@iem/core";
 
 export type BlockProjectionState = {
   status?:

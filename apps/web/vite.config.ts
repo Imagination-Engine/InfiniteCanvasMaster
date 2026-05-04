@@ -5,22 +5,49 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  test: {
-    environment: "jsdom",
-    globals: true,
-    setupFiles: ["./src/test/setup.ts"],
+  optimizeDeps: {
+    include: [
+      "lucide-react",
+      "@ai-sdk/react",
+      "framer-motion",
+      "clsx",
+      "tailwind-merge",
+    ],
+    exclude: [
+      "@iem/imagination-canvas-kit",
+      "@iem/core",
+      "@iem/agents",
+      "@iem/chat-interaction-kit",
+    ],
+  },
+  resolve: {
+    alias: {
+      "lucide-react": "lucide-react/dist/esm/lucide-react",
+      "@iem/core":
+        "/Users/zacharyschenkler/icmaster/packages/core/src/index.ts",
+      "@iem/agents":
+        "/Users/zacharyschenkler/icmaster/packages/agents/src/index.ts",
+      "@iem/db": "/Users/zacharyschenkler/icmaster/packages/db/src/index.ts",
+      "@iem/chat-interaction-kit":
+        "/Users/zacharyschenkler/icmaster/packages/chat-interaction-kit/src/index.ts",
+      "@iem/imagination-canvas-kit":
+        "/Users/zacharyschenkler/icmaster/packages/imagination-canvas-kit/src/index.ts",
+    },
   },
   build: {
+    commonjsOptions: {
+      include: [/packages/, /node_modules/],
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       external: [
-        "stream/web",
-        "node:process",
-        "crypto",
-        "@mastra/core",
-        "@modelcontextprotocol/sdk",
-        "zod-to-json-schema",
-        "ai",
-        "@ai-sdk/google",
+        "react",
+        "react-dom",
+        "lucide-react",
+        "framer-motion",
+        "zustand",
+        "zod",
+        "google",
       ],
     },
   },
@@ -35,4 +62,4 @@ export default defineConfig({
       },
     },
   },
-});
+} as any);

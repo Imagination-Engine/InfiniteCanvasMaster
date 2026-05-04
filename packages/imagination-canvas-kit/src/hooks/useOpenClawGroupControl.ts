@@ -1,6 +1,9 @@
 import { useState, useCallback } from "react";
 import { useCanvasStore } from "../state/canvasStore";
-import { OpenClawAgentGroup, OpenClawSubtask } from "../contracts/openclaw";
+import {
+  type OpenClawAgentGroup,
+  type OpenClawSubtask,
+} from "../contracts/openclaw";
 
 /**
  * TDD: Hook to control a group of OpenClaw Blocks,

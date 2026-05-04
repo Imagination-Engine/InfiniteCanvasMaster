@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useOpenClawAdapter } from "../adapters/openclaw/OpenClawAdapterProvider";
 import { useCanvasStore } from "../state/canvasStore";
-import { OpenClawBlock } from "../contracts/openclaw";
+import type { type OpenClawBlock } from "../contracts/openclaw";
 
 /**
  * Hook providing controlled access to the task lifecycle via the adapter boundary.

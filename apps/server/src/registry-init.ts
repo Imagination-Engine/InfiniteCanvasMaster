@@ -97,6 +97,9 @@ const registerBlocks = (blocks: any[]) => {
 };
 
 export function initializeBlockRegistry() {
+  // Register newly defined core blocks first
+  registerBlocks(blockRegistry.list());
+
   registerBlocks([
     // Scribe
     proseBlock,

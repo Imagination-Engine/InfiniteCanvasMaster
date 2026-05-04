@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import { OpenClawBlockAdapter } from "../../contracts/openclaw";
+import type { OpenClawBlockAdapter } from "../../contracts/openclaw";
 import { NoRuntimeOpenClawAdapter } from "./NoRuntimeAdapter";
 
 const OpenClawAdapterContext = createContext<OpenClawBlockAdapter>(

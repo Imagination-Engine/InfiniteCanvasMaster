@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { useViewportCamera } from "../hooks/useViewportCamera";
 import { useCanvasStore } from "../state/canvasStore";
 import { useSelectionStore } from "../state/selectionStore";
-import { ObjectRenderer, ComponentRegistry } from "./ObjectRenderer";
+import { ObjectRenderer, type ComponentRegistry } from "./ObjectRenderer";
 import { ConnectorLayer } from "./ConnectorLayer";
 import { AgentActivityLayer } from "./AgentActivityLayer";
 import { PresenceLayer } from "./PresenceLayer";
@@ -130,10 +130,20 @@ export const InfiniteViewport: React.FC<{
   };
 
   const onDrop = (e: React.DragEvent) => {
+    console.log("DROP EVENT", e.dataTransfer.types);
     e.preventDefault();
 
-    const type = e.dataTransfer.getData("application/reactflow");
-    if (!type || !containerRef.current) return;
+    const type =
+      e.dataTransfer.getData("application/reactflow") ||
+      e.dataTransfer.getData("text/plain");
+    if (!type || !containerRef.current) {
+      console.log(
+        "DROP FAILED: no type or container",
+        type,
+        !!containerRef.current,
+      );
+      return;
+    }
 
     const rect = containerRef.current.getBoundingClientRect();
 
@@ -145,7 +155,7 @@ export const InfiniteViewport: React.FC<{
     const addObject = useCanvasStore.getState().addObject;
     addObject({
       id: `${type}-${Date.now()}`,
-      type,
+      type: type as any,
       x: canvasX,
       y: canvasY,
       width: 300,

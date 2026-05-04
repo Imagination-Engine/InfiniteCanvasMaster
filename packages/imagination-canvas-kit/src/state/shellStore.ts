@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CanvasMode } from "../components/CanvasShell";
+import type { CanvasMode } from "../components/CanvasShell";
 
 export type DensityMode =
   | "comfortable"

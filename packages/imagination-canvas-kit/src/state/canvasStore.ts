@@ -7,7 +7,7 @@ import {
 } from "../contracts/index";
 
 interface CanvasState {
-  objects: CanvasObject[];
+  objects: Record<string, CanvasObject>;
   connections: CanvasConnection[];
   bindings: CanvasBinding[];
 
@@ -33,41 +33,34 @@ interface CanvasState {
 export const useCanvasStore = create<CanvasState>()(
   persist(
     (set) => ({
-      objects: [],
+      objects: {},
       connections: [],
       bindings: [],
 
       addObject: (obj) =>
-        set((state) => ({ objects: [...state.objects, obj] })),
+        set((state) => ({ objects: { ...state.objects, [obj.id]: obj } })),
       updateObject: (id, updates) =>
         set((state) => {
-          // If objects is an array
-          if (Array.isArray(state.objects)) {
-            return {
-              objects: state.objects.map((obj) =>
-                obj.id === id ? { ...obj, ...updates } : (obj as any),
-              ),
-            };
-          }
-          // If objects is a dictionary
-          if (state.objects[id]) {
-            return {
-              objects: {
-                ...state.objects,
-                [id]: { ...state.objects[id], ...updates },
-              },
-            };
-          }
-          return state;
+          if (!state.objects[id]) return state;
+          return {
+            objects: {
+              ...state.objects,
+              [id]: { ...state.objects[id], ...updates } as any,
+            },
+          };
         }),
       removeObject: (id) =>
-        set((state) => ({
-          objects: state.objects.filter((obj) => obj.id !== id),
-          connections: state.connections.filter(
-            (c) => c.sourceId !== id && c.targetId !== id,
-          ),
-          bindings: state.bindings.filter((b) => b.targetId !== id),
-        })),
+        set((state) => {
+          const newObjects = { ...state.objects };
+          delete newObjects[id];
+          return {
+            objects: newObjects,
+            connections: state.connections.filter(
+              (c) => c.sourceId !== id && c.targetId !== id,
+            ),
+            bindings: state.bindings.filter((b) => b.targetId !== id),
+          };
+        }),
 
       addConnection: (conn) =>
         set((state) => ({ connections: [...state.connections, conn] })),
@@ -95,40 +88,51 @@ export const useCanvasStore = create<CanvasState>()(
           // Find all bindings targeting these moving objects
           const boundObjectIds = state.bindings
             .filter((b) => ids.includes(b.targetId))
-            .map((b) => b.sourceId);
+            .map((b) => b.actorId);
 
           const allMovingIds = [...ids, ...boundObjectIds];
 
           return {
-            objects: state.objects.map((obj) => {
-              if (
-                allMovingIds.includes(obj.id) &&
-                obj.capabilities?.canMove !== false
-              ) {
-                return { ...obj, x: obj.x + deltaX, y: obj.y + deltaY };
-              }
-              return obj;
-            }),
+            objects: Object.values(state.objects).reduce(
+              (acc, obj) => {
+                if (
+                  allMovingIds.includes(obj.id) &&
+                  obj.capabilities?.canMove !== false
+                ) {
+                  acc[obj.id] = {
+                    ...obj,
+                    x: obj.x + deltaX,
+                    y: obj.y + deltaY,
+                  };
+                } else {
+                  acc[obj.id] = obj;
+                }
+                return acc;
+              },
+              {} as Record<string, CanvasObject>,
+            ),
           };
         }),
 
       resizeObject: (id, deltaWidth, deltaHeight) =>
-        set((state) => ({
-          objects: state.objects.map((obj) => {
-            if (obj.id === id && obj.capabilities?.canResize !== false) {
-              return {
+        set((state) => {
+          const obj = state.objects[id];
+          if (!obj || obj.capabilities?.canResize === false) return state;
+          return {
+            objects: {
+              ...state.objects,
+              [id]: {
                 ...obj,
                 width: Math.max(10, obj.width + deltaWidth),
                 height: Math.max(10, obj.height + deltaHeight),
-              };
-            }
-            return obj;
-          }),
-        })),
+              },
+            },
+          };
+        }),
 
       updateZOrder: (id, action) =>
         set((state) => {
-          const sortedObjects = [...state.objects].sort(
+          const sortedObjects = Object.values(state.objects).sort(
             (a, b) => (a.zIndex || 0) - (b.zIndex || 0),
           );
           const index = sortedObjects.findIndex((obj) => obj.id === id);
@@ -147,10 +151,10 @@ export const useCanvasStore = create<CanvasState>()(
             newSorted.splice(Math.max(0, index - 1), 0, removed);
           }
 
-          // Re-assign z-indexes based on new order
-          const updatedObjects = state.objects.map((obj) => {
+          const updatedObjects: Record<string, CanvasObject> = {};
+          Object.values(state.objects).forEach((obj) => {
             const newIndex = newSorted.findIndex((so) => so.id === obj.id);
-            return { ...obj, zIndex: newIndex };
+            updatedObjects[obj.id] = { ...obj, zIndex: newIndex };
           });
 
           return { objects: updatedObjects };

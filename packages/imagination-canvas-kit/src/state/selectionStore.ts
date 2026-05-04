@@ -1,4 +1,4 @@
-import { Rect, getIdsInRect, BoundingBoxed } from "../utils/math";
+import { type Rect, getIdsInRect, type BoundingBoxed } from "../utils/math";
 import { create } from "zustand";
 
 export type SelectionMode =
@@ -39,6 +39,7 @@ export const useSelectionStore = create<SelectionState>((set) => ({
   selectedIds: [],
   hoveredId: null,
   selectionMode: "none",
+  editingId: null,
 
   select: (id, options = {}) =>
     set((state) => {
@@ -86,6 +87,7 @@ export const useSelectionStore = create<SelectionState>((set) => ({
   setSelectionMode: (mode) => set({ selectionMode: mode }),
 
   setEditing: (id) => set({ editingId: id }),
+
   selectInRect: (rect, objects) =>
     set(() => {
       const ids = getIdsInRect(rect, objects);

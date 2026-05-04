@@ -1,4 +1,4 @@
-import { BalnceFabricLane } from "./lanes";
+import type { BalnceFabricLane } from "./lanes";
 import crypto from "crypto";
 
 export type FabricDeliveryClass =

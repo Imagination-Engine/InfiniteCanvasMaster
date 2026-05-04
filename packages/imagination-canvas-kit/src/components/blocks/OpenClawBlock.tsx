@@ -9,10 +9,7 @@ import {
   Pause,
   Square,
 } from "lucide-react";
-import {
-  CanvasObject,
-  OpenClawBlock as OpenClawBlockType,
-} from "../../contracts";
+import { CanvasObject } from "../../contracts";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useOpenClawTaskControl } from "../../hooks/useOpenClawTaskControl";
@@ -24,7 +21,7 @@ function cn(...inputs: ClassValue[]) {
 export const OpenClawBlock: React.FC<{ object: CanvasObject }> = ({
   object,
 }) => {
-  const data = (object.metadata as unknown as OpenClawBlockType) || {};
+  const data = (object.metadata as any) || {};
   const status = data.state?.status || "unconfigured";
   const connectionStatus = data.runtime?.connectionStatus || "unbound";
   const currentTask = data.state?.currentTask || "No active task";
@@ -72,7 +69,7 @@ export const OpenClawBlock: React.FC<{ object: CanvasObject }> = ({
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-black uppercase tracking-tighter leading-none">
-              {data.title || "OpenClaw Block"}
+              {data.title || "ImagiClaw Block"}
             </span>
             <span
               className={cn(

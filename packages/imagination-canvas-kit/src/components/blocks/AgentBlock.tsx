@@ -1,5 +1,5 @@
 import React from "react";
-import { CanvasObject } from "../../contracts";
+import type { CanvasObject } from "../../contracts";
 import { Bot, UserCheck } from "lucide-react";
 
 export const AgentBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
@@ -7,7 +7,7 @@ export const AgentBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
 
   return (
     <div
-      className="p-4 bg-brand-bg-surface border border-brand-purple/30 rounded-2xl shadow-2xl text-white flex flex-col gap-3 backdrop-blur-xl"
+      className="p-4 bg-black/60 border border-brand-purple/40 shadow-[0_0_30px_rgba(123,92,234,0.1)] hover:border-brand-purple transition-all duration-500 rounded-2xl shadow-2xl text-white flex flex-col gap-3 backdrop-blur-xl"
       style={{ width: object.width, height: object.height }}
     >
       <div className="flex items-center justify-between">
@@ -26,7 +26,7 @@ export const AgentBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
         )}
       </div>
 
-      <div className="flex-1 text-[11px] text-brand-text-body leading-relaxed line-clamp-3 italic opacity-80">
+      <div className="flex-1 text-[11px] text-brand-purple/90 font-mono leading-relaxed line-clamp-3 bg-brand-purple/5 p-2 rounded-lg border border-brand-purple/10 shadow-inner">
         "{(object.metadata.lastAction as string) || "Idle."}"
       </div>
 
