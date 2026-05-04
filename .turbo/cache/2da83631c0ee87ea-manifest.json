@@ -1,0 +1,11 @@
+{
+  "files": {
+    "packages/chat-interaction-kit/.turbo/turbo-build.log": {
+      "size": 118,
+      "mtime_nanos": 1777928063266721190,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["packages/chat-interaction-kit/.turbo/turbo-build.log"]
+}
