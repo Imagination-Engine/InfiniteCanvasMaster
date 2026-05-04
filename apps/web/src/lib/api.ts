@@ -42,7 +42,11 @@ export async function apiRequest<TResponse>(
   }
 
   // Handle 401 Unauthorized globally using the callback
-  if (response.status === 401 && unauthorizedCallback) {
+  if (
+    response.status === 401 &&
+    unauthorizedCallback &&
+    path !== "/api/auth/refresh"
+  ) {
     // If a refresh is already in progress, wait for it
     if (!refreshPromise) {
       refreshPromise = unauthorizedCallback().finally(() => {
