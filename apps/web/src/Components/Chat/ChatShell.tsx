@@ -40,18 +40,6 @@ export const ChatShell: React.FC<ChatShellProps> = ({
     stop,
   } = useChat({
     api: "http://localhost:3001/api/chat",
-  } as any) as any;
-  const x = {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-    stop,
-  } = useChat({
-    api: "http://localhost:3001/api/chat",
-    api: "http://localhost:3001/api/chat",
     headers: {
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
@@ -67,7 +55,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       },
     },
     initialMessages: initialMessages as any,
-  });
+  } as any) as any;
 
   // Automatically scroll to bottom as new messages stream in
   useAutoScroll(messagesEndRef, [messages, isLoading, error]);
@@ -89,7 +77,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
             <p className="text-sm">Initiate orchestration.</p>
           </div>
         ) : (
-          messages.map((m) => {
+          messages.map((m: any) => {
             const isAssistant = m.role !== "user";
             return (
               <div
