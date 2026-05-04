@@ -1,5 +1,6 @@
 // @ts-nocheck
 export * from "./contracts/index";
+export * from "./contracts/openclaw";
 
 export * from "./state/canvasStore";
 export * from "./state/viewportStore";
