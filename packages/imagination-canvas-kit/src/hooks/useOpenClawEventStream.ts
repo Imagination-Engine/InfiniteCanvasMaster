@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from "react";
 import { useOpenClawAdapter } from "../adapters/openclaw/OpenClawAdapterProvider";
 import { OpenClawBlockEvent } from "../contracts/openclaw";

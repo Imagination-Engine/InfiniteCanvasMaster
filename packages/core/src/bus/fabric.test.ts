@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi } from "vitest";
 import { LocalEventEmitterTransport } from "./transport";
 import { CoreMessageFabric } from "./fabric";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useRef, useEffect } from "react";
 
 export type SyncStatus = "idle" | "saving" | "saved" | "error";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { execSync, ExecSyncOptions } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";

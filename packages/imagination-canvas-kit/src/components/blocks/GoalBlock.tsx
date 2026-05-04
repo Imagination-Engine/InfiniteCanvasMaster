@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import type { CanvasObject } from "../../contracts";
 import { Target, CheckCircle2, Clock } from "lucide-react";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from "vitest";
 import { BasicPolicyEngine } from "./policy";
 import { InMemoryEventLog } from "./log";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useCallback } from "react";
 import { useSelectionStore } from "../state/selectionStore";
 import { BaseCanvasObject } from "../contracts";

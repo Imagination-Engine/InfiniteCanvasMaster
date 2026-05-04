@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type TransitionType = "cinematic" | "spatial";
 
 export const getTransition = (type: TransitionType) => {

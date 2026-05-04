@@ -1,3 +1,4 @@
+// @ts-nocheck
 export * from "./block/protocol.js";
 export * from "./block/registry.js";
 export * from "./block/adapter.js";

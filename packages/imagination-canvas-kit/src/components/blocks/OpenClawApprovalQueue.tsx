@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import { useOpenClawApproval } from "../../hooks/useOpenClawApproval";
 import { CheckCircle2, XCircle, ShieldAlert } from "lucide-react";

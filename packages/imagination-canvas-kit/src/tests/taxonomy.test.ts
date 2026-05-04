@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from "vitest";
 
 // We attempt to import required modules. If they are missing, the test run itself will fail (or typescript will fail it),

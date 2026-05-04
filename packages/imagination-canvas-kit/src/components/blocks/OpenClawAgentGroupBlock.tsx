@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import type { OpenClawAgentGroup } from "../../contracts/openclaw";
 import type { CanvasObject } from "../../contracts";

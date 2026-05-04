@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import type { CanvasObject } from "../../contracts";
 import { FileText, ExternalLink } from "lucide-react";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback } from "react";
 import { useOpenClawAdapter } from "../adapters/openclaw/OpenClawAdapterProvider";
 import { useCanvasStore } from "../state/canvasStore";

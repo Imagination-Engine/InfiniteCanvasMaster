@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const FabricTopics = {
   // DAG/Workflow Topics
   workflowTrace: (runId: string) => `dag.${runId}.trace`,

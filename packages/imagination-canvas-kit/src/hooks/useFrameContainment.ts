@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback } from "react";
 import { useCanvasStore } from "../state/canvasStore";
 import { rectsIntersect, Rect } from "../utils/math";

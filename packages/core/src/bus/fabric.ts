@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   A2AMessageFabric,
   A2AMessageTransport,

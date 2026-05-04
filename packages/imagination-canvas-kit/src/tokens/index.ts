@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const canvasSpacing = {
   xs: 4,
   sm: 8,

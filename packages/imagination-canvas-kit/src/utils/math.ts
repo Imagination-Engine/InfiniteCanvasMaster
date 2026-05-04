@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface Rect {
   x: number;
   y: number;

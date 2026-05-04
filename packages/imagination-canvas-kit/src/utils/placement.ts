@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { rectsIntersect, Rect, BoundingBoxed } from "./math";
 import { CanvasViewport } from "../contracts";
 

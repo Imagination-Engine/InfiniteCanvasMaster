@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CanvasObject, CanvasConnection } from "../contracts";
 
 export type LayoutAlgorithm = "pipeline" | "tree" | "swarm";

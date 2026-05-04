@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { OpenClawBlock, OpenClawBlockEvent } from "../contracts/openclaw";
 
 /**

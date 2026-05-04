@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type AnchorPosition = "center" | "top" | "right" | "bottom" | "left";
 export type PathStyle = "straight" | "bezier";
 

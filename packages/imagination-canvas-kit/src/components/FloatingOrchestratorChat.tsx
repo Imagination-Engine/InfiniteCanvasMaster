@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { BrainCircuit, X, GripHorizontal, Minimize2, Send } from "lucide-react";

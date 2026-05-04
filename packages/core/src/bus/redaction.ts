@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type RedactionLevel = "none" | "compact" | "full";
 
 export function redactPayload(

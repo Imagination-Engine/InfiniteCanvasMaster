@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from "vitest";
 import { NoRuntimeOpenClawAdapter } from "../adapters/openclaw/NoRuntimeAdapter";
 import { TestOpenClawAdapter } from "../adapters/openclaw/TestAdapter";

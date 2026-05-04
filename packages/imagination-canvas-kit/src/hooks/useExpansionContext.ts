@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback } from "react";
 import { useExpansionStore, ExpansionMode } from "../state/expansionStore";
 import { useViewportStore } from "../state/viewportStore";

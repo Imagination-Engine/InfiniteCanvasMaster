@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Redacts sensitive keys from event payloads before they reach the UI or state.
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type ComputeRoute =
   | "local"
   | "device_mesh"

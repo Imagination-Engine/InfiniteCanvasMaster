@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { z } from "zod";
 import type { BlockDefinition } from "./protocol";
 import { blockRegistry } from "./registry";

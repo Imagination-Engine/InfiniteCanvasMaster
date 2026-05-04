@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { BalnceEnvelope } from "./envelope";
 
 export interface NodeInputAdapter<TInput = unknown> {

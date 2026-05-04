@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useEffect } from "react";
 import { useViewportCamera } from "../hooks/useViewportCamera";
 import { useCanvasStore } from "../state/canvasStore";

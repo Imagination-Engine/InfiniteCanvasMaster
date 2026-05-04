@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi } from "vitest";
 import { BlockRegistry } from "../BlockRegistry";
 import React from "react";

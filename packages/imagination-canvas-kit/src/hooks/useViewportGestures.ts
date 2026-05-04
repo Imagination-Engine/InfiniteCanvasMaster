@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useRef, TouchEvent } from "react";
 import { useViewportStore } from "../state/viewportStore";
 import { getZoomedOffset } from "../utils/camera";

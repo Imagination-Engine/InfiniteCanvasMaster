@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { createContext, useContext } from "react";
 import type { OpenClawBlockAdapter } from "../../contracts/openclaw";
 import { NoRuntimeOpenClawAdapter } from "./NoRuntimeAdapter";

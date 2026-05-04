@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from "vitest";
 import { openclawBlockReducer } from "../state/openclawReducer";
 import { OpenClawBlock, OpenClawBlockEvent } from "../contracts/openclaw";

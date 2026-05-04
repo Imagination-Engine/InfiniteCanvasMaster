@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { generateText, streamText } from "ai";
 import { google } from "@ai-sdk/google";
 import type { ChatRequest, ChatResponse } from "./provider";

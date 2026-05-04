@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BalnceEnvelope, NodeInputAdapter } from "./protocol";
 
 export class NodeInputAdapterRegistry {

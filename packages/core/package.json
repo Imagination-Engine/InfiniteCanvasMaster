@@ -15,7 +15,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
     "@iem/db": "workspace:*",
-    "@mastra/core": "latest",
+    "@mastra/core": "^1.27.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "ai": "^6.0.168",
     "drizzle-orm": "^0.45.2",

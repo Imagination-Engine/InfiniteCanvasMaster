@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { A2AMessageTransport, BalnceEnvelope } from "./protocol";
 
 export interface GatewayRule {

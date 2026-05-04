@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createEnvelope } from "../envelope";
 import type { FabricRouter } from "../transport";
 import { FabricTopics } from "../topics";

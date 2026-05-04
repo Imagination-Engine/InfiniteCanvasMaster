@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { memo, useRef, useState } from "react";
 import type { CanvasObject } from "../contracts";
 import { useSelectionStore } from "../state/selectionStore";

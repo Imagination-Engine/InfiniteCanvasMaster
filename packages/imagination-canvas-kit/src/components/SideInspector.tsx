@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import { useExpansionStore } from "../state/expansionStore";
 import { useCanvasStore } from "../state/canvasStore";

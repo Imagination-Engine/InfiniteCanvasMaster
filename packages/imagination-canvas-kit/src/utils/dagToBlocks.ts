@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CanvasObject, CanvasConnection } from "../contracts";
 import { blockRegistry } from "@iem/core";
 

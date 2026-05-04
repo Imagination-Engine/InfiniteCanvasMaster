@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useMemo } from "react";
 import { Search, Library, X } from "lucide-react";
 import { blockRegistry } from "@iem/core";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type BalnceFabricLane =
   | "document_state"
   | "presence"

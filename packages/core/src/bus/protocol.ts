@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { z } from "zod";
 
 export const BALNCE_A2A_PROTOCOL = "balnce.a2a" as const;

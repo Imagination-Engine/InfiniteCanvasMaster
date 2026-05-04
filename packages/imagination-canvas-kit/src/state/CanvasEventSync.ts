@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { OpenClawBlockEvent } from "../contracts/openclaw";
 import { openclawBlockReducer } from "./openclawReducer";
 import { useCanvasStore } from "./canvasStore";

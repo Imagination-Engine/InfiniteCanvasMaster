@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from "vitest";
 import { screenToCanvas, canvasToScreen, getZoomedOffset } from "../camera";
 

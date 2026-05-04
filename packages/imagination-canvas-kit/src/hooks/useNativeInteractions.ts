@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect } from "react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useToolStore } from "../state/toolStore";

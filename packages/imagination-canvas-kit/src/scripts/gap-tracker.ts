@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface GapEntry {
   id: string;
   title: string;

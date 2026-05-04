@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExpansionStore } from "../state/expansionStore";

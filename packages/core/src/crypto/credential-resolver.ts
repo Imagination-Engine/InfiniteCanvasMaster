@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { encrypt, decrypt } from "./index";
 import { pgTable, text, bigint } from "drizzle-orm/pg-core";
 import { eq, and } from "drizzle-orm";

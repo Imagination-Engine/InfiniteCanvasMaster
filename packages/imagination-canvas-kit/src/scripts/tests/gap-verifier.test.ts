@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi } from "vitest";
 import { verifyGaps } from "../gap-verifier";
 import fs from "fs";

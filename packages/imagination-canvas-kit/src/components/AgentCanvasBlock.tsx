@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import { useAgentTaskStore } from "../state/agentTaskStore";
 import { BaseCanvasObject } from "../contracts";

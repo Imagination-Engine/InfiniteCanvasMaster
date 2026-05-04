@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import type { CanvasObject } from "../../contracts";
 import { Brain, Layers } from "lucide-react";

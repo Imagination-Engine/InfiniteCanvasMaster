@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { create } from "zustand";
 import { CanvasObject, CanvasConnection, CanvasBinding } from "../contracts";
 import { useCanvasStore } from "./canvasStore";

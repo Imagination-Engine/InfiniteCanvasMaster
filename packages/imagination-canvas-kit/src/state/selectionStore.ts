@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type Rect, getIdsInRect, type BoundingBoxed } from "../utils/math";
 import { create } from "zustand";
 

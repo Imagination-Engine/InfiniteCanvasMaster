@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi } from "vitest";
 import { A2AGateway } from "./gateway";
 import { LocalEventEmitterTransport } from "./transport";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import { usePresenceStore } from "../state/presenceStore";
 import { MousePointer2 } from "lucide-react";

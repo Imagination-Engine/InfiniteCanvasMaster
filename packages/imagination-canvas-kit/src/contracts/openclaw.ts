@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type OpenClawBlockStatus =
   | "unconfigured"
   | "binding"

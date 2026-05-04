@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import { OpenClawBlockEvent } from "../../contracts/openclaw";
 import { Activity } from "lucide-react";

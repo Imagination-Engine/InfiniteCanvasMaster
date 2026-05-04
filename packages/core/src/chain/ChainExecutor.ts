@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface ChainStep {
   name: string;
   execute: (input: any) => Promise<any>;

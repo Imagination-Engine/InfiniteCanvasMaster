@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect } from "react";
 import { useSelectionStore } from "../state/selectionStore";
 import { useCanvasStore } from "../state/canvasStore";

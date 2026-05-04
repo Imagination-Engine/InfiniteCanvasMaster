@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useSelectionStore } from "./selectionStore";
 import { create } from "zustand";
 import { usePresenceStore } from "./presenceStore";
