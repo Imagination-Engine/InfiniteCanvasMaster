@@ -163,34 +163,48 @@ export const ObjectRenderer: React.FC<{
       }}
     >
       <div
-        className="bg-brand-bg-surface/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        className="bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-all duration-300 hover:border-brand-cyan/20"
         style={{
           width: object.width,
           height: isCollapsed ? "auto" : object.height,
         }}
       >
-        {/* "Browser" Window Chrome / Title Bar */}
-        <div className="h-9 border-b border-white/5 flex items-center justify-between px-3 bg-black/40 shrink-0 select-none group/header cursor-grab active:cursor-grabbing">
-          <div className="flex items-center gap-2 overflow-hidden">
+        {/* Premium Canvas Block Header */}
+        <div className="h-10 border-b border-white/5 flex items-center justify-between px-3 bg-gradient-to-r from-black/60 to-black/20 shrink-0 select-none group/header cursor-grab active:cursor-grabbing relative overflow-hidden">
+          {/* Subtle running pulse if active */}
+          {(object.status === "running" ||
+            object.status === "thinking" ||
+            object.status === "generating") && (
+            <div className="absolute bottom-0 left-0 h-[2px] bg-brand-cyan shadow-[0_0_10px_rgba(0,194,255,0.8)] animate-[scan_2s_ease-in-out_infinite] w-1/3" />
+          )}
+
+          <div className="flex items-center gap-2 overflow-hidden z-10">
             <GripHorizontal
               size={12}
               className="text-white/20 opacity-0 group-hover/header:opacity-100 transition-opacity shrink-0"
             />
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-cyan truncate">
+
+            {/* Status indicator pip */}
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${object.status === "error" ? "bg-red-500 animate-pulse" : object.status === "complete" ? "bg-green-500" : object.status === "running" || object.status === "thinking" || object.status === "generating" ? "bg-brand-cyan animate-pulse shadow-[0_0_8px_rgba(0,194,255,0.5)]" : "bg-white/20"}`}
+            />
+
+            <span className="text-[11px] font-black uppercase tracking-widest text-white truncate drop-shadow-md">
               {String(displayLabel)}
             </span>
+
             {displayLabel !== blockTypeLabel && (
-              <span className="text-[8px] font-bold uppercase tracking-widest text-brand-text-muted truncate ml-1 px-1.5 py-0.5 rounded bg-white/5">
+              <span className="text-[8px] font-bold uppercase tracking-widest text-brand-text-muted truncate ml-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
                 {String(blockTypeLabel)}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 z-10">
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => setExpanded(object.id, "side-panel")}
-              className="p-1.5 text-white/20 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              className="p-1 text-white/40 hover:text-white hover:bg-white/10 rounded-md transition-all"
               title="Settings Inspector"
             >
               <Settings size={12} />
@@ -198,15 +212,15 @@ export const ObjectRenderer: React.FC<{
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 text-white/20 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              className="p-1 text-white/40 hover:text-white hover:bg-white/10 rounded-md transition-all"
               title={isCollapsed ? "Expand" : "Minimize"}
             >
               {isCollapsed ? <ChevronDown size={12} /> : <Minus size={12} />}
             </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setExpanded(object.id, "modal")}
-              className="p-1.5 text-white/20 hover:text-brand-cyan hover:bg-brand-cyan/10 rounded-lg transition-all"
+              onClick={() => setExpanded(object.id, "fullscreen")}
+              className="p-1 text-brand-cyan hover:text-black hover:bg-brand-cyan rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
               title="Immersive View"
             >
               <Maximize2 size={12} />

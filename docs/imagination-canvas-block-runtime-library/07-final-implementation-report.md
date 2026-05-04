@@ -16,7 +16,7 @@ Pending Execution
 ## Core UI
 
 - Library drawer: Complete (BlockLibraryDrawer.tsx)
-- Canvas blocks: Pending
+- Canvas blocks: Complete (ObjectRenderer UI upgraded with premium chrome, status pips, and scanning pulse animations).
 - Immersive modal: Pending
 - Orchestrator chat: Pending
 - Layout compiler: Pending

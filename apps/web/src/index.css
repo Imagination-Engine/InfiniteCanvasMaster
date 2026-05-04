@@ -76,3 +76,10 @@ body,
   background: linear-gradient(to bottom, #7B5CEA, #00C2FF);
   box-shadow: 0 0 10px rgba(123, 92, 234, 0.5);
 }
+
+/* Custom animations for premium block UI */
+@keyframes scan {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(300%); opacity: 0; }
+}
