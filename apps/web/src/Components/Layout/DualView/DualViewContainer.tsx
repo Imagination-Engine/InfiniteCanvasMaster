@@ -30,8 +30,8 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       objects[node.id] = {
         id: node.id,
         type: node.type || "note",
-        x: node.position?.x || node.x || 0,
-        y: node.position?.y || node.y || 0,
+        x: node.position?.x || (node as any).x || 0,
+        y: node.position?.y || (node as any).y || 0,
         width: node.width || 320,
         height: node.height || 240,
         zIndex: 1,

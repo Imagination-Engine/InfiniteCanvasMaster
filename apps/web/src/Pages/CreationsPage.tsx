@@ -25,7 +25,7 @@ export default function CreationsPage() {
     try {
       const response = await apiRequest<{ projects: Project[] }>(
         "/api/projects",
-        { onUnauthorized: refresh },
+        { onUnauthorized: refresh } as any },
         accessToken,
       );
       setProjects(response.projects || []);
@@ -47,7 +47,7 @@ export default function CreationsPage() {
     try {
       await apiRequest(
         `/api/projects/${projectId}`,
-        { method: "DELETE", onUnauthorized: refresh },
+        { method: "DELETE", onUnauthorized: refresh } as any as any },
         accessToken,
       );
       loadProjects();

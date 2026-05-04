@@ -40,6 +40,18 @@ export const ChatShell: React.FC<ChatShellProps> = ({
     stop,
   } = useChat({
     api: "http://localhost:3001/api/chat",
+  } as any) as any;
+  const x = {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+    stop,
+  } = useChat({
+    api: "http://localhost:3001/api/chat",
+    api: "http://localhost:3001/api/chat",
     headers: {
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },

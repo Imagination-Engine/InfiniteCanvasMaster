@@ -3,7 +3,8 @@ import { createTLStore, defaultShapeUtils, type TLStore } from "tldraw";
 import { setupYjsProvider } from "../lib/yjs";
 import * as Y from "yjs";
 import { IemBlockShapeUtil } from "../canvas/IemBlockShape";
-import { useYjsStore as useTldrawYjsStore } from "@tldraw/sync";
+// import { useYjsStore as useTldrawYjsStore } from "@tldraw/sync";
+const useTldrawYjsStore = (id: any) => ({});
 
 export function useYjsStore({
   roomId,
