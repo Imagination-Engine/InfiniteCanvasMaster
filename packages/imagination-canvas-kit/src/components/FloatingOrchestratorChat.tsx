@@ -91,7 +91,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
       initial={{ x: window.innerWidth - 400, y: 80 }}
       className={
         "absolute z-[100] flex flex-col bg-brand-bg-surface/80 backdrop-blur-3xl border border-white/10 hover:border-brand-cyan/30 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 " +
-        (isMinimized ? "w-64 h-12" : "w-[350px] h-[85vh]")
+        (isMinimized ? "w-64 h-12" : "w-[300px] h-[1550px]")
       }
     >
       <div className="h-12 border-b border-white/5 bg-gradient-to-r from-brand-cyan/10 to-transparent flex items-center justify-between px-3 shrink-0 cursor-grab active:cursor-grabbing group">
