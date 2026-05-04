@@ -5,6 +5,7 @@ import { useExpansionStore } from "../state/expansionStore";
 import { useViewportStore } from "../state/viewportStore";
 import { useCanvasStore } from "../state/canvasStore";
 import { useConnectionStore } from "../state/connectionStore";
+import { BlockRegistry } from "../contracts/BlockRegistry";
 import { NoteBlock } from "./blocks/NoteBlock";
 import { RichTextBlock } from "./blocks/RichTextBlock";
 import { AgentBlock } from "./blocks/AgentBlock";
@@ -62,7 +63,11 @@ export const ObjectRenderer: React.FC<{
   const isSelected = selectedIds.includes(object.id);
   const isHovered = hoveredId === object.id;
 
-  const Component = registry[object.type] || CommonBlockView;
+  const Component =
+    BlockRegistry.resolve((object as any).blockKind) ||
+    BlockRegistry.resolve(object.type) ||
+    registry[object.type] ||
+    CommonBlockView;
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();

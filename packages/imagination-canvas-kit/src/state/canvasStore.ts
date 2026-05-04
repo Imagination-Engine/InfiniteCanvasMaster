@@ -76,14 +76,26 @@ export const useCanvasStore = create<CanvasState>()(
           ),
         })),
       moveObjects: (ids, deltaX, deltaY) =>
-        set((state) => ({
-          objects: state.objects.map((obj) => {
-            if (ids.includes(obj.id) && obj.capabilities?.canMove !== false) {
-              return { ...obj, x: obj.x + deltaX, y: obj.y + deltaY };
-            }
-            return obj;
-          }),
-        })),
+        set((state) => {
+          // Find all bindings targeting these moving objects
+          const boundObjectIds = state.bindings
+            .filter((b) => ids.includes(b.targetId))
+            .map((b) => b.sourceId);
+
+          const allMovingIds = [...ids, ...boundObjectIds];
+
+          return {
+            objects: state.objects.map((obj) => {
+              if (
+                allMovingIds.includes(obj.id) &&
+                obj.capabilities?.canMove !== false
+              ) {
+                return { ...obj, x: obj.x + deltaX, y: obj.y + deltaY };
+              }
+              return obj;
+            }),
+          };
+        }),
 
       resizeObject: (id, deltaWidth, deltaHeight) =>
         set((state) => ({

@@ -12,3 +12,4 @@
 | R08     | **Mastra Wrapper Complexity**    | Compiler becomes unmaintainable    | Extract fabric logic into `MastraDagFabricAdapter`; inject fabric dependency.               | Open   |
 | R09     | **Canvas UI Lag**                | Too many SSE events throttle UI    | Multiplexing in single SSE stream; lane-based filtering in `useA2A` hook.                   | Open   |
 | R10     | **Yjs/tldraw Out of Sync**       | Collaborative state diverges       | Strict `document_state` lane for final accepted outputs only.                               | Open   |
+| R11     | **Test Suite Instability**       | Test failures mask real issues     | The `cliBinding.test.ts` failure needs to be fixed to ensure the CI pipeline is stable.     | Open   |

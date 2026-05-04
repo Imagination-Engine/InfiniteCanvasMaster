@@ -64,4 +64,69 @@ describe("useViewportGestures", () => {
 
     expect(mockPan).toHaveBeenCalledWith(10, 20);
   });
+
+  describe("Touch Gestures", () => {
+    it("should calculate pinch-to-zoom correctly", () => {
+      const { result } = renderHook(() =>
+        useViewportGestures({ current: null } as any),
+      );
+
+      // Simulate first touch point
+      const touchStartEvent = {
+        touches: [
+          { clientX: 100, clientY: 100 },
+          { clientX: 200, clientY: 200 },
+        ],
+        preventDefault: vi.fn(),
+      };
+
+      result.current.onTouchStart(touchStartEvent as any);
+
+      // Simulate pinch out (zoom in)
+      const touchMoveEvent = {
+        touches: [
+          { clientX: 50, clientY: 50 },
+          { clientX: 250, clientY: 250 },
+        ],
+        preventDefault: vi.fn(),
+      };
+
+      result.current.onTouchMove(touchMoveEvent as any);
+
+      expect(mockSetCamera).toHaveBeenCalled();
+
+      // Should have zoomed in
+      const callArgs = mockSetCamera.mock.calls[0][0];
+      expect(callArgs.zoom).toBeGreaterThan(1);
+    });
+
+    it("should handle two-finger panning", () => {
+      const { result } = renderHook(() =>
+        useViewportGestures({ current: null } as any),
+      );
+
+      const touchStartEvent = {
+        touches: [
+          { clientX: 100, clientY: 100 },
+          { clientX: 200, clientY: 100 },
+        ],
+        preventDefault: vi.fn(),
+      };
+
+      result.current.onTouchStart(touchStartEvent as any);
+
+      // Pan right
+      const touchMoveEvent = {
+        touches: [
+          { clientX: 110, clientY: 100 },
+          { clientX: 210, clientY: 100 },
+        ],
+        preventDefault: vi.fn(),
+      };
+
+      result.current.onTouchMove(touchMoveEvent as any);
+
+      // Two finger pan calls setCamera with offset changes\n      expect(mockSetCamera).toHaveBeenCalled();
+    });
+  });
 });

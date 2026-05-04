@@ -4,3 +4,4 @@
 - **Yjs/tldraw Integration:** While boundaries are defined, full integration with Yjs/tldraw collaborative state adapters is deferred to the Canvas-specific tracks.
 - **Cross-Instance Scaling:** `InProcessTransport` is limited to a single Node.js process. Distributed scaling will require a `RedisTransport` implementation.
 - **Security Policy Enforcement:** Advanced policy checks (budgets, fine-grained capabilities) are scaffolded but require further database integration.
+- **Slice 8 Canvas UI Subscriptions:** Block-level canvas UI projection subscription is partial; `canvas.subscribe` logic needs to be fully wired into frontend components to replace state polling.

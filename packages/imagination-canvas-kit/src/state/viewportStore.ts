@@ -1,5 +1,6 @@
 import { useSelectionStore } from "./selectionStore";
 import { create } from "zustand";
+import { usePresenceStore } from "./presenceStore";
 import { persist } from "zustand/middleware";
 import { CanvasViewport, CanvasObject } from "../contracts/index";
 import { useCanvasStore } from "./canvasStore";
@@ -26,6 +27,7 @@ interface ViewportState {
   height?: number;
   mode: ViewportMode;
   previous?: ViewportPrevious;
+  followedUserId?: string;
 
   setCamera: (
     camera: Partial<Pick<CanvasViewport, "x" | "y" | "zoom">>,
@@ -34,6 +36,7 @@ interface ViewportState {
   zoomTo: (zoom: number) => void;
   resize: (width: number, height: number) => void;
   setMode: (mode: ViewportMode) => void;
+  setFollowedUser: (userId: string | undefined) => void;
   focusOn: (
     camera: Pick<CanvasViewport, "x" | "y" | "zoom">,
     reason: string,
@@ -51,6 +54,7 @@ export const useViewportStore = create<ViewportState>()(
       y: 0,
       zoom: 1,
       mode: "free",
+      followedUserId: undefined,
 
       setCamera: (camera) =>
         set((state) => {
@@ -60,11 +64,46 @@ export const useViewportStore = create<ViewportState>()(
       pan: (dx, dy) =>
         set((state) => {
           if (useSelectionStore.getState().editingId) return state;
-          return { x: state.x + dx, y: state.y + dy };
+          // Break follow mode on manual pan
+          return {
+            x: state.x + dx,
+            y: state.y + dy,
+            mode: state.mode === "follow" ? "free" : state.mode,
+            followedUserId:
+              state.mode === "follow" ? undefined : state.followedUserId,
+          };
         }),
-      zoomTo: (zoom) => set({ zoom }),
+      zoomTo: (zoom) =>
+        set((state) => ({
+          zoom,
+          // Break follow mode on manual zoom
+          mode: state.mode === "follow" ? "free" : state.mode,
+          followedUserId:
+            state.mode === "follow" ? undefined : state.followedUserId,
+        })),
       resize: (width, height) => set({ width, height }),
       setMode: (mode) => set({ mode }),
+
+      setFollowedUser: (userId) => {
+        if (!userId) {
+          set({ mode: "free", followedUserId: undefined });
+          return;
+        }
+
+        const user = usePresenceStore.getState().users[userId];
+
+        if (user && user.viewport) {
+          set({
+            mode: "follow",
+            followedUserId: userId,
+            x: user.viewport.x,
+            y: user.viewport.y,
+            zoom: user.viewport.zoom,
+          });
+        } else {
+          set({ mode: "follow", followedUserId: userId });
+        }
+      },
 
       focusOn: (camera, reason) => {
         const { x, y, zoom } = get();

@@ -1,17 +1,24 @@
 import { create } from "zustand";
 
-export interface RemoteUser {
+export interface CanvasPresence {
   id: string;
   name: string;
   color: string;
   x: number;
   y: number;
   lastActive: number;
+  isAgent?: boolean;
+  selectionIds?: string[];
+  viewport?: {
+    x: number;
+    y: number;
+    zoom: number;
+  };
 }
 
 interface PresenceState {
-  users: Record<string, RemoteUser>;
-  updateUser: (id: string, patch: Partial<RemoteUser>) => void;
+  users: Record<string, CanvasPresence>;
+  updateUser: (id: string, patch: Partial<CanvasPresence>) => void;
   removeUser: (id: string) => void;
 }
 

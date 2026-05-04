@@ -14,6 +14,20 @@
   
   --color-brand-border: rgba(255, 255, 255, 0.08);
   --color-brand-border-glow: rgba(123, 100, 255, 0.2);
+
+  /* Imagination Canvas 14 Design Tokens */
+  --radius-soft: 12px;
+  --radius-pill: 9999px;
+
+  --shadow-spatial: 0 10px 30px -5px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+  --shadow-floating: 0 20px 40px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+
+  --ease-cinematic: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spatial: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --color-agent-thinking: #eab308;
+  --color-agent-generating: #3b82f6;
+  --color-agent-waiting: #ef4444;
 }
 
 /* ─── Global Reset ─────────────────────────────────────────────── */
