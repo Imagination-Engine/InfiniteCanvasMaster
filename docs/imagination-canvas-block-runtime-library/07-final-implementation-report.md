@@ -6,12 +6,12 @@ Pending Execution
 
 ## Implemented
 
-- None yet.
+- Phase 1: Block Registry Normalization complete.
 
 ## Block Library
 
 - Target: 65+ blocks.
-- Currently mapped: 0.
+- Currently mapped: 73.
 
 ## Core UI
 
