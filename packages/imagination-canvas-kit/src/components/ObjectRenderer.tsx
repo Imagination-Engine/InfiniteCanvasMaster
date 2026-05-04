@@ -40,7 +40,7 @@ export const ObjectRenderer: React.FC<{
 }> = memo(({ object, registry = defaultRegistry }) => {
   const { selectedIds, setSelection, setHovered, hoveredId } =
     useSelectionStore();
-  const { setExpansion } = useExpansionStore();
+  const { setExpanded } = useExpansionStore();
   const { x: viewportX, y: viewportY, zoom: viewportZoom } = useViewportStore();
   const updateObject = useCanvasStore((s) => s.updateObject);
   const addConnection = useConnectionStore((s) => s.addConnection);
@@ -107,7 +107,7 @@ export const ObjectRenderer: React.FC<{
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpansion(object.id, "modal"); // or 'immersive'
+    setExpanded(object.id, "modal"); // or 'immersive'
   };
 
   // Polyfill data bridging for block registry views
@@ -189,7 +189,7 @@ export const ObjectRenderer: React.FC<{
           <div className="flex items-center gap-1">
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setExpansion(object.id, "side-panel")}
+              onClick={() => setExpanded(object.id, "side-panel")}
               className="p-1.5 text-white/20 hover:text-white hover:bg-white/10 rounded-lg transition-all"
               title="Settings Inspector"
             >
@@ -205,7 +205,7 @@ export const ObjectRenderer: React.FC<{
             </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setExpansion(object.id, "modal")}
+              onClick={() => setExpanded(object.id, "modal")}
               className="p-1.5 text-white/20 hover:text-brand-cyan hover:bg-brand-cyan/10 rounded-lg transition-all"
               title="Immersive View"
             >

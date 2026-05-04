@@ -40,11 +40,26 @@ export const useCanvasStore = create<CanvasState>()(
       addObject: (obj) =>
         set((state) => ({ objects: [...state.objects, obj] })),
       updateObject: (id, updates) =>
-        set((state) => ({
-          objects: state.objects.map((obj) =>
-            obj.id === id ? { ...obj, ...updates } : (obj as any),
-          ),
-        })),
+        set((state) => {
+          // If objects is an array
+          if (Array.isArray(state.objects)) {
+            return {
+              objects: state.objects.map((obj) =>
+                obj.id === id ? { ...obj, ...updates } : (obj as any),
+              ),
+            };
+          }
+          // If objects is a dictionary
+          if (state.objects[id]) {
+            return {
+              objects: {
+                ...state.objects,
+                [id]: { ...state.objects[id], ...updates },
+              },
+            };
+          }
+          return state;
+        }),
       removeObject: (id) =>
         set((state) => ({
           objects: state.objects.filter((obj) => obj.id !== id),
