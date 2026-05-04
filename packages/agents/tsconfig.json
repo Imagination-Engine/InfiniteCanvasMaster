@@ -16,7 +16,7 @@
       "@iem/core": ["../core/src"],
       "@iem/imagination-canvas-kit": ["../imagination-canvas-kit/src"]
     },
-    "composite": true,
+    
     "jsx": "react-jsx"
   },
   "include": ["src/**/*"],
