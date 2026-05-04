@@ -11,6 +11,11 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "paths": {
+      "@iem/db": ["../db/src"],
+      "@iem/core": ["../core/src"],
+      "@iem/imagination-canvas-kit": ["../imagination-canvas-kit/src"]
+    },
     "composite": true,
     "jsx": "react-jsx"
   },
