@@ -26,7 +26,7 @@ async function testStream() {
       const { done, value } = await reader.read();
       if (done) break;
       if (value.type === "text-delta") {
-        fullText += value.textDelta;
+        fullText += value.delta;
       }
       console.log(`Chunk ${++count}:`, JSON.stringify(value));
     }

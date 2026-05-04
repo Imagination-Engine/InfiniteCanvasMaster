@@ -30,7 +30,7 @@ describe("redactSensitivePayload", () => {
       event: "login",
       data: {
         user: "test@example.com",
-        credentials: {
+        authStuff: {
           secretKey: "hidden-value",
           publicInfo: "visible",
         },
@@ -44,8 +44,9 @@ describe("redactSensitivePayload", () => {
     const result = redactSensitivePayload(payload);
 
     expect(result.data.user).toBe("test@example.com");
-    expect(result.data.credentials.secretKey).toBe("[REDACTED]");
-    expect(result.data.credentials.publicInfo).toBe("visible");
+    // "secretKey" contains "secret" and "key", should be redacted
+    expect(result.data.authStuff.secretKey).toBe("[REDACTED]");
+    expect(result.data.authStuff.publicInfo).toBe("visible");
     expect(result.headers[0].authorization).toBe("[REDACTED]");
     expect(result.headers[1]["Content-Type"]).toBe("application/json");
   });

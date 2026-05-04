@@ -30,8 +30,8 @@ describe("Canvas Store", () => {
     addObject(newBlock);
 
     const { objects } = useCanvasStore.getState();
-    expect(objects).toHaveLength(1);
-    expect(objects[0].id).toBe("block-1");
+    expect(Object.values(objects)).toHaveLength(1);
+    expect(Object.values(objects)[0].id).toBe("block-1");
   });
 
   it("should update an object position", () => {
@@ -48,8 +48,8 @@ describe("Canvas Store", () => {
     updateObject("obj-1", { x: 100, y: 200 });
 
     const { objects } = useCanvasStore.getState();
-    expect(objects[0].x).toBe(100);
-    expect(objects[0].y).toBe(200);
+    expect(Object.values(objects)[0].x).toBe(100);
+    expect(Object.values(objects)[0].y).toBe(200);
   });
 });
 

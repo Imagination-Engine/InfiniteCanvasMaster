@@ -8,8 +8,8 @@ import { useCanvasStore } from "../canvasStore";
 describe("Object Transformations", () => {
   beforeEach(() => {
     useCanvasStore.setState({
-      objects: [
-        {
+      objects: {
+        "obj-1": {
           id: "obj-1",
           type: "shape",
           shapeType: "rectangle",
@@ -21,7 +21,7 @@ describe("Object Transformations", () => {
           status: "idle",
           capabilities: { canMove: true, canResize: true },
         },
-        {
+        "obj-2": {
           id: "obj-2",
           type: "shape",
           shapeType: "rectangle",
@@ -33,7 +33,7 @@ describe("Object Transformations", () => {
           status: "idle",
           capabilities: { canMove: true, canResize: true },
         },
-        {
+        "locked-obj": {
           id: "locked-obj",
           type: "shape",
           shapeType: "rectangle",
@@ -45,7 +45,7 @@ describe("Object Transformations", () => {
           status: "idle",
           capabilities: { canMove: false, canResize: false },
         },
-      ] as any[],
+      } as any,
     });
   });
 
@@ -54,9 +54,7 @@ describe("Object Transformations", () => {
       const { moveObjects } = useCanvasStore.getState() as any;
       moveObjects(["obj-1"], 50, 50);
 
-      const obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-1");
+      const obj = useCanvasStore.getState().objects["obj-1"];
       expect(obj?.x).toBe(50);
       expect(obj?.y).toBe(50);
     });
@@ -65,12 +63,8 @@ describe("Object Transformations", () => {
       const { moveObjects } = useCanvasStore.getState() as any;
       moveObjects(["obj-1", "obj-2"], 10, 10);
 
-      const obj1 = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-1");
-      const obj2 = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-2");
+      const obj1 = useCanvasStore.getState().objects["obj-1"];
+      const obj2 = useCanvasStore.getState().objects["obj-2"];
       expect(obj1?.x).toBe(10);
       expect(obj1?.y).toBe(10);
       expect(obj2?.x).toBe(210);
@@ -81,9 +75,7 @@ describe("Object Transformations", () => {
       const { moveObjects } = useCanvasStore.getState() as any;
       moveObjects(["locked-obj"], 100, 100);
 
-      const obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "locked-obj");
+      const obj = useCanvasStore.getState().objects["locked-obj"];
       expect(obj?.x).toBe(500);
       expect(obj?.y).toBe(500);
     });
@@ -94,9 +86,7 @@ describe("Object Transformations", () => {
       const { resizeObject } = useCanvasStore.getState() as any;
       resizeObject("obj-1", 50, 50);
 
-      const obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-1");
+      const obj = useCanvasStore.getState().objects["obj-1"];
       expect(obj?.width).toBe(150);
       expect(obj?.height).toBe(150);
     });
@@ -105,9 +95,7 @@ describe("Object Transformations", () => {
       const { resizeObject } = useCanvasStore.getState() as any;
       resizeObject("locked-obj", 100, 100);
 
-      const obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "locked-obj");
+      const obj = useCanvasStore.getState().objects["locked-obj"];
       expect(obj?.width).toBe(100);
       expect(obj?.height).toBe(100);
     });
@@ -118,15 +106,9 @@ describe("Object Transformations", () => {
       const { updateZOrder } = useCanvasStore.getState() as any;
       updateZOrder("obj-1", "front");
 
-      const obj1 = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-1");
-      const obj2 = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-2");
-      const lockedObj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "locked-obj");
+      const obj1 = useCanvasStore.getState().objects["obj-1"];
+      const obj2 = useCanvasStore.getState().objects["obj-2"];
+      const lockedObj = useCanvasStore.getState().objects["locked-obj"];
 
       // obj-1 should have the highest zIndex
       expect(obj1?.zIndex).toBeGreaterThan(obj2!.zIndex);
@@ -137,12 +119,8 @@ describe("Object Transformations", () => {
       const { updateZOrder } = useCanvasStore.getState() as any;
       updateZOrder("locked-obj", "back");
 
-      const obj1 = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-1");
-      const lockedObj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "locked-obj");
+      const obj1 = useCanvasStore.getState().objects["obj-1"];
+      const lockedObj = useCanvasStore.getState().objects["locked-obj"];
 
       expect(lockedObj?.zIndex).toBeLessThan(obj1!.zIndex);
     });
@@ -153,9 +131,7 @@ describe("Object Transformations", () => {
       const { resizeObject } = useCanvasStore.getState() as any;
       resizeObject("obj-1", -500, -500);
 
-      const obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "obj-1");
+      const obj = useCanvasStore.getState().objects["obj-1"];
       expect(obj?.width).toBe(10); // Wait, if width was 100 and we substract 500, it should be 10 (min)
       // Ah, I set width: 100 in beforeEach. 100 - 500 = -400. Math.max(10, -400) = 10.
     });

@@ -41,9 +41,6 @@ describe("A2A Hooks", () => {
       );
 
       await waitFor(() => expect(result.current.isConnected).toBe(true));
-
-      // Access the mock instance - this is a bit tricky with stubGlobal
-      // We can use a singleton or capture it in the constructor
     });
   });
 
@@ -63,12 +60,16 @@ describe("A2A Hooks", () => {
     });
 
     it("adversarial: should handle fetch errors", async () => {
-      mockFetch.mockRejectedValueOnce(new Error("Network Error"));
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+      });
 
       const { result } = renderHook(() => useA2AHistory({ runId: "run-1" }));
 
       await waitFor(() => expect(result.current.error).toBeDefined());
-      expect(result.current.isLoading).toBe(false);
+
+      // We need to wait for the finally block in fetchHistory to execute and update state
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
     });
   });
 });

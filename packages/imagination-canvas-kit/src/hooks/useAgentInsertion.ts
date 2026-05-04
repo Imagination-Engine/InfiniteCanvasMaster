@@ -27,7 +27,7 @@ export const useAgentInsertion = () => {
         const height = payload.height || 150;
 
         const currentObjects = [
-          ...useCanvasStore.getState().objects,
+          ...Object.values(useCanvasStore.getState().objects),
           ...addedObjects,
         ];
         const pos = findEmptySpace(

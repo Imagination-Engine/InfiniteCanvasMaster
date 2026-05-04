@@ -33,34 +33,42 @@ export const FloatingOrchestratorChat: React.FC = () => {
         : Object.values(objects);
       const newBlock = currentArray[currentArray.length - 1] as any;
 
-      const blockName = newBlock.metadata?.label || newBlock.type;
+      const blockName = newBlock?.metadata?.label || newBlock?.type;
 
-      let reaction = "I see you added a " + blockName + " block. ";
-      const bnLower = String(blockName).toLowerCase();
-      if (bnLower.indexOf("video") !== -1) {
-        reaction +=
-          "Want this to become a launch reel, cinematic ad, or creator short?";
-      } else if (bnLower.indexOf("claw") !== -1) {
-        reaction +=
-          "Should I sandbox this agent as a builder, researcher, or operator?";
-      } else if (bnLower.indexOf("game") !== -1) {
-        reaction +=
-          "I can connect this Game Runtime to a Storyboard and Asset Generator.";
-      } else if (bnLower.indexOf("writer") !== -1) {
-        reaction +=
-          "That Writers Studio can become the narrative spine of this project.";
-      } else {
-        reaction += "How should we wire this into the flow?";
+      if (blockName) {
+        let reaction = "I see you added a " + blockName + " block. ";
+        const bnLower = String(blockName).toLowerCase();
+        if (bnLower.indexOf("video") !== -1) {
+          reaction +=
+            "Want this to become a launch reel, cinematic ad, or creator short?";
+        } else if (bnLower.indexOf("claw") !== -1) {
+          reaction +=
+            "Should I sandbox this agent as a builder, researcher, or operator?";
+        } else if (bnLower.indexOf("game") !== -1) {
+          reaction +=
+            "I can connect this Game Runtime to a Storyboard and Asset Generator.";
+        } else if (bnLower.indexOf("writer") !== -1) {
+          reaction +=
+            "That Writers Studio can become the narrative spine of this project.";
+        } else {
+          reaction += "How should we wire this into the flow?";
+        }
+
+        setMessages((prev) => [...prev, { role: "agent", content: reaction }]);
       }
-
-      setMessages((prev) => [...prev, { role: "agent", content: reaction }]);
     }
     prevObjectsLength.current = currentLength;
   }, [objects]);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    // In vitest jsdom environments, scrollIntoView might not be implemented
+    if (
+      messagesEndRef.current &&
+      typeof messagesEndRef.current.scrollIntoView === "function"
+    ) {
+      try {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      } catch (e) {}
     }
   }, [messages, isMinimized]);
 
@@ -86,9 +94,6 @@ export const FloatingOrchestratorChat: React.FC = () => {
   return (
     <motion.div
       drag
-      dragMomentum={true}
-      dragElastic={0.1}
-      dragTransition={{ power: 0.2, timeConstant: 200 }}
       initial={{ x: window.innerWidth - 400, y: 80 }}
       className={
         "absolute z-[100] flex flex-col bg-brand-bg-surface/80 backdrop-blur-3xl border border-white/10 hover:border-brand-cyan/30 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 " +

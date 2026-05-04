@@ -9,7 +9,7 @@ import { renderHook, act } from "@testing-library/react";
 
 describe("useMutationPreview", () => {
   beforeEach(() => {
-    useCanvasStore.setState({ objects: [], connections: [], bindings: [] });
+    useCanvasStore.setState({ objects: {}, connections: [], bindings: [] });
 
     useCanvasStore.getState().addObject({
       id: "obj-1",
@@ -39,7 +39,7 @@ describe("useMutationPreview", () => {
     expect(result.current.previewState?.changes[0].updates.x).toBe(500);
 
     // The main store should NOT be changed yet
-    const obj = useCanvasStore.getState().objects.find((o) => o.id === "obj-1");
+    const obj = useCanvasStore.getState().objects["obj-1"];
     expect(obj?.x).toBe(0);
   });
 
@@ -61,7 +61,7 @@ describe("useMutationPreview", () => {
     expect(result.current.previewState).toBeNull();
 
     // Main store should now be updated
-    const obj = useCanvasStore.getState().objects.find((o) => o.id === "obj-1");
+    const obj = useCanvasStore.getState().objects["obj-1"];
     expect(obj?.x).toBe(500);
     expect(obj?.y).toBe(500);
   });
@@ -84,7 +84,7 @@ describe("useMutationPreview", () => {
     expect(result.current.previewState).toBeNull();
 
     // Main store should remain unchanged
-    const obj = useCanvasStore.getState().objects.find((o) => o.id === "obj-1");
+    const obj = useCanvasStore.getState().objects["obj-1"];
     expect(obj?.x).toBe(0);
   });
 

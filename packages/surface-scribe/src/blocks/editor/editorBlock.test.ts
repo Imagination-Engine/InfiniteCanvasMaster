@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { editorBlock } from "./editorBlock";
 
+// Mock the AI SDK properly so generateText returns usage
 vi.mock("ai", () => ({
-  generateText: vi.fn(),
+  generateText: vi.fn().mockResolvedValue({
+    text: "Mocked edited content",
+    usage: { promptTokens: 10, completionTokens: 5 },
+  }),
 }));
 
 vi.mock("@ai-sdk/google", () => ({
@@ -23,11 +27,6 @@ describe("Editor Block (Red/Green Phase)", () => {
   });
 
   it("executes agent binding successfully", async () => {
-    const { generateText } = await import("ai");
-    (generateText as any).mockResolvedValueOnce({
-      text: "Mocked edited content",
-    });
-
     const result = await editorBlock.agent.invoke({ payload: "test" });
     expect(result.success).toBe(true);
     expect(result.text).toBe("Mocked edited content");

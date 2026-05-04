@@ -31,10 +31,10 @@ describe("useNativeInteractions", () => {
     window.dispatchEvent(pasteEvent);
 
     const objects = useCanvasStore.getState().objects;
-    expect(objects.length).toBe(1);
-    expect(objects[0].type).toBe("block");
-    expect((objects[0] as any).blockKind).toBe("note");
-    expect((objects[0] as any).data.content).toBe("Hello World");
+    expect(Object.values(objects).length).toBe(1);
+    expect(Object.values(objects)[0].type).toBe("block");
+    expect((Object.values(objects)[0] as any).blockKind).toBe("note");
+    expect((Object.values(objects)[0] as any).data.content).toBe("Hello World");
     unmount();
   });
 
@@ -50,9 +50,9 @@ describe("useNativeInteractions", () => {
     // It should ideally switch to note creation mode or directly inject a note
     // Let's assume it injects a note at the center of the viewport
     const objects = useCanvasStore.getState().objects;
-    expect(objects.length).toBe(1);
-    expect((objects[0] as any).blockKind).toBe("note");
-    expect((objects[0] as any).data.content).toBe("H");
+    expect(Object.values(objects).length).toBe(1);
+    expect((Object.values(objects)[0] as any).blockKind).toBe("note");
+    expect((Object.values(objects)[0] as any).data.content).toBe("H");
   });
 
   describe("adversarial cases", () => {
@@ -69,7 +69,7 @@ describe("useNativeInteractions", () => {
       input.dispatchEvent(keyEvent);
 
       const objects = useCanvasStore.getState().objects;
-      expect(objects.length).toBe(0);
+      expect(Object.values(objects).length).toBe(0);
 
       document.body.removeChild(input);
       unmount();
@@ -86,7 +86,7 @@ describe("useNativeInteractions", () => {
       window.dispatchEvent(keyEvent);
 
       const objects = useCanvasStore.getState().objects;
-      expect(objects.length).toBe(0);
+      expect(Object.values(objects).length).toBe(0);
 
       unmount();
     });

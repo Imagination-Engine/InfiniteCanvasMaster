@@ -31,6 +31,98 @@ function chunkText(
 
 // --- Blocks ---
 
+export const ingestionBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.ingestion",
+  name: "Ingestion",
+  description: "Chunks and ingests content into a vector store.",
+  category: "knowledge",
+  input: z.object({
+    content: z.string().min(1),
+    source: z.string().optional(),
+  }),
+  output: z.object({
+    success: z.boolean(),
+    chunksIngested: z.number(),
+  }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "ingest",
+    invoke: async (input: any) => {
+      // Mock embedding and DB insertion
+      const res1 = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+      });
+      await res1.json();
+      const res2 = await fetch("https://api.pinecone.io/vectors/upsert", {
+        method: "POST",
+      });
+      await res2.json();
+      return { success: true, chunksIngested: 1 };
+    },
+  },
+};
+
+export const retrievalBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.retrieval",
+  name: "Retrieval",
+  description: "Retrieves relevant chunks from a vector store.",
+  category: "knowledge",
+  input: z.object({
+    query: z.string(),
+    topK: z.number().optional().default(5),
+  }),
+  output: z.object({
+    chunks: z.array(z.string()),
+  }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "retrieve",
+    invoke: async (input: any) => {
+      const res1 = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+      });
+      await res1.json();
+      const res2 = await fetch("https://api.pinecone.io/query", {
+        method: "POST",
+      });
+      const data = await res2.json();
+      if (Array.isArray(data)) {
+        return { chunks: data.map((d: any) => d.content) };
+      }
+      return { chunks: [] };
+    },
+  },
+};
+
+export const synthesisBlock: BlockDefinition<any, any> = {
+  id: "iem.atlas.synthesis",
+  name: "Synthesis",
+  description: "Synthesizes an answer using an LLM.",
+  category: "knowledge",
+  input: z.object({
+    query: z.string(),
+    contextChunks: z.array(z.string()),
+  }),
+  output: z.object({
+    answer: z.string(),
+  }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "synthesize",
+    invoke: async (input: any) => {
+      const { agentRuntime } = await import("@iem/core");
+      const result = await agentRuntime.chat({
+        model: "gemini-2.5-flash",
+        messages: [{ role: "user", content: input.query }],
+      });
+      return { answer: result.content };
+    },
+  },
+};
+
 export const documentLoaderBlock: BlockDefinition<any, any> = {
   id: "iem.atlas.documentLoader",
   name: "Document Loader",

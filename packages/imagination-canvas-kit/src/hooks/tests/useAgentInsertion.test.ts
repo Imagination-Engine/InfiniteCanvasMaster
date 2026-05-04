@@ -29,14 +29,15 @@ describe("useAgentInsertion", () => {
     });
 
     const objects = useCanvasStore.getState().objects;
-    expect(objects.length).toBe(2);
-    expect(objects[0].provenance?.source).toBe("agent");
-    expect(objects[0].provenance?.agentId).toBe("agent-123");
+    expect(Object.values(objects).length).toBe(2);
+    expect(Object.values(objects)[0].provenance?.source).toBe("agent");
+    expect(Object.values(objects)[0].provenance?.agentId).toBe("agent-123");
 
     // They shouldn't be at the exact same coordinates due to findEmptySpace
-    expect(objects[0].x === objects[1].x && objects[0].y === objects[1].y).toBe(
-      false,
-    );
+    expect(
+      Object.values(objects)[0].x === Object.values(objects)[1].x &&
+        Object.values(objects)[0].y === Object.values(objects)[1].y,
+    ).toBe(false);
   });
 
   describe("adversarial cases", () => {
@@ -52,7 +53,7 @@ describe("useAgentInsertion", () => {
       });
 
       const objects = useCanvasStore.getState().objects;
-      expect(objects.length).toBe(0);
+      expect(Object.values(objects).length).toBe(0);
 
       unmount();
     });
@@ -74,7 +75,7 @@ describe("useAgentInsertion", () => {
       });
 
       const objects = useCanvasStore.getState().objects;
-      expect(objects.length).toBe(50);
+      expect(Object.values(objects).length).toBe(50);
 
       unmount();
     });

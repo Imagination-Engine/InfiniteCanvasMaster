@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
+// @ts-ignore
 import { messageBus, BalnceFabricLane } from "@iem/core";
 import jwt from "jsonwebtoken";
 

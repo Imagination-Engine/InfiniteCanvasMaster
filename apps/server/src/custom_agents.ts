@@ -50,20 +50,23 @@ export async function saveCustomAgent(
   }
 
   try {
-    const [result] = await db.insert(customAgents).values({
-      ownerId: data.userId,
-      name: data.name,
-      tagline: data.tagline || null,
-      avatarUrl: data.avatarUrl || null,
-      story: data.story || null,
-      persona: data.persona || null,
-      skills: data.skills,
-      contextSources: data.contextSources || null,
-      capabilities: data.capabilities || null,
-      purpose: data.purpose,
-      blockDefinition: data.blockDefinition || null,
-    }).returning();
-    
+    const resultArr = await (
+      db.insert(customAgents as any).values({
+        ownerId: data.userId,
+        name: data.name,
+        tagline: data.tagline || null,
+        avatarUrl: data.avatarUrl || null,
+        story: data.story || null,
+        persona: data.persona || null,
+        skills: data.skills,
+        contextSources: data.contextSources || null,
+        capabilities: data.capabilities || null,
+        purpose: data.purpose,
+        blockDefinition: data.blockDefinition || null,
+      }) as any
+    ).returning();
+
+    const result = resultArr[0];
     return result.id;
   } catch (error) {
     throw new Error(
@@ -75,16 +78,20 @@ export async function saveCustomAgent(
 /**
  * Retrieves custom agents for a specific user.
  */
-export async function getCustomAgents(db: NodePgDatabase<typeof schema>, userId: string) {
+export async function getCustomAgents(
+  db: NodePgDatabase<typeof schema>,
+  userId: string,
+) {
   if (!userId || typeof userId !== "string" || userId.trim() === "") {
     throw new Error("Invalid userId provided");
   }
 
   try {
-    return await db.select()
-      .from(customAgents)
-      .where(eq(customAgents.ownerId, userId))
-      .orderBy(desc(customAgents.createdAt));
+    return await db
+      .select()
+      .from(customAgents as any)
+      .where(eq((customAgents as any).ownerId, userId))
+      .orderBy(desc((customAgents as any).createdAt));
   } catch (error) {
     throw new Error(
       `Failed to retrieve custom agents: ${error instanceof Error ? error.message : "Unknown error"}`,

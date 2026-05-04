@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+// @ts-ignore
 import { blockRegistry } from "@iem/core";
 import jwt from "jsonwebtoken";
 

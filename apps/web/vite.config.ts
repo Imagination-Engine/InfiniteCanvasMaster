@@ -2,6 +2,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import nodePolyfills from "rollup-plugin-polyfill-node";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -20,18 +23,29 @@ export default defineConfig({
       "@iem/chat-interaction-kit",
     ],
   },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./vitest.setup.ts"],
+  },
   resolve: {
     alias: {
       "lucide-react": "lucide-react/dist/esm/lucide-react",
-      "@iem/core":
-        new URL("../../packages/core/src/index.ts", import.meta.url).pathname,
-      "@iem/agents":
-        new URL("../../packages/agents/src/index.ts", import.meta.url).pathname,
-      "@iem/db": new URL("../../packages/db/src/index.ts", import.meta.url).pathname,
-      "@iem/chat-interaction-kit":
-        new URL("../../packages/chat-interaction-kit/src/index.ts", import.meta.url).pathname,
-      "@iem/imagination-canvas-kit":
-        new URL("../../packages/imagination-canvas-kit/src/index.ts", import.meta.url).pathname,
+      "stream/web": require.resolve("web-streams-polyfill"),
+      crypto: require.resolve("crypto-browserify"),
+      stream: require.resolve("stream-browserify"),
+      "@iem/core": new URL("../../packages/core/src/index.ts", import.meta.url)
+        .pathname,
+      "@iem/db": new URL("../../packages/db/src/index.ts", import.meta.url)
+        .pathname,
+      "@iem/chat-interaction-kit": new URL(
+        "../../packages/chat-interaction-kit/src/index.ts",
+        import.meta.url,
+      ).pathname,
+      "@iem/imagination-canvas-kit": new URL(
+        "../../packages/imagination-canvas-kit/src/index.ts",
+        import.meta.url,
+      ).pathname,
     },
   },
   build: {
@@ -40,6 +54,7 @@ export default defineConfig({
       transformMixedEsModules: true,
     },
     rollupOptions: {
+      plugins: [nodePolyfills()],
       external: [
         "react",
         "react-dom",

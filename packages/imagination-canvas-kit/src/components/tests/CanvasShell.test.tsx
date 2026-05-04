@@ -13,7 +13,21 @@ expect.extend(matchers);
 // Mock framer-motion to avoid issues in tests
 vi.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, className, style, ...props }: any) => (
+    div: ({
+      children,
+      className,
+      style,
+      drag,
+      dragMomentum,
+      dragElastic,
+      dragTransition,
+      initial,
+      animate,
+      exit,
+      layoutId,
+      layout,
+      ...props
+    }: any) => (
       <div className={className} style={style} {...props}>
         {children}
       </div>

@@ -8,7 +8,7 @@ export const useFrameContainment = () => {
     const { objects, updateObject } = useCanvasStore.getState();
 
     // Find all frames
-    const frames = objects.filter(
+    const frames = Object.values(objects).filter(
       (o) =>
         o.type === "block" &&
         (o as any).blockKind === "frame" &&

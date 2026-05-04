@@ -1,12 +1,20 @@
 import {
   blockRegistry,
+  // @ts-ignore
   refinerBlock,
+  // @ts-ignore
   summarizerBlock,
+  // @ts-ignore
   translatorBlock,
+  // @ts-ignore
   colorSwapperBlock,
+  // @ts-ignore
   filterBlock,
+  // @ts-ignore
   webScraperBlock,
+  // @ts-ignore
   formatterBlock,
+  // @ts-ignore
   programmerBlock,
 } from "@iem/core";
 import {

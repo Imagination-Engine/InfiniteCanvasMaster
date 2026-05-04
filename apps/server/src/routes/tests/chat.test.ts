@@ -3,8 +3,8 @@ import { chatRouter } from "../chat.js";
 
 // Mock Mastra and Agent
 vi.mock("@iem/agents", () => ({
-  mastra: {
-    getAgent: vi.fn().mockReturnValue({
+  createOrchestrator: vi.fn().mockImplementation(async () => {
+    return {
       stream: vi.fn().mockImplementation(async (messages) => {
         // Adversarial condition: throw an error if the user tries to break it
         if (messages.some((m: any) => m.content === "throw_error")) {
@@ -18,7 +18,10 @@ vi.mock("@iem/agents", () => ({
           toolResults: [],
         };
       }),
-    }),
+    };
+  }),
+  mastra: {
+    storage: {},
   },
 }));
 

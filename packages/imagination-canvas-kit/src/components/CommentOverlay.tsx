@@ -6,7 +6,7 @@ export const CommentOverlay: React.FC = () => {
   const { objects, bindings } = useCanvasStore();
 
   // Find all objects of type 'comment' that have a binding to another object
-  const comments = objects.filter(
+  const comments = Object.values(objects).filter(
     (obj) =>
       obj.type === "comment" && bindings.some((b) => b.sourceId === obj.id),
   );

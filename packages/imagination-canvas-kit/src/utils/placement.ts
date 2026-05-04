@@ -37,7 +37,7 @@ export const findEmptySpace = (
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const candidateRect: Rect = { x: currentX, y: currentY, width, height };
 
-    const hasCollision = existingObjects.some((obj) =>
+    const hasCollision = Object.values(existingObjects).some((obj) =>
       rectsIntersect(candidateRect, obj),
     );
 

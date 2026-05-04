@@ -1,21 +1,29 @@
-import { describe, it, expect } from 'vitest';
-import { colliderBlock } from './colliderBlock';
+import { describe, it, expect } from "vitest";
+import { colliderBlock } from "./colliderBlock";
 
-describe('Collider Block (Red/Green Phase)', () => {
-  it('has valid metadata and schema', () => {
-    expect(colliderBlock.id).toBe('iem.playable.collider');
-    expect(colliderBlock.name).toBe('Collider');
-    
-    const validIn = { payload: 'test' };
-    expect(colliderBlock.input.parse(validIn)).toEqual(validIn);
+describe("Collider Block (Red/Green Phase)", () => {
+  it("has valid metadata and schema", () => {
+    expect(colliderBlock.id).toBe("iem.playable.collider");
+    expect(colliderBlock.name).toBe("Hitbox Collider");
+
+    const validIn = {
+      shape: "rectangle",
+      width: 64,
+      height: 64,
+      isTrigger: false,
+      collisionGroup: "default",
+    };
+    expect(colliderBlock.input.parse(validIn)).toMatchObject({
+      shape: "rectangle",
+    });
   });
 
-  it('executes agent binding successfully', async () => {
-    const result = await colliderBlock.agent.invoke({ payload: 'test' });
-    expect(result.success).toBe(true);
+  it("executes agent binding successfully", async () => {
+    const result = await colliderBlock.agent.invoke({ shape: "rectangle" });
+    expect(result.isColliding).toBe(false);
   });
 
-  it('adversarial: rejects invalid schema inputs', () => {
-    expect(() => colliderBlock.input.parse({ payload: 123 })).toThrow();
+  it("adversarial: rejects invalid schema inputs", () => {
+    expect(() => colliderBlock.input.parse({ shape: 123 })).toThrow();
   });
 });

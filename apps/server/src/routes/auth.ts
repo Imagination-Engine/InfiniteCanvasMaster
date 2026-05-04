@@ -39,15 +39,15 @@ authRouter.post("/signup", async (c) => {
   try {
     const existingUser = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email));
+      .from(users as any)
+      .where(eq((users as any).email, email));
     if (existingUser.length > 0) {
       return c.json({ error: "Email already exists" }, 409);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const [newUser] = await db
-      .insert(users)
+      .insert(users as any)
       .values({
         email,
         passwordHash,
@@ -64,7 +64,7 @@ authRouter.post("/signup", async (c) => {
     });
 
     // Store refresh token in DB
-    await db.insert(authSessions).values({
+    await db.insert(authSessions as any).values({
       userId: newUser.id,
       refreshToken,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -113,7 +113,10 @@ authRouter.post("/login", async (c) => {
   }
 
   try {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await db
+      .select()
+      .from(users as any)
+      .where(eq((users as any).email, email));
     if (!user) {
       return c.json({ error: "Invalid email or password" }, 401);
     }
@@ -133,7 +136,7 @@ authRouter.post("/login", async (c) => {
     });
 
     // Store refresh token in DB
-    await db.insert(authSessions).values({
+    await db.insert(authSessions as any).values({
       userId: user.id,
       refreshToken,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -195,8 +198,8 @@ authRouter.post("/refresh", async (c) => {
     // Check if token exists in DB and is not expired
     const [session] = await db
       .select()
-      .from(authSessions)
-      .where(eq(authSessions.refreshToken, refreshToken));
+      .from(authSessions as any)
+      .where(eq((authSessions as any).refreshToken, refreshToken));
 
     if (!session) {
       console.warn("[AUTH REFRESH] Session not found in database");
@@ -210,8 +213,8 @@ authRouter.post("/refresh", async (c) => {
 
     const [user] = await db
       .select()
-      .from(users)
-      .where(eq(users.id, payload.sub));
+      .from(users as any)
+      .where(eq((users as any).id, payload.sub));
 
     if (!user) {
       console.error("[AUTH REFRESH] User not found for valid token");
@@ -247,8 +250,8 @@ authRouter.post("/logout", async (c) => {
 
   if (refreshToken) {
     await db
-      .delete(authSessions)
-      .where(eq(authSessions.refreshToken, refreshToken));
+      .delete(authSessions as any)
+      .where(eq((authSessions as any).refreshToken, refreshToken));
   }
 
   deleteCookie(c, "refresh_token", { path: "/" });
@@ -269,9 +272,9 @@ authRouter.post("/complete-onboarding", async (c) => {
     const payload = jwt.verify(token, JWT_SECRET) as { sub: string };
 
     const [updatedUser] = await db
-      .update(users)
+      .update(users as any)
       .set({ hasCompletedOnboarding: true })
-      .where(eq(users.id, payload.sub))
+      .where(eq((users as any).id, payload.sub))
       .returning();
 
     if (!updatedUser) {

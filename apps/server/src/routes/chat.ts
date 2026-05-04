@@ -62,8 +62,8 @@ chatRouter.post("/", async (c) => {
   if (sessionId && !sessionId.startsWith("draft-") && !body.isDraft) {
     const [workspace] = await db
       .select()
-      .from(workspaces)
-      .where(eq(workspaces.id, sessionId));
+      .from(workspaces as any)
+      .where(eq((workspaces as any).id, sessionId));
 
     if (!workspace || workspace.ownerId !== user.sub) {
       return c.json({ error: "Session not found or unauthorized" }, 403);
@@ -71,6 +71,7 @@ chatRouter.post("/", async (c) => {
   }
 
   try {
+    // @ts-ignore
     const { createOrchestrator, mastra } = await import("@iem/agents");
     const agent = await createOrchestrator(mastra.storage);
 

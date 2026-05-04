@@ -13,7 +13,9 @@ export const useBlockAutosave = (blockId: string, debounceMs: number = 300) => {
       timeoutRef.current = setTimeout(() => {
         // In a real implementation we might fetch the current block to merge
         const objects = useCanvasStore.getState().objects;
-        const currentBlock = objects.find((o) => o.id === blockId);
+        const currentBlock = Object.values(objects).find(
+          (o) => o.id === blockId,
+        );
 
         if (currentBlock) {
           useCanvasStore.getState().updateObject(blockId, {
@@ -39,7 +41,7 @@ export const useBlockAutosave = (blockId: string, debounceMs: number = 300) => {
 
       // Apply immediately if not locked
       const objects = useCanvasStore.getState().objects;
-      const currentBlock = objects.find((o) => o.id === blockId);
+      const currentBlock = Object.values(objects).find((o) => o.id === blockId);
 
       if (currentBlock) {
         useCanvasStore.getState().updateObject(blockId, {

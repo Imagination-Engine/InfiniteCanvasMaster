@@ -11,7 +11,7 @@ import { renderHook, act } from "@testing-library/react";
 describe("useBlockAutosave", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    useCanvasStore.setState({ objects: [], connections: [], bindings: [] });
+    useCanvasStore.setState({ objects: {}, connections: [], bindings: [] });
     useSelectionStore.setState({ editingId: null });
 
     useCanvasStore.getState().addObject({
@@ -39,9 +39,7 @@ describe("useBlockAutosave", () => {
     });
 
     // Before timer, store should not be updated
-    let obj = useCanvasStore
-      .getState()
-      .objects.find((o) => o.id === "block-1") as any;
+    let obj = useCanvasStore.getState().objects["block-1"];
     expect(obj.data.content).toBe("initial");
 
     act(() => {
@@ -49,9 +47,7 @@ describe("useBlockAutosave", () => {
     });
 
     // After timer, store should be updated
-    obj = useCanvasStore
-      .getState()
-      .objects.find((o) => o.id === "block-1") as any;
+    obj = useCanvasStore.getState().objects["block-1"];
     expect(obj.data.content).toBe("updated");
   });
 
@@ -73,9 +69,7 @@ describe("useBlockAutosave", () => {
       vi.advanceTimersByTime(500);
     });
 
-    const obj = useCanvasStore
-      .getState()
-      .objects.find((o) => o.id === "block-1") as any;
+    const obj = useCanvasStore.getState().objects["block-1"];
     expect(obj.data.content).toBe("initial");
   });
 
@@ -95,9 +89,7 @@ describe("useBlockAutosave", () => {
         vi.advanceTimersByTime(200);
       });
 
-      let obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "block-1") as any;
+      let obj = useCanvasStore.getState().objects["block-1"];
       expect(obj.data.content).toBe("initial");
 
       // Finish timer
@@ -105,9 +97,7 @@ describe("useBlockAutosave", () => {
         vi.advanceTimersByTime(200);
       });
 
-      obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "block-1") as any;
+      obj = useCanvasStore.getState().objects["block-1"];
       expect(obj.data.content).toBe("3");
     });
 

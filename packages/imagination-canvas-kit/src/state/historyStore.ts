@@ -92,7 +92,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       name,
       timestamp: Date.now(),
       state: {
-        objects: [...currentState.objects],
+        objects: [...Object.values(currentState.objects)],
         connections: [...currentState.connections],
         bindings: [...currentState.bindings],
       },

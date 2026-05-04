@@ -21,7 +21,7 @@ export const useNativeInteractions = () => {
 
       const viewport = useViewportStore.getState();
       const center = getCenterOfViewport(viewport);
-      const objects = useCanvasStore.getState().objects;
+      const objects = Object.values(useCanvasStore.getState().objects);
 
       const pos = findEmptySpace(
         center.x,
@@ -66,7 +66,7 @@ export const useNativeInteractions = () => {
 
       const viewport = useViewportStore.getState();
       const center = getCenterOfViewport(viewport);
-      const objects = useCanvasStore.getState().objects;
+      const objects = Object.values(useCanvasStore.getState().objects);
 
       const pos = findEmptySpace(
         center.x,

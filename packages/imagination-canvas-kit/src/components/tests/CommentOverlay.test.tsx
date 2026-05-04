@@ -10,7 +10,7 @@ import { useCanvasStore } from "../../state/canvasStore";
 
 describe("CommentOverlay", () => {
   beforeEach(() => {
-    useCanvasStore.setState({ objects: [], connections: [], bindings: [] });
+    useCanvasStore.setState({ objects: {}, connections: [], bindings: [] });
 
     // Add a block to comment on
     useCanvasStore.getState().addObject({
@@ -38,8 +38,9 @@ describe("CommentOverlay", () => {
     // Bind the comment to the block
     useCanvasStore.getState().addBinding({
       id: "bind-1",
-      sourceId: "comment-1",
+      sourceId: "comment-1", // The canvasStore code maps sourceId and targetId
       targetId: "block-1",
+      actorId: "comment-1", // The implementation actually uses actorId
       type: "anchor",
     } as any);
   });
@@ -66,9 +67,7 @@ describe("CommentOverlay", () => {
       // If it doesn't currently, the test will fail here, signaling we need to update `moveObjects`.
     });
 
-    const movedComment = useCanvasStore
-      .getState()
-      .objects.find((o) => o.id === "comment-1");
+    const movedComment = useCanvasStore.getState().objects["comment-1"];
     expect(movedComment?.x).toBe(150);
     expect(movedComment?.y).toBe(130);
 

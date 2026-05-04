@@ -45,7 +45,9 @@ describe("useFrameContainment", () => {
       evaluateDrop("obj-1", { x: 200, y: 200, width: 50, height: 50 });
     });
 
-    const obj = useCanvasStore.getState().objects.find((o) => o.id === "obj-1");
+    const obj = Object.values(useCanvasStore.getState().objects).find(
+      (o) => o.id === "obj-1",
+    );
     expect(obj?.parentId).toBe("frame-1");
   });
 
@@ -61,7 +63,9 @@ describe("useFrameContainment", () => {
       evaluateDrop("obj-1", { x: 0, y: 0, width: 50, height: 50 });
     });
 
-    const obj = useCanvasStore.getState().objects.find((o) => o.id === "obj-1");
+    const obj = Object.values(useCanvasStore.getState().objects).find(
+      (o) => o.id === "obj-1",
+    );
     expect(obj?.parentId).toBeUndefined();
   });
 
@@ -75,9 +79,10 @@ describe("useFrameContainment", () => {
         evaluateDrop("frame-1", { x: 100, y: 100, width: 400, height: 400 });
       });
 
-      const obj = useCanvasStore
-        .getState()
-        .objects.find((o) => o.id === "frame-1");
+      const obj = useCanvasStore.getState();
+      Object.values(useCanvasStore.getState().objects).find(
+        (o) => o.id === "frame-1",
+      );
       expect(obj?.parentId).toBeUndefined(); // Should not be 'frame-1'
     });
   });

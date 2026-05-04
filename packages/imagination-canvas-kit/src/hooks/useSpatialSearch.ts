@@ -9,7 +9,7 @@ export const useSpatialSearch = () => {
     const lowerQuery = query.toLowerCase();
     const { objects } = useCanvasStore.getState();
 
-    return objects
+    return Object.values(objects)
       .filter((obj) => {
         // Build a searchable string from the object's properties
         let searchableText = `${obj.type} ${(obj as any).blockKind || ""} `;
