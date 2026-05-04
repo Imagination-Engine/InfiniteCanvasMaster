@@ -79,11 +79,8 @@ chatRouter.post("/", async (c) => {
       canvasSystemPrompt = `\n\nCURRENT CANVAS STATE:\nNodes: ${JSON.stringify(body.canvasContext.nodes)}\nEdges: ${JSON.stringify(body.canvasContext.edges)}\nBe aware of these existing nodes and connections when suggesting changes, discussing the workspace, or generating blueprints. You are contiguous with the canvas experience.`;
     }
 
-    // Pass the user's latest message, but Mastra will fetch the history automatically because of the threadId!
-    const latestUserMessage =
-      sanitizedMessages[sanitizedMessages.length - 1]?.content;
-
-    // We can still inject our powerful system prompt dynamically.
+    // Pass the ENTIRE message history from the UI (which already contains the context),
+    // and prepend the dynamic system message so the model has the rules.
     const finalMessages = [
       {
         role: "system",
@@ -94,10 +91,7 @@ The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_
 
 Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.${canvasSystemPrompt}`,
       },
-      {
-        role: "user",
-        content: latestUserMessage,
-      },
+      ...sanitizedMessages,
     ];
 
     const result = await agent.stream(finalMessages, {
