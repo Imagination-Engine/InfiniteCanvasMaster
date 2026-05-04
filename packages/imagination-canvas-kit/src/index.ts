@@ -42,3 +42,5 @@ BlockRegistry.register("app", AppBlock as any);
 export * from "./components/BlockLibraryDrawer";
 
 export * from "./components/ImmersiveBlockModal";
+
+export * from "./components/FloatingOrchestratorChat";

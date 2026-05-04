@@ -18,7 +18,7 @@ Pending Execution
 - Library drawer: Complete (BlockLibraryDrawer.tsx)
 - Canvas blocks: Complete (ObjectRenderer UI upgraded with premium chrome, status pips, and scanning pulse animations).
 - Immersive modal: Complete (ImmersiveBlockModal.tsx implementing edge-to-edge split pane UI).
-- Orchestrator chat: Pending
+- Orchestrator chat: Complete (FloatingOrchestratorChat.tsx with canvas awareness).
 - Layout compiler: Pending
 
 ## Runtime Wiring
