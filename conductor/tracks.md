@@ -32,9 +32,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Imagination Canvas Extraction: 16 - Component Implementation Plan**
-      _Link: [./tracks/imagination_canvas_16_component_plan_20260501/](./tracks/imagination_canvas_16_component_plan_20260501/)_
-
 ---
 
 - [ ] **Track: Imagination Canvas Extraction: 17 - Balnce Native Blocks**
