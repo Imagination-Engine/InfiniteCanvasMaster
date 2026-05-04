@@ -2,12 +2,15 @@ export * from "./contracts/index";
 
 export * from "./state/canvasStore";
 export * from "./state/viewportStore";
+export * from "./state/connectionStore";
+export * from "./state/expansionStore";
 
 export * from "./utils/camera";
 
 export * from "./components/InfiniteViewport";
 export * from "./components/ObjectRenderer";
 export * from "./components/ConnectorLayer";
+export * from "./components/CanvasShell";
 
 export * from "./hooks/useCanvasClipboard";
 export * from "./hooks/useAgentOnCanvas";

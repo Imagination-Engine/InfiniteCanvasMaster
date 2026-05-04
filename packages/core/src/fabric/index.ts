@@ -6,3 +6,4 @@ export * from "./router";
 export * from "./nodeInputAdapters";
 export * from "./transports/InProcessTransport";
 export * from "./adapters/MastraDagFabricAdapter";
+export * from "./adapters/DurableEventAdapter";

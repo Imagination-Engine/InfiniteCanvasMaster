@@ -535,6 +535,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260423.1)(@types/pg@8.20.0)(pg@8.20.0)
+      eventemitter3:
+        specifier: ^5.0.4
+        version: 5.0.4
       express:
         specifier: ^4.21.2
         version: 4.22.1
@@ -7023,7 +7026,7 @@ packages:
       "@vitest/spy": 4.1.5
       estree-walker: 3.0.3
       magic-string: 0.30.21
-      vite: 7.3.2(@types/node@24.12.2)(tsx@4.21.0)
+      vite: 7.3.2(@types/node@25.6.0)(tsx@4.21.0)
     dev: true
 
   /@vitest/mocker@4.1.5(vite@8.0.10):

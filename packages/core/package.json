@@ -14,15 +14,16 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
+    "@iem/db": "workspace:*",
     "@mastra/core": "latest",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@iem/db": "workspace:*",
     "ai": "^6.0.168",
     "drizzle-orm": "^0.45.2",
+    "eventemitter3": "^5.0.4",
+    "express": "^4.21.2",
     "react": "^19.0.0",
     "zod": "^3.24.1",
-    "zod-to-json-schema": "^3.25.2",
-    "express": "^4.21.2"
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

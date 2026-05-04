@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import EventEmitter from "eventemitter3";
 import { BalnceEnvelope } from "../envelope";
 import {
   FabricTransport,
@@ -12,9 +12,7 @@ export class InProcessTransport implements FabricTransport {
   readonly kind = "in-process";
   private emitter = new EventEmitter();
 
-  constructor() {
-    this.emitter.setMaxListeners(1000);
-  }
+  constructor() {}
 
   async publish<T>(envelope: BalnceEnvelope<T>): Promise<void> {
     const topic = envelope.source?.topic || "global";

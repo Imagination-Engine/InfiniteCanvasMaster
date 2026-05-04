@@ -41,6 +41,15 @@ export function useA2ASubscription(options: UseA2ASubscriptionOptions) {
         const envelope = JSON.parse(event.data) as BalnceEnvelope;
         setLastEnvelope(envelope);
         if (onMessage) onMessage(envelope);
+
+        // Push into the global projection store if it's a ui_projection
+        if (envelope.lane === "ui_projection") {
+          import("./useBlockProjection").then(
+            ({ useCanvasProjectionStore }) => {
+              useCanvasProjectionStore.getState().applyEnvelope(envelope);
+            },
+          );
+        }
       } catch (err) {
         console.error("Failed to parse A2A envelope", err);
       }
