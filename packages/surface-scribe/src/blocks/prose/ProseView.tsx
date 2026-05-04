@@ -13,9 +13,9 @@ export interface ProseViewProps {
 
 export const ProseView: React.FC<ProseViewProps> = ({ data = {} }) => {
   const content =
-    data.content ||
-    data.input?.payload ||
-    data.params?.payload ||
+    (data as any).content ||
+    (data as any).input?.payload ||
+    (data as any).params?.payload ||
     "<p>Hello Scribe!</p>";
 
   const editor = useEditor({

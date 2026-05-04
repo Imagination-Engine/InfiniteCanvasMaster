@@ -78,7 +78,7 @@ export default function Canvas() {
                 });
 
                 if (newShapes.length > 0) {
-                  store.put(newShapes);
+                  (store as any).put(newShapes);
                 }
               }
             } catch (e) {
@@ -111,7 +111,7 @@ export default function Canvas() {
 
       // Create the custom IemBlockShape on the Tldraw canvas
       const newShapeId = createShapeId();
-      store.put([
+      (store as any).put([
         {
           id: newShapeId,
           type: "iem-block",
@@ -151,7 +151,7 @@ export default function Canvas() {
 
       {/* The Tldraw spatial renderer */}
       <div className="absolute inset-0" style={{ zIndex: 1 }}>
-        <Tldraw store={store} />
+        <Tldraw store={store as any} />
       </div>
 
       <div className="absolute bottom-0 w-full z-10">
