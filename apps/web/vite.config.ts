@@ -24,14 +24,14 @@ export default defineConfig({
     alias: {
       "lucide-react": "lucide-react/dist/esm/lucide-react",
       "@iem/core":
-        "/Users/zacharyschenkler/icmaster/packages/core/src/index.ts",
+        new URL("../../packages/core/src/index.ts", import.meta.url).pathname,
       "@iem/agents":
-        "/Users/zacharyschenkler/icmaster/packages/agents/src/index.ts",
-      "@iem/db": "/Users/zacharyschenkler/icmaster/packages/db/src/index.ts",
+        new URL("../../packages/agents/src/index.ts", import.meta.url).pathname,
+      "@iem/db": new URL("../../packages/db/src/index.ts", import.meta.url).pathname,
       "@iem/chat-interaction-kit":
-        "/Users/zacharyschenkler/icmaster/packages/chat-interaction-kit/src/index.ts",
+        new URL("../../packages/chat-interaction-kit/src/index.ts", import.meta.url).pathname,
       "@iem/imagination-canvas-kit":
-        "/Users/zacharyschenkler/icmaster/packages/imagination-canvas-kit/src/index.ts",
+        new URL("../../packages/imagination-canvas-kit/src/index.ts", import.meta.url).pathname,
     },
   },
   build: {
