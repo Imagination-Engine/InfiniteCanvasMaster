@@ -2,7 +2,17 @@ import { useCallback } from "react";
 import { useViewportStore } from "../state/viewportStore";
 
 export function useViewportCamera() {
-  const { viewport, updateViewport } = useViewportStore();
+  const store = useViewportStore();
+
+  // The viewport state variables are spread directly on the store root,
+  // not under a 'viewport' key. We must construct a synthetic viewport object.
+  const viewport = {
+    x: store.x,
+    y: store.y,
+    zoom: store.zoom,
+  };
+
+  const updateViewport = store.setCamera;
 
   const pan = useCallback(
     (dx: number, dy: number) => {
