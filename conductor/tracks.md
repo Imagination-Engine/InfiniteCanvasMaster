@@ -61,3 +61,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Cross-Studio Interoperability & Compatibility Engine**
       _Link: [./tracks/cross_studio_interop_20260504/](./tracks/cross_studio_interop_20260504/)_
+
+---
+
+- [ ] **Track: Vertical Slice Implementation: Writer's Studio**
+      _Link: [./tracks/vertical_slice_writers_studio_20260504/](./tracks/vertical_slice_writers_studio_20260504/)_

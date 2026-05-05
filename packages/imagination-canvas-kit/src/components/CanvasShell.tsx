@@ -59,8 +59,8 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
       )}
     >
       <BlockLibraryDrawer />
-      <ImmersiveBlockModal />
       {children}
+      <ImmersiveBlockModal />
       <FloatingOrchestratorChat />
     </div>
   );

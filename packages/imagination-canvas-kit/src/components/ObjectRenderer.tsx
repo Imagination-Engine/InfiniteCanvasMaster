@@ -259,7 +259,7 @@ export const ObjectRenderer: React.FC<{
             >
               <Maximize2
                 size={14}
-                className="group-hover:stroke-black transition-colors"
+                className="group-hover:!stroke-black transition-colors"
               />
             </button>
           </div>
