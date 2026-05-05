@@ -16,7 +16,7 @@ export const useLibraryStore = create<LibraryState>()(
 
       loadCustomBlocks: async () => {
         try {
-          const response = await fetch("/api/library/blocks");
+          const response = await fetch("/api/blocks/library");
           if (response.ok) {
             const data = await response.json();
             set({ customBlocks: data.blocks || [] });

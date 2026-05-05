@@ -48,7 +48,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
     };
 
     try {
-      const response = await fetch("/api/library/blocks", {
+      const response = await fetch("/api/blocks/library", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

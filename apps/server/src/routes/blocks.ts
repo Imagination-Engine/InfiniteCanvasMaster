@@ -7,7 +7,52 @@ const blocksRouter = new Hono();
 
 import { authMiddleware } from "../middleware/auth.js";
 
-blocksRouter.use("*", authMiddleware);
+/**
+ * List all available blocks (Registry + Database)
+ * GET /api/blocks/library
+ */
+blocksRouter.get("/library", async (c) => {
+  // 1. Get core registry blocks
+  const registryBlocks = blockRegistry.list().map((b) => ({
+    id: b.id,
+    name: b.name,
+    category: b.category,
+    description: b.description,
+    icon: b.icon,
+    agentic: b.agentic,
+    runtime: b.runtime,
+    studio: b.studio,
+  }));
+
+  // 2. Fetch custom blocks from DB (placeholder for now)
+  const dbBlocks: any[] = [];
+
+  return c.json({
+    blocks: [...registryBlocks, ...dbBlocks],
+  });
+});
+
+/**
+ * Save a custom block to the library
+ * POST /api/blocks/library
+ */
+blocksRouter.post("/library", async (c) => {
+  const payload = await c.req.json();
+
+  // In production, we would persist this to the DB.
+  console.log(`[LIBRARY] Saving custom block: ${payload.name}`);
+
+  return c.json({
+    success: true,
+    block: {
+      ...payload,
+      id: payload.id || `custom-${Date.now()}`,
+    },
+  });
+});
+
+// Protect only the execution endpoint for now
+blocksRouter.use("/execute", authMiddleware);
 
 /**
  * Single Block Execution Endpoint

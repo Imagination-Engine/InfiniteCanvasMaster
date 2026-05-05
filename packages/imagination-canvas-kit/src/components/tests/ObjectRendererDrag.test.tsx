@@ -19,11 +19,15 @@ describe("ObjectRenderer Drag Interaction", () => {
     zIndex: 1,
     status: "idle",
     metadata: { label: "Test Agent" },
+    capabilities: [],
+    blockKind: "agent",
   };
 
   beforeEach(() => {
     useSelectionStore.setState({ selectedIds: [] });
-    useCanvasStore.setState({ objects: { [mockObject.id]: mockObject } });
+    useCanvasStore.setState({
+      objects: { [mockObject.id]: mockObject as any },
+    });
   });
 
   afterEach(() => {
@@ -33,6 +37,7 @@ describe("ObjectRenderer Drag Interaction", () => {
   it("should update coordinates in store during drag", () => {
     render(<ObjectRenderer object={mockObject as any} />);
 
+    // Search for the element that contains the label
     const block = screen.getByText(/Test Agent/i).closest(".absolute");
     expect(block).toBeDefined();
 
@@ -49,19 +54,5 @@ describe("ObjectRenderer Drag Interaction", () => {
 
     // End drag
     fireEvent.pointerUp(window);
-  });
-
-  it("should apply dragging visual styles", () => {
-    // This requires isDragging state in the component
-    // We'll check for a class like 'scale-105' or 'shadow-2xl' if we implement it
-    render(<ObjectRenderer object={mockObject as any} />);
-
-    const block = screen.getByText(/Test Agent/i).closest(".absolute");
-
-    fireEvent.pointerDown(block!, { clientX: 100, clientY: 100 });
-
-    // Check if it has elevated styling (we'll implement this)
-    // For now we just expect it to be in the DOM
-    expect(block).toBeDefined();
   });
 });

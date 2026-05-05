@@ -21,11 +21,15 @@ describe("ObjectRenderer Top Bar", () => {
     metadata: {
       label: "Test Agent",
     },
+    capabilities: [],
+    blockKind: "agent",
   };
 
   beforeEach(() => {
     useSelectionStore.setState({ selectedIds: [] });
-    useCanvasStore.setState({ objects: { [mockObject.id]: mockObject } });
+    useCanvasStore.setState({
+      objects: { [mockObject.id]: mockObject as any },
+    });
   });
 
   afterEach(() => {

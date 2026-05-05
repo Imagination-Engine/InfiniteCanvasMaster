@@ -31,11 +31,15 @@ describe("useOrchestratorContext hook", () => {
       y: 0,
       width: 100,
       height: 100,
+      zIndex: 1,
+      status: "idle",
       metadata: { label: "Test Note" },
+      capabilities: [],
+      blockKind: "note",
     };
 
     act(() => {
-      useCanvasStore.getState().addObject(testBlock);
+      useCanvasStore.getState().addObject(testBlock as any);
       useSelectionStore.getState().select("block-1");
     });
 
@@ -53,10 +57,14 @@ describe("useOrchestratorContext hook", () => {
       y: 10,
       width: 100,
       height: 100,
+      zIndex: 1,
+      status: "idle",
+      capabilities: [],
+      blockKind: "agent",
     };
 
     act(() => {
-      useCanvasStore.getState().addObject(testBlock);
+      useCanvasStore.getState().addObject(testBlock as any);
     });
 
     expect(result.current.lastDroppedBlockId).toBe("block-new");

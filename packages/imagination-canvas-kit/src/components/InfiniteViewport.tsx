@@ -8,6 +8,7 @@ import { ConnectorLayer } from "./ConnectorLayer";
 import { AgentActivityLayer } from "./AgentActivityLayer";
 import { PresenceLayer } from "./PresenceLayer";
 import { screenToCanvas } from "../utils/camera";
+import { blockRegistry } from "@iem/core";
 
 export const InfiniteViewport: React.FC<{
   children?: React.ReactNode;
@@ -153,18 +154,24 @@ export const InfiniteViewport: React.FC<{
 
     const newId = `${type}-${Date.now()}`;
 
+    // Look up block definition for better metadata
+    const blockDef = blockRegistry.get(type);
+
     addObject({
       id: newId,
       type: type as any,
       x: canvasPoint.x,
       y: canvasPoint.y,
-      width: 300,
-      height: 200,
+      width: blockDef?.width || 320,
+      height: blockDef?.height || 240,
       zIndex: 1,
       status: "idle",
       rotation: 0,
       metadata: {
-        label: `New ${type}`,
+        label: blockDef?.name || `New ${type.split(".").pop()}`,
+        description: blockDef?.description || "",
+        capabilities: blockDef?.capabilities || [],
+        runtime: blockDef?.runtime || "LIVE",
       },
     });
 

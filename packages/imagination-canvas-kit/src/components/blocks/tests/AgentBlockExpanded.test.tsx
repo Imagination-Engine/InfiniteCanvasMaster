@@ -16,19 +16,19 @@ describe("AgentBlock Expanded State", () => {
       y: 0,
       width: 320,
       height: 240,
+      zIndex: 1,
       status: "idle",
       metadata: {
         label: "Test Agent",
         role: "Researcher",
         instructions: "Find market trends",
       },
+      capabilities: [],
+      blockKind: "agent",
     };
 
-    // We pass a 'mode' prop or similar to indicate expanded state
-    // Let's assume we use a prop called 'mode'
-    render(<AgentBlock object={testObject} mode="fullscreen" />);
+    render(<AgentBlock object={testObject as any} mode="fullscreen" />);
 
-    // In expanded mode, we expect to see input fields for role and instructions
     expect(screen.getByLabelText(/Agent Role/i)).toBeDefined();
     expect(screen.getByLabelText(/Instructions/i)).toBeDefined();
   });
@@ -41,14 +41,15 @@ describe("AgentBlock Expanded State", () => {
       y: 0,
       width: 320,
       height: 240,
+      zIndex: 1,
       status: "idle",
       metadata: { label: "Test Agent" },
+      capabilities: [],
+      blockKind: "agent",
     };
 
-    render(<AgentBlock object={testObject} mode="fullscreen" />);
-
-    // Add object to store so updateObject can find it
-    useCanvasStore.getState().addObject(testObject);
+    render(<AgentBlock object={testObject as any} mode="fullscreen" />);
+    useCanvasStore.getState().addObject(testObject as any);
 
     const roleInput = screen.getByLabelText(/Agent Role/i) as HTMLInputElement;
     fireEvent.change(roleInput, { target: { value: "Copywriter" } });

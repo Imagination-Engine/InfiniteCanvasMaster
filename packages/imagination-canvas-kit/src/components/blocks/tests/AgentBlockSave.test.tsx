@@ -15,34 +15,35 @@ describe("AgentBlock Save to Library", () => {
       y: 0,
       width: 320,
       height: 240,
+      zIndex: 1,
       status: "idle",
       metadata: {
         label: "Custom Agent",
         role: "Researcher",
         instructions: "Do research",
       },
+      capabilities: [],
+      blockKind: "agent",
     };
 
-    // We'll mock the global fetch to verify the network dispatch
-    const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(() =>
+    const fetchSpy = vi.spyOn(window, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ success: true }),
       } as Response),
     );
 
-    render(<AgentBlock object={testObject} mode="fullscreen" />);
+    render(<AgentBlock object={testObject as any} mode="fullscreen" />);
 
     const saveButton = screen.getByText(/Save to Library/i);
     fireEvent.click(saveButton);
 
-    // Verify fetch was called with the correct path and payload
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalled();
     });
 
     const [url, options] = fetchSpy.mock.calls[0];
-    expect(url).toContain("/api/library/blocks");
+    expect(url.toString()).toContain("/api/blocks/library");
     expect(options?.method).toBe("POST");
 
     const body = JSON.parse(options?.body as string);

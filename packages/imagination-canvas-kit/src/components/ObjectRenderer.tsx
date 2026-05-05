@@ -150,11 +150,10 @@ export const ObjectRenderer: React.FC<{
 
   return (
     <div
-      className={`absolute transition-all duration-200 border-2 border-transparent ${isSelected ? "ring-2 ring-brand-cyan shadow-[0_0_20px_rgba(0,194,255,0.2)]" : ""} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "scale-[1.02] shadow-2xl opacity-90 cursor-grabbing" : "cursor-grab"}`}
+      className={`absolute transition-all duration-300 ${isSelected ? "z-[1000] ring-2 ring-brand-cyan shadow-[0_0_40px_rgba(0,194,255,0.3)] scale-[1.01]" : "z-[10] shadow-xl"} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "z-[10000] scale-[1.03] shadow-2xl opacity-90 cursor-grabbing" : "cursor-grab"}`}
       style={{
         left: object.x,
         top: object.y,
-        zIndex: isDragging ? 10000 : isSelected ? 1000 : object.zIndex,
         transform: `rotate(${(object as any).rotation || 0}deg)`,
         userSelect: "none",
       }}
@@ -178,6 +177,14 @@ export const ObjectRenderer: React.FC<{
         }
       }}
     >
+      {/* Left Input Connector Handle */}
+      <div
+        className={`absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-0"}`}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-sm" />
+      </div>
+
       <div
         className={`bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-all duration-300 ${isHovered || isSelected ? "border-brand-cyan/20" : ""}`}
         style={{
@@ -281,16 +288,16 @@ export const ObjectRenderer: React.FC<{
         </div>
       </div>
 
-      {/* Right Connector Handle */}
+      {/* Right Output Connector Handle */}
       <div
-        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center cursor-crosshair opacity-0 hover:opacity-100 transition-opacity"
+        className={`absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-0"}`}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData("application/iem-connection", object.id);
         }}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="w-3 h-3 bg-brand-cyan rounded-full border border-white/20 shadow-lg shadow-brand-cyan/50" />
+        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-sm" />
       </div>
     </div>
   );

@@ -24,11 +24,15 @@ describe("ObjectRenderer Body & Footer", () => {
       instructions: "Find market trends",
       capabilities: ["web_search", "file_read"],
     },
+    capabilities: [],
+    blockKind: "agent",
   };
 
   beforeEach(() => {
     useSelectionStore.setState({ selectedIds: [] });
-    useCanvasStore.setState({ objects: { [mockObject.id]: mockObject } });
+    useCanvasStore.setState({
+      objects: { [mockObject.id]: mockObject as any },
+    });
   });
 
   afterEach(() => {
@@ -54,7 +58,9 @@ describe("ObjectRenderer Body & Footer", () => {
 
   it("should render a human-in-the-loop indicator when status is 'waiting-for-user'", () => {
     const waitingObject = { ...mockObject, status: "waiting-for-user" };
-    useCanvasStore.setState({ objects: { [waitingObject.id]: waitingObject } });
+    useCanvasStore.setState({
+      objects: { [waitingObject.id]: waitingObject as any },
+    });
 
     render(<ObjectRenderer object={waitingObject as any} />);
 

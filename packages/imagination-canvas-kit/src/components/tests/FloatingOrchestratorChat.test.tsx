@@ -112,7 +112,9 @@ describe("FloatingOrchestratorChat Integration", () => {
       () => {
         const objects = useCanvasStore.getState().objects;
         const objectValues = Object.values(objects);
-        const hasAgent = objectValues.some((obj) => obj.type === "agent");
+        const hasAgent = objectValues.some(
+          (obj) => (obj as any).type === "agent",
+        );
         expect(hasAgent).toBe(true);
       },
       { timeout: 4000 },
@@ -138,7 +140,7 @@ describe("FloatingOrchestratorChat Integration", () => {
       () => {
         const objects = useCanvasStore.getState().objects;
         const agent = Object.values(objects).find(
-          (obj) => obj.type === "agent",
+          (obj) => (obj as any).type === "agent",
         ) as any;
         expect(agent).toBeDefined();
         expect(agent.metadata.label).toBe("Researcher Agent");

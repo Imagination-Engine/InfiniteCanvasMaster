@@ -16,10 +16,14 @@ export const ConnectorLayer: React.FC = () => {
     return Object.values(objectsRecord);
   }, [objectsRecord]);
 
+  console.log(
+    `[ConnectorLayer] Rendering ${connections.length} connections with ${objects.length} objects.`,
+  );
+
   return (
     <svg
-      className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ overflow: "visible" }}
+      className="absolute top-0 left-0 pointer-events-none"
+      style={{ overflow: "visible", width: 1, height: 1 }}
     >
       <defs>
         <linearGradient id="edge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -29,14 +33,21 @@ export const ConnectorLayer: React.FC = () => {
         </linearGradient>
 
         <marker
-          id="arrowhead"
-          markerWidth="10"
-          markerHeight="7"
-          refX="9"
-          refY="3.5"
+          id="dot-end"
+          markerWidth="8"
+          markerHeight="8"
+          refX="4"
+          refY="4"
           orient="auto"
         >
-          <polygon points="0 0, 10 3.5, 0 7" fill="rgba(0, 194, 255, 0.4)" />
+          <circle
+            cx="4"
+            cy="4"
+            r="3"
+            fill="rgba(0, 194, 255, 1)"
+            stroke="rgba(255, 255, 255, 0.2)"
+            strokeWidth="1"
+          />
         </marker>
 
         <filter id="glow-connector">
@@ -97,19 +108,19 @@ export const ConnectorLayer: React.FC = () => {
               d={path}
               fill="none"
               stroke="url(#edge-gradient)"
-              strokeWidth={2}
-              className="transition-all duration-300 opacity-40 group-hover/edge:opacity-100 group-hover/edge:stroke-brand-cyan"
-              markerEnd="url(#arrowhead)"
+              strokeWidth={3}
+              className="transition-all duration-300 opacity-80 group-hover/edge:opacity-100 group-hover/edge:stroke-brand-cyan"
+              markerEnd="url(#dot-end)"
               filter="url(#glow-connector)"
             />
 
             {/* Pulse animation for active connections */}
             <circle
-              r={2}
+              r={3}
               fill="#00c2ff"
-              className="shadow-[0_0_8px_rgba(0,194,255,1)]"
+              className="shadow-[0_0_12px_rgba(0,194,255,1)]"
             >
-              <animateMotion dur="2.5s" repeatCount="indefinite" path={path} />
+              <animateMotion dur="2s" repeatCount="indefinite" path={path} />
             </circle>
           </g>
         );
