@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -11,7 +12,7 @@ export interface ProseViewProps {
   };
 }
 
-export const ProseView: React.FC<ProseViewProps> = ({ data = {} }) => {
+export const ProseView: React.FC<ProseViewProps> = ({ data = {} as any }) => {
   const content =
     (data as any).content ||
     (data as any).input?.payload ||

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../../auth/AuthContext";

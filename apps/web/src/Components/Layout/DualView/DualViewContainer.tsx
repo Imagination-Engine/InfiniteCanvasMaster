@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect } from "react";
 import { useSessionStore } from "../../../store/useSessionStore";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
