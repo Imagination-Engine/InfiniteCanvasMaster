@@ -60,6 +60,7 @@ BlockRegistry.register("iem.app.web", AppBlock as any);
 BlockRegistry.register("iem.app.iframe", AppBlock as any);
 
 export * from "./components/BlockLibraryDrawer";
+export * from "./components/BlockLibraryCard";
 
 export * from "./components/ImmersiveBlockModal";
 

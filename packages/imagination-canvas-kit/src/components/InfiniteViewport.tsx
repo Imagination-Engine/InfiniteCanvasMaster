@@ -7,6 +7,7 @@ import { ObjectRenderer, type ComponentRegistry } from "./ObjectRenderer";
 import { ConnectorLayer } from "./ConnectorLayer";
 import { AgentActivityLayer } from "./AgentActivityLayer";
 import { PresenceLayer } from "./PresenceLayer";
+import { screenToCanvas } from "../utils/camera";
 
 export const InfiniteViewport: React.FC<{
   children?: React.ReactNode;
@@ -127,38 +128,36 @@ export const InfiniteViewport: React.FC<{
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = "copy";
   };
 
   const onDrop = (e: React.DragEvent) => {
-    console.log("DROP EVENT", e.dataTransfer.types);
     e.preventDefault();
 
     const type =
       e.dataTransfer.getData("application/reactflow") ||
       e.dataTransfer.getData("text/plain");
-    if (!type || !containerRef.current) {
-      console.log(
-        "DROP FAILED: no type or container",
-        type,
-        !!containerRef.current,
-      );
-      return;
-    }
+
+    if (!type || !containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
 
-    // Project screen coordinates to canvas coordinates
-    // CanvasX = (ScreenX - PanX) / Zoom
-    const canvasX = (e.clientX - rect.left - viewport.x) / viewport.zoom;
-    const canvasY = (e.clientY - rect.top - viewport.y) / viewport.zoom;
+    // Use utility for coordinate conversion
+    const canvasPoint = screenToCanvas(
+      { x: e.clientX - rect.left, y: e.clientY - rect.top },
+      viewport,
+    );
 
     const addObject = useCanvasStore.getState().addObject;
+    const { select } = useSelectionStore.getState();
+
+    const newId = `${type}-${Date.now()}`;
+
     addObject({
-      id: `${type}-${Date.now()}`,
+      id: newId,
       type: type as any,
-      x: canvasX,
-      y: canvasY,
+      x: canvasPoint.x,
+      y: canvasPoint.y,
       width: 300,
       height: 200,
       zIndex: 1,
@@ -168,11 +167,17 @@ export const InfiniteViewport: React.FC<{
         label: `New ${type}`,
       },
     });
+
+    // Select the new block
+    select(newId);
+
+    console.log(`[CANVAS] Block added: ${newId} (${type})`);
   };
 
   return (
     <div
       ref={containerRef}
+      data-testid="infinite-viewport"
       className="absolute inset-0 w-full h-full overflow-hidden outline-none touch-none bg-brand-bg-page"
       onPointerDown={handlePointerDown}
       onContextMenu={handleContextMenu}
