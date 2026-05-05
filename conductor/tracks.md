@@ -51,3 +51,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Block Library & Interaction**
       _Link: [./tracks/block_library_interaction_20260504/](./tracks/block_library_interaction_20260504/)_
+
+---
+
+- [ ] **Track: Custom Agent Flow**
+      _Link: [./tracks/custom_agent_flow_20260504/](./tracks/custom_agent_flow_20260504/)_
