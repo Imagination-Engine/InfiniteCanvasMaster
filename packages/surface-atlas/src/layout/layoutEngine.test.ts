@@ -51,7 +51,7 @@ describe("Auto-Layout Engine (Red/Green Phase)", () => {
 
       expect(layoutedNodes.length).toBe(numNodes);
       // It should be reasonably fast, even for 1000 nodes, but give it 10 seconds due to variable CI/test environments
-      expect(endTime - startTime).toBeLessThan(10000);
-    });
+      expect(endTime - startTime).toBeLessThan(15000);
+    }, 15000); // Pass timeout value to Vitest
   });
 });

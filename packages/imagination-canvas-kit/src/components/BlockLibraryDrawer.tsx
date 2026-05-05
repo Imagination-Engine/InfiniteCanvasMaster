@@ -1,15 +1,24 @@
 // @ts-nocheck
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Search, Library, X } from "lucide-react";
 import { blockRegistry } from "@iem/core";
 import * as Icons from "lucide-react";
+import { useLibraryStore } from "../state/libraryStore";
 
 export const BlockLibraryDrawer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const blocks = useMemo(() => blockRegistry.list(), []);
+  const { loadCustomBlocks } = useLibraryStore();
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCustomBlocks();
+    }
+  }, [isOpen, loadCustomBlocks]);
+
+  const blocks = useMemo(() => blockRegistry.list(), [isOpen]);
 
   const categories = useMemo(() => {
     const cats = new Set(blocks.map((b) => b.category));

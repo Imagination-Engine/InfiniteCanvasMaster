@@ -2,12 +2,26 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import nodePolyfills from "rollup-plugin-polyfill-node";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    nodePolyfills({
+      include: ["stream", "crypto", "buffer", "util"],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
+  ],
+  define: {
+    global: "globalThis",
+  },
   optimizeDeps: {
     include: [
       "lucide-react",
@@ -32,8 +46,6 @@ export default defineConfig({
     alias: {
       "lucide-react": "lucide-react/dist/esm/lucide-react",
       "stream/web": require.resolve("web-streams-polyfill"),
-      crypto: require.resolve("crypto-browserify"),
-      stream: require.resolve("stream-browserify"),
       "@iem/core": new URL("../../packages/core/src/index.ts", import.meta.url)
         .pathname,
       "@iem/db": new URL("../../packages/db/src/index.ts", import.meta.url)
@@ -54,7 +66,6 @@ export default defineConfig({
       transformMixedEsModules: true,
     },
     rollupOptions: {
-      plugins: [nodePolyfills()],
       external: [
         "react",
         "react-dom",

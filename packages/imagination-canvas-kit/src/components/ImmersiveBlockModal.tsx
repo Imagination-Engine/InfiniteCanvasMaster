@@ -66,6 +66,7 @@ export const ImmersiveBlockModal: React.FC = () => {
 
         {/* Modal Body - Split Pane Layout */}
         <div className="flex-1 flex overflow-hidden">
+          {/* ... (previous panes remain as they are for layout) ... */}
           {/* Left Sidebar - Chat / Orchestration */}
           <div className="w-80 border-r border-white/5 bg-black/20 flex flex-col">
             <div className="p-4 border-b border-white/5 flex items-center gap-2">
@@ -91,20 +92,46 @@ export const ImmersiveBlockModal: React.FC = () => {
 
           {/* Center - Deep Surface (Component Rendering) */}
           <div className="flex-1 flex flex-col bg-brand-bg-surface relative overflow-hidden">
-            {/* We polyfill the renderer props just like the compact view, but the component can detect it is in fullscreen if we passed mode, for now it just gets more space */}
-            <div className="flex-1 p-8 overflow-auto custom-scrollbar flex items-center justify-center text-white/20">
-              <div className="text-center">
-                <Bot size={48} className="mx-auto mb-4 opacity-50" />
-                <h2 className="text-lg font-bold tracking-widest uppercase mb-2">
-                  Deep Surface Runtime
-                </h2>
-                <p className="text-xs max-w-md mx-auto leading-relaxed">
-                  This area hosts the specialized immersive view for this block.
-                  For an App Creation Studio, this is the IDE. For a Reel
-                  Studio, this is the timeline. For an ImagiClaw agent, this is
-                  the sandbox and tool observation deck.
-                </p>
-              </div>
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              {(() => {
+                const Component =
+                  BlockRegistry.resolve((activeObject as any).blockKind) ||
+                  BlockRegistry.resolve(activeObject.type) ||
+                  null;
+
+                if (!Component) {
+                  return (
+                    <div className="flex-1 p-8 flex items-center justify-center text-white/20">
+                      <div className="text-center">
+                        <Bot size={48} className="mx-auto mb-4 opacity-50" />
+                        <h2 className="text-lg font-bold tracking-widest uppercase mb-2">
+                          Deep Surface Runtime
+                        </h2>
+                        <p className="text-xs max-w-md mx-auto leading-relaxed">
+                          This area hosts the specialized immersive view for
+                          this block.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Component
+                    object={activeObject}
+                    mode={
+                      activeMode === "fullscreen" ? "fullscreen" : "side-panel"
+                    }
+                    data={{
+                      input:
+                        activeObject.metadata.inputs ||
+                        activeObject.metadata ||
+                        {},
+                      output: activeObject.metadata.outputs || {},
+                    }}
+                  />
+                );
+              })()}
             </div>
           </div>
 

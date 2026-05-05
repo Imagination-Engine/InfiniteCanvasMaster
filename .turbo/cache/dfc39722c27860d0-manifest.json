@@ -1,0 +1,11 @@
+{
+  "files": {
+    "packages/surface-scribe/.turbo/turbo-test.log": {
+      "size": 23479,
+      "mtime_nanos": 1777931576381843143,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["packages/surface-scribe/.turbo/turbo-test.log"]
+}

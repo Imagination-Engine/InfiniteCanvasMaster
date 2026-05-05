@@ -1,0 +1,11 @@
+{
+  "files": {
+    "packages/chat-interaction-kit/.turbo/turbo-test.log": {
+      "size": 5274,
+      "mtime_nanos": 1777931574829268040,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["packages/chat-interaction-kit/.turbo/turbo-test.log"]
+}

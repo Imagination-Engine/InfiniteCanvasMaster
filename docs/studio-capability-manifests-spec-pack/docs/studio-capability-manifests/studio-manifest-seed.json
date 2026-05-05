@@ -1,0 +1,27 @@
+{
+  "studios": [
+    "writers",
+    "video",
+    "game_world",
+    "app_creation",
+    "commerce_intentcasting",
+    "agent_automation",
+    "research_knowledge"
+  ],
+  "modelAliases": [
+    "fast_tool_use",
+    "deep_planning",
+    "deep_coding",
+    "long_context_synthesis",
+    "image_generation",
+    "image_editing",
+    "video_generation",
+    "video_understanding",
+    "audio_transcription",
+    "audio_dialogue",
+    "tts",
+    "embeddings",
+    "local_lightweight",
+    "safety_judge"
+  ]
+}

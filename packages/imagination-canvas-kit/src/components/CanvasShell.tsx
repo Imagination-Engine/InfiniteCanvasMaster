@@ -22,6 +22,7 @@ export type CanvasMode =
 export interface CanvasShellProps {
   canvasId?: string;
   mode?: CanvasMode;
+  sessionContext?: string;
   className?: string;
   children: React.ReactNode;
 }
@@ -33,11 +34,19 @@ export interface CanvasShellProps {
 export const CanvasShell: React.FC<CanvasShellProps> = ({
   canvasId = "default",
   mode: controlledMode,
+  sessionContext,
   className,
   children,
 }) => {
   const storeMode = useShellStore((state) => state.mode);
+  const setSessionContext = useShellStore((state) => state.setSessionContext);
   const mode = controlledMode ?? storeMode;
+
+  React.useEffect(() => {
+    if (sessionContext) {
+      setSessionContext(sessionContext);
+    }
+  }, [sessionContext, setSessionContext]);
 
   return (
     <div
@@ -54,9 +63,9 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
         Imagination Engine: Rescue Pass Active
       </div>
       <BlockLibraryDrawer />
-      <FloatingOrchestratorChat />
       <ImmersiveBlockModal />
       {children}
+      <FloatingOrchestratorChat />
     </div>
   );
 };

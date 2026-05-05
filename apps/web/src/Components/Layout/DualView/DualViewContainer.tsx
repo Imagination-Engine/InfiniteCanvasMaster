@@ -20,7 +20,18 @@ interface DualViewContainerProps {
 export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   projectId,
   initialDocument,
+  initialMessages,
 }) => {
+  // --- Create Session Context Summary ---
+  const sessionSummary = React.useMemo(() => {
+    const userMessages = (initialMessages || [])
+      .filter((m) => m.role === "user")
+      .map((m) => m.content)
+      .slice(0, 3)
+      .join(" | ");
+    return userMessages || "New Creative Session";
+  }, [initialMessages]);
+
   // --- Spatial Sync: Initialize Stores from Document ---
   useEffect(() => {
     if (!initialDocument) return;
@@ -60,7 +71,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">
       {/* New Spatial Engine Canvas - The sole source of truth */}
-      <CanvasShell canvasId={projectId}>
+      <CanvasShell canvasId={projectId} sessionContext={sessionSummary}>
         <InfiniteViewport />
       </CanvasShell>
     </div>

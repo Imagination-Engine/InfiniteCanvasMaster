@@ -5,6 +5,7 @@ import type { CanvasObject } from "./index";
 export type BlockComponentProps = {
   object: CanvasObject;
   data?: any;
+  mode?: "compact" | "fullscreen" | "side-panel";
   onParamsChange?: (params: any) => void;
 };
 

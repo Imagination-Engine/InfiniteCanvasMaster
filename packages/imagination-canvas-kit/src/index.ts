@@ -18,6 +18,7 @@ export * from "./hooks/useCanvasClipboard";
 export * from "./hooks/useAgentOnCanvas";
 
 import { BlockRegistry } from "./contracts/BlockRegistry";
+export { BlockRegistry };
 import { NoteBlock } from "./components/blocks/NoteBlock";
 import { RichTextBlock } from "./components/blocks/RichTextBlock";
 import { AgentBlock } from "./components/blocks/AgentBlock";
@@ -39,6 +40,7 @@ BlockRegistry.register("iem.agent.agent", AgentBlock as any);
 BlockRegistry.register("iem.agent.researcher", AgentBlock as any);
 BlockRegistry.register("iem.agent.builder", AgentBlock as any);
 BlockRegistry.register("iem.agent.code", AgentBlock as any);
+BlockRegistry.register("iem.agent.blank", AgentBlock as any);
 
 BlockRegistry.register("goal", GoalBlock as any);
 BlockRegistry.register("iem.intent.goal", GoalBlock as any);

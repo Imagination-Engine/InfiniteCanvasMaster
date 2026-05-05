@@ -1,0 +1,11 @@
+{
+  "files": {
+    "packages/agents/.turbo/turbo-build.log": {
+      "size": 90,
+      "mtime_nanos": 1777931097974824075,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["packages/agents/.turbo/turbo-build.log"]
+}

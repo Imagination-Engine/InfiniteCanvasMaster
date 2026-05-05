@@ -11,13 +11,17 @@ export type DensityMode =
 interface ShellState {
   mode: CanvasMode;
   density: DensityMode;
+  sessionContext: string | null;
   setMode: (mode: CanvasMode) => void;
   setDensity: (density: DensityMode) => void;
+  setSessionContext: (context: string | null) => void;
 }
 
 export const useShellStore = create<ShellState>((set) => ({
   mode: "canvas",
   density: "comfortable",
+  sessionContext: null,
   setMode: (mode) => set({ mode }),
   setDensity: (density) => set({ density }),
+  setSessionContext: (sessionContext) => set({ sessionContext }),
 }));

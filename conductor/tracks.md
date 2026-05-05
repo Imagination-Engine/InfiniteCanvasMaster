@@ -49,5 +49,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Custom Agent Flow**
+- [x] **Track: Custom Agent Flow**
       _Link: [./tracks/custom_agent_flow_20260504/](./tracks/custom_agent_flow_20260504/)_

@@ -234,6 +234,7 @@ export const ObjectRenderer: React.FC<{
           <div className="flex-1 p-3 overflow-hidden custom-scrollbar">
             <Component
               object={object}
+              mode="compact"
               data={polyfilledData}
               onParamsChange={handleParamsChange}
             />
