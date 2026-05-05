@@ -41,3 +41,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Studio Capability Discovery & Audit**
       _Link: [./tracks/studio_capability_discovery_20260504/](./tracks/studio_capability_discovery_20260504/)_
+
+---
+
+- [ ] **Track: Studio Manifest Type Definitions**
+      _Link: [./tracks/studio_manifest_types_20260504/](./tracks/studio_manifest_types_20260504/)_
