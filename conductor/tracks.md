@@ -46,3 +46,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Canvas UI & Interaction Polish**
       _Link: [./tracks/canvas_ui_interaction_polish_20260504/](./tracks/canvas_ui_interaction_polish_20260504/)_
+
+---
+
+- [ ] **Track: Block Library & Interaction**
+      _Link: [./tracks/block_library_interaction_20260504/](./tracks/block_library_interaction_20260504/)_
