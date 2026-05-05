@@ -14,7 +14,7 @@ The primary audience is **everyday people**. We do not design for a niche subset
 
 The platform employs a **Dual-View** interaction model seamlessly managed by a **Mastra Orchestration Layer**. Users are not forced into a single mode of operation. There is equal emphasis on conversational and visual interactions. Users toggle between a **Unified Chat Shell** (the chat-first entry surface, enhanced with LibreChat UX paradigms) and the **Canvas** (direct manipulation of visual blocks).
 
-The backend is powered by `@mastra/core` and `gemini-2.5-pro`. It acts as a **DAG Goal Deconstruction Engine**, translating user intents into fully wired React Flow blueprints using a stabilized 51-block vocabulary.
+The backend is powered by `@mastra/core` and `gemini-2.5-pro`. It acts as a **DAG Goal Deconstruction Engine**, translating user intents into fully wired React Flow blueprints using a stabilized 51-block vocabulary. The on-canvas **Orchestrator** features a lightweight intent classification layer, ensuring it remains supportive and context-aware by recognizing canvas events and maintaining continuity with the original session intent.
 
 ## Foundational Priorities (Achieved)
 
