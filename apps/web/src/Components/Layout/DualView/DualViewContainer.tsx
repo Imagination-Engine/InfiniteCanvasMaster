@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useSessionStore } from "../../../store/useSessionStore";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
+import { ChatShell } from "../../Chat/ChatShell";
 
 import {
   CanvasShell,
@@ -71,7 +72,11 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">
       {/* New Spatial Engine Canvas - The sole source of truth */}
-      <CanvasShell canvasId={projectId} sessionContext={sessionSummary}>
+      <CanvasShell
+        canvasId={projectId}
+        sessionContext={sessionSummary}
+        ChatComponent={ChatShell as any}
+      >
         <InfiniteViewport />
       </CanvasShell>
     </div>

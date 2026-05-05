@@ -51,7 +51,7 @@ describe("ObjectRenderer Top Bar", () => {
   it("should contain exactly one maximize icon", () => {
     render(<ObjectRenderer object={mockObject as any} />);
 
-    const maximizeButtons = screen.getAllByTitle(/Immersive View/i);
+    const maximizeButtons = screen.getAllByTitle(/Expand/i);
     expect(maximizeButtons.length).toBe(1);
   });
 });

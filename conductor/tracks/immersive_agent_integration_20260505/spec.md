@@ -29,11 +29,16 @@ The `ImmersiveBlockModal` will be refactored into a dual-column interface.
 ### B. Right Panel: The Universal Surface (70% Width)
 
 - **Component**: `AgnosticRenderShell.tsx` (to be created in `imagination-canvas-kit`).
-- **Functionality**: A high-performance render slot that handles:
-  - **Media**: Video, images, 3D viewports (WebGL).
-  - **Code**: Live code editors and sandboxed previews.
-  - **Knowledge**: Interactive graphs and RAG visualization.
-- **Integration**: Dynamically renders the `expandedVariant` of the current block definition.
+- **Functionality**: A high-performance render slot that handles studio-specific artifacts.
+- **Studio-Specific Integrations**:
+  - **Writers Studio (Scribe)**: Extensible **Tiptap** rich-text editor with real-time EPUB/PDF export previews (`epub-gen`, `Paged.js`).
+  - **Agent Studio**: Specialized **Mastra Agent Dashboard** for persona configuration, tool-binding visualizers, and memory-state inspection.
+  - **Apps Studio (Forge)**: **Monaco Editor** for code generation and a high-performance **WebContainers** sandbox for live Node.js execution.
+  - **Gaming Studio (Playable)**: **Phaser 4** WebGL 2 viewport with **Enable3D** support and Matter.js physics debug layers.
+  - **Research & Knowledge (Atlas)**: Interactive **React Flow** or D3-based Force Graphs for Personal World Model visualization and RAG source inspection.
+  - **Video & Movies (Reel)**: **FFmpeg.wasm** powered timeline editor and Nanobanana/ElevenLabs media preview player.
+  - **Commerce Studio**: Product-intent visualizers, high-fidelity catalog cards, and secure checkout flow simulations.
+- **Integration**: Dynamically renders the `expandedVariant` of the current block definition by matching the `StudioID` and `ArtifactContract`.
 
 ---
 

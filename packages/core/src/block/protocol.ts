@@ -109,6 +109,20 @@ export interface BlockDefinition<
 
   /** Optional: capability tags for the AI to reason about composition. */
   capabilities?: string[];
+
+  /** Optional: specialized agent persona configuration for immersive mode. */
+  persona?: AgenticPersona;
+}
+
+export interface AgenticPersona {
+  /** Custom identity name for the agent (e.g. "Script Doctor") */
+  name?: string;
+  /** Specialized instructions that override or augment the generic block prompt */
+  instructions?: string;
+  /** Specific knowledge sources or RAG paths for this agent */
+  knowledge?: string[];
+  /** Specific tools this agent should prioritize or has exclusive access to */
+  tools?: string[];
 }
 
 export interface BlockViewProps<I, O> {

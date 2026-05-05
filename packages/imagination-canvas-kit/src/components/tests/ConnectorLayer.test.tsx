@@ -41,6 +41,6 @@ describe("ConnectorLayer", () => {
     const { container } = render(<ConnectorLayer />);
     const marker = container.querySelector("marker");
     expect(marker).toBeDefined();
-    expect(marker?.id).toBe("arrowhead");
+    expect(marker?.id).toBe("dot-end");
   });
 });

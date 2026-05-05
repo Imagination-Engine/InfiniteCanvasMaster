@@ -16,19 +16,26 @@ import {
 
 interface ChatShellProps {
   projectId: string;
+  blockId?: string; // Added for specialized block agent chat
   initialMessages?: any[];
   fullScreen?: boolean;
+  apiEndpoint?: string; // Allow overriding the default API
 }
 
 export const ChatShell: React.FC<ChatShellProps> = ({
   projectId,
+  blockId,
   initialMessages = [],
   fullScreen = false,
+  apiEndpoint = "http://localhost:3001/api/chat",
 }) => {
   const { accessToken } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { objects } = useCanvasStore();
   const { connections } = useConnectionStore();
+
+  // Determine final API endpoint based on blockId
+  const finalApi = blockId ? `${apiEndpoint}/block` : apiEndpoint;
 
   const {
     messages,
@@ -39,12 +46,14 @@ export const ChatShell: React.FC<ChatShellProps> = ({
     error,
     stop,
   } = useChat({
-    api: "http://localhost:3001/api/chat",
+    api: finalApi,
     headers: {
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     body: {
       sessionId: projectId,
+      projectId, // Pass both for compatibility
+      blockId, // Specifically for specialized chat
       canvasContext: {
         nodes: Object.values(objects).map((n: any) => ({
           id: n.id,
