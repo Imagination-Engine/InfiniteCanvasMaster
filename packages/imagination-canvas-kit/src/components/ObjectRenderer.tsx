@@ -47,6 +47,7 @@ export const ObjectRenderer: React.FC<{
   const addConnection = useConnectionStore((s) => s.addConnection);
 
   const [isDragging, setIsDragging] = useState(false);
+  const [isExpandHovered, setIsExpandHovered] = useState(false);
 
   const screenW = window.innerWidth / viewportZoom;
   const screenH = window.innerHeight / viewportZoom;
@@ -246,6 +247,8 @@ export const ObjectRenderer: React.FC<{
           <div className="flex items-center gap-1.5 z-10">
             <button
               onPointerDown={(e) => e.stopPropagation()}
+              onMouseEnter={() => setIsExpandHovered(true)}
+              onMouseLeave={() => setIsExpandHovered(false)}
               onPointerUp={(e) => {
                 e.stopPropagation();
                 setExpanded(object.id, "fullscreen");
@@ -254,12 +257,13 @@ export const ObjectRenderer: React.FC<{
                 e.stopPropagation();
                 setExpanded(object.id, "fullscreen");
               }}
-              className="p-1.5 text-brand-cyan hover:bg-brand-cyan group rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
+              className="p-1.5 text-brand-cyan hover:bg-brand-cyan rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
               title="Expand"
             >
               <Maximize2
                 size={14}
-                className="group-hover:!stroke-black transition-colors"
+                stroke={isExpandHovered ? "black" : "currentColor"}
+                className="transition-colors"
               />
             </button>
           </div>

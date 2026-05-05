@@ -4,6 +4,7 @@ import { Search, Library, X } from "lucide-react";
 import { blockRegistry } from "@iem/core";
 import * as Icons from "lucide-react";
 import { useLibraryStore } from "../state/libraryStore";
+import { useExpansionStore } from "../state/expansionStore";
 import { BlockLibraryCard } from "./BlockLibraryCard";
 
 export const BlockLibraryDrawer: React.FC = () => {
@@ -40,9 +41,12 @@ export const BlockLibraryDrawer: React.FC = () => {
     });
   }, [blocks, search, activeCategory]);
 
+  const { activeExpansionId } = useExpansionStore();
+  const isExpanded = !!activeExpansionId;
+
   return (
     <React.Fragment>
-      {!isOpen && (
+      {!isOpen && !isExpanded && (
         <button
           className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group"
           onClick={() => setIsOpen(true)}
@@ -59,7 +63,7 @@ export const BlockLibraryDrawer: React.FC = () => {
         </button>
       )}
 
-      {isOpen && (
+      {isOpen && !isExpanded && (
         <div className="absolute left-0 top-0 bottom-0 w-[450px] bg-brand-bg-page/95 backdrop-blur-3xl border-r border-white/10 z-50 flex flex-col shadow-2xl">
           <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 text-brand-cyan">

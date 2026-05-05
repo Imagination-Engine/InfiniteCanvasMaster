@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BrainCircuit, X, Send, Sparkles } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useViewportStore } from "../state/viewportStore";
+import { useExpansionStore } from "../state/expansionStore";
 import { GrowingTextarea } from "@iem/chat-interaction-kit";
 import { classifyOrchestratorIntent } from "../utils/orchestratorIntentClassifier";
 import { useOrchestratorContext } from "../hooks/useOrchestratorContext";
@@ -172,10 +173,13 @@ export const FloatingOrchestratorChat: React.FC = () => {
     }, 800);
   };
 
+  const { activeExpansionId } = useExpansionStore();
+  const isExpanded = !!activeExpansionId;
+
   return (
     <React.Fragment>
       {/* Toggle Tab - Mirroring Library Drawer Pattern Exactly */}
-      {!isOpen && (
+      {!isOpen && !isExpanded && (
         <button
           aria-label="Open Orchestrator"
           title="Open Canvas Orchestrator"
@@ -196,7 +200,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
 
       {/* Orchestrator Drawer - Fixed & Mutation-Locked */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && !isExpanded && (
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}

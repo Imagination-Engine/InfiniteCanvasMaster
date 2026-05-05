@@ -66,3 +66,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Vertical Slice Implementation: Writer's Studio**
       _Link: [./tracks/vertical_slice_writers_studio_20260504/](./tracks/vertical_slice_writers_studio_20260504/)_
+
+---
+
+- [ ] **Track: Intelligent Orchestrator Studio Awareness**
+      _Link: [./tracks/orchestrator_studio_awareness_20260504/](./tracks/orchestrator_studio_awareness_20260504/)_
