@@ -66,4 +66,49 @@ describe("ObjectRenderer Body & Footer", () => {
 
     expect(screen.getByTestId("hitl-indicator")).toBeDefined();
   });
+
+  // ─── Issue 2: On-Canvas Minimized Block (Red & Adversarial) ─────────────
+
+  it("should render block description when metadata.description is present", () => {
+    const obj = {
+      ...mockObject,
+      metadata: {
+        ...mockObject.metadata,
+        description: "Writes creative prose content.",
+      },
+    };
+    render(<ObjectRenderer object={obj as any} />);
+    // Will FAIL before implementation — description is not rendered yet
+    expect(screen.getByTestId("block-description")).toBeDefined();
+  });
+
+  it("should NOT render description element when metadata.description is absent", () => {
+    render(<ObjectRenderer object={mockObject as any} />);
+    expect(screen.queryByTestId("block-description")).toBeNull();
+  });
+
+  it("should apply error status color class when status is 'error'", () => {
+    const obj = { ...mockObject, status: "error" };
+    render(<ObjectRenderer object={obj as any} />);
+    const statusEl = screen.getByTestId("block-status");
+    // Will FAIL — currently always text-brand-cyan
+    expect(statusEl.className).toMatch(/text-rose/);
+  });
+
+  it("adversarial: very long description is clamped and does not break layout", () => {
+    const obj = {
+      ...mockObject,
+      metadata: { ...mockObject.metadata, description: "A".repeat(500) },
+    };
+    // Must render without crashing
+    const { container } = render(<ObjectRenderer object={obj as any} />);
+    expect(container.firstChild).toBeDefined();
+  });
+
+  it("adversarial: unknown status falls back to neutral color", () => {
+    const obj = { ...mockObject, status: "completely-unknown-status" as any };
+    render(<ObjectRenderer object={obj as any} />);
+    const statusEl = screen.getByTestId("block-status");
+    expect(statusEl.className).toMatch(/text-white/);
+  });
 });

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExpansionStore } from "../state/expansionStore";
 import { useCanvasStore } from "../state/canvasStore";
@@ -18,6 +18,41 @@ export const ImmersiveBlockModal: React.FC = () => {
     return objects[activeExpansionId] || null;
   }, [activeExpansionId, objects]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        clearExpanded();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [clearExpanded]);
+
+  const accentClass = useMemo(() => {
+    if (!activeObject) return "border-b-brand-purple";
+    const prefix = activeObject.type.split(".")[0];
+    switch (prefix) {
+      case "agent":
+      case "conductor":
+        return "border-b-brand-cyan shadow-[0_1px_15px_rgba(0,194,255,0.2)]";
+      case "scribe":
+      case "note":
+        return "border-b-violet-500 shadow-[0_1px_15px_rgba(139,92,246,0.2)]";
+      case "playable":
+        return "border-b-orange-500 shadow-[0_1px_15px_rgba(249,115,22,0.2)]";
+      case "atlas":
+        return "border-b-blue-500 shadow-[0_1px_15px_rgba(59,130,246,0.2)]";
+      case "reel":
+      case "media":
+        return "border-b-rose-500 shadow-[0_1px_15px_rgba(244,63,94,0.2)]";
+      case "forge":
+      case "app":
+        return "border-b-emerald-500 shadow-[0_1px_15px_rgba(16,185,129,0.2)]";
+      default:
+        return "border-b-brand-purple shadow-[0_1px_15px_rgba(123,92,234,0.2)]";
+    }
+  }, [activeObject]);
+
   if (!activeObject || activeMode === "none") return null;
 
   const displayLabel =
@@ -33,20 +68,32 @@ export const ImmersiveBlockModal: React.FC = () => {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         key={activeObject.id}
-        className="fixed inset-4 z-[9999] bg-brand-bg-page border border-white/10 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden"
+        className="absolute inset-0 z-[10002] bg-brand-bg-page border border-white/10 rounded-none shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden"
       >
         {/* Modal Header */}
-        <div className="h-14 border-b border-white/5 bg-black/40 flex items-center justify-between px-6 shrink-0">
+        <div
+          data-testid="modal-accent-bar"
+          className={`h-16 border-b bg-black/40 flex items-center justify-between px-6 shrink-0 ${accentClass}`}
+        >
           <div className="flex items-center gap-4">
             <div
               className={`w-2 h-2 rounded-full ${activeObject.status === "error" ? "bg-red-500 animate-pulse" : activeObject.status === "running" ? "bg-brand-cyan animate-pulse shadow-[0_0_10px_rgba(0,194,255,0.6)]" : "bg-white/20"}`}
             />
-            <h1 className="text-sm font-black uppercase tracking-widest text-white">
-              {displayLabel}
-            </h1>
-            <span className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-bold text-white/60 uppercase tracking-widest">
-              {activeObject.type}
-            </span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-3">
+                <h1 className="text-sm font-black uppercase tracking-widest text-white">
+                  {displayLabel}
+                </h1>
+                <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] font-bold text-white/60 uppercase tracking-widest">
+                  {activeObject.type}
+                </span>
+              </div>
+              {activeObject.metadata?.description && (
+                <p className="text-[10px] text-white/50 italic mt-0.5">
+                  {activeObject.metadata.description}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -77,8 +124,8 @@ export const ImmersiveBlockModal: React.FC = () => {
             </div>
             <div className="flex-1 p-4 flex items-center justify-center">
               <p className="text-[10px] text-brand-text-muted italic text-center px-4">
-                Chat with this block’s agent here. Commands sent here are routed
-                to the block’s isolated context.
+                Runtime boundary ready. Chat with this block’s agent here.
+                Commands sent here are routed to the block’s isolated context.
               </p>
             </div>
             <div className="p-3 border-t border-white/5">
@@ -150,12 +197,21 @@ export const ImmersiveBlockModal: React.FC = () => {
                   Capabilities
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-2 py-1 bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20 rounded text-[9px] font-bold uppercase tracking-tighter">
-                    Tools
-                  </span>
-                  <span className="px-2 py-1 bg-brand-purple/10 text-brand-purple border border-brand-purple/20 rounded text-[9px] font-bold uppercase tracking-tighter">
-                    Memory
-                  </span>
+                  {(
+                    (activeObject.metadata?.capabilities as string[]) || []
+                  ).map((cap) => (
+                    <span
+                      key={cap}
+                      className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-bold uppercase tracking-tighter text-white/60"
+                    >
+                      {cap}
+                    </span>
+                  ))}
+                  {!activeObject.metadata?.capabilities?.length && (
+                    <span className="text-[10px] text-white/30 italic">
+                      None
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -168,7 +224,7 @@ export const ImmersiveBlockModal: React.FC = () => {
                   <br />
                   Layer: Edge Twin
                   <br />
-                  Uptime: 00:00:00
+                  Engine: {activeObject.metadata?.runtime || "LIVE"}
                 </div>
               </div>
             </div>

@@ -178,7 +178,8 @@ export const FloatingOrchestratorChat: React.FC = () => {
       {!isOpen && (
         <button
           aria-label="Open Orchestrator"
-          className="fixed right-4 top-1/2 -translate-y-1/2 z-[10006] p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group pointer-events-auto"
+          title="Open Canvas Orchestrator"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-[10006] p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group pointer-events-auto"
           onClick={() => setIsOpen(true)}
         >
           <div className="flex flex-col items-center gap-2">
@@ -206,7 +207,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
               minWidth: "500px",
               maxWidth: "500px",
             }}
-            className="fixed right-0 top-0 bottom-0 bg-brand-bg-page/95 backdrop-blur-3xl border-l border-white/10 z-[10005] flex flex-col shadow-2xl overflow-hidden"
+            className="absolute right-0 top-0 bottom-0 bg-brand-bg-page/95 backdrop-blur-3xl border-l border-white/10 z-[10005] flex flex-col shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="h-14 border-b border-white/5 bg-gradient-to-r from-brand-cyan/10 to-transparent flex items-center justify-between px-4 shrink-0">
@@ -219,7 +220,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
               <button
                 aria-label="Close Orchestrator"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                className="p-2 text-white/70 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
               >
                 <X size={16} />
               </button>

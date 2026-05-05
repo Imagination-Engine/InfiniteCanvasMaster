@@ -58,10 +58,6 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
         className,
       )}
     >
-      <div className="absolute top-0 left-0 right-0 h-1 bg-brand-cyan z-[10000] shadow-[0_0_20px_rgba(0,194,255,1)]" />
-      <div className="absolute top-4 right-4 z-[10001] bg-brand-cyan text-black px-4 py-2 rounded-full font-black uppercase text-[10px] shadow-2xl">
-        Imagination Engine: Rescue Pass Active
-      </div>
       <BlockLibraryDrawer />
       <ImmersiveBlockModal />
       {children}

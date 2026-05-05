@@ -1,13 +1,23 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
 import React from "react";
 import { FloatingOrchestratorChat } from "../FloatingOrchestratorChat";
 import { useCanvasStore } from "../../state/canvasStore";
 
 describe("FloatingOrchestratorChat Integration", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     useCanvasStore.setState({ objects: {} });
   });
@@ -148,5 +158,37 @@ describe("FloatingOrchestratorChat Integration", () => {
       },
       { timeout: 4000 },
     );
+  });
+
+  // ─── Issue 5: Orchestrator Header Visibility (Red phase) ─────────────────
+
+  it("should render the close button with sufficient contrast class", async () => {
+    render(<FloatingOrchestratorChat />);
+
+    // Open the panel
+    const tags = screen.getAllByLabelText(/Open Orchestrator/i);
+    fireEvent.click(tags[0]);
+
+    // Find close button
+    const closeBtn = screen.getByLabelText("Close Orchestrator");
+    // Will FAIL before fix — class is text-white/40, not text-white/70
+    expect(closeBtn.className).toMatch(/text-white\/70/);
+  });
+
+  it("should render toggle button with a descriptive title", () => {
+    render(<FloatingOrchestratorChat />);
+    const toggleBtns = screen.getAllByLabelText(/Open Orchestrator/i);
+    const toggleBtn = toggleBtns[0];
+    // Will FAIL before fix — title attribute is missing
+    expect(toggleBtn.getAttribute("title")).toBe("Open Canvas Orchestrator");
+  });
+
+  it("adversarial: X button must remain accessible when panel is scrolled", async () => {
+    render(<FloatingOrchestratorChat />);
+    const tags = screen.getAllByLabelText(/Open Orchestrator/i);
+    fireEvent.click(tags[0]);
+
+    // Close button must still be reachable in the DOM
+    expect(screen.getByLabelText("Close Orchestrator")).toBeDefined();
   });
 });

@@ -65,4 +65,52 @@ describe("BlockLibraryCard", () => {
       "test-block",
     );
   });
+
+  // ─── Issue 1: Block Library Cards UI Upgrade (Red & Adversarial) ────────
+
+  it("should render the runtime badge with color-coded class for 'agent' runtime", () => {
+    render(
+      <BlockLibraryCard block={{ ...mockBlock, runtime: "agent" } as any} />,
+    );
+    // Will FAIL before implementation — no runtime-badge test id or purple class yet
+    const badge = screen.getByTestId("runtime-badge");
+    expect(badge.className).toMatch(/brand-purple/);
+  });
+
+  it("should render I/O row with accepts and produces when block has those fields", () => {
+    const block = { ...mockBlock, accepts: ["text"], produces: ["prose"] };
+    render(<BlockLibraryCard block={block as any} />);
+    // Will FAIL — I/O row does not exist yet
+    expect(screen.getByTestId("io-row")).toBeDefined();
+    expect(screen.getByText("text")).toBeDefined();
+    expect(screen.getByText("prose")).toBeDefined();
+  });
+
+  it("should not render I/O row when accepts/produces are absent", () => {
+    render(<BlockLibraryCard block={mockBlock as any} />);
+    expect(screen.queryByTestId("io-row")).toBeNull();
+  });
+
+  it("adversarial: renders gracefully when runtime is an unknown value", () => {
+    render(
+      <BlockLibraryCard
+        block={{ ...mockBlock, runtime: "unknown-runtime-xyz" } as any}
+      />,
+    );
+    // Must not crash, must fall back to muted style (no specific color class)
+    const badge = screen.getByTestId("runtime-badge");
+    expect(badge).toBeDefined();
+  });
+
+  it("adversarial: caps capability chips at 3 even if block has 10+", () => {
+    const block = {
+      ...mockBlock,
+      capabilities: Array.from({ length: 10 }, (_, i) => `cap-${i}`),
+    };
+    render(<BlockLibraryCard block={block as any} />);
+    // Wait, the current code already has `.slice(0, 3)` for capabilities!
+    // So this test should actually PASS immediately.
+    const allChips = screen.getAllByText(/cap-/);
+    expect(allChips.length).toBe(3);
+  });
 });

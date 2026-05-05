@@ -1,12 +1,31 @@
 // @ts-nocheck
 import React from "react";
+import { motion } from "framer-motion";
 import * as Icons from "lucide-react";
-import { GripHorizontal } from "lucide-react";
+import { GripHorizontal, ArrowRight } from "lucide-react";
 import type { BlockDefinition } from "@iem/core";
 
 interface BlockLibraryCardProps {
   block: BlockDefinition<any, any>;
 }
+
+export const getRuntimeBadgeColor = (runtime?: string) => {
+  switch (runtime?.toLowerCase()) {
+    case "agent":
+      return "bg-brand-purple/20 text-brand-purple border-brand-purple/30";
+    case "studio":
+      return "bg-brand-cyan/20 text-brand-cyan border-brand-cyan/30";
+    case "sandbox":
+      return "bg-amber-500/20 text-amber-500 border-amber-500/30";
+    case "generator":
+      return "bg-rose-500/20 text-rose-500 border-rose-500/30";
+    case "none":
+    case "static":
+      return "bg-white/5 text-white/40 border-white/10";
+    default:
+      return "bg-white/10 text-white/50 border-white/20";
+  }
+};
 
 export const BlockLibraryCard: React.FC<BlockLibraryCardProps> = ({
   block,
@@ -46,14 +65,14 @@ export const BlockLibraryCard: React.FC<BlockLibraryCardProps> = ({
           </div>
         </div>
         {block.agentic && (
-          <div className="px-1.5 py-0.5 bg-brand-purple/20 text-brand-purple border border-brand-purple/30 rounded text-[7px] font-black uppercase tracking-widest">
+          <div className="px-2 py-0.5 bg-brand-purple/20 text-brand-purple border border-brand-purple/30 rounded text-[9px] font-black uppercase tracking-widest">
             Agentic
           </div>
         )}
       </div>
 
       {/* Body */}
-      <p className="text-[10px] text-brand-text-muted leading-relaxed line-clamp-2">
+      <p className="text-[11px] text-brand-text-muted leading-relaxed line-clamp-3">
         {block.description}
       </p>
 
@@ -71,15 +90,39 @@ export const BlockLibraryCard: React.FC<BlockLibraryCardProps> = ({
         </div>
       )}
 
+      {/* I/O Row (Revealed on hover) */}
+      {(block.accepts?.length > 0 || block.produces?.length > 0) && (
+        <motion.div
+          initial={{ height: 0, opacity: 0, marginTop: 0 }}
+          whileHover={{ height: "auto", opacity: 1, marginTop: 4 }}
+          className="overflow-hidden"
+          data-testid="io-row"
+        >
+          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+            {block.accepts?.length > 0 && (
+              <span className="px-1.5 py-0.5 bg-brand-bg-surface border border-white/10 rounded text-[8px] font-bold text-white/60 lowercase">
+                {block.accepts.join(", ")}
+              </span>
+            )}
+            <ArrowRight size={10} className="text-brand-cyan/50" />
+            {block.produces?.length > 0 && (
+              <span className="px-1.5 py-0.5 bg-brand-cyan/10 border border-brand-cyan/20 rounded text-[8px] font-bold text-brand-cyan lowercase">
+                {block.produces.join(", ")}
+              </span>
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between mt-1 pt-2 border-t border-white/5">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center">
           <div
-            className={`w-1 h-1 rounded-full ${block.runtime === "none" ? "bg-white/20" : "bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"}`}
-          />
-          <span className="text-[8px] font-bold uppercase tracking-widest text-white/30">
-            Runtime: {block.runtime || "Static"}
-          </span>
+            data-testid="runtime-badge"
+            className={`px-1.5 py-0.5 border rounded text-[8px] font-bold uppercase tracking-widest ${getRuntimeBadgeColor(block.runtime)}`}
+          >
+            {block.runtime || "Static"}
+          </div>
         </div>
 
         {/* Hover-only drag handle */}

@@ -143,6 +143,23 @@ export const ObjectRenderer: React.FC<{
     (object as any).studio,
   );
 
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case "running":
+      case "thinking":
+      case "generating":
+        return "text-brand-cyan";
+      case "error":
+        return "text-rose-400";
+      case "waiting-for-user":
+      case "waiting_for_approval":
+        return "text-amber-400";
+      case "idle":
+      default:
+        return "text-white/20";
+    }
+  };
+
   // HITL status
   const isWaiting =
     object.status === "waiting-for-user" ||
@@ -179,6 +196,7 @@ export const ObjectRenderer: React.FC<{
     >
       {/* Left Input Connector Handle */}
       <div
+        title="Input — connect upstream"
         className={`absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-0"}`}
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -228,11 +246,21 @@ export const ObjectRenderer: React.FC<{
           <div className="flex items-center gap-1.5 z-10">
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setExpanded(object.id, "fullscreen")}
-              className="p-1 text-brand-cyan hover:text-black hover:bg-brand-cyan rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
-              title="Immersive View"
+              onPointerUp={(e) => {
+                e.stopPropagation();
+                setExpanded(object.id, "fullscreen");
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(object.id, "fullscreen");
+              }}
+              className="p-1.5 text-brand-cyan hover:bg-brand-cyan group rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
+              title="Expand"
             >
-              <Maximize2 size={12} />
+              <Maximize2
+                size={14}
+                className="group-hover:stroke-black transition-colors"
+              />
             </button>
           </div>
         </div>
@@ -246,11 +274,24 @@ export const ObjectRenderer: React.FC<{
             </span>
             <div className="flex items-center gap-1">
               <Activity size={10} className="text-white/20" />
-              <span className="text-[10px] font-bold text-brand-cyan uppercase tracking-widest">
-                {object.status}
+              <span
+                data-testid="block-status"
+                className={`text-[10px] font-bold uppercase tracking-widest ${getStatusColor(object.status)}`}
+              >
+                {object.status || "idle"}
               </span>
             </div>
           </div>
+
+          {/* Description / Purpose Line */}
+          {object.metadata?.description && (
+            <p
+              data-testid="block-description"
+              className="text-[10px] text-white/40 italic leading-relaxed line-clamp-2 mb-3"
+            >
+              {object.metadata.description}
+            </p>
+          )}
 
           {/* Content Area */}
           <div className="flex-1 min-h-0 overflow-auto custom-scrollbar mb-4 pr-1">
@@ -290,6 +331,7 @@ export const ObjectRenderer: React.FC<{
 
       {/* Right Output Connector Handle */}
       <div
+        title="Output — drag to connect"
         className={`absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-0"}`}
         draggable
         onDragStart={(e) => {
