@@ -36,8 +36,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Imagination Canvas Extraction: 17 - Balnce Native Blocks**
       _Link: [./tracks/imagination_canvas_17_native_blocks_20260501/](./tracks/imagination_canvas_17_native_blocks_20260501/)_
-
----
-
-- [x] **Track: Canvas UI & Interaction Polish**
-      _Link: [./tracks/canvas_ui_interaction_polish_20260504/](./tracks/canvas_ui_interaction_polish_20260504/)_
