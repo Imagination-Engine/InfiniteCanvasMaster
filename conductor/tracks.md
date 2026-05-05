@@ -106,8 +106,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Studio Capability Manifest Final Verification**
       _Link: [./tracks/studio_manifest_verification_20260504/](./tracks/studio_manifest_verification_20260504/)_
-
----
-
-- [x] **Track: Immersive Agentic Block Integration**
-      _Link: [./tracks/immersive_agent_integration_20260505/](./tracks/immersive_agent_integration_20260505/)_
