@@ -1,27 +1,20 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
-import type { CanvasObject } from "../../contracts";
+import type { BlockComponentProps } from "../../contracts/BlockRegistry";
 import { useCanvasStore } from "../../state/canvasStore";
-import { useSelectionStore } from "../../state/selectionStore";
 
-export const NoteBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
+export const NoteBlock: React.FC<BlockComponentProps> = ({ object }) => {
   const [text, setText] = useState((object.metadata.text as string) || "");
   const updateObject = useCanvasStore((s) => s.updateObject);
-  const isSelected = useSelectionStore((s) =>
-    s.selectedIds.includes(object.id),
-  );
 
   const handleBlur = () => {
     updateObject(object.id, { metadata: { ...object.metadata, text } });
   };
 
   return (
-    <div
-      className="p-4 bg-yellow-100 border border-yellow-400 rounded shadow-md text-black"
-      style={{ width: object.width, height: object.height }}
-    >
+    <div className="w-full h-full">
       <textarea
-        className="w-full h-full bg-transparent border-none focus:outline-none resize-none overflow-hidden"
+        className="w-full h-full bg-transparent border-none focus:outline-none resize-none overflow-hidden text-[13px] text-white/90 placeholder:text-white/20 leading-relaxed font-medium"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={handleBlur}

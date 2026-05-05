@@ -11,17 +11,9 @@ export const ConnectorLayer: React.FC = () => {
     [connectionsRecord],
   );
   const objectsRecord = useCanvasStore((s) => s.objects);
-  const zoom = useViewportStore((s) => s.zoom);
 
   const objects = useMemo(() => {
-    const raw = (
-      Array.isArray(objectsRecord)
-        ? objectsRecord
-        : Object.values(objectsRecord)
-    ) as any[];
-    return Array.isArray(objectsRecord)
-      ? objectsRecord
-      : Object.values(objectsRecord);
+    return Object.values(objectsRecord);
   }, [objectsRecord]);
 
   return (
@@ -31,12 +23,24 @@ export const ConnectorLayer: React.FC = () => {
     >
       <defs>
         <linearGradient id="edge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="rgba(0, 194, 255, 0.4)" />
-          <stop offset="50%" stopColor="rgba(0, 194, 255, 0.8)" />
-          <stop offset="100%" stopColor="rgba(0, 194, 255, 0.4)" />
+          <stop offset="0%" stopColor="rgba(0, 194, 255, 0.2)" />
+          <stop offset="50%" stopColor="rgba(0, 194, 255, 0.6)" />
+          <stop offset="100%" stopColor="rgba(0, 194, 255, 0.2)" />
         </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+
+        <marker
+          id="arrowhead"
+          markerWidth="10"
+          markerHeight="7"
+          refX="9"
+          refY="3.5"
+          orient="auto"
+        >
+          <polygon points="0 0, 10 3.5, 0 7" fill="rgba(0, 194, 255, 0.4)" />
+        </marker>
+
+        <filter id="glow-connector">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
@@ -56,7 +60,9 @@ export const ConnectorLayer: React.FC = () => {
         const endX = targetObj.x;
         const endY = targetObj.y + targetObj.height / 2;
 
-        const controlPointOffset = Math.max(Math.abs(endX - startX) * 0.5, 100);
+        const dx = Math.abs(endX - startX);
+        const controlPointOffset = Math.min(Math.max(dx * 0.4, 50), 200);
+
         const path =
           "M " +
           startX +
@@ -76,17 +82,34 @@ export const ConnectorLayer: React.FC = () => {
           endY;
 
         return (
-          <g key={conn.id}>
+          <g key={conn.id} className="group/edge">
+            {/* Background interactive path */}
+            <path
+              d={path}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={20}
+              className="pointer-events-auto cursor-pointer"
+            />
+
+            {/* Visible path */}
             <path
               d={path}
               fill="none"
               stroke="url(#edge-gradient)"
-              strokeWidth={3}
-              className="opacity-50"
-              filter="url(#glow)"
+              strokeWidth={2}
+              className="transition-all duration-300 opacity-40 group-hover/edge:opacity-100 group-hover/edge:stroke-brand-cyan"
+              markerEnd="url(#arrowhead)"
+              filter="url(#glow-connector)"
             />
-            <circle r={3} fill="#fff" filter="url(#glow)">
-              <animateMotion dur="3s" repeatCount="indefinite" path={path} />
+
+            {/* Pulse animation for active connections */}
+            <circle
+              r={2}
+              fill="#00c2ff"
+              className="shadow-[0_0_8px_rgba(0,194,255,1)]"
+            >
+              <animateMotion dur="2.5s" repeatCount="indefinite" path={path} />
             </circle>
           </g>
         );

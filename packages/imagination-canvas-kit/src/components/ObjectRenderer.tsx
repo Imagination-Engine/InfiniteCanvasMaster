@@ -13,17 +13,17 @@ import { AgentBlock } from "./blocks/AgentBlock";
 import { OpenClawBlock as OpenClawBlockComponent } from "./blocks/OpenClawBlock";
 import { OpenClawAgentGroupBlock } from "./blocks/OpenClawAgentGroupBlock";
 import { CommonBlockView } from "./blocks/CommonBlockView";
-import {
-  Settings,
-  Minus,
-  Maximize2,
-  ChevronDown,
-  GripHorizontal,
-} from "lucide-react";
+import { resolveBlockIcon } from "../utils/blockIconMap";
+import { Maximize2, GripHorizontal, Activity, AlertCircle } from "lucide-react";
 
 export type ComponentRegistry = Record<
   string,
-  React.FC<{ object?: CanvasObject; data?: any; onParamsChange?: any }>
+  React.FC<{
+    object?: CanvasObject;
+    data?: any;
+    mode?: string;
+    onParamsChange?: any;
+  }>
 >;
 
 const defaultRegistry: ComponentRegistry = {
@@ -46,7 +46,7 @@ export const ObjectRenderer: React.FC<{
   const updateObject = useCanvasStore((s) => s.updateObject);
   const addConnection = useConnectionStore((s) => s.addConnection);
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const screenW = window.innerWidth / viewportZoom;
   const screenH = window.innerHeight / viewportZoom;
@@ -73,7 +73,6 @@ export const ObjectRenderer: React.FC<{
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
 
-    // Handle shift-click for multi-select
     if (e.shiftKey) {
       setSelection(
         isSelected
@@ -85,19 +84,25 @@ export const ObjectRenderer: React.FC<{
 
     setSelection([object.id]);
 
-    // Handle Dragging
     const startX = e.clientX;
     const startY = e.clientY;
     const initialObjX = object.x;
     const initialObjY = object.y;
 
+    let moved = false;
+
     const onMove = (moveEvent: PointerEvent) => {
+      if (!moved) {
+        setIsDragging(true);
+        moved = true;
+      }
       const dx = (moveEvent.clientX - startX) / viewportZoom;
       const dy = (moveEvent.clientY - startY) / viewportZoom;
       updateObject(object.id, { x: initialObjX + dx, y: initialObjY + dy });
     };
 
     const onUp = () => {
+      setIsDragging(false);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
@@ -108,10 +113,9 @@ export const ObjectRenderer: React.FC<{
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpanded(object.id, "fullscreen"); // or 'immersive'
+    setExpanded(object.id, "fullscreen");
   };
 
-  // Polyfill data bridging for block registry views
   const handleParamsChange = (newParams: any) => {
     updateObject(object.id, {
       metadata: {
@@ -133,20 +137,31 @@ export const ObjectRenderer: React.FC<{
   const displayLabel =
     object.metadata?.label || object.metadata?.title || blockTypeLabel;
 
+  const BlockIcon = resolveBlockIcon(
+    object.type,
+    object.metadata?.category,
+    (object as any).studio,
+  );
+
+  // HITL status
+  const isWaiting =
+    object.status === "waiting-for-user" ||
+    object.status === "waiting_for_approval";
+
   return (
     <div
-      className={`absolute transition-shadow duration-200 border-2 border-red-500/50 ${isSelected ? "ring-2 ring-brand-cyan shadow-[0_0_20px_rgba(0,194,255,0.2)]" : ""} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""}`}
+      className={`absolute transition-all duration-200 border-2 border-transparent ${isSelected ? "ring-2 ring-brand-cyan shadow-[0_0_20px_rgba(0,194,255,0.2)]" : ""} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "scale-[1.02] shadow-2xl opacity-90 cursor-grabbing" : "cursor-grab"}`}
       style={{
         left: object.x,
         top: object.y,
-        zIndex: object.zIndex,
+        zIndex: isDragging ? 10000 : isSelected ? 1000 : object.zIndex,
         transform: `rotate(${(object as any).rotation || 0}deg)`,
+        userSelect: "none",
       }}
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
       onPointerEnter={() => setHovered(object.id)}
       onPointerLeave={() => setHovered(null)}
-      // Connection drop handling
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("application/iem-connection")) {
           e.preventDefault();
@@ -164,14 +179,14 @@ export const ObjectRenderer: React.FC<{
       }}
     >
       <div
-        className="bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-all duration-300 hover:border-brand-cyan/20"
+        className={`bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-all duration-300 ${isHovered || isSelected ? "border-brand-cyan/20" : ""}`}
         style={{
           width: object.width,
-          height: isCollapsed ? "auto" : object.height,
+          height: object.height,
         }}
       >
         {/* Premium Canvas Block Header */}
-        <div className="h-10 border-b border-white/5 flex items-center justify-between px-3 bg-gradient-to-r from-black/60 to-black/20 shrink-0 select-none group/header cursor-grab active:cursor-grabbing relative overflow-hidden">
+        <div className="h-10 border-b border-white/5 flex items-center justify-between px-3 bg-gradient-to-r from-black/60 to-black/20 shrink-0 select-none group/header relative overflow-hidden">
           {/* Subtle running pulse if active */}
           {(object.status === "running" ||
             object.status === "thinking" ||
@@ -185,39 +200,25 @@ export const ObjectRenderer: React.FC<{
               className="text-white/20 opacity-0 group-hover/header:opacity-100 transition-opacity shrink-0"
             />
 
-            {/* Status indicator pip */}
-            <div
-              className={`w-1.5 h-1.5 rounded-full ${object.status === "error" ? "bg-red-500 animate-pulse" : object.status === "complete" ? "bg-green-500" : object.status === "running" || object.status === "thinking" || object.status === "generating" ? "bg-brand-cyan animate-pulse shadow-[0_0_8px_rgba(0,194,255,0.5)]" : "bg-white/20"}`}
-            />
+            {/* Block Icon */}
+            <div className="text-brand-cyan flex items-center justify-center">
+              <BlockIcon size={14} />
+            </div>
 
             <span className="text-[11px] font-black uppercase tracking-widest text-white truncate drop-shadow-md">
               {String(displayLabel)}
             </span>
 
-            {displayLabel !== blockTypeLabel && (
-              <span className="text-[8px] font-bold uppercase tracking-widest text-brand-text-muted truncate ml-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
-                {String(blockTypeLabel)}
-              </span>
+            {isWaiting && (
+              <div
+                data-testid="hitl-indicator"
+                className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse"
+                title="Decision Needed"
+              />
             )}
           </div>
 
           <div className="flex items-center gap-1.5 z-10">
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setExpanded(object.id, "side-panel")}
-              className="p-1 text-white/40 hover:text-white hover:bg-white/10 rounded-md transition-all"
-              title="Settings Inspector"
-            >
-              <Settings size={12} />
-            </button>
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1 text-white/40 hover:text-white hover:bg-white/10 rounded-md transition-all"
-              title={isCollapsed ? "Expand" : "Minimize"}
-            >
-              {isCollapsed ? <ChevronDown size={12} /> : <Minus size={12} />}
-            </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => setExpanded(object.id, "fullscreen")}
@@ -230,8 +231,22 @@ export const ObjectRenderer: React.FC<{
         </div>
 
         {/* Inner Content Body */}
-        {!isCollapsed && (
-          <div className="flex-1 p-3 overflow-hidden custom-scrollbar">
+        <div className="flex-1 flex flex-col p-4 overflow-hidden relative">
+          {/* Primary Role/Purpose */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[9px] font-black uppercase tracking-tighter text-white/30">
+              {object.metadata?.role || object.type.split(".")[1] || "Process"}
+            </span>
+            <div className="flex items-center gap-1">
+              <Activity size={10} className="text-white/20" />
+              <span className="text-[10px] font-bold text-brand-cyan uppercase tracking-widest">
+                {object.status}
+              </span>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 min-h-0 overflow-auto custom-scrollbar mb-4 pr-1">
             <Component
               object={object}
               mode="compact"
@@ -239,22 +254,44 @@ export const ObjectRenderer: React.FC<{
               onParamsChange={handleParamsChange}
             />
           </div>
-        )}
+
+          {/* Footer: Capabilities & Runtime */}
+          <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+            <div className="flex gap-1.5 overflow-hidden">
+              {((object.metadata?.capabilities as string[]) || [])
+                .slice(0, 2)
+                .map((cap) => (
+                  <span
+                    key={cap}
+                    className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[8px] font-bold text-white/40 lowercase truncate max-w-[80px]"
+                  >
+                    {cap}
+                  </span>
+                ))}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0 ml-2">
+              <div
+                className={`w-1 h-1 rounded-full ${object.status === "error" ? "bg-red-500" : "bg-emerald-500"}`}
+              />
+              <span className="text-[8px] font-black uppercase tracking-widest text-white/20">
+                {object.metadata?.runtime || "LIVE"}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Right Connector Handle for outgoing connections */}
-      {!isCollapsed && (
-        <div
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center cursor-crosshair opacity-0 hover:opacity-100 transition-opacity"
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData("application/iem-connection", object.id);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <div className="w-3 h-3 bg-brand-cyan rounded-full border border-white/20 shadow-lg shadow-brand-cyan/50" />
-        </div>
-      )}
+      {/* Right Connector Handle */}
+      <div
+        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center cursor-crosshair opacity-0 hover:opacity-100 transition-opacity"
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData("application/iem-connection", object.id);
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="w-3 h-3 bg-brand-cyan rounded-full border border-white/20 shadow-lg shadow-brand-cyan/50" />
+      </div>
     </div>
   );
 });
