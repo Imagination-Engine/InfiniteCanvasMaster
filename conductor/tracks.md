@@ -71,3 +71,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Intelligent Orchestrator Studio Awareness**
       _Link: [./tracks/orchestrator_studio_awareness_20260504/](./tracks/orchestrator_studio_awareness_20260504/)_
+
+---
+
+- [ ] **Track: Studio Capability Manifest Final Verification**
+      _Link: [./tracks/studio_manifest_verification_20260504/](./tracks/studio_manifest_verification_20260504/)_
