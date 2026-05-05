@@ -1,0 +1,8 @@
+{
+  "track_id": "immersive_agent_integration_20260505",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-05T22:30:00Z",
+  "updated_at": "2026-05-05T22:30:00Z",
+  "description": "Full implementation of the Immersive Agentic Block Integration specification, enabling block-specific sovereign agents and the dual-column command center UI."
+}
