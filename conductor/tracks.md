@@ -46,3 +46,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Studio Manifest Type Definitions**
       _Link: [./tracks/studio_manifest_types_20260504/](./tracks/studio_manifest_types_20260504/)_
+
+---
+
+- [ ] **Track: Block Registry Normalization & Alignment**
+      _Link: [./tracks/block_registry_normalization_20260504/](./tracks/block_registry_normalization_20260504/)_

@@ -1,56 +1,95 @@
-# Balnce AI Imagination Engine - The Infinite Canvas
+# 🌌 Balnce AI: Imagination Engine
 
-The Infinite Canvas is Balnce AI's way of providing a decentralized, AI-powered, next generation tool that will allow users to manage workflows based on their intent. 
-If you can imagine, the Canvas will help you bring it alive.
+> **Unlock Your Unlimited Digital Potential.**
 
-## Tech Stack Details
+The **Imagination Engine** is a premium, high-fidelity decentralized personal AI platform. It serves as an infinite canvas substrate where your imagination becomes functional reality through a network of loyal, stateful agents.
 
-The Infinite Canvas is built as a TypeScript + React web application. The project's back end is supported by NodeJS. Agents used in the canvas nodes are run through Gemini API.
+---
 
-## Set Up & Instructions
+## 🏗️ Architecture: The Infinite Canvas
 
-The current build requires users to run the program directly from the terminal, as the decentralized nature of the project keeps everything at a local scale.
-The intention is for the final product to be integrated within the Balnce AI app.
+Unlike traditional node-based tools, the Imagination Engine utilizes a custom-built **InfiniteViewport** engine. This provides a cinematic, edge-to-edge experience for complex multi-agent workflows, intentional data ownership, and sovereign digital empowerment.
 
-To run the frontend, go to the imagination-canvas directory and run:
+### Core Stack
+
+- **Frontend**: React 19 + Vite + Tailwind CSS + Framer Motion.
+- **Substrate**: Custom Infinite Viewport (Native Canvas Logic).
+- **Backend**: Hono + Node.js (High-performance API orchestration).
+- **Database**: PostgreSQL (pgvector) for long-term agent memory and RAG.
+- **Orchestration**: AutoGen v0.2 + Balnce Message Fabric.
+
+---
+
+## 🚀 Quick Start
+
+Ensure you have **Docker** and **pnpm** installed.
+
+### 1. Provision the Substrate
+
+Spin up the database, vector store, and temporal shell:
+
 ```bash
-npm run dev
+docker compose up -d
 ```
-To run the backend, still in the imagination-canvas directory run:
+
+### 2. Launch the Engine
+
+This command automatically syncs your database schema and launches the full application stack (Web, Server, and MCP):
+
 ```bash
-npm run server
+pnpm dev
 ```
 
-Upon entering the landing page, all you need to do is create an account and log in!
+### 3. Access the Canvas
 
-## Usage
+Open [http://localhost:5173](http://localhost:5173) to begin your first project.
 
-Once you are logged in, you can create a new project that utilizes a new canvas. Each new project will have its own canvas. The canvas has a variety of different nodes, each with 
-their own unique functions to help assist you in your workflows, and they can connect to one other to tie your project together! Each canvas can be used for whatever you can think 
-of, be it a new startup idea, an app you have in mind, or even taking care of your daily tasks! The following is a list of available nodes:
+---
 
-- Refiner: Refine text into a specific writing style.
-- Summarizer: Summarize and analyze mixed media inputs.
-- Translator: Translate text/audio into a target language.
-- Color Swapper: Transfer palette from one image to another.
-- Filter: Filter text or JSON with certain conditions.
-- Web Scraper: Scrape a manually entered URL and return both structured JSON and plain text.
-- Formatter: Reformat files into requested output format.
-- Programmer: Generates code from prompt and optional source file.
-- Gmail: Automates checking, sending, and receiving emails from your Gmail account.
+## 🧩 The Studio Ecosystem
 
-## Current Project Status
-The base canvas is ready to go, but we are working on implementing more nodes for automation purposes, such as connecting to Slack and Discord to name a few.
+The engine is divided into five distinct interactive "Surfaces," each serving a unique creative paradigm:
 
-## Tools & Acknowledgements
-- React.js and Tailwind CSS: General frontend UI and styling
-- React Flow: React library for infinite canvas blocks
-- React Router: React library for routing between different pages
-- Vite: Local development server for testing
-- Node.js, Typescript, and Express: Backend server code
-- PostgresSQL: Local database to store user login and project information
-- Bcrypt, crypto, and JWT: Node libraries for authentication
-- Ollama: Local LLM models as the basis for AI agents
-- Microsoft Autogen: Communication and fine tuning of AI agents
-- Google Gemini: Non-local LLM models for debugging and testing
-- Gemini CLI, Codex, Antigravity, etc.: Various AI tools for fast code development or debugging
+| Surface       | Studio        | Purpose                                               |
+| :------------ | :------------ | :---------------------------------------------------- |
+| **Surface A** | **Playable**  | Multiplayer game studio & interactive simulations.    |
+| **Surface B** | **Conductor** | The primary workflow orchestrator and DAG controller. |
+| **Surface C** | **Reel**      | Generative media, cinematic video, and audio studio.  |
+| **Surface D** | **Forge**     | Rapid app building and isolated sandbox execution.    |
+| **Surface E** | **Atlas**     | Knowledge graphs, Personal World Model, and RAG.      |
+
+---
+
+## 🛠️ Specialized Blocks
+
+Drag these from the **Block Library** to empower your canvas:
+
+- **Agent Block**: Deploy autonomous agents with specialized personas.
+- **Scribe Block**: Generative prose and long-form writing automation.
+- **Web Scraper**: Extract structured intelligence from any URL.
+- **Programmer**: Local sandbox execution for code generation and testing.
+- **Gmail/Slack**: Sovereign connectors for your existing digital footprint.
+
+---
+
+## 🧪 Development & TDD
+
+We operate on a strict **Red/Green/Refactor/Adversarial** workflow. Always verify changes using the integrated test suite:
+
+```bash
+# Run all workspace tests
+pnpm test
+
+# Build for production
+pnpm build
+```
+
+---
+
+## 🔒 Personal Sovereignty
+
+Balnce AI is built on the principle of **radical personal ownership**. Your data stays in your substrate, your agents are loyal to you, and your intentions drive the network—not the other way around.
+
+---
+
+_Proudly building the future of Personal AI & the Internet of Agents._
