@@ -16,7 +16,7 @@ Unlike traditional node-based tools, the Imagination Engine utilizes a custom-bu
 - **Substrate**: Custom Infinite Viewport (Native Canvas Logic).
 - **Backend**: Hono + Node.js (High-performance API orchestration).
 - **Database**: PostgreSQL (pgvector) for long-term agent memory and RAG.
-- **Orchestration**: AutoGen v0.2 + Balnce Message Fabric.
+- **Orchestration**: Mastra + Balnce Message Fabric.
 
 ---
 
