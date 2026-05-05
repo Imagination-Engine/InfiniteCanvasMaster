@@ -16,16 +16,23 @@
     "@tldraw/sync": "^4.5.10",
     "@xyflow/react": "^12.10.1",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.38.0",
-    "lucide-react": "^1.14.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "tailwind-merge": "^3.5.0",
     "tldraw": "^4.5.10",
-    "zod": "^3.24.1",
-    "zustand": "^5.0.11"
+    "zod": "^3.24.1"
+  },
+  "peerDependencies": {
+    "framer-motion": ">=12.0.0",
+    "lucide-react": ">=0.575.0",
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0",
+    "zustand": ">=5.0.0"
   },
   "devDependencies": {
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.575.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zustand": "^5.0.12",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
