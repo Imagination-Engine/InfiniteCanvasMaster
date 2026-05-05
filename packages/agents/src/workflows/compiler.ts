@@ -1,13 +1,44 @@
 import { Workflow, createStep } from "@mastra/core/workflows";
-import { blockRegistry } from "@iem/core";
+import {
+  blockRegistry,
+  messageBus,
+  // @ts-ignore
+  NodeInputAdapterRegistry,
+  // @ts-ignore
+  DefaultStrictInputAdapter,
+  // @ts-ignore
+  LegacyAdditionalInstructionsAdapter,
+  // @ts-ignore
+  createEnvelope,
+  // @ts-ignore
+  FabricTopics,
+} from "@iem/core";
 import { z } from "zod";
+import crypto from "crypto";
 
-export function compileGraphToWorkflow(graph: {
-  nodes: any[];
-  edges: any[];
-}): any {
+export type CompileWorkflowOptions = {
+  messageFabric?: any;
+  adapterRegistry?: any; // Cast to any
+  runId?: string;
+};
+
+export function compileGraphToWorkflow(
+  graph: { nodes: any[]; edges: any[] },
+  options: CompileWorkflowOptions = {},
+) {
+  const runId = options.runId || Date.now().toString();
+  const fabric = options.messageFabric || messageBus;
+  // @ts-ignore
+  const registry = options.adapterRegistry || new NodeInputAdapterRegistry();
+
+  // Ensure default adapters are present if none registered
+  if (!(registry as any).defaultAdapter) {
+    // @ts-ignore
+    registry.registerDefault(new DefaultStrictInputAdapter());
+  }
+
   const workflow = new Workflow({
-    id: `canvas-workflow-${Date.now()}`,
+    id: `canvas-workflow-${runId}`,
     inputSchema: z.record(z.string(), z.any()).optional(),
     outputSchema: z.any(),
   });
@@ -35,32 +66,69 @@ export function compileGraphToWorkflow(graph: {
         getStepResult,
         getInitData,
       }: any) => {
-        // Gather inputs from previous steps based on graph edges
+        // Collect upstream envelopes
         const incomingEdges = graph.edges.filter(
           (e: any) => e.target === node.id || e.targetId === node.id,
         );
 
-        let mergedInput = { ...(node.data?.inputs || node.data?.params || {}) };
+        const envelopes: any[] = [];
 
-        // Merge outputs from upstream dependencies
+        // Fetch envelopes from Mastra step results
         for (const edge of incomingEdges) {
           const sourceId = edge.source || edge.sourceId;
-          const sourceResult = getStepResult(sourceId);
-          if (sourceResult) {
-            mergedInput = { ...mergedInput, ...sourceResult };
+          const result = getStepResult(sourceId);
+          if (result) {
+            envelopes.push(result);
           }
         }
 
-        // If this is a root node (no incoming edges), merge in the triggerData
+        // Add trigger data if it's an envelope
         const triggerData = getInitData();
         if (incomingEdges.length === 0 && triggerData) {
-          mergedInput = { ...mergedInput, ...(triggerData as any) };
+          if (triggerData.protocol === "balnce.fabric") {
+            envelopes.push(triggerData);
+          }
         }
 
-        // Validate and execute
-        const validatedInput = blockDef.input.parse(mergedInput);
-        const output = await blockDef.agent.invoke(validatedInput);
-        return blockDef.output.parse(output);
+        // Use Adapter Registry instead of universal mutation
+        const baseInput = { ...(node.data?.inputs || node.data?.params || {}) };
+        const adaptedInput = await registry.adapt({
+          envelopes,
+          baseInput,
+          nodeSpec: node,
+          traceId: runId, // Using runId as traceId for now
+        });
+
+        // Validate
+        const validatedInput = blockDef.input.parse(adaptedInput);
+
+        // Execute block
+        const rawOutput = await blockDef.agent.invoke(validatedInput);
+        const parsedOutput = blockDef.output.parse(rawOutput);
+
+        // Wrap the output in a BalnceEnvelope v2
+        // @ts-ignore
+        const envelope = createEnvelope({
+          lane: "agent_stream",
+          traceId: runId,
+          runId: runId,
+          source: {
+            type: "block",
+            id: node.id,
+            // @ts-ignore
+            topic: FabricTopics.workflowNodeOutput(runId, node.id),
+          },
+          event: {
+            type: "node.output",
+          },
+          delivery: { class: "replayable" },
+          payload: parsedOutput,
+        });
+
+        // Publish to the Message Fabric
+        await fabric.publish(envelope);
+
+        return envelope;
       },
     });
 

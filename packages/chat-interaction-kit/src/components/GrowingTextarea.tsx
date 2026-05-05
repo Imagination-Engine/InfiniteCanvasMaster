@@ -15,7 +15,15 @@ export const GrowingTextarea = forwardRef<
   GrowingTextareaProps
 >(
   (
-    { value, maxHeight = 200, onEnter, onFileSelect, actions, ...props },
+    {
+      value,
+      maxHeight = 200,
+      onEnter,
+      onFileSelect,
+      actions,
+      className: externalClassName,
+      ...props
+    },
     ref,
   ) => {
     const internalRef = React.useRef<HTMLTextAreaElement>(null);
@@ -34,18 +42,15 @@ export const GrowingTextarea = forwardRef<
     };
 
     return (
-      <div
-        className="relative flex items-center w-full bg-white/10 border border-white/20 rounded-full focus-within:border-brand-cyan/50 focus-within:bg-white/15 transition-all px-2"
-        style={{ minHeight: "60px" }}
-      >
+      <div className="relative flex items-center w-full bg-white/5 border border-white/10 rounded-2xl focus-within:border-brand-cyan/50 focus-within:bg-white/10 transition-all p-1">
         {/* Left Action: Upload */}
-        <div className="flex items-center justify-center pl-2 pr-1 shrink-0">
+        <div className="flex items-center justify-center shrink-0">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-10 h-10 flex items-center justify-center text-white/40 hover:text-white transition-colors rounded-full hover:bg-white/5"
+            className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white transition-colors rounded-xl hover:bg-white/5"
           >
-            <Plus size={24} />
+            <Plus size={20} />
           </button>
           <input
             type="file"
@@ -62,15 +67,14 @@ export const GrowingTextarea = forwardRef<
           value={value}
           rows={1}
           placeholder={props.placeholder}
-          className={`flex-1 bg-transparent border-none focus:outline-none resize-none py-4 px-2 text-white placeholder:text-white/40 text-base leading-normal ${props.className || ""}`}
+          className={`flex-1 bg-transparent border-none focus:outline-none resize-none py-2 px-2 text-white placeholder:text-white/30 text-[13px] leading-relaxed min-h-[36px] ${externalClassName || ""}`}
           onKeyDown={handleKeyDown}
-          style={{ height: "auto", minHeight: "24px" }}
           {...props}
         />
 
         {/* Right Actions: Submit, etc. */}
         {actions && (
-          <div className="flex items-center justify-center pr-2 pl-1 shrink-0">
+          <div className="flex items-center justify-center shrink-0">
             {actions}
           </div>
         )}

@@ -47,7 +47,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
     body: {
       sessionId: projectId,
       canvasContext: {
-        nodes: Object.values(objects).map((n) => ({
+        nodes: Object.values(objects).map((n: any) => ({
           id: n.id,
           type: n.type,
           data: n.metadata,
@@ -56,7 +56,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       },
     },
     initialMessages: initialMessages as any,
-  });
+  } as any) as any;
 
   // Automatically scroll to bottom as new messages stream in
   useAutoScroll(messagesEndRef, [messages, isLoading, error]);
@@ -78,7 +78,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
             <p className="text-sm">Initiate orchestration.</p>
           </div>
         ) : (
-          messages.map((m) => {
+          messages.map((m: any) => {
             const isAssistant = m.role !== "user";
             return (
               <div

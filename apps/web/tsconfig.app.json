@@ -11,7 +11,7 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
@@ -26,7 +26,9 @@
     "paths": {
       "@iem/agents": ["../../packages/agents/src"],
       "@iem/core": ["../../packages/core/src"],
-      "@iem/db": ["../../packages/db/src"]
+      "@iem/db": ["../../packages/db/src"],
+      "@iem/imagination-canvas-kit": ["../../packages/imagination-canvas-kit/src"],
+      "@iem/chat-interaction-kit": ["../../packages/chat-interaction-kit/src"]
     }
   },
   "include": ["src"]

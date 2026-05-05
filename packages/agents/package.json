@@ -16,17 +16,21 @@
     "@iem/core": "workspace:^",
     "ai": "latest",
     "@iem/db": "workspace:^",
-    "@mastra/core": "latest",
+    "@iem/imagination-canvas-kit": "workspace:^",
+    "@mastra/core": "^1.27.0",
     "@mastra/evals": "^1.2.1",
     "@mastra/memory": "^1.17.1",
     "@mastra/observability": "^1.10.0",
-    "@mastra/pg": "latest",
+    "@mastra/pg": "^1.9.2",
+    "ai": "^6.0.168",
+    "drizzle-orm": "^0.45.2",
     "pg": "^8.20.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@types/pg": "^8.20.0",
+    "globals": "^16.5.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
   }

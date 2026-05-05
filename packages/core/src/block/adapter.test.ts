@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from "vitest";
 import { createMastraToolFromBlock } from "./adapter";
 import { z } from "zod";

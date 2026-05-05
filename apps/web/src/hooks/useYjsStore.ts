@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { createTLStore, defaultShapeUtils } from "tldraw";
-import type { TLStore } from "tldraw";
+import { createTLStore, defaultShapeUtils, type TLStore } from "tldraw";
 import { setupYjsProvider } from "../lib/yjs";
 import * as Y from "yjs";
 import { IemBlockShapeUtil } from "../canvas/IemBlockShape";
-// @ts-ignore
-import { useYjsStore as useTldrawYjsStore } from "@tldraw/sync";
+// import { useYjsStore as useTldrawYjsStore } from "@tldraw/sync";
+const useTldrawYjsStore = (id: any) => ({});
 
 export function useYjsStore({
   roomId,
@@ -15,7 +14,7 @@ export function useYjsStore({
   hostUrl?: string;
 }) {
   const [store] = useState<TLStore>(() => {
-    const shapeUtils = [...defaultShapeUtils, IemBlockShapeUtil] as any;
+    const shapeUtils = [...defaultShapeUtils, IemBlockShapeUtil];
     return createTLStore({ shapeUtils });
   });
 
@@ -49,7 +48,7 @@ export function useYjsStore({
   const syncedStore = useTldrawYjsStore({
     roomId,
     hostUrl: hostUrl || "ws://localhost:1234",
-    shapeUtils: [...defaultShapeUtils, IemBlockShapeUtil] as any,
+    shapeUtils: [...defaultShapeUtils, IemBlockShapeUtil],
   });
 
   // We return the official syncedStore which uses their native implementation

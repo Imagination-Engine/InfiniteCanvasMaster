@@ -29,6 +29,7 @@ import {
 import { FileText } from "lucide-react";
 import React, { useCallback } from "react";
 import { useCanvasStore } from "../../canvas/store/useCanvasStore";
+import { useBlockProjection } from "../../hooks/useBlockProjection";
 
 // ─── Type Wiring ────────────────────────────────────────────────────
 // Import the data shape from blockTypes.ts so TypeScript knows
@@ -69,6 +70,7 @@ export function ContentNode({
   selected,
 }: NodeProps<ContentNodeType>) {
   const { updateBlock } = useCanvasStore();
+  const projection = useBlockProjection(id);
 
   // ── Title editing ─────────────────────────────────────────────
   // Updates data.meta.label — the block's display name.
@@ -111,9 +113,13 @@ export function ContentNode({
   const format = data.state.data.format;
 
   return (
-    <div className={`flex items-stretch min-w-[240px] min-h-[150px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
-      selected ? "border-brand-purple shadow-[0_0_30px_rgba(123,92,234,0.15)] scale-[1.01]" : "border-brand-border shadow-2xl"
-    }`}>
+    <div
+      className={`flex items-stretch min-w-[240px] min-h-[150px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
+        selected
+          ? "border-brand-purple shadow-[0_0_30px_rgba(123,92,234,0.15)] scale-[1.01]"
+          : "border-brand-border shadow-2xl"
+      }`}
+    >
       <NodeResizer
         isVisible={selected}
         minWidth={240}
@@ -154,23 +160,42 @@ export function ContentNode({
 
         {/* Document textarea */}
         <textarea
-          value={data.state.data.document}
+          value={
+            projection.textBuffer !== undefined
+              ? projection.textBuffer
+              : data.state.data.document
+          }
           onChange={handleDocumentChange}
+          readOnly={
+            projection.status === "streaming" || projection.status === "running"
+          }
           onKeyDown={(e) => e.stopPropagation()}
-          className="text-xs text-brand-text-body bg-white/[0.02] rounded-xl p-3 outline-none resize-none flex-1 border border-brand-border focus:border-brand-purple/30 focus:bg-white/[0.04] transition-all nowheel nodrag nopan leading-relaxed"
-          placeholder="Start writing..."
+          className={`text-xs text-brand-text-body bg-white/[0.02] rounded-xl p-3 outline-none resize-none flex-1 border border-brand-border transition-all nowheel nodrag nopan leading-relaxed ${
+            projection.status === "streaming" || projection.status === "running"
+              ? "border-brand-purple/50 bg-brand-purple/5 opacity-80"
+              : "focus:border-brand-purple/30 focus:bg-white/[0.04]"
+          }`}
+          placeholder={
+            projection.status === "streaming"
+              ? "Receiving projection..."
+              : "Start writing..."
+          }
         />
 
         {/* Status indicators */}
         <div className="flex items-center justify-between mt-1">
-          {data.state.status === "running" ? (
+          {projection.status === "running" ||
+          projection.status === "streaming" ||
+          data.state.status === "running" ? (
             <div className="flex items-center gap-2 text-[10px] text-brand-purple font-black uppercase tracking-widest">
               <div className="w-1.5 h-1.5 bg-brand-purple rounded-full animate-pulse shadow-[0_0_8px_rgba(123,92,234,0.5)]" />
-              Generating
+              {projection.status === "streaming" ? "Streaming" : "Generating"}
+              {projection.progress !== undefined &&
+                ` (${Math.round(projection.progress * 100)}%)`}
             </div>
-          ) : data.state.status === "error" ? (
+          ) : projection.status === "error" || data.state.status === "error" ? (
             <div className="text-[10px] text-rose-500 font-black uppercase tracking-widest">
-              Error
+              Error {projection.error ? `: ${projection.error}` : ""}
             </div>
           ) : (
             <div />

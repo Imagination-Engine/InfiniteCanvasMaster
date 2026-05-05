@@ -52,6 +52,7 @@ Thumbs.db
 
 # AI / Agentic tools
 .gemini/
+.turbo/
 
 # Optional: Local-only assets or temporary design files
 *.tmp

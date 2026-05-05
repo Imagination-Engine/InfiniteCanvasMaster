@@ -153,13 +153,6 @@ export default function SessionPage() {
                 Engine
               </span>
             </p>
-            <div className="h-4 w-px bg-white/10 mx-2" />
-            <Link
-              to="/projects"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
-            >
-              Exit
-            </Link>
           </div>
         </div>
 

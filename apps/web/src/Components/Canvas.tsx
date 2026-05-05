@@ -6,6 +6,7 @@ import { NODE_CATALOG } from "../nodes/nodeCatalog";
 import { useAuth } from "../auth/AuthContext";
 import { useParams } from "react-router-dom";
 import { useYjsStore } from "../hooks/useYjsStore";
+import { FloatingOrchestratorChat } from "@iem/imagination-canvas-kit";
 
 export default function Canvas() {
   const { accessToken } = useAuth();
@@ -46,7 +47,7 @@ export default function Canvas() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\\n").filter(Boolean);
+        const lines = chunk.split("\n").filter(Boolean);
 
         for (const line of lines) {
           if (line.startsWith("9:")) {
@@ -78,7 +79,7 @@ export default function Canvas() {
                 });
 
                 if (newShapes.length > 0) {
-                  store.put(newShapes);
+                  (store as any).put(newShapes);
                 }
               }
             } catch (e) {
@@ -111,7 +112,7 @@ export default function Canvas() {
 
       // Create the custom IemBlockShape on the Tldraw canvas
       const newShapeId = createShapeId();
-      store.put([
+      (store as any).put([
         {
           id: newShapeId,
           type: "iem-block",
@@ -151,8 +152,10 @@ export default function Canvas() {
 
       {/* The Tldraw spatial renderer */}
       <div className="absolute inset-0" style={{ zIndex: 1 }}>
-        <Tldraw store={store} />
+        <Tldraw store={store as any} />
       </div>
+
+      <FloatingOrchestratorChat />
 
       <div className="absolute bottom-0 w-full z-10">
         <IntentcastingBar onSubmit={handleIntentSubmit} isLoading={isCasting} />

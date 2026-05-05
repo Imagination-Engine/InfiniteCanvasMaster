@@ -11,6 +11,10 @@ export function useAutoScroll(
     if (!isAutoScrollEnabled || !scrollAnchorRef?.current) return;
 
     const target = scrollAnchorRef.current;
+
+    // Initial scroll
+    target.scrollIntoView({ behavior: "smooth", block: "end" });
+
     const parent = target.parentElement;
     if (!parent) return;
 
@@ -23,9 +27,6 @@ export function useAutoScroll(
     });
 
     observer.observe(parent);
-
-    // Initial scroll
-    target.scrollIntoView({ behavior: "smooth", block: "end" });
 
     return () => observer.disconnect();
   }, [isAutoScrollEnabled, scrollAnchorRef, ...dependencies]);

@@ -85,17 +85,20 @@ services:
       - .:/workspace
 
   # ---------------------------------------------------------
-  # Relational Database - PostgreSQL
+  # Postgres Database (with pgvector for RAG)
   # ---------------------------------------------------------
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg15
     container_name: iem-postgres
-    restart: always
-    environment:
-      - POSTGRES_DB=imagination_canvas
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
     ports:
       - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=imagination_canvas
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - iem-postgres-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  iem-postgres-data:

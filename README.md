@@ -1,90 +1,95 @@
-# Balnce AI Imagination Engine
+# 🌌 Balnce AI: Imagination Engine
 
-Welcome to the **Imagination Engine**—a premium, futuristic, decentralized personal AI platform built by Balnce AI. The Imagination Engine is a unified, agentic canvas substrate designed to support multiple interactive expressions and workflows, helping you unlock your unlimited digital potential.
+> **Unlock Your Unlimited Digital Potential.**
 
-## Architecture Overview
+The **Imagination Engine** is a premium, high-fidelity decentralized personal AI platform. It serves as an infinite canvas substrate where your imagination becomes functional reality through a network of loyal, stateful agents.
 
-This project is a modern monorepo managed with `pnpm` and `turbo`. It is built to support robust agentic orchestration, hybrid intelligence (local and cloud), and strict isolation.
+---
 
-### Applications (`apps/`)
+## 🏗️ Architecture: The Infinite Canvas
 
-- **`apps/web`**: The frontend React/Vite application utilizing React Flow for the infinite canvas, TailwindCSS for styling, and Zustand for state management.
-- **`apps/server`**: The backend API orchestrator using Hono/Cloudflare Workers and Express.
+Unlike traditional node-based tools, the Imagination Engine utilizes a custom-built **InfiniteViewport** engine. This provides a cinematic, edge-to-edge experience for complex multi-agent workflows, intentional data ownership, and sovereign digital empowerment.
 
-### Packages (`packages/`)
+### Core Stack
 
-- **`surface-playable`**: Surface A - Multiplayer game studio.
-- **`surface-conductor`**: Surface B - Workflow orchestrator.
-- **`surface-reel`**: Surface C - Generative media studio.
-- **`surface-forge`**: Surface D - App builder and sandbox layer.
-- **`surface-atlas`**: Surface E - Knowledge graph and RAG.
-- **`core`**: Core primitives, Block Protocol, and Scheduler.
-- **`db`**: Drizzle ORM schema and PostgreSQL database setup.
-- **`ui`**: Shared UI components.
-- **`agents`**: Agent definitions and orchestration logic.
+- **Frontend**: React 19 + Vite + Tailwind CSS + Framer Motion.
+- **Substrate**: Custom Infinite Viewport (Native Canvas Logic).
+- **Backend**: Hono + Node.js (High-performance API orchestration).
+- **Database**: PostgreSQL (pgvector) for long-term agent memory and RAG.
+- **Orchestration**: Mastra + Balnce Message Fabric.
 
-## Prerequisites
+---
 
-Before running the Imagination Engine, ensure you have the following installed:
+## 🚀 Quick Start
 
-- [Node.js](https://nodejs.org/) (v20+ recommended)
-- [pnpm](https://pnpm.io/) (v8.15.5+): `npm install -g pnpm@8.15.5`
-- [Docker & Docker Compose](https://www.docker.com/) (Required for supporting infrastructure)
+Ensure you have **Docker** and **pnpm** installed.
 
-## Setup Instructions
+### 1. Provision the Substrate
 
-1. **Install Dependencies**
-   Run the following command at the root of the repository to install all workspace dependencies:
+Spin up the database, vector store, and temporal shell:
 
-   ```bash
-   pnpm install
-   ```
+```bash
+docker compose up -d
+```
 
-2. **Environment Configuration**
-   Copy the example environment file to `.env`:
+### 2. Launch the Engine
 
-   ```bash
-   cp .env.example .env
-   ```
-
-   Fill in the required values in `.env`. The file is split into different security classifications (e.g., Sovereign Secrets like `GEMINI_API_KEY`, Integration Tokens like `SLACK_BOT_TOKEN`, and safe Client variables).
-
-3. **Database and Infrastructure (Docker)**
-   Start the supporting infrastructure via Docker Compose. This spins up LibreChat, MongoDB, Meilisearch, Jaeger, and the MCP server:
-   ```bash
-   docker compose up -d
-   ```
-   _Optional: To initialize and seed the relational database (PostgreSQL via Drizzle):_
-   ```bash
-   pnpm --filter @iem/web db:generate
-   pnpm --filter @iem/web db:push
-   pnpm --filter @iem/web db:seed
-   ```
-
-## Running the Application Locally
-
-With the dependencies installed and infrastructure running, start the development servers using Turbo:
+This command automatically syncs your database schema and launches the full application stack (Web, Server, and MCP):
 
 ```bash
 pnpm dev
 ```
 
-This command concurrently starts all `dev` tasks across the monorepo:
+### 3. Access the Canvas
 
-- **Frontend** (`apps/web`): Starts the Vite development server.
-- **Backend** (`apps/server`): Starts the TSX watcher for the backend API.
+Open [http://localhost:5173](http://localhost:5173) to begin your first project.
 
-## Testing & Workflow
+---
 
-The Imagination Engine team operates on a strict **Red/Green/Refactor/Adversarial** workflow. Write failing tests first, make them pass, refactor, and finally add tests designed to break the logic (e.g., edge cases).
+## 🧩 The Studio Ecosystem
 
-Available Turbo commands:
+The engine is divided into five distinct interactive "Surfaces," each serving a unique creative paradigm:
 
-- **Build all packages:** `pnpm run build --filter='!@iem/desktop'` (Note: The desktop app is currently excluded from standard builds due to dependency and environment configuration issues).
-- **Run test suites:** `pnpm run test`
-- **Lint the codebase:** `pnpm run lint`
-- **Typecheck:** `pnpm run typecheck`
+| Surface       | Studio        | Purpose                                               |
+| :------------ | :------------ | :---------------------------------------------------- |
+| **Surface A** | **Playable**  | Multiplayer game studio & interactive simulations.    |
+| **Surface B** | **Conductor** | The primary workflow orchestrator and DAG controller. |
+| **Surface C** | **Reel**      | Generative media, cinematic video, and audio studio.  |
+| **Surface D** | **Forge**     | Rapid app building and isolated sandbox execution.    |
+| **Surface E** | **Atlas**     | Knowledge graphs, Personal World Model, and RAG.      |
 
-## Documentation
+---
 
-For specific details on any individual package or application, consult its local `README.md` (e.g., `apps/web/README.md`, `packages/surface-playable/README.md`).
+## 🛠️ Specialized Blocks
+
+Drag these from the **Block Library** to empower your canvas:
+
+- **Agent Block**: Deploy autonomous agents with specialized personas.
+- **Scribe Block**: Generative prose and long-form writing automation.
+- **Web Scraper**: Extract structured intelligence from any URL.
+- **Programmer**: Local sandbox execution for code generation and testing.
+- **Gmail/Slack**: Sovereign connectors for your existing digital footprint.
+
+---
+
+## 🧪 Development & TDD
+
+We operate on a strict **Red/Green/Refactor/Adversarial** workflow. Always verify changes using the integrated test suite:
+
+```bash
+# Run all workspace tests
+pnpm test
+
+# Build for production
+pnpm build
+```
+
+---
+
+## 🔒 Personal Sovereignty
+
+Balnce AI is built on the principle of **radical personal ownership**. Your data stays in your substrate, your agents are loyal to you, and your intentions drive the network—not the other way around.
+
+---
+
+_Proudly building the future of Personal AI & the Internet of Agents._

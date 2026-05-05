@@ -5,118 +5,98 @@ import { generateText } from "ai";
 
 export const summarizer = createTool({
   id: "summarizer",
-  description: "Summarize and analyze mixed media inputs (text, audio, image).",
+  description: "Summarizes text from one or more sources.",
   inputSchema: z.object({
     sources: z.array(z.string()),
     additionalInstructions: z.string().optional(),
   }),
-  execute: async (args: any) => {
-    const input = args.input || args;
+  execute: async (input) => {
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
-      prompt: `Summarize and analyze the following content. Return ONLY a JSON object with two fields: "summary" (a concise summary) and "analysis" (deeper insights, patterns, or notable points).
-      Instructions: ${input.additionalInstructions || "None"}
-      Content: ${input.sources.join("\n\n")}`,
+      prompt: `Summarize the following sources: ${input.sources.join(
+        "\n",
+      )}. ${input.additionalInstructions || ""}`,
     });
-    try {
-      return JSON.parse(text);
-    } catch {
-      return { summary: text, analysis: "Analysis provided in summary." };
-    }
+    return { summary: text };
   },
 });
 
 export const translator = createTool({
   id: "translator",
-  description: "Translate text/audio to a target language.",
+  description: "Translates text into a target language.",
   inputSchema: z.object({
     source: z.string(),
-    targetLanguage: z.string().default("English"),
+    targetLanguage: z.string().optional().default("Spanish"),
   }),
-  execute: async (args: any) => {
-    const input = args.input || args;
+  execute: async (input) => {
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
-      prompt: `Translate the following text to ${input.targetLanguage}. Return ONLY a JSON object with two fields: "detectedLanguage" and "translation".
-      Text: ${input.source}`,
+      prompt: `Translate the following text to ${input.targetLanguage}: ${input.source}`,
     });
-    try {
-      return JSON.parse(text);
-    } catch {
-      return { translation: text, detectedLanguage: "Unknown" };
-    }
+    return { translated: text };
   },
 });
 
-export const programmer = createTool({
-  id: "programmer",
-  description:
-    "Generate production-grade code based on a prompt and technical requirements.",
+export const refiner = createTool({
+  id: "refiner",
+  description: "Refines and improves text for clarity and impact.",
   inputSchema: z.object({
     prompt: z.string(),
-    language: z.string().default("typescript"),
     context: z.string().optional(),
+    language: z.string().optional(),
   }),
-  execute: async (args: any) => {
-    const input = args.input || args;
+  execute: async (input) => {
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
-      prompt: `You are an elite software engineer. Generate a high-quality ${input.language} code snippet for the following requirement: ${input.prompt}. 
-      Context: ${input.context || "None"}
-      Return ONLY the code, no markdown blocks unless requested.`,
+      prompt: `Refine the following text: ${input.prompt}. Context: ${
+        input.context || "none"
+      }. Language: ${input.language || "original"}`,
     });
-    return { generatedCode: text };
+    return { refined: text };
   },
 });
 
 export const colorSwapper = createTool({
   id: "colorSwapper",
-  description:
-    "Analyze an image and swap specific colors or describe a color transformation.",
+  description: "Simulated tool to swap colors in an image asset.",
   inputSchema: z.object({
-    image: z.string().describe("Base64 image data or URL"),
+    image: z.string(),
     targetColor: z.string(),
     replacementColor: z.string(),
   }),
-  execute: async (args: any) => {
-    const input = args.input || args;
-    // For now, we simulate the color swap via description as we don't have a direct pixel manipulation tool yet
-    // In a production environment, this would call a specialized image processing service.
+  execute: async (input) => {
     return {
-      status: "simulated",
-      message: `Color swap from ${input.targetColor} to ${input.replacementColor} requested for provided image.`,
-      image: input.image,
+      swapped: true,
+      newImage: `${input.image}?swap=${input.targetColor}-to-${input.replacementColor}`,
     };
   },
 });
 
 export const formatter = createTool({
   id: "formatter",
-  description:
-    "Format data or text into a specific target format (JSON, Markdown, CSV, etc.)",
+  description: "Formats raw content into a target format (JSON, MD, CSV).",
   inputSchema: z.object({
     content: z.string(),
     targetFormat: z.string(),
   }),
-  execute: async (args: any) => {
-    const input = args.input || args;
+  execute: async (input) => {
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
-      prompt: `Format the following content into ${input.targetFormat}. Ensure it is valid and clean.\n\nContent: ${input.content}`,
+      prompt: `Format the following content into ${input.targetFormat}: ${input.content}. Return ONLY the formatted content.`,
     });
-    return { formattedContent: text };
+    return { formatted: text };
   },
 });
 
-export const filter = createTool({
+export const filterBlock = createTool({
   id: "filter",
-  description: "Filter a dataset or text based on specific conditions.",
+  description:
+    "Filters and transforms data collections using natural language.",
   inputSchema: z.object({
-    data: z.any(),
     conditions: z.string(),
+    data: z.any().optional(),
   }),
-  execute: async (args: any) => {
-    const input = args.input || args;
+  execute: async (input) => {
     const { text } = await generateText({
       model: google("gemini-2.5-pro"),
       prompt: `Filter the following data based on these conditions: ${input.conditions}.\n\nData: ${JSON.stringify(input.data)}\n\nReturn ONLY the filtered JSON result.`,

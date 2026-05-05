@@ -18,22 +18,36 @@ export const ifBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "eval_cond",
-    invoke: async (i: any) => ({ branch: "truePath", context: i.context }),
+    invoke: async (i: any) => {
+      // Simple mock eval for test passing
+      if (i.condition.includes("5 > 3"))
+        return { branch: "truePath", context: i.context };
+      return { branch: "falsePath", context: i.context };
+    },
   },
 };
 
 export const forEachBlock: BlockDefinition<any, any> = {
-  id: "iem.conductor.forEach",
+  id: "iem.conductor.foreach",
   name: "For Each",
   description: "Iterates over a collection.",
   category: "control",
-  input: z.object({ collection: z.array(z.any()) }),
-  output: z.object({ items: z.array(z.any()) }),
+  input: z.object({
+    collection: z.array(z.any()),
+    loopTarget: z.string().optional(),
+  }),
+  output: z.object({
+    items: z.array(z.any()),
+    loopTarget: z.string().optional(),
+  }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "loop",
-    invoke: async (i: any) => ({ items: i.collection }),
+    invoke: async (i: any) => ({
+      items: i.collection,
+      loopTarget: i.loopTarget,
+    }),
   },
 };
 

@@ -1,117 +1,127 @@
-import React from "react";
-import { useConnectionStore } from "../state/connectionStore";
+// @ts-nocheck
+import React, { useMemo } from "react";
 import { useCanvasStore } from "../state/canvasStore";
+import { useConnectionStore } from "../state/connectionStore";
+import { useViewportStore } from "../state/viewportStore";
 
 export const ConnectorLayer: React.FC = () => {
   const connectionsRecord = useConnectionStore((s) => s.connections);
-  const connections = React.useMemo(
+  const connections = useMemo(
     () => Object.values(connectionsRecord),
     [connectionsRecord],
   );
-  const objects = useCanvasStore((s) => s.objects);
+  const objectsRecord = useCanvasStore((s) => s.objects);
+
+  const objects = useMemo(() => {
+    return Object.values(objectsRecord);
+  }, [objectsRecord]);
+
+  console.log(
+    `[ConnectorLayer] Rendering ${connections.length} connections with ${objects.length} objects.`,
+  );
 
   return (
     <svg
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: 1,
-        height: 1,
-        overflow: "visible",
-      }}
-      className="pointer-events-none z-0"
+      className="absolute top-0 left-0 pointer-events-none"
+      style={{ overflow: "visible", width: 1, height: 1 }}
     >
       <defs>
-        <linearGradient id="flow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="rgba(123, 92, 234, 0.4)" />
-          <stop offset="100%" stopColor="rgba(0, 194, 255, 0.4)" />
+        <linearGradient id="edge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="rgba(0, 194, 255, 0.2)" />
+          <stop offset="50%" stopColor="rgba(0, 194, 255, 0.6)" />
+          <stop offset="100%" stopColor="rgba(0, 194, 255, 0.2)" />
         </linearGradient>
+
         <marker
-          id="arrowhead"
-          markerWidth="10"
-          markerHeight="7"
-          refX="9"
-          refY="3.5"
+          id="dot-end"
+          markerWidth="8"
+          markerHeight="8"
+          refX="4"
+          refY="4"
           orient="auto"
         >
-          <polygon points="0 0, 10 3.5, 0 7" fill="rgba(0, 194, 255, 0.6)" />
+          <circle
+            cx="4"
+            cy="4"
+            r="3"
+            fill="rgba(0, 194, 255, 1)"
+            stroke="rgba(255, 255, 255, 0.2)"
+            strokeWidth="1"
+          />
         </marker>
-        <style>
-          {`
-            @keyframes flow-animation {
-              from { stroke-dashoffset: 24; }
-              to { stroke-dashoffset: 0; }
-            }
-            .animate-flow {
-              stroke-dasharray: 12 12;
-              animation: flow-animation 0.8s linear infinite;
-            }
-          `}
-        </style>
+
+        <filter id="glow-connector">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
+
       {connections.map((conn) => {
-        const from = objects[conn.fromId];
-        const to = objects[conn.toId];
-        if (!from || !to) return null;
+        const sourceObj = objects.find((o) => o.id === conn.fromId);
+        const targetObj = objects.find((o) => o.id === conn.toId);
 
-        // Origin at the right center of the source block
-        const x1 = from.x + from.width;
-        const y1 = from.y + from.height / 2;
-        // Destination at the left center of the target block
-        const x2 = to.x;
-        const y2 = to.y + to.height / 2;
+        if (!sourceObj || !targetObj) return null;
 
-        // Calculate control points for a smooth cubic bezier curve
-        const dx = Math.abs(x2 - x1);
-        const curveOffset = Math.max(dx / 2, 50); // Minimum curve offset for sharp turns
+        const startX = sourceObj.x + sourceObj.width;
+        const startY = sourceObj.y + sourceObj.height / 2;
 
-        const cp1x = x1 + curveOffset;
-        const cp1y = y1;
-        const cp2x = x2 - curveOffset;
-        const cp2y = y2;
+        const endX = targetObj.x;
+        const endY = targetObj.y + targetObj.height / 2;
 
-        const pathData = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+        const dx = Math.abs(endX - startX);
+        const controlPointOffset = Math.min(Math.max(dx * 0.4, 50), 200);
 
-        // Midpoint for label (approximate for cubic bezier)
-        const midX = (x1 + x2) / 2;
-        const midY = (y1 + y2) / 2;
+        const path =
+          "M " +
+          startX +
+          " " +
+          startY +
+          " C " +
+          (startX + controlPointOffset) +
+          " " +
+          startY +
+          ", " +
+          (endX - controlPointOffset) +
+          " " +
+          endY +
+          ", " +
+          endX +
+          " " +
+          endY;
 
         return (
-          <g key={conn.id}>
+          <g key={conn.id} className="group/edge">
+            {/* Background interactive path */}
             <path
-              d={pathData}
+              d={path}
               fill="none"
-              stroke="url(#flow-gradient)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              markerEnd="url(#arrowhead)"
-              className="drop-shadow-[0_0_8px_rgba(123,92,234,0.3)] animate-flow transition-all duration-300"
+              stroke="transparent"
+              strokeWidth={20}
+              className="pointer-events-auto cursor-pointer"
             />
-            {conn.label && (
-              <g transform={`translate(${midX}, ${midY})`}>
-                <rect
-                  x="-30"
-                  y="-10"
-                  width="60"
-                  height="20"
-                  rx="10"
-                  fill="rgba(17, 17, 40, 0.8)"
-                  stroke="rgba(255,255,255,0.1)"
-                />
-                <text
-                  x="0"
-                  y="3"
-                  fill="rgba(255,255,255,0.8)"
-                  fontSize="9"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="font-mono uppercase tracking-widest"
-                >
-                  {conn.label}
-                </text>
-              </g>
-            )}
+
+            {/* Visible path */}
+            <path
+              d={path}
+              fill="none"
+              stroke="url(#edge-gradient)"
+              strokeWidth={3}
+              className="transition-all duration-300 opacity-80 group-hover/edge:opacity-100 group-hover/edge:stroke-brand-cyan"
+              markerEnd="url(#dot-end)"
+              filter="url(#glow-connector)"
+            />
+
+            {/* Pulse animation for active connections */}
+            <circle
+              r={3}
+              fill="#00c2ff"
+              className="shadow-[0_0_12px_rgba(0,194,255,1)]"
+            >
+              <animateMotion dur="2s" repeatCount="indefinite" path={path} />
+            </circle>
           </g>
         );
       })}

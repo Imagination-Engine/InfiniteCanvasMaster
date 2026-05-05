@@ -36,7 +36,10 @@ describe("useAutoScroll", () => {
     rerender({ messages: [{ id: "1" }] } as any);
 
     // Should have called scrollIntoView because auto-scroll is enabled by default
-    expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
+    expect(mockScrollIntoView).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "end",
+    });
   });
 
   it("does not scroll to bottom when locked by the user", () => {

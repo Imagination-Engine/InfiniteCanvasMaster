@@ -12,6 +12,69 @@ Every new feature, block, and MCP tool must follow the strict four-step rhythm d
 4. **Adversarial:** Add one test that intentionally tries to break what was just written (e.g., edge cases, malformed inputs, race conditions). If it passes, proceed.
 5. **No Stubs/Mocks Rule:** Do not use stubs or mocks in your tests. Use the actual implementation instead.
 
+## 1.1 The Four Tenets
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
 ## 2. Quality & Coverage Standards
 
 - **Test Coverage Requirement:** >85%. Code cannot be considered complete until this threshold is demonstrably met.
@@ -49,3 +112,20 @@ Before attempting to write new files to nested paths in Planning Mode, the agent
 3. Write the file contents directly via the script.
 4. Execute the script using a terminal/shell command.
 5. Delete the scaffolding script immediately after successful execution.
+
+### 17. No-Stub Scaffolding Protocol
+
+**The Issue:** Automated mass-scaffolding of tracks can lead to "hollow" or "stubbed" tracks where `spec.md` and `plan.md` contain only one-line placeholders instead of detailed requirements.
+
+**The Rule:**
+
+1.  **Source-Driven Content:** Every `spec.md` and `plan.md` MUST be derived from its corresponding source documentation.
+2.  **No Generic Tasks:** Tasks like "- [ ] Task: Execute requirements" are strictly forbidden.
+3.  **Contextual Indexing:** Every track`s `index.md` must link to the original source/knowledge documents in the project`s documentation folder.
+4.  **Batch Limitation:** Do not scaffold more than 3 tracks in a single tool call.
+
+### Gemini CLI File Modification Bug (Cannot read properties of undefined (reading 'type'))
+
+**The Issue:** When attempting to use `replace` or `write_file` tools, the agent might receive an error: `Cannot read properties of undefined (reading 'type')`. This causes the tool execution to fail.
+
+**The Workaround:** If `replace` or `write_file` fails with this error, the agent must fallback to using `run_shell_command` with tools like `cat`, `sed`, `awk`, or a temporary Python script to perform the file modifications.

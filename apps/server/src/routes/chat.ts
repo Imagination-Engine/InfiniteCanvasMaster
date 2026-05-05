@@ -6,33 +6,9 @@ import jwt from "jsonwebtoken";
 
 const chatRouter = new Hono();
 
-const getSecrets = (c: any) => {
-  return {
-    JWT_SECRET:
-      c.env?.JWT_SECRET ||
-      process.env.JWT_SECRET ||
-      "super-secret-fallback-key",
-  };
-};
+import { authMiddleware } from "../middleware/auth.js";
 
-// Auth Middleware
-chatRouter.use("*", async (c, next) => {
-  const { JWT_SECRET } = getSecrets(c);
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.error("[CHAT AUTH] Missing or invalid Authorization header");
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    c.set("user", payload);
-    await next();
-  } catch (err) {
-    console.error("[CHAT AUTH] JWT Verify failed:", err);
-    return c.json({ error: "Invalid token" }, 401);
-  }
-});
+chatRouter.use("*", authMiddleware);
 
 chatRouter.post("/", async (c) => {
   const db = c.get("db") as any;
@@ -86,8 +62,8 @@ chatRouter.post("/", async (c) => {
   if (sessionId && !sessionId.startsWith("draft-") && !body.isDraft) {
     const [workspace] = await db
       .select()
-      .from(workspaces)
-      .where(eq(workspaces.id, sessionId));
+      .from(workspaces as any)
+      .where(eq((workspaces as any).id, sessionId));
 
     if (!workspace || workspace.ownerId !== user.sub) {
       return c.json({ error: "Session not found or unauthorized" }, 403);
@@ -95,19 +71,17 @@ chatRouter.post("/", async (c) => {
   }
 
   try {
-    const { createOrchestrator, storage } = await import("@iem/agents");
-    const agent = await createOrchestrator(storage);
+    // @ts-ignore
+    const { createOrchestrator, mastra } = await import("@iem/agents");
+    const agent = await createOrchestrator(mastra.storage);
 
     let canvasSystemPrompt = "";
     if (body.canvasContext) {
       canvasSystemPrompt = `\n\nCURRENT CANVAS STATE:\nNodes: ${JSON.stringify(body.canvasContext.nodes)}\nEdges: ${JSON.stringify(body.canvasContext.edges)}\nBe aware of these existing nodes and connections when suggesting changes, discussing the workspace, or generating blueprints. You are contiguous with the canvas experience.`;
     }
 
-    // Pass the user's latest message, but Mastra will fetch the history automatically because of the threadId!
-    const latestUserMessage =
-      sanitizedMessages[sanitizedMessages.length - 1]?.content;
-
-    // We can still inject our powerful system prompt dynamically.
+    // Pass the ENTIRE message history from the UI (which already contains the context),
+    // and prepend the dynamic system message so the model has the rules.
     const finalMessages = [
       {
         role: "system",
@@ -118,14 +92,12 @@ The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_
 
 Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.${canvasSystemPrompt}`,
       },
-      {
-        role: "user",
-        content: latestUserMessage,
-      },
+      ...sanitizedMessages,
     ];
 
     const result = await agent.stream(finalMessages, {
-      runId: sessionId, // This tells Mastra to load history and save this turn!
+      threadId: sessionId, // This tells Mastra to load history and save this turn!
+      resourceId: user.sub,
     });
 
     const stream = new ReadableStream({

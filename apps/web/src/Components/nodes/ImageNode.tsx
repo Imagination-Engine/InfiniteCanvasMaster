@@ -21,17 +21,15 @@ import { Image as ImageIcon, Upload, Sparkles, Trash2 } from "lucide-react";
 import React, { useCallback, useRef } from "react";
 import type { BlockData } from "../../canvas/types/blockTypes";
 import { useCanvasStore } from "../../canvas/store/useCanvasStore";
+import { useBlockProjection } from "../../hooks/useBlockProjection";
 
 export type ImageNodeData = BlockData<"image">;
 export type ImageNodeType = Node<ImageNodeData, "image">;
 
-export function ImageNode({
-  id,
-  data,
-  selected,
-}: NodeProps<ImageNodeType>) {
+export function ImageNode({ id, data, selected }: NodeProps<ImageNodeType>) {
   const { updateBlock } = useCanvasStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const projection = useBlockProjection(id);
 
   // ── File Upload Logic ───────────────────────────────────────────
   const handleFileChange = useCallback(
@@ -47,7 +45,9 @@ export function ImageNode({
             data: {
               ...data.state.data,
               imageUrl: reader.result as string,
-              format: (file.type.split("/")[1] as "png" | "jpg" | "webp" | "svg") || "png",
+              format:
+                (file.type.split("/")[1] as "png" | "jpg" | "webp" | "svg") ||
+                "png",
             },
           },
           meta: {
@@ -69,19 +69,20 @@ export function ImageNode({
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       updateBlock(id, {
         extensions: {
-            ...data.extensions,
-            config: {
-                ...data.extensions.config,
-                sourcePrompt: e.target.value
-            }
-        }
+          ...data.extensions,
+          config: {
+            ...data.extensions.config,
+            sourcePrompt: e.target.value,
+          },
+        },
       });
     },
     [id, data, updateBlock],
   );
 
   const sourcePromptRaw = data.extensions.config?.sourcePrompt;
-  const sourcePrompt = typeof sourcePromptRaw === "string" ? sourcePromptRaw : "";
+  const sourcePrompt =
+    typeof sourcePromptRaw === "string" ? sourcePromptRaw : "";
 
   // ── Title Logic ────────────────────────────────────────────────
   const handleTitleChange = useCallback(
@@ -102,9 +103,9 @@ export function ImageNode({
       state: {
         ...data.state,
         data: {
-            ...data.state.data,
-            imageUrl: ""
-        }
+          ...data.state.data,
+          imageUrl: "",
+        },
       },
       meta: {
         ...data.meta,
@@ -117,9 +118,13 @@ export function ImageNode({
   const hasImage = !!data.state.data.imageUrl;
 
   return (
-    <div className={`flex flex-col min-w-[280px] min-h-[220px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
-      selected ? "border-brand-cyan shadow-[0_0_30px_rgba(0,194,255,0.15)] scale-[1.01]" : "border-brand-border shadow-2xl"
-    }`}>
+    <div
+      className={`flex flex-col min-w-[280px] min-h-[220px] h-full bg-brand-bg-glass backdrop-blur-3xl rounded-2xl border transition-all duration-300 relative group overflow-hidden ${
+        selected
+          ? "border-brand-cyan shadow-[0_0_30px_rgba(0,194,255,0.15)] scale-[1.01]"
+          : "border-brand-border shadow-2xl"
+      }`}
+    >
       <NodeResizer
         isVisible={selected}
         minWidth={280}
@@ -172,11 +177,11 @@ export function ImageNode({
         />
 
         <div className="flex-1 relative rounded-xl border border-dashed border-white/10 bg-white/[0.01] overflow-hidden flex flex-col items-center justify-center group/preview">
-          {hasImage ? (
+          {hasImage || projection.previewUrl ? (
             <img
-              src={data.state.data.imageUrl}
+              src={projection.previewUrl || data.state.data.imageUrl}
               alt={data.state.data.altText || "Uploaded content"}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${projection.status === "running" ? "opacity-50 blur-sm" : ""}`}
             />
           ) : (
             <div className="flex flex-col items-center gap-5 py-8 px-4 w-full text-center">
@@ -188,12 +193,16 @@ export function ImageNode({
                 <div className="w-12 h-12 rounded-2xl bg-brand-bg-glass shadow-lg flex items-center justify-center border border-brand-border group-hover/preview:scale-110 group-hover/preview:border-brand-cyan/30 transition-all duration-500">
                   <Upload className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest">Upload Content</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  Upload Content
+                </span>
               </button>
 
               <div className="w-full flex items-center gap-3">
                 <div className="h-[1px] flex-1 bg-white/5" />
-                <span className="text-[9px] uppercase font-black text-white/10 tracking-widest">or</span>
+                <span className="text-[9px] uppercase font-black text-white/10 tracking-widest">
+                  or
+                </span>
                 <div className="h-[1px] flex-1 bg-white/5" />
               </div>
 
@@ -201,7 +210,9 @@ export function ImageNode({
               <div className="w-full flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-brand-cyan">
                   <Sparkles className="w-3 h-3" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Manifest with AI</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    Manifest with AI
+                  </span>
                 </div>
                 <textarea
                   value={sourcePrompt}
@@ -230,9 +241,14 @@ export function ImageNode({
         </div>
       </div>
 
-      {hasImage && data.state.status === "running" && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-20">
+      {(projection.status === "running" || data.state.status === "running") && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center z-20 gap-3">
           <Sparkles className="w-8 h-8 text-brand-cyan animate-pulse" />
+          <span className="text-[10px] text-brand-cyan font-black uppercase tracking-[0.2em]">
+            Generating{" "}
+            {projection.progress !== undefined &&
+              `(${Math.round(projection.progress * 100)}%)`}
+          </span>
         </div>
       )}
 

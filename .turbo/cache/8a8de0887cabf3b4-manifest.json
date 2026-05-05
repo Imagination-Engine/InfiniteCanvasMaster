@@ -1,0 +1,11 @@
+{
+  "files": {
+    "packages/imagination-canvas-kit/.turbo/turbo-build.log": {
+      "size": 122,
+      "mtime_nanos": 1777931010061199882,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["packages/imagination-canvas-kit/.turbo/turbo-build.log"]
+}

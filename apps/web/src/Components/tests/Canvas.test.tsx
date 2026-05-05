@@ -44,6 +44,13 @@ vi.mock("../IntentcastingBar", () => ({
   ),
 }));
 
+// Mock FloatingOrchestratorChat
+vi.mock("@iem/imagination-canvas-kit", () => ({
+  FloatingOrchestratorChat: () => (
+    <div data-testid="floating-orchestrator-chat">FloatingOrchestratorChat</div>
+  ),
+}));
+
 describe("Canvas Component (Tldraw wrapper)", () => {
   it("renders the Tldraw component and IntentcastingBar", () => {
     const { getByTestId } = render(<Canvas />);
@@ -51,6 +58,7 @@ describe("Canvas Component (Tldraw wrapper)", () => {
     // Test should initially fail if Canvas is missing these data-testids or structural changes broke it
     expect(getByTestId("tldraw-mock")).toBeDefined();
     expect(getByTestId("intentcasting-bar")).toBeDefined();
+    expect(getByTestId("floating-orchestrator-chat")).toBeDefined();
   });
 
   it("adversarial: handles rapid unmounting gracefully", () => {

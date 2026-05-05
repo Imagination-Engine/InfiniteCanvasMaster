@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { z } from "zod";
 
 export type BlockExecutionMode = "triggered" | "streaming" | "ambient";
@@ -23,17 +24,73 @@ export interface BlockDefinition<
   /** One-line description for palette and AI discovery */
   description: string;
 
-  /** Category for palette grouping */
+  /** High-level grouping */
   category:
-    | "text"
-    | "image"
-    | "audio"
-    | "video"
-    | "code"
-    | "data"
-    | "io"
-    | "meta"
+    | "Intent & Planning"
+    | "Agents & Swarms"
+    | "Chat & Communication"
+    | "Text & Knowledge"
+    | "Generative Media"
+    | "Studios"
+    | "Runtime & Apps"
+    | "Commerce & Intentcasting"
+    | "Files & Data"
+    | "System & Utility"
     | string;
+
+  /** Optional studio association */
+  studio?:
+    | "Agent Studio"
+    | "Video Studio"
+    | "Game Studio"
+    | "Writer’s Studio"
+    | "App Creation Studio"
+    | "Commerce Studio"
+    | "Research Studio"
+    | "Knowledge Studio"
+    | "Launch Studio"
+    | "Media Studio"
+    | "Automation Studio"
+    | string;
+
+  /** Icon identifier (e.g. lucide name) */
+  icon?: string;
+
+  /** CSS color string or variable for branding */
+  accent?: string;
+
+  /** What kinds of data/types this block accepts */
+  accepts?: string[];
+
+  /** What kinds of data/types this block produces */
+  produces?: string[];
+
+  /** Whether this block has autonomous/agentic capabilities */
+  agentic?: boolean;
+
+  /** The type of runtime this block represents */
+  runtime?:
+    | "none"
+    | "agent"
+    | "studio"
+    | "generator"
+    | "sandbox"
+    | "app"
+    | "commerce"
+    | "media"
+    | "document";
+
+  /** Which UI variant to use in the library drawer */
+  libraryCardVariant?: string;
+
+  /** Which UI variant to use on the canvas */
+  canvasVariant?: string;
+
+  /** Which UI variant to use when expanded immersively */
+  expandedVariant?: string;
+
+  /** If true, this block is choreographed/simulated (e.g. Commerce) */
+  demoMode?: boolean;
 
   /** Input schema. Validates what arrives on the input edge. */
   input: TInput;

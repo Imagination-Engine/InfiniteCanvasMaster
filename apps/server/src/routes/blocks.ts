@@ -1,35 +1,58 @@
 import { Hono } from "hono";
+// @ts-ignore
 import { blockRegistry } from "@iem/core";
 import jwt from "jsonwebtoken";
 
 const blocksRouter = new Hono();
 
-const getSecrets = (c: any) => {
-  return {
-    JWT_SECRET:
-      c.env?.JWT_SECRET ||
-      process.env.JWT_SECRET ||
-      "super-secret-fallback-key",
-  };
-};
+import { authMiddleware } from "../middleware/auth.js";
 
-// Auth Middleware (Optional but recommended for execution)
-blocksRouter.use("*", async (c, next) => {
-  const { JWT_SECRET } = getSecrets(c);
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    // We might allow public execution for some blocks, but for now, strict.
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    c.set("user", payload);
-    await next();
-  } catch (err) {
-    return c.json({ error: "Invalid token" }, 401);
-  }
+/**
+ * List all available blocks (Registry + Database)
+ * GET /api/blocks/library
+ */
+blocksRouter.get("/library", async (c) => {
+  // 1. Get core registry blocks
+  const registryBlocks = blockRegistry.list().map((b) => ({
+    id: b.id,
+    name: b.name,
+    category: b.category,
+    description: b.description,
+    icon: b.icon,
+    agentic: b.agentic,
+    runtime: b.runtime,
+    studio: b.studio,
+  }));
+
+  // 2. Fetch custom blocks from DB (placeholder for now)
+  const dbBlocks: any[] = [];
+
+  return c.json({
+    blocks: [...registryBlocks, ...dbBlocks],
+  });
 });
+
+/**
+ * Save a custom block to the library
+ * POST /api/blocks/library
+ */
+blocksRouter.post("/library", async (c) => {
+  const payload = await c.req.json();
+
+  // In production, we would persist this to the DB.
+  console.log(`[LIBRARY] Saving custom block: ${payload.name}`);
+
+  return c.json({
+    success: true,
+    block: {
+      ...payload,
+      id: payload.id || `custom-${Date.now()}`,
+    },
+  });
+});
+
+// Protect only the execution endpoint for now
+blocksRouter.use("/execute", authMiddleware);
 
 /**
  * Single Block Execution Endpoint

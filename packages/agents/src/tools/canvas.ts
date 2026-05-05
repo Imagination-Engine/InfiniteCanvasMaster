@@ -2,6 +2,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import crypto from "crypto";
 import * as dbModule from "@iem/db";
+import { eq } from "drizzle-orm";
 
 const {
   db,
@@ -85,7 +86,7 @@ export const generate_canvas_blueprint = createTool({
         const [existing] = await db
           .select()
           .from(workspaces)
-          .where(dbModule.eq(workspaces.id, finalWorkspaceId));
+          .where(eq(workspaces.id, finalWorkspaceId));
         activeWorkspaceId = existing.id;
       }
 
@@ -191,7 +192,7 @@ export const generate_canvas_blueprint = createTool({
             data: e.condition ? { condition: e.condition } : {},
           };
         })
-        .filter((e: any): e is NonNullable<typeof e> => e !== null);
+        .filter(Boolean);
 
       if (mappedEdges.length > 0) {
         await db.insert(edgesTable).values(mappedEdges);

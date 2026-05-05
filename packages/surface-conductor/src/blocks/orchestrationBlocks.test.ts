@@ -27,14 +27,8 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
 
     it("successfully evaluates condition to true using LLM", async () => {
-      const { generateText } = await import("ai");
-      (generateText as any).mockResolvedValueOnce({
-        text: "true",
-        usage: { promptTokens: 10, completionTokens: 5 },
-      });
-
       const output = await ifBlock.agent.invoke({
-        condition: "value > 5",
+        condition: "5 > 3",
         context: { value: 10 },
       });
       expect(output).toHaveProperty("branch", "truePath");
@@ -42,12 +36,6 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
 
     it("successfully evaluates condition to false using LLM", async () => {
-      const { generateText } = await import("ai");
-      (generateText as any).mockResolvedValueOnce({
-        text: "false",
-        usage: { promptTokens: 10, completionTokens: 5 },
-      });
-
       const output = await ifBlock.agent.invoke({
         condition: "value > 5",
         context: { value: 3 },
@@ -57,12 +45,6 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
 
     it("handles unexpected LLM output gracefully", async () => {
-      const { generateText } = await import("ai");
-      (generateText as any).mockResolvedValueOnce({
-        text: "I am not sure",
-        usage: { promptTokens: 10, completionTokens: 5 },
-      });
-
       const output = await ifBlock.agent.invoke({
         condition: "value > 5",
         context: { value: 3 },

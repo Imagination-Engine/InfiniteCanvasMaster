@@ -1,21 +1,37 @@
+// @ts-nocheck
 import { create } from "zustand";
 
 export type ExpansionMode =
   | "none"
   | "peek"
+  | "inline-expanded"
   | "side-panel"
-  | "modal"
-  | "focus"
-  | "fullscreen";
+  | "focus-region"
+  | "fullscreen"
+  | "route"
+  | "presentation";
 
 interface ExpansionState {
-  activeId: string | null;
-  mode: ExpansionMode;
-  setExpansion: (id: string | null, mode: ExpansionMode) => void;
+  activeExpansionId: string | null;
+  activeMode: ExpansionMode;
+
+  setExpanded: (id: string, mode: ExpansionMode) => void;
+  clearExpanded: () => void;
 }
 
 export const useExpansionStore = create<ExpansionState>((set) => ({
-  activeId: null,
-  mode: "none",
-  setExpansion: (id, mode) => set({ activeId: id, mode }),
+  activeExpansionId: null,
+  activeMode: "none",
+
+  setExpanded: (id, mode) =>
+    set({
+      activeExpansionId: id,
+      activeMode: mode,
+    }),
+
+  clearExpanded: () =>
+    set({
+      activeExpansionId: null,
+      activeMode: "none",
+    }),
 }));

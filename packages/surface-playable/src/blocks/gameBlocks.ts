@@ -198,3 +198,42 @@ export const ruleBlock: BlockDefinition<any, any> = {
     invoke: async () => ({ result: true }),
   },
 };
+
+export const sceneBlock: BlockDefinition<any, any> = {
+  id: "iem.playable.scene",
+  name: "Scene",
+  description: "Define visual environment.",
+  category: "media",
+  input: z.object({
+    background: z.string(),
+    width: z.number(),
+    height: z.number(),
+  }),
+  output: z.object({ sceneId: z.string(), status: z.string() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "gen_scene",
+    invoke: async () => ({ sceneData: {} }),
+  },
+};
+
+export const characterBlock: BlockDefinition<any, any> = {
+  id: "iem.playable.character",
+  name: "Character",
+  description: "Visual character in scene.",
+  category: "media",
+  input: z.object({
+    name: z.string(),
+    asset: z.string(),
+    x: z.number(),
+    y: z.number(),
+  }),
+  output: z.object({ characterId: z.string() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "gen_char",
+    invoke: async () => ({ characterId: "char_1" }),
+  },
+};
