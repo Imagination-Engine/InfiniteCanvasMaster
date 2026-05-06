@@ -101,8 +101,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Intelligent Orchestrator Studio Awareness**
       _Link: [./tracks/orchestrator_studio_awareness_20260504/](./tracks/orchestrator_studio_awareness_20260504/)_
-
----
-
-- [x] **Track: Immersive Agentic Block Integration**
-      _Link: [./tracks/immersive_agent_integration_20260505/](./tracks/immersive_agent_integration_20260505/)_
