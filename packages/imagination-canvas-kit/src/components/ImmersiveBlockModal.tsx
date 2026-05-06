@@ -23,6 +23,7 @@ export interface ImmersiveBlockModalProps {
     projectId: string;
     blockId: string;
     fullScreen?: boolean;
+    apiEndpoint?: string;
   }>;
 }
 
@@ -85,7 +86,7 @@ export const ImmersiveBlockModal: React.FC<ImmersiveBlockModalProps> = ({
         initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
         animate={{ opacity: 1, backdropFilter: "blur(20px)" }}
         exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-        className="fixed inset-0 z-[10001] bg-black/60 flex items-center justify-center p-4 md:p-8"
+        className="fixed inset-0 z-[10002] bg-black/60 flex items-center justify-center p-4 md:p-8"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -142,6 +143,24 @@ export const ImmersiveBlockModal: React.FC<ImmersiveBlockModalProps> = ({
               <div className="w-px h-6 bg-white/10 mx-2" />
 
               <button
+                onClick={() =>
+                  setActiveTab(activeTab === "config" ? "chat" : "config")
+                }
+                className={`p-2.5 rounded-xl transition-all group relative ${activeTab === "config" ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]" : "bg-white/5 hover:bg-white/10 text-brand-text-muted hover:text-white"}`}
+                title="Toggle Controls"
+              >
+                <Settings2
+                  size={18}
+                  className={`${activeTab === "config" ? "rotate-45" : "group-hover:rotate-45"} transition-transform`}
+                />
+                <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-[9px] font-bold uppercase tracking-tighter rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none">
+                  {activeTab === "config" ? "Back to Chat" : "Show Controls"}
+                </span>
+              </button>
+
+              <div className="w-px h-6 bg-white/10 mx-2" />
+
+              <button
                 onClick={clearExpanded}
                 className="p-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl transition-all"
               >
@@ -152,8 +171,8 @@ export const ImmersiveBlockModal: React.FC<ImmersiveBlockModalProps> = ({
 
           {/* Modal Body - 40/60 Split */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Left Utility Sidebar (40%) */}
-            <div className="w-[40%] min-w-[450px] border-r border-white/10 bg-black/20 flex flex-col relative z-[10]">
+            {/* Left Utility Sidebar (Fixed 450px for usability) */}
+            <div className="w-[450px] shrink-0 border-r border-white/10 bg-black/20 flex flex-col relative z-[10]">
               <AnimatePresence mode="wait">
                 {activeTab === "chat" ? (
                   <motion.div

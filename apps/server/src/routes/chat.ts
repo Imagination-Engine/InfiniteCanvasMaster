@@ -245,6 +245,10 @@ chatRouter.post("/block", async (c) => {
     const threadId = `${projectId}:${blockId}`;
 
     // 6. Stream Chat using Mastra Agent
+    console.log(
+      `[BLOCK-CHAT] Initiating stream for block: ${node.id} (${node.type}) on thread: ${threadId}`,
+    );
+
     const result = await agent.stream(messages, {
       threadId,
       resourceId: user.sub,
@@ -259,12 +263,54 @@ chatRouter.post("/block", async (c) => {
           }
 
           const rawToolCalls = await result.toolCalls;
-          if (rawToolCalls) {
+          const rawToolResults = await result.toolResults;
+          const steps = await (result as any).steps;
+
+          if (rawToolCalls && rawToolCalls.length > 0) {
             for (const wrapper of rawToolCalls) {
               const toolCall = wrapper.payload || wrapper;
+              const resultWrapper = rawToolResults?.find((r: any) => {
+                const resPayload = r.payload || r;
+                return resPayload.toolCallId === toolCall.toolCallId;
+              });
+              const toolResult = resultWrapper
+                ? resultWrapper.payload || resultWrapper
+                : undefined;
+
+              const uiToolPayload = {
+                toolCallId: toolCall.toolCallId,
+                toolName: toolCall.toolName,
+                args: toolCall.args,
+                result: toolResult ? toolResult.result : undefined,
+              };
               controller.enqueue(
-                encoder.encode(`9:${JSON.stringify(toolCall)}\n`),
+                encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
               );
+            }
+          } else if (steps && steps.length > 0) {
+            for (const step of steps) {
+              if (step.toolCalls && step.toolCalls.length > 0) {
+                for (const wrapper of step.toolCalls) {
+                  const toolCall = wrapper.payload || wrapper;
+                  const resultWrapper = step.toolResults?.find((r: any) => {
+                    const resPayload = r.payload || r;
+                    return resPayload.toolCallId === toolCall.toolCallId;
+                  });
+                  const toolResult = resultWrapper
+                    ? resultWrapper.payload || resultWrapper
+                    : undefined;
+
+                  const uiToolPayload = {
+                    toolCallId: toolCall.toolCallId,
+                    toolName: toolCall.toolName,
+                    args: toolCall.args,
+                    result: toolResult ? toolResult.result : undefined,
+                  };
+                  controller.enqueue(
+                    encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
+                  );
+                }
+              }
             }
           }
         } catch (err: any) {

@@ -1,7 +1,7 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import * as dbModule from "@iem/db";
-import { eq, or, and } from "drizzle-orm";
+import { eq, or, and, inArray } from "drizzle-orm";
 
 const { db, nodes: nodesTable, edges: edgesTable } = dbModule as any;
 
@@ -49,12 +49,9 @@ export const read_canvas_context = createTool({
           .where(
             and(
               eq(nodesTable.canvasId, currentNode.canvasId),
-              // This is a bit simplified, but Drizzle supports 'in' if we have the right import
-              // For now, we'll just filter them manually or assume we can map
+              inArray(nodesTable.id, neighborIds),
             ),
           );
-
-        neighbors = neighbors.filter((n: any) => neighborIds.includes(n.id));
       }
 
       return {

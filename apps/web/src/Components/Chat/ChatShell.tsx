@@ -1,8 +1,8 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../../auth/AuthContext";
 import { Markdown } from "./Markdown";
-import { Bot, ChevronRight, ArrowUp, Square } from "lucide-react";
+import { Bot, ChevronRight, ArrowUp, Square, ChevronDown } from "lucide-react";
 import {
   GrowingTextarea,
   ToolCallBlock,
@@ -27,25 +27,20 @@ export const ChatShell: React.FC<ChatShellProps> = ({
   blockId,
   initialMessages = [],
   fullScreen = false,
-  apiEndpoint = "http://localhost:3001/api/chat",
+  apiEndpoint = "/api/chat",
 }) => {
   const { accessToken } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { objects } = useCanvasStore();
-  const { connections } = useConnectionStore();
+  const objects = useCanvasStore((s) => s.objects);
+  const connections = useConnectionStore((s) => s.connections);
 
   // Determine final API endpoint based on blockId
   const finalApi = blockId ? `${apiEndpoint}/block` : apiEndpoint;
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-    stop,
-  } = useChat({
+  // LOCAL STATE OVERRIDE for input to bypass SDK synchronization issues
+  const [localInput, setLocalInput] = useState("");
+
+  const chatResult = useChat({
     api: finalApi,
     headers: {
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -64,14 +59,93 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       },
     },
     initialMessages: initialMessages as any,
-  } as any) as any;
+  });
+
+  // ROBUST PROPERTY RESOLUTION
+  // Detect if the hook returned an array (legacy/alt pattern) or an object (standard/modern)
+  const isArray = Array.isArray(chatResult);
+
+  const messages = isArray ? chatResult[0] : chatResult.messages || [];
+  const status = !isArray ? (chatResult as any).status : undefined;
+  const isLoading = isArray
+    ? chatResult[4]
+    : chatResult.isLoading ||
+      status === "loading" ||
+      status === "streaming" ||
+      status === "submitting" ||
+      false;
+  const error = isArray ? chatResult[5] : chatResult.error;
+
+  // Handlers with exhaustive fallbacks
+  const stop = isArray
+    ? chatResult[6]
+    : chatResult.stop || (chatResult as any).abort || (() => {});
+
+  // Submission resolution (append, sendMessage, handleSubmit, etc.)
+  const append = isArray
+    ? chatResult[7]
+    : chatResult.append ||
+      (chatResult as any).sendMessage ||
+      (chatResult as any).handleSubmit ||
+      (chatResult as any).onSubmit;
+
+  const handleManualSubmit = async (e?: any) => {
+    if (e?.preventDefault) e.preventDefault();
+    const content = localInput.trim();
+    if (!content || isLoading) return;
+
+    console.log("[CHAT-SHELL] Manual submit initiated:", {
+      content,
+      isArray,
+      hasAppend: typeof append === "function",
+      keys: isArray ? "array" : Object.keys(chatResult),
+    });
+
+    try {
+      setLocalInput(""); // Clear immediately for UX
+
+      if (typeof append === "function") {
+        // Handle different call signatures (standard append vs modern sendMessage)
+        if ((chatResult as any).sendMessage) {
+          await (append as any)({
+            role: "user",
+            content,
+          });
+        } else {
+          await append({
+            role: "user",
+            content,
+          } as any);
+        }
+      } else if (typeof (chatResult as any).append === "function") {
+        // Direct access fallback
+        await (chatResult as any).append({ role: "user", content });
+      } else {
+        throw new Error(
+          `No submission handler found. Keys: ${isArray ? "array" : Object.keys(chatResult).join(", ")}`,
+        );
+      }
+    } catch (err) {
+      console.error("[CHAT-SHELL] Manual submit failed:", err);
+      setLocalInput(content); // Restore on failure
+    }
+  };
+
+  console.log("[CHAT-SHELL] Component Render State:", {
+    projectId,
+    blockId,
+    finalApi,
+    isArray,
+    keys: isArray ? "array" : Object.keys(chatResult),
+    isLoading,
+  });
 
   // Automatically scroll to bottom as new messages stream in
   useAutoScroll(messagesEndRef, [messages, isLoading, error]);
 
   const { handleKeyDown, handleButtonClick } = useComposerSubmit({
-    onSubmit: () => handleSubmit(new Event("submit") as any),
-    onStop: stop,
+    onSubmit: handleManualSubmit,
+    onStop: stop as any,
     isStreaming: isLoading,
   });
 
@@ -146,19 +220,27 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       )}
 
       <div className="p-4 bg-white/[0.02] border-t border-white/5">
-        <form onSubmit={handleSubmit} className="flex items-end group w-full">
+        <form
+          onSubmit={handleManualSubmit}
+          className="flex items-end group w-full"
+        >
           <GrowingTextarea
-            value={input}
-            onChange={handleInputChange}
+            value={localInput}
+            onChange={(e) => {
+              console.log("[CHAT-SHELL] Local Input change:", e.target.value);
+              setLocalInput(e.target.value);
+            }}
             placeholder="Instruct the engine..."
             onKeyDown={handleKeyDown as any}
-            onEnter={() => handleSubmit(new Event("submit") as any)}
+            onEnter={() => {
+              console.log("[CHAT-SHELL] Enter pressed");
+              handleManualSubmit();
+            }}
             onFileSelect={(files) => console.log("Files selected:", files)}
             actions={
               <button
-                type="button"
-                onClick={handleButtonClick}
-                disabled={!(input || "").trim() && !isLoading}
+                type="submit"
+                disabled={!localInput.trim() && !isLoading}
                 className="w-10 h-10 flex items-center justify-center bg-brand-purple hover:bg-brand-cyan text-white rounded-full transition-all disabled:opacity-50 disabled:hover:bg-brand-purple"
               >
                 {isLoading ? (

@@ -12,7 +12,7 @@ export const summarizer = createTool({
   }),
   execute: async (input) => {
     const { text } = await generateText({
-      model: google("gemini-2.5-pro"),
+      model: google("gemini-2.5-flash"),
       prompt: `Summarize the following sources: ${input.sources.join(
         "\n",
       )}. ${input.additionalInstructions || ""}`,
@@ -30,7 +30,7 @@ export const translator = createTool({
   }),
   execute: async (input) => {
     const { text } = await generateText({
-      model: google("gemini-2.5-pro"),
+      model: google("gemini-2.5-flash"),
       prompt: `Translate the following text to ${input.targetLanguage}: ${input.source}`,
     });
     return { translated: text };
@@ -47,7 +47,7 @@ export const refiner = createTool({
   }),
   execute: async (input) => {
     const { text } = await generateText({
-      model: google("gemini-2.5-pro"),
+      model: google("gemini-2.5-flash"),
       prompt: `Refine the following text: ${input.prompt}. Context: ${
         input.context || "none"
       }. Language: ${input.language || "original"}`,
@@ -81,7 +81,7 @@ export const formatter = createTool({
   }),
   execute: async (input) => {
     const { text } = await generateText({
-      model: google("gemini-2.5-pro"),
+      model: google("gemini-2.5-flash"),
       prompt: `Format the following content into ${input.targetFormat}: ${input.content}. Return ONLY the formatted content.`,
     });
     return { formatted: text };
@@ -98,7 +98,7 @@ export const filterBlock = createTool({
   }),
   execute: async (input) => {
     const { text } = await generateText({
-      model: google("gemini-2.5-pro"),
+      model: google("gemini-2.5-flash"),
       prompt: `Filter the following data based on these conditions: ${input.conditions}.\n\nData: ${JSON.stringify(input.data)}\n\nReturn ONLY the filtered JSON result.`,
     });
     try {

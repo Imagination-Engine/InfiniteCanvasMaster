@@ -24,7 +24,7 @@ export class AgentFactory {
 
   constructor(options: AgentFactoryOptions = {}) {
     this.storage = options.storage;
-    this.defaultModel = options.model || google("gemini-2.5-pro");
+    this.defaultModel = options.model || google("gemini-2.5-flash");
   }
 
   /**
