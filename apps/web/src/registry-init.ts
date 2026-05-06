@@ -24,6 +24,12 @@ import {
   webFetchBlock,
   slackPostBlock,
   notionCreateBlock,
+  switchBlock,
+  transformBlock,
+  regexExtractBlock,
+  jsonParseBlock,
+  classifyBlock,
+  discordPostBlock,
 } from "@iem/surface-conductor";
 
 import {
@@ -102,6 +108,12 @@ export function initializeWebRegistry() {
     webFetchBlock,
     slackPostBlock,
     notionCreateBlock,
+    switchBlock,
+    transformBlock,
+    regexExtractBlock,
+    jsonParseBlock,
+    classifyBlock,
+    discordPostBlock,
 
     // Forge
     architectBlock,
