@@ -44,8 +44,13 @@ const parseJsonFromContent = (content: string): unknown => {
   return JSON.parse(candidate);
 };
 
-async function requestOllama(systemPrompt: string, userPrompt: string, schema: object): Promise<unknown> {
-  const baseUrl = import.meta.env.VITE_OLLAMA_BASE_URL ?? "http://localhost:11434";
+async function requestOllama(
+  systemPrompt: string,
+  userPrompt: string,
+  schema: object,
+): Promise<unknown> {
+  const baseUrl =
+    import.meta.env.VITE_OLLAMA_BASE_URL ?? "http://localhost:11434";
   const model = import.meta.env.VITE_OLLAMA_MODEL ?? "llama3";
 
   const schemaInstruction = [
@@ -73,7 +78,9 @@ async function requestOllama(systemPrompt: string, userPrompt: string, schema: o
     }),
   });
 
-  const payload = (await response.json().catch(() => null)) as OllamaChatResponse | null;
+  const payload = (await response
+    .json()
+    .catch(() => null)) as OllamaChatResponse | null;
 
   if (!response.ok) {
     throw new LLMStructuredError(
@@ -85,20 +92,32 @@ async function requestOllama(systemPrompt: string, userPrompt: string, schema: o
 
   const content = payload?.message?.content ?? payload?.response;
   if (!content || typeof content !== "string") {
-    throw new LLMStructuredError("OLLAMA_EMPTY_RESPONSE", "Ollama returned empty response content.", payload);
+    throw new LLMStructuredError(
+      "OLLAMA_EMPTY_RESPONSE",
+      "Ollama returned empty response content.",
+      payload,
+    );
   }
 
   try {
     return parseJsonFromContent(content);
   } catch (error) {
-    throw new LLMStructuredError("OLLAMA_NON_JSON_RESPONSE", "Model response was not valid JSON.", {
-      rawContent: content,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    throw new LLMStructuredError(
+      "OLLAMA_NON_JSON_RESPONSE",
+      "Model response was not valid JSON.",
+      {
+        rawContent: content,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
   }
 }
 
-async function requestGemini(systemPrompt: string, userPrompt: string, schema: object): Promise<unknown> {
+async function requestGemini(
+  systemPrompt: string,
+  userPrompt: string,
+  schema: object,
+): Promise<unknown> {
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
   if (!apiKey) throw new Error("VITE_GOOGLE_API_KEY is not defined in .env");
 
@@ -110,47 +129,70 @@ async function requestGemini(systemPrompt: string, userPrompt: string, schema: o
 
   const fullPrompt = `${systemPrompt}\n${schemaInstruction}\n\nUSER_QUERY:\n${userPrompt}`;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0,
-      }
-    }),
-  });
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0,
+        },
+      }),
+    },
+  );
 
   const payload = (await response.json().catch(() => null)) as any;
   if (!response.ok) {
-    throw new LLMStructuredError("GEMINI_HTTP_ERROR", `Gemini request failed: ${response.status}`, payload);
+    throw new LLMStructuredError(
+      "GEMINI_HTTP_ERROR",
+      `Gemini request failed: ${response.status}`,
+      payload,
+    );
   }
 
   const content = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!content) {
-    throw new LLMStructuredError("GEMINI_EMPTY_RESPONSE", "Gemini returned empty response.", payload);
+    throw new LLMStructuredError(
+      "GEMINI_EMPTY_RESPONSE",
+      "Gemini returned empty response.",
+      payload,
+    );
   }
 
   try {
     return parseJsonFromContent(content);
   } catch (error) {
-    throw new LLMStructuredError("GEMINI_NON_JSON_RESPONSE", "Model response was not valid JSON.", {
-      rawContent: content,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    throw new LLMStructuredError(
+      "GEMINI_NON_JSON_RESPONSE",
+      "Model response was not valid JSON.",
+      {
+        rawContent: content,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
   }
 }
 
-export async function callLLM<T>({ systemPrompt, userPrompt, schema }: CallLLMArgs): Promise<T> {
-  const provider = import.meta.env.VITE_LLM_PROVIDER?.toLowerCase() === "ollama" ? "ollama" : "gemini";
+export async function callLLM<T>({
+  systemPrompt,
+  userPrompt,
+  schema,
+}: CallLLMArgs): Promise<T> {
+  const provider =
+    import.meta.env.VITE_LLM_PROVIDER?.toLowerCase() === "ollama"
+      ? "ollama"
+      : "gemini";
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const json = provider === "ollama" 
-        ? await requestOllama(systemPrompt, userPrompt, schema)
-        : await requestGemini(systemPrompt, userPrompt, schema);
+      const json =
+        provider === "ollama"
+          ? await requestOllama(systemPrompt, userPrompt, schema)
+          : await requestGemini(systemPrompt, userPrompt, schema);
       return validateSchema<T>(schema, json);
     } catch (error) {
       lastError = error;

@@ -45,9 +45,11 @@ export async function runIntegrationNode(
   };
 }
 
-const toStringValue = (value: unknown) => (typeof value === "string" ? value : String(value ?? ""));
+const toStringValue = (value: unknown) =>
+  typeof value === "string" ? value : String(value ?? "");
 
-const toTextLines = (values: string[]) => values.filter((v) => v.trim().length > 0).join("\n");
+const toTextLines = (values: string[]) =>
+  values.filter((v) => v.trim().length > 0).join("\n");
 
 const firstNonEmpty = (...values: unknown[]) => {
   for (const value of values) {
@@ -138,9 +140,17 @@ async function runSlackNode(
       );
     }
     case "slack.listChannels":
-      return apiRequest("/api/slack/nodes/listChannels", { method: "POST" }, accessToken);
+      return apiRequest(
+        "/api/slack/nodes/listChannels",
+        { method: "POST" },
+        accessToken,
+      );
     case "slack.listUsers":
-      return apiRequest("/api/slack/nodes/listUsers", { method: "POST" }, accessToken);
+      return apiRequest(
+        "/api/slack/nodes/listUsers",
+        { method: "POST" },
+        accessToken,
+      );
     case "slack.createChannel": {
       const name = toStringValue(inputs.name).trim();
       const isPrivate = toStringValue(inputs.is_private).trim();
@@ -157,7 +167,10 @@ async function runSlackNode(
       const type = nodeType;
       return {
         result: { nodeType: type, status: "unsupported" },
-        text: toTextLines([`Slack node not implemented: ${type}`, JSON.stringify(inputs)]),
+        text: toTextLines([
+          `Slack node not implemented: ${type}`,
+          JSON.stringify(inputs),
+        ]),
       };
     }
   }
@@ -170,7 +183,11 @@ async function runGmailNode(
 ): Promise<Record<string, unknown>> {
   switch (nodeType) {
     case "gmail.sendEmail": {
-      const to = firstNonEmpty(inputs.to, inputs.recipient, inputs.recipientEmail);
+      const to = firstNonEmpty(
+        inputs.to,
+        inputs.recipient,
+        inputs.recipientEmail,
+      );
       const subject = firstNonEmpty(inputs.subject, inputs.title, inputs.topic);
       const body = firstNonEmpty(
         inputs.body,
@@ -206,7 +223,10 @@ async function runGmailNode(
       const type = nodeType;
       return {
         result: { nodeType: type, status: "unsupported" },
-        text: toTextLines([`Gmail node not implemented: ${type}`, JSON.stringify(inputs)]),
+        text: toTextLines([
+          `Gmail node not implemented: ${type}`,
+          JSON.stringify(inputs),
+        ]),
       };
     }
   }

@@ -1,10 +1,12 @@
-import { defineConfig } from 'drizzle-kit';
+import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  schema: './src/schema/index.ts',
-  out: './migrations',
-  dialect: 'postgresql',
+  schema: "./src/schema/index.ts",
+  out: "./migrations",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5433/imagination_engine',
+    url:
+      process.env.DATABASE_URL ||
+      "postgres://postgres:postgres@localhost:5433/imagination_engine",
   },
 });

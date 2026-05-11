@@ -23,7 +23,7 @@ import {
 } from "./workflow/runtimeState";
 import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
-import { Maximize2, Minimize2, Zap } from "lucide-react";
+import { Maximize2, Minimize2, Zap, Settings, Lock } from "lucide-react";
 
 const toText = (value: unknown) =>
   typeof value === "string" ? value : JSON.stringify(value ?? "");
@@ -599,32 +599,83 @@ export default function BaseNode({ id, data, selected }: NodeProps) {
                     />
                   </section>
 
-                  <section>
-                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-brand-purple mb-6">
-                      Input Parameters
-                    </h3>
-                    <div className="space-y-6">
-                      {Object.keys(definition.inputSchema)
-                        .filter((k) => k !== "source" && k !== "payload")
-                        .map((key) => (
-                          <div key={key} className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-brand-text-muted px-1">
-                              {key}
-                            </label>
-                            <input
-                              value={toText(nodeData.inputs[key] ?? "")}
-                              onChange={(e) =>
-                                updateData({
-                                  inputs: { [key]: e.target.value },
-                                })
-                              }
-                              onKeyDown={(e) => e.stopPropagation()}
-                              className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-brand-purple/50 transition-all"
-                            />
-                          </div>
-                        ))}
-                    </div>
-                  </section>
+                  <>
+                    <section>
+                      <h3 className="text-xs font-black uppercase tracking-[0.3em] text-brand-purple mb-6 flex items-center gap-2">
+                        <Settings size={14} />
+                        Configuration
+                      </h3>
+                      <div className="space-y-6">
+                        {Object.keys(definition.inputSchema)
+                          .filter(
+                            (k) =>
+                              ![
+                                "source",
+                                "payload",
+                                "apiKey",
+                                "clientSecret",
+                              ].includes(k),
+                          )
+                          .map((key) => (
+                            <div key={key} className="space-y-2">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-brand-text-muted px-1">
+                                {key}
+                              </label>
+                              <input
+                                value={toText(nodeData.inputs?.[key] ?? "")}
+                                placeholder={getInputPlaceholder(
+                                  nodeData.type,
+                                  key,
+                                )}
+                                onChange={(e) =>
+                                  updateData({
+                                    inputs: { [key]: e.target.value },
+                                  })
+                                }
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-brand-purple/50 transition-all"
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    </section>
+
+                    {/* Security Section (Conditional) */}
+                    {(definition.inputSchema.apiKey ||
+                      definition.inputSchema.clientSecret) && (
+                      <section>
+                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-rose-400 mb-6 flex items-center gap-2">
+                          <Lock size={14} />
+                          Security & Authentication
+                        </h3>
+                        <div className="space-y-6">
+                          {["apiKey", "clientSecret"].map((key) => {
+                            if (!definition.inputSchema[key]) return null;
+                            return (
+                              <div key={key} className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-brand-text-muted px-1">
+                                  {key === "apiKey"
+                                    ? "API Key / Token"
+                                    : "Client Secret"}
+                                </label>
+                                <input
+                                  type="password"
+                                  value={toText(nodeData.inputs?.[key] ?? "")}
+                                  onChange={(e) =>
+                                    updateData({
+                                      inputs: { [key]: e.target.value },
+                                    })
+                                  }
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-rose-300 outline-none focus:border-rose-500/50 transition-all font-mono"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    )}
+                  </>
 
                   <section>
                     <h3 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-400 mb-6">
