@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "rootDir": "..",
+    "rootDir": "./src",
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -8,17 +8,17 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
-    
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "jsx": "react-jsx",
     "paths": {
-      "@iem/db": ["../db/src"],
-      "@iem/core": ["../core/src"],
-      "@iem/imagination-canvas-kit": ["../imagination-canvas-kit/src"]
-    },
-    
-    "jsx": "react-jsx"
+      "@iem/core": ["../core/dist/index.d.ts"],
+      "@iem/db": ["../db/dist/index.d.ts"],
+      "@iem/imagination-canvas-kit": [
+        "../imagination-canvas-kit/dist/index.d.ts"
+      ]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
