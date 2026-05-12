@@ -315,15 +315,54 @@ projectsRouter.post("/:id/execute", async (c) => {
     return c.json({ error: "Unauthorized" }, 403);
   }
 
+  // Ensure semantic blocks are registered (idempotent, helps in dev/hot-reload scenarios)
+  try {
+    const { initializeBlockRegistry } = await import("../registry-init.js");
+    initializeBlockRegistry();
+  } catch {
+    // non-fatal
+  }
+
+  // Debug: confirm key blocks exist in registry during dev
+  try {
+    // @ts-ignore
+    const { blockRegistry } = await import("@iem/core");
+    console.log(
+      "[EXECUTE] registry has iem.conductor.saas:",
+      !!blockRegistry.get("iem.conductor.saas"),
+    );
+    console.log(
+      "[EXECUTE] registry has iem.conductor.router:",
+      !!blockRegistry.get("iem.conductor.router"),
+    );
+    console.log(
+      "[EXECUTE] registry has iem.core.formatter:",
+      !!blockRegistry.get("iem.core.formatter"),
+    );
+  } catch {}
+
   // 2. Compile to Mastra Workflow
   // @ts-ignore
-  const { compileGraphToWorkflow } = await import("@iem/agents");
-  const workflow = compileGraphToWorkflow(document);
+  const { compileGraphToWorkflow, mastra } = await import("@iem/agents");
+  const workflow = compileGraphToWorkflow(document, { mastra });
 
-  // 3. Execute via Mastra
+  // 3. Execute via Mastra (Run API)
   try {
-    const { runId, results } = await workflow.execute({ triggerData } as any);
-    return c.json({ success: true, runId, results }, 200);
+    const run = await workflow.createRun({ disableScorers: true });
+    const result = await run.start({
+      inputData: { triggerData } as any,
+    });
+
+    return c.json(
+      {
+        success: result.status === "success",
+        runId: run.runId,
+        results: result.status === "success" ? result.result : undefined,
+        steps: result.steps,
+        error: result.status === "failed" ? result.error : undefined,
+      },
+      result.status === "success" ? 200 : 500,
+    );
   } catch (error) {
     console.error("Workflow execution failed:", error);
     return c.json({ error: "Workflow execution failed" }, 500);

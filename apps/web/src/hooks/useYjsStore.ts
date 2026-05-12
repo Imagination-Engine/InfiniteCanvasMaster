@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { createTLStore, defaultShapeUtils, type TLStore } from "tldraw";
 import { setupYjsProvider } from "../lib/yjs";
-import * as Y from "yjs";
 import { IemBlockShapeUtil } from "../canvas/IemBlockShape";
-// import { useYjsStore as useTldrawYjsStore } from "@tldraw/sync";
-const useTldrawYjsStore = (id: any) => ({});
 
 export function useYjsStore({
   roomId,
@@ -31,6 +28,8 @@ export function useYjsStore({
 
       provider.on("sync", (isSynced: boolean) => {
         if (isSynced) {
+          // NOTE: We are not currently binding the TLStore to Yjs.
+          // This status reflects websocket sync only.
           setStatus("synced-remote");
         }
       });
@@ -40,22 +39,9 @@ export function useYjsStore({
     }
   }, [roomId, hostUrl]);
 
-  // @tldraw/sync adapter handles the deep CRDT syncing automatically
-  // It binds the TLStore to the Y.Doc instances map.
-  // Note: we'd ideally hook `useTldrawYjsStore` directly, but since we manage provider manually,
-  // we do the bind. In this example, we just return the store.
-  // Real implementation for tldraw:
-  const syncedStore = useTldrawYjsStore({
-    roomId,
-    hostUrl: hostUrl || "ws://localhost:1234",
-    shapeUtils: [...defaultShapeUtils, IemBlockShapeUtil],
-  });
-
-  // We return the official syncedStore which uses their native implementation
-  // but we fallback to our manual setup if it errors.
   return {
     status,
-    store: syncedStore || store,
+    store,
     error,
     awareness: yjsProvider?.awareness,
   };

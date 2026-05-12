@@ -1,1 +1,0 @@
-{"root":["./src/index.ts","./src/backend/triggerlisteners.test.ts","./src/backend/triggerlisteners.ts","./src/blocks/orchestrationblocks.test.ts","./src/blocks/orchestrationblocks.ts","./src/integrations/saasintegrations.test.ts","./src/integrations/saasintegrations.ts"],"errors":true,"version":"6.0.3"}

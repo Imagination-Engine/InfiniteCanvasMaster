@@ -7,7 +7,10 @@ import { useLibraryStore } from "../state/libraryStore";
 import { useExpansionStore } from "../state/expansionStore";
 import { BlockLibraryCard } from "./BlockLibraryCard";
 
-export const BlockLibraryDrawer: React.FC = () => {
+export const BlockLibraryDrawer: React.FC<{
+  onRunGraph?: () => void;
+  isRunning?: boolean;
+}> = ({ onRunGraph, isRunning }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -47,20 +50,48 @@ export const BlockLibraryDrawer: React.FC = () => {
   return (
     <React.Fragment>
       {!isOpen && !isExpanded && (
-        <button
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group"
-          onClick={() => setIsOpen(true)}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <Library size={20} />
-            <span
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ writingMode: "vertical-rl" }}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
+          <button
+            className="p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group"
+            onClick={() => setIsOpen(true)}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <Library size={20} />
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ writingMode: "vertical-rl" }}
+              >
+                Library
+              </span>
+            </div>
+          </button>
+
+          {onRunGraph && (
+            <button
+              className="p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-brand-cyan/20 rounded-2xl shadow-2xl text-brand-cyan hover:border-brand-cyan/40 hover:bg-brand-cyan/5 transition-colors disabled:opacity-50"
+              onClick={onRunGraph}
+              disabled={isRunning}
+              title="Run Graph"
             >
-              Library
-            </span>
-          </div>
-        </button>
+              <div className="flex flex-col items-center gap-2">
+                {(Icons as any).Play ? (
+                  React.createElement((Icons as any).Play, {
+                    size: 20,
+                    fill: "currentColor",
+                  })
+                ) : (
+                  <Library size={20} />
+                )}
+                <span
+                  className="text-[10px] font-bold uppercase tracking-widest"
+                  style={{ writingMode: "vertical-rl" }}
+                >
+                  Run
+                </span>
+              </div>
+            </button>
+          )}
+        </div>
       )}
 
       {isOpen && !isExpanded && (
@@ -72,12 +103,14 @@ export const BlockLibraryDrawer: React.FC = () => {
                 Block Library
               </h2>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="p-4 shrink-0">

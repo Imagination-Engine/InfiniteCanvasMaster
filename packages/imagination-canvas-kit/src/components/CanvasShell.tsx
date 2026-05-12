@@ -24,6 +24,8 @@ export interface CanvasShellProps {
   mode?: CanvasMode;
   sessionContext?: string;
   className?: string;
+  onRunGraph?: () => void;
+  isRunning?: boolean;
   children: React.ReactNode;
 }
 
@@ -36,6 +38,8 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
   mode: controlledMode,
   sessionContext,
   className,
+  onRunGraph,
+  isRunning,
   children,
 }) => {
   const storeMode = useShellStore((state) => state.mode);
@@ -58,8 +62,11 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
         className,
       )}
     >
-      <BlockLibraryDrawer />
+      {/* 1. Base Layer: The Infinite Viewport (children) */}
       {children}
+
+      {/* 2. UI Overlays */}
+      <BlockLibraryDrawer onRunGraph={onRunGraph} isRunning={isRunning} />
       <ImmersiveBlockModal />
       <FloatingOrchestratorChat />
     </div>

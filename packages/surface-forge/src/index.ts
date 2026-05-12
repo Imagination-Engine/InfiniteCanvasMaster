@@ -1,1 +1,1 @@
-export * from "./blocks/roleBlocks.js";
+export * from "./blocks/roleBlocks.ts";

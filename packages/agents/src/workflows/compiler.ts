@@ -20,6 +20,7 @@ export type CompileWorkflowOptions = {
   messageFabric?: any;
   adapterRegistry?: any; // Cast to any
   runId?: string;
+  mastra?: any;
 };
 
 export function compileGraphToWorkflow(
@@ -38,6 +39,7 @@ export function compileGraphToWorkflow(
   }
 
   const workflow = new Workflow({
+    mastra: options.mastra,
     id: `canvas-workflow-${runId}`,
     inputSchema: z.record(z.string(), z.any()).optional(),
     outputSchema: z.any(),
@@ -50,8 +52,17 @@ export function compileGraphToWorkflow(
     const blockDef = blockRegistry.get(node.type || node.blockId);
     if (!blockDef) {
       console.warn(
-        `Block definition not found for node type: ${node.type || node.blockId}`,
+        `Block definition not found for node type: ${node.type || node.blockId}. Creating pass-through step.`,
       );
+      const step = createStep({
+        id: node.id,
+        description: "Pass-through Canvas Block",
+        execute: async () => ({
+          success: true,
+          warning: "Pass-through execution due to missing block def.",
+        }),
+      });
+      steps.set(node.id, step);
       continue;
     }
 
@@ -163,19 +174,13 @@ export function compileGraphToWorkflow(
   }
 
   let wfBuilder: any = workflow;
-  let isFirst = true;
 
   while (queue.length > 0) {
     const currentId = queue.shift()!;
     const currentStep = steps.get(currentId);
 
     if (currentStep) {
-      if (isFirst) {
-        wfBuilder = wfBuilder.step(currentStep);
-        isFirst = false;
-      } else {
-        wfBuilder = wfBuilder.then(currentStep);
-      }
+      wfBuilder = wfBuilder.then(currentStep);
     }
 
     for (const neighbor of outEdges.get(currentId) || []) {

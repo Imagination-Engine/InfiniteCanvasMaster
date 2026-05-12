@@ -12,14 +12,18 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    nodePolyfills({
-      include: ["stream", "crypto", "buffer", "util"],
-      globals: {
-        Buffer: true,
-        global: true,
-        process: true,
-      },
-    }),
+    ...(process.env.VITEST
+      ? []
+      : [
+          nodePolyfills({
+            include: ["stream", "crypto", "buffer", "util"],
+            globals: {
+              Buffer: true,
+              global: true,
+              process: true,
+            },
+          }),
+        ]),
   ],
   define: {
     global: "globalThis",

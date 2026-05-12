@@ -18,7 +18,8 @@ export function useA2ASubscription(options: UseA2ASubscriptionOptions) {
     if (!enabled) return;
 
     // In a real app, you'd get the token from auth store
-    const token = localStorage.getItem("auth_token") || "dummy";
+    const token =
+      (globalThis as any).localStorage?.getItem?.("auth_token") || "dummy";
     const lanesQuery = lanes ? `&lanes=${lanes.join(",")}` : "";
     const url = `/api/a2a/stream?topic=${encodeURIComponent(topic || "#")}${lanesQuery}&token=${token}`;
 

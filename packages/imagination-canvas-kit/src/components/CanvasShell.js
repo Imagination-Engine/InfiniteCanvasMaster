@@ -19,6 +19,8 @@ export const CanvasShell = ({
   mode: controlledMode,
   sessionContext,
   className,
+  onRunGraph,
+  isRunning,
   children,
 }) => {
   const storeMode = useShellStore((state) => state.mode);
@@ -38,8 +40,8 @@ export const CanvasShell = ({
       className,
     ),
     children: [
-      _jsx(BlockLibraryDrawer, {}),
       children,
+      _jsx(BlockLibraryDrawer, { onRunGraph, isRunning }),
       _jsx(ImmersiveBlockModal, {}),
       _jsx(FloatingOrchestratorChat, {}),
     ],

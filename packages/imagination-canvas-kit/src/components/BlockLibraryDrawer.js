@@ -2,11 +2,12 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 // @ts-nocheck
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, Library, X } from "lucide-react";
+import * as Icons from "lucide-react";
 import { blockRegistry } from "@iem/core";
 import { useLibraryStore } from "../state/libraryStore";
 import { useExpansionStore } from "../state/expansionStore";
 import { BlockLibraryCard } from "./BlockLibraryCard";
-export const BlockLibraryDrawer = () => {
+export const BlockLibraryDrawer = ({ onRunGraph, isRunning }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(null);
@@ -38,21 +39,53 @@ export const BlockLibraryDrawer = () => {
     children: [
       !isOpen &&
         !isExpanded &&
-        _jsx("button", {
+        _jsxs("div", {
           className:
-            "absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group",
-          onClick: () => setIsOpen(true),
-          children: _jsxs("div", {
-            className: "flex flex-col items-center gap-2",
-            children: [
-              _jsx(Library, { size: 20 }),
-              _jsx("span", {
-                className: "text-[10px] font-bold uppercase tracking-widest",
-                style: { writingMode: "vertical-rl" },
-                children: "Library",
+            "absolute left-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2",
+          children: [
+            _jsx("button", {
+              className:
+                "p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group",
+              onClick: () => setIsOpen(true),
+              children: _jsxs("div", {
+                className: "flex flex-col items-center gap-2",
+                children: [
+                  _jsx(Library, { size: 20 }),
+                  _jsx("span", {
+                    className:
+                      "text-[10px] font-bold uppercase tracking-widest",
+                    style: { writingMode: "vertical-rl" },
+                    children: "Library",
+                  }),
+                ],
               }),
-            ],
-          }),
+            }),
+            onRunGraph &&
+              _jsx("button", {
+                className:
+                  "p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-brand-cyan/20 rounded-2xl shadow-2xl text-brand-cyan hover:border-brand-cyan/40 hover:bg-brand-cyan/5 transition-colors disabled:opacity-50",
+                onClick: onRunGraph,
+                disabled: isRunning,
+                title: "Run Graph",
+                children: _jsxs("div", {
+                  className: "flex flex-col items-center gap-2",
+                  children: [
+                    Icons.Play
+                      ? React.createElement(Icons.Play, {
+                          size: 20,
+                          fill: "currentColor",
+                        })
+                      : _jsx(Library, { size: 20 }),
+                    _jsx("span", {
+                      className:
+                        "text-[10px] font-bold uppercase tracking-widest",
+                      style: { writingMode: "vertical-rl" },
+                      children: "Run",
+                    }),
+                  ],
+                }),
+              }),
+          ],
         }),
       isOpen &&
         !isExpanded &&

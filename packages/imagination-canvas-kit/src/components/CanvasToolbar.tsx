@@ -9,13 +9,23 @@ import {
   Trash2,
   Undo2,
   Redo2,
+  Play,
+  Loader2,
 } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useSelectionStore } from "../state/selectionStore";
 import { useCanvasHistory } from "../hooks/useCanvasHistory";
 import { canvasTouchTargets } from "../tokens";
 
-export const CanvasToolbar: React.FC = () => {
+interface CanvasToolbarProps {
+  onRunGraph?: () => void;
+  isRunning?: boolean;
+}
+
+export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
+  onRunGraph,
+  isRunning,
+}) => {
   const addObject = useCanvasStore((s) => s.addObject);
   const { selectedIds, clearSelection } = useSelectionStore();
   const removeObject = useCanvasStore((s) => s.removeObject);
@@ -51,6 +61,25 @@ export const CanvasToolbar: React.FC = () => {
 
   return (
     <div className="absolute bottom-8 left-8 flex flex-col items-center gap-2 p-2 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50">
+      {onRunGraph && (
+        <>
+          <button
+            onClick={onRunGraph}
+            disabled={isRunning}
+            style={buttonStyle}
+            className="flex items-center justify-center text-brand-cyan hover:bg-brand-cyan/10 rounded-xl transition-all shadow-[0_0_15px_rgba(0,194,255,0.2)] disabled:opacity-50"
+            title="Run Graph"
+          >
+            {isRunning ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Play size={20} fill="currentColor" />
+            )}
+          </button>
+          <div className="h-px w-6 bg-white/10 my-1" />
+        </>
+      )}
+
       <button
         onClick={undo}
         style={buttonStyle}

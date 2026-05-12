@@ -1,1 +1,1 @@
-export * from "./blocks/mediaBlocks.js";
+export * from "./blocks/mediaBlocks.ts";

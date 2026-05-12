@@ -1,61 +1,35 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, X, Send, Sparkles } from "lucide-react";
+import { BrainCircuit, X, Send, Sparkles, Loader2 } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
+import { useConnectionStore } from "../state/connectionStore";
 import { useViewportStore } from "../state/viewportStore";
 import { useExpansionStore } from "../state/expansionStore";
 import { GrowingTextarea } from "@iem/chat-interaction-kit";
-import { classifyOrchestratorIntent } from "../utils/orchestratorIntentClassifier";
 import { useOrchestratorContext } from "../hooks/useOrchestratorContext";
-import { extractAgentTraits } from "../utils/orchestratorTraitExtractor";
+import { Markdown } from "../../../apps/web/src/Components/Chat/Markdown";
 
-/**
- * Orchestrator Drawer: Fixed-width, right-docked production chat interface.
- * Mirrored exactly from BlockLibraryDrawer to ensure layout stability.
- */
 export const FloatingOrchestratorChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { selectedBlock, lastDroppedBlock, sessionContext } =
     useOrchestratorContext();
 
-  const [messages, setMessages] = useState<
-    Array<{
-      id: string;
-      role: string;
-      content: string;
-      type?: "text" | "artifact" | "card";
-    }>
-  >([
+  const [messages, setMessages] = useState<any[]>([
     {
       id: "msg-1",
       role: "agent",
       content:
-        "I am your Canvas Orchestrator. Tell me what you want to build and I will generate the blueprint.",
-      type: "text",
+        "I am your Canvas Orchestrator. Tell me how to change your graph or wire up nodes.",
     },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const addObject = useCanvasStore((s) => s.addObject);
-
-  // React to canvas changes
-  useEffect(() => {
-    if (lastDroppedBlock) {
-      const blockName =
-        lastDroppedBlock.metadata?.label || lastDroppedBlock.type;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `msg-${Date.now()}`,
-          role: "agent",
-          content: `I see you added a ${blockName} block. How should we wire this into the flow?`,
-          type: "text",
-        },
-      ]);
-    }
-  }, [lastDroppedBlock]);
+  const updateObject = useCanvasStore((s) => s.updateObject);
+  const addConnection = useConnectionStore((s) => s.addConnection);
 
   useEffect(() => {
     if (
@@ -68,109 +42,199 @@ export const FloatingOrchestratorChat: React.FC = () => {
     }
   }, [messages, isOpen]);
 
-  const handleSubmit = () => {
-    if (!input.trim()) return;
+  const handleSubmit = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMsg = {
       id: `msg-${Date.now()}`,
       role: "user",
       content: input,
-      type: "text",
     };
-    setMessages((prev) => [...prev, userMsg]);
-
-    // Classify intent
-    const intent = classifyOrchestratorIntent(input);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput("");
+    setIsLoading(true);
 
-    // --- Intent Analysis & Canvas Interaction ---
-    setTimeout(() => {
-      let response = "";
+    try {
+      const objects = useCanvasStore.getState().objects;
+      const connections = useConnectionStore.getState().connections;
 
-      if (intent === "emotional_expression") {
-        const reactions = [
-          "I am so glad you are enjoying the creative process! What should we build next?",
-          "Thanks! I'm here to help you bring your imagination to life. Any specific ideas?",
-          "That means a lot! The canvas is ready for your next big move.",
-        ];
-        response = reactions[Math.floor(Math.random() * reactions.length)];
-      } else if (intent === "create_block") {
-        const lowerInput = input.toLowerCase();
+      const canvasContext = {
+        nodes: Object.values(objects).map((o: any) => ({
+          id: o.id,
+          type: o.type,
+          label: o.metadata?.label,
+          description: o.metadata?.description,
+        })),
+        edges: Object.values(connections),
+      };
 
-        // Calculate intelligent placement (center of viewport)
-        const viewport = useViewportStore.getState();
-        const vw = viewport.width || 1000;
-        const vh = viewport.height || 1000;
-        const dropX = viewport.x + vw / 2 / viewport.zoom - 150;
-        const dropY = viewport.y + vh / 2 / viewport.zoom - 100;
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token") || ""}`,
+        },
+        body: JSON.stringify({
+          sessionId: `canvas-mutation-${Date.now()}`,
+          isDraft: true,
+          messages: newMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          canvasContext,
+        }),
+      });
 
-        if (lowerInput.includes("agent") || lowerInput.includes("claw")) {
-          const traits = extractAgentTraits(input);
-          const label = traits.role
-            ? `${traits.role.charAt(0).toUpperCase() + traits.role.slice(1)} Agent`
-            : "Autonomous Builder";
+      if (!res.body) throw new Error("No response body");
 
-          response = traits.role
-            ? `Initializing ${label} runtime. Dropping them onto the canvas for you.`
-            : "Initializing OpenClaw runtime. Spinning up a builder agent on the canvas.";
-
-          addObject({
-            id: `agent-${Date.now()}`,
-            type: "agent",
-            x: dropX,
-            y: dropY,
-            width: 320,
-            height: 260,
-            zIndex: 1,
-            status: "thinking",
-            metadata: {
-              label,
-              description:
-                traits.description || "Defining my purpose on the canvas...",
-            },
-          });
-        } else if (
-          lowerInput.includes("note") ||
-          lowerInput.includes("write")
-        ) {
-          response = `I've drafted a narrative spine related to "${sessionContext || "your project"}". Dropping a Note block onto the canvas for you.`;
-          addObject({
-            id: `note-${Date.now()}`,
-            type: "note",
-            x: dropX,
-            y: dropY,
-            width: 300,
-            height: 200,
-            zIndex: 1,
-            status: "idle",
-            metadata: { label: "Orchestrator Note" },
-          });
-        } else {
-          response =
-            "I see you want to create something. Which block should I drop in?";
-        }
-      } else if (intent === "question") {
-        if (selectedBlock) {
-          response = `You currently have the "${selectedBlock.metadata?.label || selectedBlock.type}" block selected. It's currently in a "${selectedBlock.status}" state. What would you like to know about it?`;
-        } else {
-          response =
-            "That's a great question. I can help you understand the current canvas layout or suggest new blocks to connect.";
-        }
-      } else {
-        response =
-          "I'm analyzing the canvas context to optimize your DAG. Tell me more about the logic flow.";
-      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      const aiMessageId = `msg-ai-${Date.now()}`;
 
       setMessages((prev) => [
         ...prev,
+        { id: aiMessageId, role: "assistant", content: "" },
+      ]);
+
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          if (line.startsWith("0:")) {
+            try {
+              let chunk = line.slice(2);
+              if (chunk.startsWith('"') && chunk.endsWith('"')) {
+                chunk = JSON.parse(chunk);
+              }
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMessageId
+                    ? { ...m, content: m.content + chunk }
+                    : m,
+                ),
+              );
+            } catch (e) {}
+          } else if (line.startsWith("9:")) {
+            try {
+              const toolData = JSON.parse(line.slice(2));
+
+              if (
+                toolData.toolName === "add_block" ||
+                toolData.result?.action === "add_block"
+              ) {
+                const args = toolData.args || toolData.result;
+                const viewport = useViewportStore.getState();
+                const vw = viewport.width || 1000;
+                const vh = viewport.height || 1000;
+
+                addObject({
+                  id: args.id || `block-${Date.now()}`,
+                  type: args.type || "iem.scribe.prose",
+                  x:
+                    viewport.x +
+                    vw / 2 / viewport.zoom -
+                    150 +
+                    Math.random() * 50,
+                  y:
+                    viewport.y +
+                    vh / 2 / viewport.zoom -
+                    100 +
+                    Math.random() * 50,
+                  width: 320,
+                  height: 240,
+                  zIndex: 1,
+                  status: "idle",
+                  metadata: {
+                    label: args.title,
+                    description: args.description,
+                    inputs: args.recommended_params || {},
+                  },
+                });
+
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: `sys-${Date.now()}`,
+                    role: "agent",
+                    content: `Added block: ${args.title}`,
+                  },
+                ]);
+              } else if (
+                toolData.toolName === "connect_blocks" ||
+                toolData.result?.action === "connect_blocks"
+              ) {
+                const args = toolData.args || toolData.result;
+                addConnection({
+                  id: `edge-${Date.now()}`,
+                  fromId: args.source,
+                  toId: args.target,
+                  label: args.condition,
+                });
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: `sys-${Date.now()}`,
+                    role: "agent",
+                    content: `Connected ${args.source} -> ${args.target}`,
+                  },
+                ]);
+              } else if (
+                toolData.toolName === "update_block" ||
+                toolData.result?.action === "update_block"
+              ) {
+                const args = toolData.args || toolData.result;
+                const currentObj = useCanvasStore.getState().objects[args.id];
+                if (currentObj) {
+                  updateObject(args.id, {
+                    metadata: {
+                      ...currentObj.metadata,
+                      label: args.title || currentObj.metadata.label,
+                      description:
+                        args.description || currentObj.metadata.description,
+                      inputs: {
+                        ...(currentObj.metadata.inputs || {}),
+                        ...(args.params || {}),
+                      },
+                    },
+                  });
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: `sys-${Date.now()}`,
+                      role: "agent",
+                      content: `Updated block: ${args.id}`,
+                    },
+                  ]);
+                }
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
         {
-          id: `msg-${Date.now() + 1}`,
+          id: `err-${Date.now()}`,
           role: "agent",
-          content: response,
-          type: "text",
+          content: "Sorry, I lost connection to the Orchestrator.",
         },
       ]);
-    }, 800);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const { activeExpansionId } = useExpansionStore();
@@ -178,11 +242,8 @@ export const FloatingOrchestratorChat: React.FC = () => {
 
   return (
     <React.Fragment>
-      {/* Toggle Tab - Mirroring Library Drawer Pattern Exactly */}
       {!isOpen && !isExpanded && (
         <button
-          aria-label="Open Orchestrator"
-          title="Open Canvas Orchestrator"
           className="absolute right-4 top-1/2 -translate-y-1/2 z-[10006] p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white hover:text-brand-cyan hover:border-brand-cyan/30 transition-colors group pointer-events-auto"
           onClick={() => setIsOpen(true)}
         >
@@ -198,7 +259,6 @@ export const FloatingOrchestratorChat: React.FC = () => {
         </button>
       )}
 
-      {/* Orchestrator Drawer - Fixed & Mutation-Locked */}
       <AnimatePresence>
         {isOpen && !isExpanded && (
           <motion.div
@@ -206,14 +266,9 @@ export const FloatingOrchestratorChat: React.FC = () => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
-            style={{
-              width: "500px",
-              minWidth: "500px",
-              maxWidth: "500px",
-            }}
+            style={{ width: "500px", minWidth: "500px", maxWidth: "500px" }}
             className="absolute right-0 top-0 bottom-0 bg-brand-bg-page/95 backdrop-blur-3xl border-l border-white/10 z-[10005] flex flex-col shadow-2xl overflow-hidden"
           >
-            {/* Header */}
             <div className="h-14 border-b border-white/5 bg-gradient-to-r from-brand-cyan/10 to-transparent flex items-center justify-between px-4 shrink-0">
               <div className="flex items-center gap-2 text-brand-cyan">
                 <BrainCircuit size={18} />
@@ -222,7 +277,6 @@ export const FloatingOrchestratorChat: React.FC = () => {
                 </h2>
               </div>
               <button
-                aria-label="Close Orchestrator"
                 onClick={() => setIsOpen(false)}
                 className="p-2 text-white/70 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
               >
@@ -230,7 +284,6 @@ export const FloatingOrchestratorChat: React.FC = () => {
               </button>
             </div>
 
-            {/* Chat Stream Area */}
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-6 w-full">
               <AnimatePresence initial={false}>
                 {messages.map((msg) => (
@@ -264,34 +317,37 @@ export const FloatingOrchestratorChat: React.FC = () => {
                           ? "bg-white/10 text-white rounded-tr-sm"
                           : "bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20 rounded-tl-sm")
                       }
-                      style={{
-                        maxWidth: "100%",
-                        wordBreak: "break-word",
-                      }}
+                      style={{ maxWidth: "100%", wordBreak: "break-word" }}
                     >
-                      {msg.content}
+                      <Markdown content={msg.content} />
                     </div>
                   </motion.div>
                 ))}
+                {isLoading && (
+                  <motion.div className="flex items-center gap-2 text-brand-cyan p-4">
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      Orchestrator Thinking...
+                    </span>
+                  </motion.div>
+                )}
               </AnimatePresence>
               <div ref={messagesEndRef} className="h-4 shrink-0" />
             </div>
 
-            {/* Input Area */}
             <div className="p-4 border-t border-white/5 bg-black/40 shrink-0 w-full">
               <GrowingTextarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Describe your intent..."
+                placeholder="Ask agent to mutate canvas..."
                 onEnter={handleSubmit}
                 className="bg-transparent border-none"
                 maxHeight={150}
                 actions={
                   <button
-                    aria-label="Send Message"
                     type="button"
                     onClick={handleSubmit}
-                    disabled={!input.trim()}
+                    disabled={!input.trim() || isLoading}
                     className="w-9 h-9 flex items-center justify-center text-brand-cyan disabled:text-white/20 hover:bg-brand-cyan/10 rounded-xl transition-colors"
                   >
                     <Send size={18} />

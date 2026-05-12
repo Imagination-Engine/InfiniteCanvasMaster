@@ -1,6 +1,11 @@
 import { Agent } from "@mastra/core/agent";
 import { google } from "@ai-sdk/google";
 import { generate_canvas_blueprint } from "../tools/canvas.js";
+import {
+  add_block,
+  connect_blocks,
+  update_block,
+} from "../tools/canvasMutations.js";
 import { blockRegistry, createMastraToolFromBlock } from "@iem/core";
 import { Memory } from "@mastra/memory";
 
@@ -10,6 +15,9 @@ import { Memory } from "@mastra/memory";
 async function getOrchestratorTools() {
   const tools: Record<string, any> = {
     generate_canvas_blueprint,
+    add_block,
+    connect_blocks,
+    update_block,
   };
 
   const blocks = blockRegistry.list();
@@ -36,11 +44,11 @@ export const createOrchestrator = async (storage?: any) => {
       - Keep your responses friendly, professional, and focused on the "Imagination Path".
       - Do NOT call 'generate_canvas_blueprint' until you have a solid "Deconstruction Matrix" formed in your memory from these turns.
       
-      PHASE 2: DECONSTRUCT & GENERATE (The Blueprint)
-      Once the intent is fully sharpened (after the interplay), deconstruct it into a Directed Acyclic Graph (DAG) living blueprint using the 'generate_canvas_blueprint' tool.
-      The blueprint is used to construct a DAG of multiple agents, blocks, and agents-as-blocks across the 5 surfaces.
+      PHASE 2: DECONSTRUCT & MUTATE
+      If the user is starting from scratch, use 'generate_canvas_blueprint' to layout a new graph.
+      If the user is asking to modify an existing canvas, you MUST use 'add_block', 'connect_blocks', or 'update_block' to surgically mutate the active canvas state.
       
-      You have access to a 51+ block system vocabulary across distinct surfaces. Use the EXACT block IDs listed below when generating the blueprint:
+      You have access to a 51+ block system vocabulary across distinct surfaces. Use the EXACT block IDs listed below when generating or adding blocks:
       - Scribe (Writing): iem.scribe.prose, iem.scribe.chapter, iem.scribe.characterProfile, iem.scribe.worldLore, iem.scribe.dialogueTree, iem.scribe.editor, iem.scribe.proofreader
       - Playable (Games): iem.playable.joystick, iem.playable.collider, iem.playable.score, iem.playable.spawner, iem.playable.timer, iem.playable.camera, iem.playable.lighting, iem.playable.audio, iem.playable.particle, iem.playable.sprite, iem.playable.physicsEntity, iem.playable.input, iem.playable.rule
       - Atlas (Data/RAG): iem.atlas.documentLoader, iem.atlas.chunker, iem.atlas.vectorSearch, iem.atlas.graphKnowledge, iem.atlas.indexer, iem.atlas.query, iem.atlas.embed, iem.atlas.upsert, iem.atlas.semanticRouter
@@ -61,5 +69,5 @@ export const orchestrator = new Agent({
   name: "Imagination Orchestrator",
   instructions: "Initializing...",
   model: google("gemini-2.5-pro"),
-  tools: { generate_canvas_blueprint },
+  tools: { generate_canvas_blueprint, add_block, connect_blocks, update_block },
 });

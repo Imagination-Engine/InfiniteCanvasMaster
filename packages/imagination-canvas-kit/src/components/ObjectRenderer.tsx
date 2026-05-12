@@ -180,11 +180,19 @@ export const ObjectRenderer: React.FC<{
       onPointerEnter={() => setHovered(object.id)}
       onPointerLeave={() => setHovered(null)}
       onDragOver={(e) => {
-        if (e.dataTransfer.types.includes("application/iem-connection")) {
+        // HTML5 drag types are often lowercased by the browser
+        if (
+          e.dataTransfer.types.includes("application/iem-connection") ||
+          e.dataTransfer.types.includes(
+            "application/iem-connection".toLowerCase(),
+          )
+        ) {
           e.preventDefault();
+          e.stopPropagation();
         }
       }}
       onDrop={(e) => {
+        e.stopPropagation();
         const sourceId = e.dataTransfer.getData("application/iem-connection");
         if (sourceId && sourceId !== object.id) {
           addConnection({

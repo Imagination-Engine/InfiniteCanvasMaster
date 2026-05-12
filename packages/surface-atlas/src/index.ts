@@ -1,1 +1,1 @@
-export * from "./blocks/knowledgeBlocks.js";
+export * from "./blocks/knowledgeBlocks.ts";

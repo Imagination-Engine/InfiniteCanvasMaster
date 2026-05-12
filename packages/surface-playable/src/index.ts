@@ -1,1 +1,1 @@
-export * from "./blocks/gameBlocks";
+export * from "./blocks/gameBlocks.ts";
