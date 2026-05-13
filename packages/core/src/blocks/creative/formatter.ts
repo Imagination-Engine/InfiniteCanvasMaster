@@ -27,30 +27,23 @@ export const formatterBlock: BlockDefinition<
     toolName: "format_file",
     invoke: async (input: unknown) => {
       const parsed = FormatterInput.parse(input);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
-        const res = await fetch("http://localhost:11434/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "llama3",
-            prompt: `Reformat the following content into ${parsed.desiredFormat} format:\n\n${parsed.file}`,
-            stream: false,
-          }),
-          signal: controller.signal,
+        const { agentRuntime } = await import("../../agent/runtime");
+        const response = await agentRuntime.chat({
+          model: "gemini-2.5-pro",
+          messages: [
+            {
+              role: "user",
+              content: `Reformat the following content into ${parsed.desiredFormat} format. Return ONLY the formatted output without markdown blocks if possible:\n\n${parsed.file}`,
+            },
+          ],
         });
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const data = await res.json();
-        const apiResponseSchema = z.object({ response: z.string() });
-        const validated = apiResponseSchema.parse(data);
-        return { formattedFile: validated.response };
+
+        return { formattedFile: response.content };
       } catch (err) {
         throw new Error(
           `Formatter failed: ${err instanceof Error ? err.message : "Unknown error"}`,
         );
-      } finally {
-        clearTimeout(timeoutId);
       }
     },
   },

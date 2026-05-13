@@ -4,7 +4,15 @@ import { useSessionStore } from "../../../store/useSessionStore";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
 import { apiRequest } from "../../../lib/api";
 import { useAuth } from "../../../auth/AuthContext";
-import { Download } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Image as ImageIcon,
+  Music,
+  Code,
+  File,
+  ExternalLink,
+} from "lucide-react";
 
 import {
   CanvasShell,
@@ -136,27 +144,175 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     }
   };
 
-  const downloadText = (
+  const downloadFile = (
     filename: string,
     content: string,
     mime = "text/plain",
   ) => {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
+    if (!content) return;
+
+    let url;
+    const isUrl =
+      typeof content === "string" &&
+      (content.startsWith("http") || content.startsWith("data:"));
+
+    if (isUrl) {
+      url = content;
+    } else {
+      const blob = new Blob([content], { type: mime });
+      url = URL.createObjectURL(blob);
+    }
+
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+
+    if (!isUrl) {
+      setTimeout(() => {
+        a.remove();
+        URL.revokeObjectURL(url);
+      }, 100);
+    } else {
+      a.remove();
+    }
   };
 
-  const inferredCode =
-    (typeof lastRun?.results?.code === "string" && lastRun.results.code) ||
-    (typeof lastRun?.results?.formattedFile === "string" &&
-      lastRun.results.formattedFile) ||
-    null;
+  const artifacts = React.useMemo(() => {
+    if (!lastRun) return [];
+    const found: any[] = [];
+    const seen = new Set();
+
+    const processPayload = (payload: any, source: string) => {
+      if (!payload || typeof payload !== "object") return;
+
+      const config = [
+        {
+          key: "generatedCode",
+          type: "code",
+          ext: "ts",
+          mime: "text/plain",
+          icon: Code,
+        },
+        {
+          key: "code",
+          type: "code",
+          ext: "ts",
+          mime: "text/plain",
+          icon: Code,
+        },
+        {
+          key: "formattedFile",
+          type: "code",
+          ext: "ts",
+          mime: "text/plain",
+          icon: Code,
+        },
+        {
+          key: "spec",
+          type: "text",
+          ext: "md",
+          mime: "text/markdown",
+          icon: FileText,
+        },
+        {
+          key: "design",
+          type: "text",
+          ext: "md",
+          mime: "text/markdown",
+          icon: FileText,
+        },
+        {
+          key: "imageUrl",
+          type: "image",
+          ext: "png",
+          mime: "image/png",
+          icon: ImageIcon,
+        },
+        {
+          key: "audioUrl",
+          type: "audio",
+          ext: "mp3",
+          mime: "audio/mpeg",
+          icon: Music,
+        },
+        {
+          key: "fileUrl",
+          type: "file",
+          ext: "bin",
+          mime: "application/octet-stream",
+          icon: File,
+        },
+        {
+          key: "trackUrl",
+          type: "audio",
+          ext: "mp3",
+          mime: "audio/mpeg",
+          icon: Music,
+        },
+        {
+          key: "results",
+          type: "text",
+          ext: "txt",
+          mime: "text/plain",
+          icon: FileText,
+        },
+      ];
+
+      config.forEach(({ key, type, ext, mime, icon }) => {
+        if (payload[key]) {
+          const content = payload[key];
+          let finalExt = ext;
+          let finalMime = mime;
+
+          if (type === "code" && typeof content === "string") {
+            if (
+              content.includes("<!DOCTYPE html>") ||
+              content.includes("<html")
+            ) {
+              finalExt = "html";
+              finalMime = "text/html";
+            } else if (
+              content.includes("import React") ||
+              content.includes("export default")
+            ) {
+              finalExt = "tsx";
+            }
+          }
+
+          const hash = `${type}-${typeof content === "string" ? (content.length > 100 ? content.substring(0, 100) : content) : JSON.stringify(content)}`;
+          if (!seen.has(hash)) {
+            seen.add(hash);
+            found.push({
+              id: `${source}-${key}`,
+              name: `${key}-${source.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.${finalExt}`,
+              type,
+              content,
+              mime: finalMime,
+              label: key,
+              icon,
+              source,
+            });
+          }
+        }
+      });
+    };
+
+    // 1. Process final results
+    const finalPayload = lastRun.results?.payload || lastRun.results;
+    processPayload(finalPayload, "final");
+
+    // 2. Process all steps
+    if (lastRun.steps) {
+      Object.entries(lastRun.steps).forEach(([stepId, step]: [string, any]) => {
+        const stepPayload = step.output?.payload || step.output;
+        processPayload(stepPayload, stepId);
+      });
+    }
+
+    return found;
+  }, [lastRun]);
 
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">
@@ -190,10 +346,10 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
             </button>
           </div>
           <div className="p-4 overflow-auto max-h-[50vh]">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-4">
               <button
                 onClick={() =>
-                  downloadText(
+                  downloadFile(
                     `workflow-run-${lastRun?.runId || "latest"}.json`,
                     JSON.stringify(lastRun, null, 2),
                     "application/json",
@@ -205,27 +361,74 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
                 <Download size={14} />
                 Download JSON
               </button>
-
-              {inferredCode && (
-                <button
-                  onClick={() =>
-                    downloadText(
-                      `artifact-${lastRun?.runId || "latest"}.txt`,
-                      inferredCode,
-                      "text/plain",
-                    )
-                  }
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan/20 border border-brand-cyan/25 text-[10px] font-black uppercase tracking-widest"
-                  title="Download code-like output as a text file"
-                >
-                  <Download size={14} />
-                  Download Artifact
-                </button>
-              )}
             </div>
 
+            {artifacts.length > 0 && (
+              <div className="mb-6">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-3">
+                  Generated Artifacts
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {artifacts.map((art) => (
+                    <div
+                      key={art.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {art.type === "image" &&
+                        typeof art.content === "string" &&
+                        (art.content.startsWith("data:") ||
+                          art.content.startsWith("http")) ? (
+                          <img
+                            src={art.content}
+                            className="w-10 h-10 rounded-lg bg-black/20 object-cover border border-white/10"
+                            alt="preview"
+                          />
+                        ) : (
+                          <div className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple-light">
+                            <art.icon size={16} />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-[11px] font-bold text-white truncate">
+                            {art.name}
+                          </div>
+                          <div className="text-[9px] text-white/40 uppercase tracking-tighter">
+                            {art.type} · {art.source}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {art.type === "image" &&
+                          typeof art.content === "string" && (
+                            <a
+                              href={art.content}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
+                              title="View full image"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+                          )}
+                        <button
+                          onClick={() =>
+                            downloadFile(art.name, art.content, art.mime)
+                          }
+                          className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
+                          title="Download artifact"
+                        >
+                          <Download size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-2">
-              Output
+              Raw Output
             </div>
             <pre className="text-[11px] whitespace-pre-wrap break-words bg-black/30 border border-white/10 rounded-xl p-3 overflow-auto">
               {JSON.stringify(

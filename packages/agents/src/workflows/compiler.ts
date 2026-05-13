@@ -49,7 +49,16 @@ export function compileGraphToWorkflow(
 
   // 1. Define all steps dynamically
   for (const node of graph.nodes) {
-    const blockDef = blockRegistry.get(node.type || node.blockId);
+    let blockDef = blockRegistry.get(node.type || node.blockId);
+
+    if (!blockDef) {
+      // Fallback: match UI short names (e.g., "programmer", "forge.builder") to fully qualified IDs ("iem.core.programmer")
+      const typeStr = node.type || node.blockId;
+      blockDef = blockRegistry
+        .list()
+        .find((b) => b.id.endsWith(`.${typeStr}`) || b.id === typeStr);
+    }
+
     if (!blockDef) {
       console.warn(
         `Block definition not found for node type: ${node.type || node.blockId}. Creating pass-through step.`,

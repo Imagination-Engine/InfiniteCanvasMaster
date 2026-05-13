@@ -27,33 +27,22 @@ export const programmerBlock: BlockDefinition<
     toolName: "generate_code",
     invoke: async (input: unknown) => {
       const parsed = ProgrammerInput.parse(input);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
         const fullPrompt = parsed.code
-          ? `Source code:\n${parsed.code}\n\nTask: ${parsed.prompt}\n\nPlease generate the updated code.`
-          : `Task: ${parsed.prompt}\n\nPlease generate the code.`;
-        const res = await fetch("http://localhost:11434/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "llama3",
-            prompt: fullPrompt,
-            stream: false,
-          }),
-          signal: controller.signal,
+          ? `Source code:\n${parsed.code}\n\nTask: ${parsed.prompt}\n\nPlease generate the updated code. Return ONLY the code.`
+          : `Task: ${parsed.prompt}\n\nPlease generate the code. Return ONLY the code.`;
+
+        const { agentRuntime } = await import("../../agent/runtime");
+        const response = await agentRuntime.chat({
+          model: "gemini-2.5-pro",
+          messages: [{ role: "user", content: fullPrompt }],
         });
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const data = await res.json();
-        const apiResponseSchema = z.object({ response: z.string() });
-        const validated = apiResponseSchema.parse(data);
-        return { generatedCode: validated.response };
+
+        return { generatedCode: response.content };
       } catch (err) {
         throw new Error(
           `Programmer failed: ${err instanceof Error ? err.message : "Unknown error"}`,
         );
-      } finally {
-        clearTimeout(timeoutId);
       }
     },
   },
