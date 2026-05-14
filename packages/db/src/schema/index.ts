@@ -182,3 +182,5 @@ export const a2aApprovals = pgTable("a2a_approvals", {
   envelope: jsonb("envelope").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export * from "./conductor.js";
