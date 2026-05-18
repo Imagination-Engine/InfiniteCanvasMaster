@@ -68,3 +68,4 @@ data-node/
 *.tsbuildinfo
 
 
+public/generated-media/

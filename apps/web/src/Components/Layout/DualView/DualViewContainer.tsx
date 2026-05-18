@@ -37,8 +37,15 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   useEffect(() => {
     if (!initialDocument) return;
 
+    // Get any locally persisted state so we can preserve generated media
+    const localObjects = useCanvasStore.getState().objects || {};
+
     const objects: Record<string, any> = {};
     (initialDocument.nodes || []).forEach((node) => {
+      const localObj = localObjects[node.id];
+      // Preserve locally-generated inputs (e.g. imageUrl from Reel)
+      const preservedInputs = localObj?.metadata?.inputs || {};
+
       objects[node.id] = {
         id: node.id,
         type: node.type || "note",
@@ -52,6 +59,11 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           label: node.data?.label,
           description: node.data?.description,
           ...node.data,
+          // Merge: server data first, then overlay any locally persisted inputs
+          inputs: {
+            ...(node.data?.inputs || {}),
+            ...preservedInputs,
+          },
         },
       };
     });
