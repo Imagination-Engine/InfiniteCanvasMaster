@@ -49,17 +49,17 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Block Registry Normalization & Alignment**
+- [x] **Track: Block Registry Normalization & Alignment**
       _Link: [./tracks/block_registry_normalization_20260504/](./tracks/block_registry_normalization_20260504/)_
 
 ---
 
-- [ ] **Track: Studio Manifest Infrastructure & Registration**
+- [x] **Track: Studio Manifest Infrastructure & Registration**
       _Link: [./tracks/studio_manifest_registration_20260504/](./tracks/studio_manifest_registration_20260504/)_
 
 ---
 
-- [ ] **Track: Cross-Studio Interoperability & Compatibility Engine**
+- [x] **Track: Cross-Studio Interoperability & Compatibility Engine**
       _Link: [./tracks/cross_studio_interop_20260504/](./tracks/cross_studio_interop_20260504/)_
 
 ---

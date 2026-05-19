@@ -7,3 +7,5 @@
 
 export * from "./contracts.js";
 export * from "./schemas.js";
+export * from "./manifests/index.js";
+export * from "./interop.js";
