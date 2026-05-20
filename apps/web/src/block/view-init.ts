@@ -5,6 +5,7 @@ import { JoystickView } from "../blocks/playable/JoystickView";
 import { SpriteView } from "../blocks/playable/SpriteView";
 import { PhysicsEntityView } from "../blocks/playable/PhysicsEntityView";
 import { ColliderView } from "../blocks/playable/ColliderView";
+import { ReelMediaView } from "../blocks/reel/ReelMediaView";
 
 export function initializeViewRegistry() {
   // Scribe Surface
@@ -17,6 +18,22 @@ export function initializeViewRegistry() {
   viewRegistry.register("iem.playable.sprite", SpriteView);
   viewRegistry.register("iem.playable.physicsEntity", PhysicsEntityView);
   viewRegistry.register("iem.playable.collider", ColliderView);
+
+  // Reel Surface
+  viewRegistry.register("iem.reel.scene", ReelMediaView);
+  viewRegistry.register("iem.reel.character", ReelMediaView);
+  viewRegistry.register("iem.reel.textToImage", ReelMediaView);
+
+  // Register directly with the canvas kit registry as well
+  import("@iem/imagination-canvas-kit")
+    .then(({ BlockRegistry }) => {
+      if (BlockRegistry) {
+        BlockRegistry.register("iem.reel.scene", ReelMediaView as any);
+        BlockRegistry.register("iem.reel.character", ReelMediaView as any);
+        BlockRegistry.register("iem.reel.textToImage", ReelMediaView as any);
+      }
+    })
+    .catch((e) => console.warn("Could not load BlockRegistry", e));
 
   // Creative Core
   viewRegistry.register("iem.core.refiner", RefinerView);

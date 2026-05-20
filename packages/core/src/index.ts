@@ -18,5 +18,6 @@ export {
 } from "./bus/protocol.js";
 
 export * from "./fabric/index.js";
+export * from "./studio/index.js";
 
 export * from "./bus/MessageBus.js";
