@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   ifBlock,
   forEachBlock,
   webhookTriggerBlock,
+  agentBlock,
 } from "./orchestrationBlocks";
 
 // Mock the AI SDK
@@ -76,6 +77,55 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
       expect(webhookTriggerBlock.id).toBe("iem.conductor.webhook");
       const validIn = { path: "/api/trigger" };
       expect(webhookTriggerBlock.input.parse(validIn)).toEqual(validIn);
+    });
+  });
+
+  describe("Sub-Agent Block", () => {
+    let originalEnv: typeof process.env;
+
+    beforeEach(() => {
+      originalEnv = { ...process.env };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it("has valid metadata and schema", () => {
+      expect(agentBlock.id).toBe("iem.conductor.agent");
+      const validIn = { instructions: "Translate", input: { text: "hello" } };
+      expect(agentBlock.input.parse(validIn)).toEqual(validIn);
+    });
+
+    it("executes simulated/fallback when API key is missing", async () => {
+      delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+      const res = await agentBlock.agent.invoke({
+        instructions: "Translate",
+        input: "hello",
+      });
+      expect(res.output).toContain(
+        "Simulated response from agent based on: Translate",
+      );
+      expect(res.output).toContain("hello");
+    });
+
+    it("executes real LLM call when API key is present", async () => {
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY = "dummy-key";
+      const { generateText } = await import("ai");
+      const { google } = await import("@ai-sdk/google");
+
+      vi.mocked(generateText).mockResolvedValue({
+        text: "Real response from sub-agent block",
+      } as any);
+
+      vi.mocked(google).mockReturnValue({} as any);
+
+      const res = await agentBlock.agent.invoke({
+        instructions: "Translate",
+        input: "hello",
+      });
+
+      expect(res.output).toBe("Real response from sub-agent block");
     });
   });
 });

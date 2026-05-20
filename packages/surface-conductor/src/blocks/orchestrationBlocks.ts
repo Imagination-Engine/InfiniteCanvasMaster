@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { BlockDefinition, MCPToolBinding } from "@iem/core";
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
 
 export const ifBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.if",
@@ -111,7 +113,42 @@ export const agentBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "agent_exec",
-    invoke: async () => ({ output: "Success" }),
+    invoke: async (i: { instructions: string; input?: any }) => {
+      const instructions = i.instructions || "";
+      const inputVal = i.input;
+
+      let upstreamContext = "";
+      if (inputVal !== undefined && inputVal !== null) {
+        if (typeof inputVal === "string") {
+          upstreamContext = inputVal;
+        } else {
+          upstreamContext = JSON.stringify(inputVal, null, 2);
+        }
+      }
+
+      const finalPrompt = upstreamContext
+        ? `${instructions}\n\n### Context:\n${upstreamContext}`
+        : instructions;
+
+      const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+      if (!apiKey) {
+        return {
+          output: `Simulated response from agent based on: ${instructions}${upstreamContext ? "\nContext: " + upstreamContext : ""}`,
+        };
+      }
+
+      try {
+        const response = await generateText({
+          model: google("gemini-2.5-pro"),
+          prompt: finalPrompt,
+        });
+        return { output: response.text };
+      } catch (err: any) {
+        return {
+          output: `Simulated response from agent (error fallback) based on: ${instructions}. Error: ${err?.message || String(err)}`,
+        };
+      }
+    },
   },
 };
 
