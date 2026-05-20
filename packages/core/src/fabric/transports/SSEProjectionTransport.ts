@@ -26,16 +26,16 @@ export class SSEProjectionTransport implements FabricTransport {
     );
   }
 
-  async subscribe<T>(
+  subscribe<T>(
     filter: FabricSubscriptionFilter,
-    handler: FabricHandler<T>,
+    _handler: FabricHandler<T>,
   ): Promise<FabricUnsubscribe> {
     // Verify that the requested lanes are projection-safe
     if (filter.lanes) {
       const unsafe = filter.lanes.filter((l) => !this.allowedLanes.includes(l));
       if (unsafe.length > 0) {
-        throw new Error(
-          `SSE projection forbidden for lanes: ${unsafe.join(", ")}`,
+        return Promise.reject(
+          new Error(`SSE projection forbidden for lanes: ${unsafe.join(", ")}`),
         );
       }
     }
@@ -43,9 +43,9 @@ export class SSEProjectionTransport implements FabricTransport {
     // In a real implementation, this would manage the actual HTTP stream/connection.
     // For the Core package, it provides the hook for the Server route to tap into.
 
-    return () => {
+    return Promise.resolve(() => {
       // Cleanup
-    };
+    });
   }
 
   /**

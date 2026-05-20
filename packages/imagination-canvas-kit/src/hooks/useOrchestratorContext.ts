@@ -3,6 +3,11 @@ import { useMemo, useEffect, useRef, useState } from "react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useSelectionStore } from "../state/selectionStore";
 import { useShellStore } from "../state/shellStore";
+import {
+  buildBlockOrchestratorContext,
+  buildStudioCapabilitySummary,
+  studioInteropResolver,
+} from "@iem/core";
 
 /**
  * Hook providing canvas-aware context to the Orchestrator.
@@ -17,12 +22,9 @@ export function useOrchestratorContext() {
   );
   const prevObjectsLength = useRef(Object.keys(objects).length);
 
-  // Track recent drops
   useEffect(() => {
     const currentKeys = Object.keys(objects);
     if (currentKeys.length > prevObjectsLength.current) {
-      // Logic: the latest key added is considered the 'drop' for this context
-      // This is a simplification; a more robust event system is preferred in production.
       const latestId = currentKeys[currentKeys.length - 1];
       setLastDroppedBlockId(latestId);
     }
@@ -41,12 +43,40 @@ export function useOrchestratorContext() {
     return objects[lastDroppedBlockId] || null;
   }, [lastDroppedBlockId, objects]);
 
+  const selectedBlockKind = useMemo(() => {
+    if (!selectedBlock) return null;
+    return (selectedBlock as any).blockKind || selectedBlock.type || null;
+  }, [selectedBlock]);
+
+  const blockContext = useMemo(() => {
+    if (!selectedBlockKind) return null;
+    return buildBlockOrchestratorContext(selectedBlockKind);
+  }, [selectedBlockKind]);
+
+  const compatibleBlocks = useMemo(() => {
+    if (!selectedBlockKind) return [];
+    return studioInteropResolver.suggestCompatibleBlocks(selectedBlockKind);
+  }, [selectedBlockKind]);
+
+  const studioCapabilitySummary = useMemo(
+    () => buildStudioCapabilitySummary(),
+    [],
+  );
+
+  const resolveBlockId = (object: { type?: string; blockKind?: string }) =>
+    (object as any).blockKind || object.type || "";
+
   return {
     selectedBlockId,
     selectedBlock,
+    selectedBlockKind,
     lastDroppedBlockId,
     lastDroppedBlock,
     allObjects: objects,
     sessionContext,
+    blockContext,
+    compatibleBlocks,
+    missingToolMounts: blockContext?.missingToolMounts ?? [],
+    studioCapabilitySummary,
   };
 }

@@ -1,0 +1,1 @@
+{"version":3,"file":"summarizer.d.ts","sourceRoot":"","sources":["summarizer.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,CAAC,EAAE,MAAM,KAAK,CAAC;AACxB,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,sBAAsB,CAAC;AAE5D,eAAO,MAAM,eAAe;;;;;;;;;;;;EAI1B,CAAC;AAEH,eAAO,MAAM,gBAAgB;;;;;;;;;EAG3B,CAAC;AAEH,eAAO,MAAM,eAAe,EAAE,eAAe,CAC3C,OAAO,eAAe,EACtB,OAAO,gBAAgB,CAqDxB,CAAC"}

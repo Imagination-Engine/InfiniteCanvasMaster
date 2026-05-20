@@ -1,72 +1,86 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+
+const canvasState = vi.hoisted(() => ({
+  objects: {} as Record<string, unknown>,
+}));
+const selectionState = vi.hoisted(() => ({
+  selectedIds: [] as string[],
+}));
+
+vi.mock("../../state/canvasStore", () => ({
+  useCanvasStore: (selector: (s: typeof canvasState) => unknown) =>
+    selector(canvasState),
+}));
+
+vi.mock("../../state/selectionStore", () => ({
+  useSelectionStore: (selector: (s: typeof selectionState) => unknown) =>
+    selector(selectionState),
+}));
+
+vi.mock("../../state/shellStore", () => ({
+  useShellStore: (selector: (s: { sessionContext: string }) => unknown) =>
+    selector({ sessionContext: "test-session" }),
+}));
+
 import { useOrchestratorContext } from "../useOrchestratorContext";
-import { useCanvasStore } from "../../state/canvasStore";
-import { useSelectionStore } from "../../state/selectionStore";
 
 describe("useOrchestratorContext hook", () => {
   beforeEach(() => {
-    useCanvasStore.setState({ objects: {} });
-    useSelectionStore.setState({ selectedIds: [] });
+    canvasState.objects = {};
+    selectionState.selectedIds = [];
   });
 
   it("should return the currently selected block ID", () => {
+    selectionState.selectedIds = ["block-1"];
     const { result } = renderHook(() => useOrchestratorContext());
-
-    act(() => {
-      useSelectionStore.getState().select("block-1");
-    });
-
     expect(result.current.selectedBlockId).toBe("block-1");
   });
 
   it("should return details of the selected block", () => {
-    const testBlock = {
-      id: "block-1",
-      type: "note",
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 100,
-      zIndex: 1,
-      status: "idle",
-      metadata: { label: "Test Note" },
-      capabilities: [],
-      blockKind: "note",
+    canvasState.objects = {
+      "block-1": {
+        id: "block-1",
+        type: "note",
+        metadata: { label: "Test Note" },
+      },
     };
-
-    act(() => {
-      useCanvasStore.getState().addObject(testBlock as any);
-      useSelectionStore.getState().select("block-1");
-    });
+    selectionState.selectedIds = ["block-1"];
 
     const { result } = renderHook(() => useOrchestratorContext());
     expect(result.current.selectedBlock?.metadata?.label).toBe("Test Note");
   });
 
   it("should track the last added block as a recent drop", () => {
-    const { result } = renderHook(() => useOrchestratorContext());
-
-    const testBlock = {
-      id: "block-new",
-      type: "agent",
-      x: 10,
-      y: 10,
-      width: 100,
-      height: 100,
-      zIndex: 1,
-      status: "idle",
-      capabilities: [],
-      blockKind: "agent",
-    };
+    const { result, rerender } = renderHook(() => useOrchestratorContext());
 
     act(() => {
-      useCanvasStore.getState().addObject(testBlock as any);
+      canvasState.objects = {
+        "block-new": { id: "block-new", type: "agent" },
+      };
     });
+    rerender();
 
     expect(result.current.lastDroppedBlockId).toBe("block-new");
+  });
+
+  it("should attach compatible blocks when a studio block is selected", () => {
+    canvasState.objects = {
+      "writer-1": {
+        id: "writer-1",
+        type: "iem.studio.writer",
+        blockKind: "iem.studio.writer",
+        metadata: {},
+      },
+    };
+    selectionState.selectedIds = ["writer-1"];
+
+    const { result } = renderHook(() => useOrchestratorContext());
+    expect(result.current.blockContext?.blockId).toBe("iem.studio.writer");
+    expect(result.current.compatibleBlocks.length).toBeGreaterThan(0);
+    expect(result.current.studioCapabilitySummary).toContain("Writer");
   });
 });

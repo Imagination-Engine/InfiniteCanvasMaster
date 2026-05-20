@@ -1,7 +1,11 @@
 import { Agent } from "@mastra/core/agent";
 import { google } from "@ai-sdk/google";
 import { generate_canvas_blueprint } from "../tools/canvas.js";
-import { blockRegistry, createMastraToolFromBlock } from "@iem/core";
+import {
+  blockRegistry,
+  createMastraToolFromBlock,
+  buildStudioCapabilitySummary,
+} from "@iem/core";
 import { Memory } from "@mastra/memory";
 
 /**
@@ -49,6 +53,13 @@ export const createOrchestrator = async (storage?: any) => {
       - Core Tools: iem.core.refiner, iem.core.summarizer, iem.core.translator, iem.core.colorSwapper, iem.core.filter, iem.core.webScraper, iem.core.formatter, iem.core.programmer
       
       Ensure logical flow in your edges (e.g., a documentLoader should output to a chunker; a joystick should control a sprite).
+
+      STUDIO CAPABILITY MANIFEST (registry-aware):
+      ${buildStudioCapabilitySummary()}
+
+      When asked what can connect to a block, use accepts/produces types from the block registry.
+      Studio blocks (iem.studio.*) produce typed artifacts (manuscript, video-project, game-project, etc.).
+      Suggest compatible next-step blocks only when their accepts overlap the source produces.
     `,
     model: google("gemini-2.5-pro"),
     tools,
