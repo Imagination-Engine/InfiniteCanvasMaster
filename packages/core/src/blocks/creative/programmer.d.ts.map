@@ -1,0 +1,1 @@
+{"version":3,"file":"programmer.d.ts","sourceRoot":"","sources":["programmer.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,CAAC,EAAE,MAAM,KAAK,CAAC;AACxB,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,sBAAsB,CAAC;AAE5D,eAAO,MAAM,eAAe;;;;;;;;;EAG1B,CAAC;AAEH,eAAO,MAAM,gBAAgB;;;;;;EAE3B,CAAC;AAEH,eAAO,MAAM,eAAe,EAAE,eAAe,CAC3C,OAAO,eAAe,EACtB,OAAO,gBAAgB,CA4CxB,CAAC"}
