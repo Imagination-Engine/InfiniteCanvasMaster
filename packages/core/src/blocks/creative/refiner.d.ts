@@ -9,11 +9,11 @@ export declare const RefinerInput: z.ZodObject<
   z.ZodTypeAny,
   {
     text: string;
-    style: "formal" | "casual" | "academic" | "marketing" | "poetic";
+    style: "marketing" | "formal" | "casual" | "academic" | "poetic";
   },
   {
     text: string;
-    style: "formal" | "casual" | "academic" | "marketing" | "poetic";
+    style: "marketing" | "formal" | "casual" | "academic" | "poetic";
   }
 >;
 export declare const RefinerOutput: z.ZodObject<

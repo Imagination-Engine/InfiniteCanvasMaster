@@ -78,8 +78,6 @@ export default function AtlasNode({ id, data, selected }: NodeProps) {
   };
   const NodeIcon = meta.icon;
 
-  if (!definition) return null;
-
   const updateData = (patch: Partial<BaseNodeData>) => {
     updateNodeData(id, {
       ...nodeData,
@@ -127,6 +125,8 @@ export default function AtlasNode({ id, data, selected }: NodeProps) {
     },
     [nodeData],
   );
+
+  if (!definition) return null;
 
   const chunks = Array.isArray(nodeData.outputs?.chunks)
     ? (nodeData.outputs.chunks as string[])

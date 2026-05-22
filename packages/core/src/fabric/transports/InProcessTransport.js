@@ -3,7 +3,6 @@ export class InProcessTransport {
   id = "local-in-process";
   kind = "in-process";
   emitter = new EventEmitter();
-  constructor() {}
   async publish(envelope) {
     const topic = envelope.source?.topic || "global";
     // Exact topic
@@ -26,6 +25,8 @@ export class InProcessTransport {
   subscribe(filter, handler) {
     const hasExplicitTopics = filter.topics !== undefined;
     const lanes = filter.lanes ?? [];
+    // Lane-only filters subscribe on lane channels; publish emits on both topic
+    // and lane, so also registering the default "#" topic would double-invoke.
     const useLaneChannels = lanes.length > 0 && !hasExplicitTopics;
     const topics = hasExplicitTopics
       ? filter.topics

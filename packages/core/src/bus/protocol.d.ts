@@ -74,13 +74,13 @@ export declare const EnvelopeActorSchema: z.ZodObject<
   z.ZodTypeAny,
   {
     type:
-      | "user"
       | "agent"
-      | "system"
       | "model"
-      | "block"
       | "canvas"
       | "tool"
+      | "system"
+      | "user"
+      | "block"
       | "workflow"
       | "openclaw"
       | "edge-twin"
@@ -90,20 +90,20 @@ export declare const EnvelopeActorSchema: z.ZodObject<
     runtime?:
       | "unknown"
       | "local"
-      | "edge-twin"
       | "device-mesh"
+      | "edge-twin"
       | "cloud"
       | undefined;
   },
   {
     type:
-      | "user"
       | "agent"
-      | "system"
       | "model"
-      | "block"
       | "canvas"
       | "tool"
+      | "system"
+      | "user"
+      | "block"
       | "workflow"
       | "openclaw"
       | "edge-twin"
@@ -113,8 +113,8 @@ export declare const EnvelopeActorSchema: z.ZodObject<
     runtime?:
       | "unknown"
       | "local"
-      | "edge-twin"
       | "device-mesh"
+      | "edge-twin"
       | "cloud"
       | undefined;
   }
@@ -143,13 +143,13 @@ export declare const EnvelopeTargetSchema: z.ZodObject<
   {
     type:
       | "agent"
-      | "block"
-      | "canvas"
       | "topic"
+      | "canvas"
       | "tool"
+      | "block"
       | "workflow"
-      | "openclaw"
       | "broadcast"
+      | "openclaw"
       | "approval-queue";
     id?: string | undefined;
     topic?: string | undefined;
@@ -157,13 +157,13 @@ export declare const EnvelopeTargetSchema: z.ZodObject<
   {
     type:
       | "agent"
-      | "block"
-      | "canvas"
       | "topic"
+      | "canvas"
       | "tool"
+      | "block"
       | "workflow"
-      | "openclaw"
       | "broadcast"
+      | "openclaw"
       | "approval-queue";
     id?: string | undefined;
     topic?: string | undefined;
@@ -254,10 +254,10 @@ export declare const EnvelopeInstructionSchema: z.ZodObject<
   {
     text: string;
     origin:
-      | "user"
       | "agent"
-      | "system"
       | "tool"
+      | "system"
+      | "user"
       | "retrieved_content"
       | "external_content";
     trust: "trusted" | "bounded" | "untrusted";
@@ -269,10 +269,10 @@ export declare const EnvelopeInstructionSchema: z.ZodObject<
   {
     text: string;
     origin:
-      | "user"
       | "agent"
-      | "system"
       | "tool"
+      | "system"
+      | "user"
       | "retrieved_content"
       | "external_content";
     trust: "trusted" | "bounded" | "untrusted";
@@ -352,7 +352,7 @@ export declare const EnvelopePolicySchema: z.ZodObject<
   "strip",
   z.ZodTypeAny,
   {
-    visibility: "public" | "private" | "workspace" | "agent-group";
+    visibility: "public" | "workspace" | "private" | "agent-group";
     sensitivity?: "low" | "high" | "medium" | "secret" | undefined;
     requiresApproval?: boolean | undefined;
     allowedCapabilities?: string[] | undefined;
@@ -362,7 +362,7 @@ export declare const EnvelopePolicySchema: z.ZodObject<
     redaction?: "none" | "compact" | "full" | undefined;
   },
   {
-    visibility: "public" | "private" | "workspace" | "agent-group";
+    visibility: "public" | "workspace" | "private" | "agent-group";
     sensitivity?: "low" | "high" | "medium" | "secret" | undefined;
     requiresApproval?: boolean | undefined;
     allowedCapabilities?: string[] | undefined;
@@ -419,27 +419,27 @@ export declare const EnvelopeDeliverySchema: z.ZodObject<
   z.ZodTypeAny,
   {
     class:
-      | "ephemeral"
       | "replayable"
+      | "ephemeral"
       | "durable"
       | "approval_required"
       | "provenance_required";
-    ordered?: boolean | undefined;
     replayable?: boolean | undefined;
     durable?: boolean | undefined;
     ttlMs?: number | undefined;
+    ordered?: boolean | undefined;
   },
   {
     class:
-      | "ephemeral"
       | "replayable"
+      | "ephemeral"
       | "durable"
       | "approval_required"
       | "provenance_required";
-    ordered?: boolean | undefined;
     replayable?: boolean | undefined;
     durable?: boolean | undefined;
     ttlMs?: number | undefined;
+    ordered?: boolean | undefined;
   }
 >;
 export type EnvelopeDelivery = z.infer<typeof EnvelopeDeliverySchema>;
@@ -455,16 +455,16 @@ export declare const EnvelopeDebugSchema: z.ZodObject<
   "strip",
   z.ZodTypeAny,
   {
-    latencyMs?: number | undefined;
     toolName?: string | undefined;
+    latencyMs?: number | undefined;
     compilerNodeId?: string | undefined;
     mastraWorkflowId?: string | undefined;
     mastraStepId?: string | undefined;
     modelName?: string | undefined;
   },
   {
-    latencyMs?: number | undefined;
     toolName?: string | undefined;
+    latencyMs?: number | undefined;
     compilerNodeId?: string | undefined;
     mastraWorkflowId?: string | undefined;
     mastraStepId?: string | undefined;
@@ -513,13 +513,13 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
       z.ZodTypeAny,
       {
         type:
-          | "user"
           | "agent"
-          | "system"
           | "model"
-          | "block"
           | "canvas"
           | "tool"
+          | "system"
+          | "user"
+          | "block"
           | "workflow"
           | "openclaw"
           | "edge-twin"
@@ -529,20 +529,20 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         runtime?:
           | "unknown"
           | "local"
-          | "edge-twin"
           | "device-mesh"
+          | "edge-twin"
           | "cloud"
           | undefined;
       },
       {
         type:
-          | "user"
           | "agent"
-          | "system"
           | "model"
-          | "block"
           | "canvas"
           | "tool"
+          | "system"
+          | "user"
+          | "block"
           | "workflow"
           | "openclaw"
           | "edge-twin"
@@ -552,8 +552,8 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         runtime?:
           | "unknown"
           | "local"
-          | "edge-twin"
           | "device-mesh"
+          | "edge-twin"
           | "cloud"
           | undefined;
       }
@@ -582,13 +582,13 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         {
           type:
             | "agent"
-            | "block"
-            | "canvas"
             | "topic"
+            | "canvas"
             | "tool"
+            | "block"
             | "workflow"
-            | "openclaw"
             | "broadcast"
+            | "openclaw"
             | "approval-queue";
           id?: string | undefined;
           topic?: string | undefined;
@@ -596,13 +596,13 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         {
           type:
             | "agent"
-            | "block"
-            | "canvas"
             | "topic"
+            | "canvas"
             | "tool"
+            | "block"
             | "workflow"
-            | "openclaw"
             | "broadcast"
+            | "openclaw"
             | "approval-queue";
           id?: string | undefined;
           topic?: string | undefined;
@@ -695,10 +695,10 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         {
           text: string;
           origin:
-            | "user"
             | "agent"
-            | "system"
             | "tool"
+            | "system"
+            | "user"
             | "retrieved_content"
             | "external_content";
           trust: "trusted" | "bounded" | "untrusted";
@@ -710,10 +710,10 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         {
           text: string;
           origin:
-            | "user"
             | "agent"
-            | "system"
             | "tool"
+            | "system"
+            | "user"
             | "retrieved_content"
             | "external_content";
           trust: "trusted" | "bounded" | "untrusted";
@@ -800,7 +800,7 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         "strip",
         z.ZodTypeAny,
         {
-          visibility: "public" | "private" | "workspace" | "agent-group";
+          visibility: "public" | "workspace" | "private" | "agent-group";
           sensitivity?: "low" | "high" | "medium" | "secret" | undefined;
           requiresApproval?: boolean | undefined;
           allowedCapabilities?: string[] | undefined;
@@ -810,7 +810,7 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
           redaction?: "none" | "compact" | "full" | undefined;
         },
         {
-          visibility: "public" | "private" | "workspace" | "agent-group";
+          visibility: "public" | "workspace" | "private" | "agent-group";
           sensitivity?: "low" | "high" | "medium" | "secret" | undefined;
           requiresApproval?: boolean | undefined;
           allowedCapabilities?: string[] | undefined;
@@ -869,27 +869,27 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         z.ZodTypeAny,
         {
           class:
-            | "ephemeral"
             | "replayable"
+            | "ephemeral"
             | "durable"
             | "approval_required"
             | "provenance_required";
-          ordered?: boolean | undefined;
           replayable?: boolean | undefined;
           durable?: boolean | undefined;
           ttlMs?: number | undefined;
+          ordered?: boolean | undefined;
         },
         {
           class:
-            | "ephemeral"
             | "replayable"
+            | "ephemeral"
             | "durable"
             | "approval_required"
             | "provenance_required";
-          ordered?: boolean | undefined;
           replayable?: boolean | undefined;
           durable?: boolean | undefined;
           ttlMs?: number | undefined;
+          ordered?: boolean | undefined;
         }
       >
     >;
@@ -906,16 +906,16 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         "strip",
         z.ZodTypeAny,
         {
-          latencyMs?: number | undefined;
           toolName?: string | undefined;
+          latencyMs?: number | undefined;
           compilerNodeId?: string | undefined;
           mastraWorkflowId?: string | undefined;
           mastraStepId?: string | undefined;
           modelName?: string | undefined;
         },
         {
-          latencyMs?: number | undefined;
           toolName?: string | undefined;
+          latencyMs?: number | undefined;
           compilerNodeId?: string | undefined;
           mastraWorkflowId?: string | undefined;
           mastraStepId?: string | undefined;
@@ -928,15 +928,16 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
   z.ZodTypeAny,
   {
     id: string;
+    version: string;
     source: {
       type:
-        | "user"
         | "agent"
-        | "system"
         | "model"
-        | "block"
         | "canvas"
         | "tool"
+        | "system"
+        | "user"
+        | "block"
         | "workflow"
         | "openclaw"
         | "edge-twin"
@@ -946,22 +947,20 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
       runtime?:
         | "unknown"
         | "local"
-        | "edge-twin"
         | "device-mesh"
+        | "edge-twin"
         | "cloud"
         | undefined;
     };
-    protocol: "balnce.a2a";
-    version: string;
     traceId: string;
     runId: string;
+    protocol: "balnce.a2a";
     event: {
       type: string;
       timestamp: string;
       sequence: number;
       phase?: string | undefined;
     };
-    parentId?: string | undefined;
     provenance?:
       | {
           vladId?: string | undefined;
@@ -971,42 +970,23 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
           sourceRefs?: string[] | undefined;
         }
       | undefined;
-    causationId?: string | undefined;
-    correlationId?: string | undefined;
-    idempotencyKey?: string | undefined;
     target?:
       | {
           type:
             | "agent"
-            | "block"
-            | "canvas"
             | "topic"
+            | "canvas"
             | "tool"
+            | "block"
             | "workflow"
-            | "openclaw"
             | "broadcast"
+            | "openclaw"
             | "approval-queue";
           id?: string | undefined;
           topic?: string | undefined;
         }
       | undefined;
-    instruction?:
-      | {
-          text: string;
-          origin:
-            | "user"
-            | "agent"
-            | "system"
-            | "tool"
-            | "retrieved_content"
-            | "external_content";
-          trust: "trusted" | "bounded" | "untrusted";
-          priority?: "low" | "normal" | "high" | "critical" | undefined;
-          mayModifyGoal?: boolean | undefined;
-          mayUseTools?: boolean | undefined;
-          mayEscalatePermissions?: boolean | undefined;
-        }
-      | undefined;
+    payload?: any;
     context?:
       | {
           values?: Record<string, any> | undefined;
@@ -1020,10 +1000,43 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
             | undefined;
         }
       | undefined;
-    payload?: any;
+    parentId?: string | undefined;
+    correlationId?: string | undefined;
+    causationId?: string | undefined;
+    delivery?:
+      | {
+          class:
+            | "replayable"
+            | "ephemeral"
+            | "durable"
+            | "approval_required"
+            | "provenance_required";
+          replayable?: boolean | undefined;
+          durable?: boolean | undefined;
+          ttlMs?: number | undefined;
+          ordered?: boolean | undefined;
+        }
+      | undefined;
+    instruction?:
+      | {
+          text: string;
+          origin:
+            | "agent"
+            | "tool"
+            | "system"
+            | "user"
+            | "retrieved_content"
+            | "external_content";
+          trust: "trusted" | "bounded" | "untrusted";
+          priority?: "low" | "normal" | "high" | "critical" | undefined;
+          mayModifyGoal?: boolean | undefined;
+          mayUseTools?: boolean | undefined;
+          mayEscalatePermissions?: boolean | undefined;
+        }
+      | undefined;
     policy?:
       | {
-          visibility: "public" | "private" | "workspace" | "agent-group";
+          visibility: "public" | "workspace" | "private" | "agent-group";
           sensitivity?: "low" | "high" | "medium" | "secret" | undefined;
           requiresApproval?: boolean | undefined;
           allowedCapabilities?: string[] | undefined;
@@ -1033,24 +1046,11 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
           redaction?: "none" | "compact" | "full" | undefined;
         }
       | undefined;
-    delivery?:
-      | {
-          class:
-            | "ephemeral"
-            | "replayable"
-            | "durable"
-            | "approval_required"
-            | "provenance_required";
-          ordered?: boolean | undefined;
-          replayable?: boolean | undefined;
-          durable?: boolean | undefined;
-          ttlMs?: number | undefined;
-        }
-      | undefined;
+    idempotencyKey?: string | undefined;
     debug?:
       | {
-          latencyMs?: number | undefined;
           toolName?: string | undefined;
+          latencyMs?: number | undefined;
           compilerNodeId?: string | undefined;
           mastraWorkflowId?: string | undefined;
           mastraStepId?: string | undefined;
@@ -1062,13 +1062,13 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
     id: string;
     source: {
       type:
-        | "user"
         | "agent"
-        | "system"
         | "model"
-        | "block"
         | "canvas"
         | "tool"
+        | "system"
+        | "user"
+        | "block"
         | "workflow"
         | "openclaw"
         | "edge-twin"
@@ -1078,21 +1078,20 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
       runtime?:
         | "unknown"
         | "local"
-        | "edge-twin"
         | "device-mesh"
+        | "edge-twin"
         | "cloud"
         | undefined;
     };
-    protocol: "balnce.a2a";
     traceId: string;
     runId: string;
+    protocol: "balnce.a2a";
     event: {
       type: string;
       timestamp: string;
       sequence: number;
       phase?: string | undefined;
     };
-    parentId?: string | undefined;
     provenance?:
       | {
           vladId?: string | undefined;
@@ -1103,42 +1102,23 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
         }
       | undefined;
     version?: string | undefined;
-    causationId?: string | undefined;
-    correlationId?: string | undefined;
-    idempotencyKey?: string | undefined;
     target?:
       | {
           type:
             | "agent"
-            | "block"
-            | "canvas"
             | "topic"
+            | "canvas"
             | "tool"
+            | "block"
             | "workflow"
-            | "openclaw"
             | "broadcast"
+            | "openclaw"
             | "approval-queue";
           id?: string | undefined;
           topic?: string | undefined;
         }
       | undefined;
-    instruction?:
-      | {
-          text: string;
-          origin:
-            | "user"
-            | "agent"
-            | "system"
-            | "tool"
-            | "retrieved_content"
-            | "external_content";
-          trust: "trusted" | "bounded" | "untrusted";
-          priority?: "low" | "normal" | "high" | "critical" | undefined;
-          mayModifyGoal?: boolean | undefined;
-          mayUseTools?: boolean | undefined;
-          mayEscalatePermissions?: boolean | undefined;
-        }
-      | undefined;
+    payload?: any;
     context?:
       | {
           values?: Record<string, any> | undefined;
@@ -1152,10 +1132,43 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
             | undefined;
         }
       | undefined;
-    payload?: any;
+    parentId?: string | undefined;
+    correlationId?: string | undefined;
+    causationId?: string | undefined;
+    delivery?:
+      | {
+          class:
+            | "replayable"
+            | "ephemeral"
+            | "durable"
+            | "approval_required"
+            | "provenance_required";
+          replayable?: boolean | undefined;
+          durable?: boolean | undefined;
+          ttlMs?: number | undefined;
+          ordered?: boolean | undefined;
+        }
+      | undefined;
+    instruction?:
+      | {
+          text: string;
+          origin:
+            | "agent"
+            | "tool"
+            | "system"
+            | "user"
+            | "retrieved_content"
+            | "external_content";
+          trust: "trusted" | "bounded" | "untrusted";
+          priority?: "low" | "normal" | "high" | "critical" | undefined;
+          mayModifyGoal?: boolean | undefined;
+          mayUseTools?: boolean | undefined;
+          mayEscalatePermissions?: boolean | undefined;
+        }
+      | undefined;
     policy?:
       | {
-          visibility: "public" | "private" | "workspace" | "agent-group";
+          visibility: "public" | "workspace" | "private" | "agent-group";
           sensitivity?: "low" | "high" | "medium" | "secret" | undefined;
           requiresApproval?: boolean | undefined;
           allowedCapabilities?: string[] | undefined;
@@ -1165,24 +1178,11 @@ export declare const BalnceEnvelopeSchema: z.ZodObject<
           redaction?: "none" | "compact" | "full" | undefined;
         }
       | undefined;
-    delivery?:
-      | {
-          class:
-            | "ephemeral"
-            | "replayable"
-            | "durable"
-            | "approval_required"
-            | "provenance_required";
-          ordered?: boolean | undefined;
-          replayable?: boolean | undefined;
-          durable?: boolean | undefined;
-          ttlMs?: number | undefined;
-        }
-      | undefined;
+    idempotencyKey?: string | undefined;
     debug?:
       | {
-          latencyMs?: number | undefined;
           toolName?: string | undefined;
+          latencyMs?: number | undefined;
           compilerNodeId?: string | undefined;
           mastraWorkflowId?: string | undefined;
           mastraStepId?: string | undefined;

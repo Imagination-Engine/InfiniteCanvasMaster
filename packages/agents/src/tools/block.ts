@@ -15,7 +15,7 @@ export const read_canvas_context = createTool({
   inputSchema: z.object({
     block_id: z.string().describe("The unique ID of the current block."),
   }),
-  execute: async ({ input }: { input: { block_id: string } }) => {
+  execute: async (input: { block_id: string }) => {
     try {
       // Find current node to get canvasId
       const [currentNode] = await db
@@ -85,7 +85,7 @@ export const mutate_self = createTool({
         "The key-value pairs to update in the block's data.inputs field.",
       ),
   }),
-  execute: async ({ input }: { input: { block_id: string; updates: any } }) => {
+  execute: async (input: { block_id: string; updates: any }) => {
     try {
       const [currentNode] = await db
         .select()
@@ -133,11 +133,7 @@ export const send_fabric_message = createTool({
       .record(z.any())
       .describe("The structured content of the message."),
   }),
-  execute: async ({
-    input,
-  }: {
-    input: { topic: string; lane: string; payload: any };
-  }) => {
+  execute: async (input: { topic: string; lane?: string; payload: any }) => {
     try {
       // In a real implementation, we would resolve the FabricRouter instance.
       // For now, we'll simulate the successful publish.
