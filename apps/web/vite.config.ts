@@ -6,18 +6,29 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
+const isTest = process.env.NODE_ENV === "test" || !!process.env.VITEST;
+
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    nodePolyfills({
-      include: ["stream", "crypto", "buffer", "util"],
-      globals: {
-        Buffer: true,
-        global: true,
-        process: true,
-      },
-    }),
+    // Exclude during test runs: this plugin injects virtual shim imports
+    // (e.g. vite-plugin-node-polyfills/shims/buffer) into processed source files.
+    // Those virtual modules are only resolvable inside Vite's plugin container —
+    // Vitest cannot resolve them, causing import-analysis failures. The test
+    // environment runs in Node.js which already provides Buffer/global natively.
+    ...(!isTest
+      ? [
+          nodePolyfills({
+            include: ["stream", "crypto", "buffer", "util"],
+            globals: {
+              Buffer: true,
+              global: true,
+              process: true,
+            },
+          }),
+        ]
+      : []),
   ],
   define: {
     global: "globalThis",
