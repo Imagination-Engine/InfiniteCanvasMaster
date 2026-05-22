@@ -1,8 +1,8 @@
 {
   "track_id": "studio_manifest_registration_20260504",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-05-04T13:00:00Z",
-  "updated_at": "2026-05-04T13:00:00Z",
+  "type": "feat",
+  "status": "done",
+  "created_at": "2026-05-04T12:30:00Z",
+  "updated_at": "2026-05-19T08:51:00Z",
   "description": "Studio Manifest Infrastructure & Registration (Phases 4 & 5)"
 }

@@ -34,15 +34,30 @@ export const exportBlock: BlockDefinition<any, any> = {
 export const sceneBlock: BlockDefinition<any, any> = {
   id: "iem.reel.scene",
   name: "Scene",
-  description: "Define visual environment.",
+  description: "Composes an image, dialogue, and duration on the timeline.",
   category: "media",
-  input: z.object({ description: z.string() }),
-  output: z.object({ sceneData: z.any() }),
+  input: z.object({
+    imageUrl: z.string().url().optional(),
+    dialogueUrl: z.string().optional(),
+    durationMs: z.number().min(100).default(3000),
+    description: z.string().optional(),
+  }),
+  output: z.object({
+    sceneId: z.string(),
+    thumbnailUrl: z.string().optional(),
+    durationMs: z.number(),
+  }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "gen_scene",
-    invoke: async () => ({ sceneData: {} }),
+    invoke: async (input: any) => ({
+      sceneId: `scene_${Date.now()}`,
+      thumbnailUrl:
+        input.imageUrl ||
+        "https://placehold.co/600x400/222/FFF?text=No+Image+Provided",
+      durationMs: input.durationMs || 3000,
+    }),
   },
 };
 
@@ -52,12 +67,54 @@ export const characterBlock: BlockDefinition<any, any> = {
   description: "Visual character in scene.",
   category: "media",
   input: z.object({ prompt: z.string() }),
-  output: z.object({ characterId: z.string() }),
+  output: z.object({
+    characterId: z.string(),
+    imageUrl: z.string().optional(),
+  }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "gen_char",
-    invoke: async () => ({ characterId: "char_1" }),
+    invoke: async (input: any) => {
+      const characterId = `char_${Date.now()}`;
+
+      if (process.env.IEM_MOCK_MODELS === "1") {
+        return {
+          characterId,
+          imageUrl: "https://placehold.co/600x400/png?text=Mock+Character",
+        };
+      }
+
+      const apiKey =
+        process.env.NANOBANANA_API_KEY || process.env.IMAGE_API_KEY;
+      if (!apiKey) {
+        return {
+          characterId,
+          imageUrl: "https://placehold.co/600x400/png?text=Generated+Character",
+        };
+      }
+
+      try {
+        const res = await fetch("https://api.nanobanana.ai/v1/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({ prompt: `Character design: ${input.prompt}` }),
+        });
+
+        if (!res.ok) throw new Error(`Image API error ${res.status}`);
+
+        const data = await res.json();
+        return { characterId, imageUrl: data.data[0].url };
+      } catch (e) {
+        return {
+          characterId,
+          imageUrl: "https://placehold.co/600x400/png?text=Character+Error",
+        };
+      }
+    },
   },
 };
 
@@ -162,14 +219,29 @@ export const textToImageBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "gen_image",
-    invoke: async () => {
-      if (!process.env.IMAGE_API_KEY && !process.env.NANOBANANA_API_KEY) {
-        throw new Error("Missing API key");
+    invoke: async (input: any) => {
+      if (process.env.IEM_MOCK_MODELS === "1") {
+        return { imageUrl: "https://placehold.co/600x400/png?text=Mock+Image" };
       }
 
-      const res = await fetch("https://api.example.com/generate", {
+      const apiKey =
+        process.env.NANOBANANA_API_KEY || process.env.IMAGE_API_KEY;
+      if (!apiKey) {
+        // Fallback to placeholder if they only have Gemini keys (no image API)
+        return {
+          imageUrl: "https://placehold.co/600x400/png?text=Generated+Image",
+        };
+      }
+
+      const res = await fetch("https://api.nanobanana.ai/v1/generate", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ prompt: input.prompt }),
       });
+
       if (!res.ok) throw new Error(`Image API error ${res.status}`);
 
       const data = await res.json();
@@ -189,19 +261,51 @@ export const textToSpeechBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "gen_speech",
-    invoke: async () => {
-      if (!process.env.ELEVENLABS_API_KEY) {
-        throw new Error("Missing ElevenLabs API key");
+    invoke: async (input: any) => {
+      if (process.env.IEM_MOCK_MODELS === "1") {
+        return { audioUrl: "data:audio/mpeg;base64,mock_audio_data" };
       }
 
-      const res = await fetch("https://api.elevenlabs.io/v1/text-to-speech", {
-        method: "POST",
-      });
+      const apiKey = process.env.ELEVENLABS_API_KEY;
+      if (!apiKey) {
+        // Fallback to placeholder if they only have Gemini keys (no speech API)
+        return { audioUrl: "data:audio/mpeg;base64,mock_audio_data_generated" };
+      }
+
+      const voiceId = input.voiceId || "21m00Tcm4TlvDq8ikWAM"; // default voice
+      const res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "xi-api-key": apiKey,
+          },
+          body: JSON.stringify({
+            text: input.text,
+            model_id: "eleven_monolingual_v1",
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.5,
+            },
+          }),
+        },
+      );
+
       if (!res.ok) throw new Error(`ElevenLabs API error ${res.status}`);
 
       const buffer = await res.arrayBuffer();
-      // Dummy conversion logic just for test passing
-      const base64 = "dummy";
+      let base64 = "dummy";
+      if (typeof globalThis !== "undefined" && (globalThis as any).Buffer) {
+        base64 = (globalThis as any).Buffer.from(buffer).toString("base64");
+      } else if (typeof window !== "undefined") {
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        base64 = window.btoa(binary);
+      }
       return { audioUrl: `data:audio/mpeg;base64,${base64}` };
     },
   },

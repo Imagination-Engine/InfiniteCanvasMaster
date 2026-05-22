@@ -57,3 +57,15 @@ Thumbs.db
 # Optional: Local-only assets or temporary design files
 *.tmp
 temp/
+
+postgres_data/
+data-node/
+
+# Turborepo
+.turbo/
+
+# TypeScript cache
+*.tsbuildinfo
+
+
+public/generated-media/

@@ -85,7 +85,8 @@ projectsRouter.get("/:id", async (c) => {
       // @ts-ignore
       const { mastra } = await import("@iem/agents");
       // Safely fetch messages, falling back if storage is uninitialized or missing tables
-      const fetchedHistory = await mastra.storage
+      const { storage } = await import("@iem/agents");
+      const fetchedHistory = await (storage as any)
         ?.getMessages({ threadId: projectId })
         .catch(() => []);
       history = fetchedHistory || [];

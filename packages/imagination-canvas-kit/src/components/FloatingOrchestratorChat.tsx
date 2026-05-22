@@ -9,6 +9,10 @@ import { GrowingTextarea } from "@iem/chat-interaction-kit";
 import { classifyOrchestratorIntent } from "../utils/orchestratorIntentClassifier";
 import { useOrchestratorContext } from "../hooks/useOrchestratorContext";
 import { extractAgentTraits } from "../utils/orchestratorTraitExtractor";
+import {
+  buildSuggestionChips,
+  resolveOrchestratorReply,
+} from "../utils/orchestratorSuggestions";
 
 /**
  * Orchestrator Drawer: Fixed-width, right-docked production chat interface.
@@ -16,8 +20,16 @@ import { extractAgentTraits } from "../utils/orchestratorTraitExtractor";
  */
 export const FloatingOrchestratorChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { selectedBlock, lastDroppedBlock, sessionContext } =
-    useOrchestratorContext();
+  const {
+    selectedBlock,
+    lastDroppedBlock,
+    sessionContext,
+    selectedBlockKind,
+    blockContext,
+    missingToolMounts,
+  } = useOrchestratorContext();
+
+  const suggestionChips = buildSuggestionChips(selectedBlockKind);
 
   const [messages, setMessages] = useState<
     Array<{
@@ -85,9 +97,11 @@ export const FloatingOrchestratorChat: React.FC = () => {
 
     // --- Intent Analysis & Canvas Interaction ---
     setTimeout(() => {
-      let response = "";
+      let response = resolveOrchestratorReply(input, selectedBlockKind) ?? "";
 
-      if (intent === "emotional_expression") {
+      if (response) {
+        // registry-aware answer handled
+      } else if (intent === "emotional_expression") {
         const reactions = [
           "I am so glad you are enjoying the creative process! What should we build next?",
           "Thanks! I'm here to help you bring your imagination to life. Any specific ideas?",
@@ -150,13 +164,18 @@ export const FloatingOrchestratorChat: React.FC = () => {
             "I see you want to create something. Which block should I drop in?";
         }
       } else if (intent === "question") {
-        if (selectedBlock) {
+        if (selectedBlock && suggestionChips.length > 0) {
+          const chipNames = suggestionChips.map((c) => c.label).join(", ");
+          response = `You have "${selectedBlock.metadata?.label || selectedBlock.type}" selected. Compatible next steps: ${chipNames}.`;
+        } else if (selectedBlock) {
           response = `You currently have the "${selectedBlock.metadata?.label || selectedBlock.type}" block selected. It's currently in a "${selectedBlock.status}" state. What would you like to know about it?`;
         } else {
           response =
             "That's a great question. I can help you understand the current canvas layout or suggest new blocks to connect.";
         }
-      } else {
+      } else if (selectedBlock && missingToolMounts.length > 0 && !response) {
+        response = `Note: "${blockContext?.blockName || selectedBlock.type}" may need tool configuration (${missingToolMounts.map((m) => m.name).join(", ")}).`;
+      } else if (!response) {
         response =
           "I'm analyzing the canvas context to optimize your DAG. Tell me more about the logic flow.";
       }
@@ -276,6 +295,23 @@ export const FloatingOrchestratorChat: React.FC = () => {
               </AnimatePresence>
               <div ref={messagesEndRef} className="h-4 shrink-0" />
             </div>
+
+            {suggestionChips.length > 0 && (
+              <div className="px-4 pb-2 flex flex-wrap gap-2 shrink-0">
+                {suggestionChips.map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() =>
+                      setInput(`Add a ${chip.label} block connected to this`)
+                    }
+                    className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-brand-cyan/30 text-brand-cyan bg-brand-cyan/5 hover:bg-brand-cyan/15 transition-colors"
+                  >
+                    + {chip.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Input Area */}
             <div className="p-4 border-t border-white/5 bg-black/40 shrink-0 w-full">

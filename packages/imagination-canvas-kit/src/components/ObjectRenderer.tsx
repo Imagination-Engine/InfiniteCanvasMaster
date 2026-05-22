@@ -16,6 +16,7 @@ import { OpenClawAgentGroupBlock } from "./blocks/OpenClawAgentGroupBlock";
 import { CommonBlockView } from "./blocks/CommonBlockView";
 import { resolveBlockIcon } from "../utils/blockIconMap";
 import { Maximize2, GripHorizontal, Activity, AlertCircle } from "lucide-react";
+import { studioInteropResolver } from "@iem/core";
 
 export type ComponentRegistry = Record<
   string,
@@ -188,13 +189,23 @@ export const ObjectRenderer: React.FC<{
       }}
       onDrop={(e) => {
         const sourceId = e.dataTransfer.getData("application/iem-connection");
-        if (sourceId && sourceId !== object.id) {
-          addConnection({
-            id: `edge-${Date.now()}`,
-            fromId: sourceId,
-            toId: object.id,
-          });
+        if (!sourceId || sourceId === object.id) return;
+
+        const sourceObj = useCanvasStore.getState().objects[sourceId];
+        const sourceKind =
+          (sourceObj as any)?.blockKind || sourceObj?.type || sourceId;
+        const targetKind = (object as any).blockKind || object.type;
+
+        if (!studioInteropResolver.canConnectBlocks(sourceKind, targetKind)) {
+          e.preventDefault();
+          return;
         }
+
+        addConnection({
+          id: `edge-${Date.now()}`,
+          fromId: sourceId,
+          toId: object.id,
+        });
       }}
     >
       {/* Left Input Connector Handle */}

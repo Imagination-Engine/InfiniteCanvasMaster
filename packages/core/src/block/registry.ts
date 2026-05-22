@@ -1,6 +1,30 @@
 // @ts-nocheck
 import type { BlockDefinition } from "./protocol";
+import type { StudioId } from "../studio/contracts";
 import { z } from "zod";
+
+// ---------------------------------------------------------------------------
+// Map legacy studio strings to canonical StudioId values
+// ---------------------------------------------------------------------------
+const STUDIO_LEGACY_MAP: Record<string, StudioId> = {
+  "Agent Studio": "agent-studio",
+  "Video Studio": "video-studio",
+  "Game Studio": "game-studio",
+  "Writer's Studio": "writers-studio",
+  "Writer\u2019s Studio": "writers-studio",
+  "App Creation Studio": "app-creation-studio",
+  "Commerce Studio": "commerce-studio",
+  "Research Studio": "research-studio",
+  "Knowledge Studio": "knowledge-studio",
+  "Launch Studio": "launch-studio",
+  "Media Studio": "media-studio",
+  "Automation Studio": "automation-studio",
+  "Brand Studio": "brand-studio",
+};
+
+// ---------------------------------------------------------------------------
+// Registry Class
+// ---------------------------------------------------------------------------
 
 class BlockRegistry {
   private blocks = new Map<string, BlockDefinition<any, any>>();
@@ -22,6 +46,28 @@ class BlockRegistry {
     return this.list().filter((b) => b.category === category);
   }
 
+  /** Return blocks belonging to a studio (checks both legacy and canonical) */
+  byStudio(studioId: StudioId): BlockDefinition<any, any>[] {
+    return this.list().filter((b) => {
+      if (b.studioAffinity) {
+        return Array.isArray(b.studioAffinity)
+          ? b.studioAffinity.includes(studioId)
+          : b.studioAffinity === studioId;
+      }
+      return false;
+    });
+  }
+
+  /** Return blocks that produce a given artifact type */
+  byProduces(artifactType: string): BlockDefinition<any, any>[] {
+    return this.list().filter((b) => b.produces?.includes(artifactType));
+  }
+
+  /** Return blocks that accept a given artifact type */
+  byAccepts(artifactType: string): BlockDefinition<any, any>[] {
+    return this.list().filter((b) => b.accepts?.includes(artifactType));
+  }
+
   clear(): void {
     this.blocks.clear();
   }
@@ -36,8 +82,30 @@ const dummyMcp = {
   invoke: async () => ({}),
 };
 
+// ---------------------------------------------------------------------------
+// Auto-infer securityClass from runtime kind when not explicitly set
+// ---------------------------------------------------------------------------
+function inferSecurityClass(runtime: string | undefined): string {
+  switch (runtime) {
+    case "sandbox":
+      return "sandbox";
+    case "agent":
+      return "sandbox";
+    case "commerce":
+      return "internal";
+    case "generator":
+      return "sandbox";
+    case "studio":
+      return "internal";
+    case "app":
+      return "internal";
+    default:
+      return "public";
+  }
+}
+
 // ============================================================================
-// PHASE 1: Populate the 65+ Required Blocks
+// Block Registration Helper
 // ============================================================================
 
 const createBlock = (
@@ -48,6 +116,11 @@ const createBlock = (
     description: string;
   },
 ) => {
+  // Auto-wire studioAffinity from legacy studio field if not set
+  const studioAffinity =
+    opts.studioAffinity ||
+    (opts.studio ? STUDIO_LEGACY_MAP[opts.studio] : undefined);
+
   blockRegistry.register({
     ...opts,
     input: opts.input || z.any(),
@@ -59,6 +132,8 @@ const createBlock = (
     produces: opts.produces || [],
     agentic: opts.agentic || false,
     runtime: opts.runtime || "none",
+    studioAffinity,
+    securityClass: opts.securityClass || inferSecurityClass(opts.runtime),
   });
 };
 
@@ -70,6 +145,9 @@ createBlock({
   description: "Captures the raw spark of an idea.",
   icon: "Sparkles",
   runtime: "document",
+  accepts: ["text", "prompt"],
+  produces: ["intent", "text"],
+  capabilities: ["intent-capture"],
 });
 createBlock({
   id: "iem.intent.goal",
@@ -78,6 +156,9 @@ createBlock({
   description: "A measurable objective.",
   icon: "Target",
   runtime: "document",
+  accepts: ["intent", "text"],
+  produces: ["goal", "text"],
+  capabilities: ["goal-definition"],
 });
 createBlock({
   id: "iem.intent.task",
@@ -86,6 +167,9 @@ createBlock({
   description: "A specific unit of work.",
   icon: "CheckSquare",
   runtime: "document",
+  accepts: ["goal", "intent", "text"],
+  produces: ["task", "text"],
+  capabilities: ["task-management"],
 });
 createBlock({
   id: "iem.intent.milestone",
@@ -94,6 +178,9 @@ createBlock({
   description: "A significant project marker.",
   icon: "Flag",
   runtime: "document",
+  accepts: ["task", "goal", "text"],
+  produces: ["milestone", "text"],
+  capabilities: ["milestone-tracking"],
 });
 createBlock({
   id: "iem.intent.requirement",
@@ -102,6 +189,9 @@ createBlock({
   description: "A necessary condition for success.",
   icon: "ListChecks",
   runtime: "document",
+  accepts: ["goal", "intent", "text"],
+  produces: ["requirement", "text"],
+  capabilities: ["requirement-definition"],
 });
 createBlock({
   id: "iem.intent.decision",
@@ -110,6 +200,9 @@ createBlock({
   description: "A recorded architectural or creative choice.",
   icon: "GitCommit",
   runtime: "document",
+  accepts: ["text", "requirement", "goal"],
+  produces: ["decision", "text"],
+  capabilities: ["decision-recording"],
 });
 createBlock({
   id: "iem.intent.constraint",
@@ -118,6 +211,9 @@ createBlock({
   description: "A boundary condition.",
   icon: "ShieldAlert",
   runtime: "document",
+  accepts: ["text", "requirement"],
+  produces: ["constraint", "text"],
+  capabilities: ["constraint-definition"],
 });
 createBlock({
   id: "iem.intent.checkpoint",
@@ -126,6 +222,9 @@ createBlock({
   description: "Halts workflow until human approval.",
   icon: "Hand",
   runtime: "sandbox",
+  accepts: ["any"],
+  produces: ["approval", "any"],
+  capabilities: ["human-in-the-loop"],
 });
 createBlock({
   id: "iem.intent.timeline",
@@ -134,6 +233,9 @@ createBlock({
   description: "A temporal view of tasks.",
   icon: "Calendar",
   runtime: "document",
+  accepts: ["task", "milestone", "goal"],
+  produces: ["timeline", "text"],
+  capabilities: ["timeline-visualization"],
 });
 createBlock({
   id: "iem.intent.plan",
@@ -142,6 +244,9 @@ createBlock({
   description: "A compiled workflow graph.",
   icon: "Network",
   runtime: "document",
+  accepts: ["task", "goal", "intent", "requirement"],
+  produces: ["workflow", "dag", "text"],
+  capabilities: ["workflow-compilation"],
 });
 
 // --- Agents & Swarms ---
@@ -1072,3 +1177,566 @@ createBlock({
   icon: "DownloadCloud",
   runtime: "app",
 });
+
+// ============================================================================
+// Block Data Enrichment — Normalization Pass (Track 3)
+//
+// Rather than modifying every createBlock call above, this declarative map
+// patches each block with its correct accepts/produces/capabilities data.
+// The createBlock helper already auto-wires studioAffinity and securityClass
+// from the legacy `studio` and `runtime` fields.
+// ============================================================================
+
+const BLOCK_DATA_ENRICHMENT: Record<
+  string,
+  { accepts?: string[]; produces?: string[]; capabilities?: string[] }
+> = {
+  // --- Agents & Swarms ---
+  "iem.agent.agent": {
+    accepts: ["prompt", "text", "config"],
+    produces: ["text", "data", "any"],
+    capabilities: ["text-generation", "tool-use", "reasoning"],
+  },
+  "iem.agent.blank": {
+    accepts: ["prompt", "config"],
+    produces: ["text", "any"],
+    capabilities: ["configurable-agent"],
+  },
+  "iem.agent.mastra": {
+    accepts: ["workflow", "config", "data"],
+    produces: ["data", "text", "any"],
+    capabilities: ["workflow-execution", "resumable-graph"],
+  },
+  "iem.agent.supervisor": {
+    accepts: ["prompt", "task", "config"],
+    produces: ["text", "task", "data"],
+    capabilities: ["agent-management", "delegation"],
+  },
+  "iem.agent.swarm": {
+    accepts: ["prompt", "task"],
+    produces: ["text", "data", "any"],
+    capabilities: ["parallel-execution", "swarm-intelligence"],
+  },
+  "iem.agent.imagiclaw": {
+    accepts: ["prompt", "text", "config"],
+    produces: ["text", "code", "data", "file"],
+    capabilities: ["computer-use", "code-generation", "tool-use"],
+  },
+  "iem.agent.imagiclaw-sandbox": {
+    accepts: ["prompt", "code", "config"],
+    produces: ["text", "code", "file", "data"],
+    capabilities: ["sandboxed-execution", "computer-use"],
+  },
+  "iem.agent.imagiclaw-swarm": {
+    accepts: ["prompt", "task"],
+    produces: ["text", "code", "data"],
+    capabilities: ["parallel-execution", "computer-use"],
+  },
+  "iem.agent.tool-runner": {
+    accepts: ["config", "data"],
+    produces: ["data", "any"],
+    capabilities: ["tool-execution"],
+  },
+  "iem.agent.mcp": {
+    accepts: ["config", "prompt"],
+    produces: ["data", "any"],
+    capabilities: ["mcp-integration", "remote-tool-use"],
+  },
+  "iem.agent.router": {
+    accepts: ["prompt", "text"],
+    produces: ["text", "prompt"],
+    capabilities: ["model-routing", "llm-selection"],
+  },
+  "iem.agent.researcher": {
+    accepts: ["prompt", "text", "url"],
+    produces: ["text", "research-brief", "citation"],
+    capabilities: ["web-research", "document-analysis"],
+  },
+  "iem.agent.builder": {
+    accepts: ["prompt", "text", "requirement"],
+    produces: ["code", "file", "text"],
+    capabilities: ["scaffolding", "project-generation"],
+  },
+  "iem.agent.code": {
+    accepts: ["prompt", "code", "text"],
+    produces: ["code", "text", "file"],
+    capabilities: ["code-generation", "debugging"],
+  },
+  "iem.agent.operator": {
+    accepts: ["prompt", "config", "url"],
+    produces: ["data", "text", "file"],
+    capabilities: ["browser-automation", "saas-operation"],
+  },
+
+  // --- Chat & Communication ---
+  "iem.chat.chat": {
+    accepts: ["text", "prompt"],
+    produces: ["text"],
+    capabilities: ["conversation"],
+  },
+  "iem.chat.multi": {
+    accepts: ["text", "prompt"],
+    produces: ["text", "transcript"],
+    capabilities: ["multi-agent-conversation"],
+  },
+  "iem.chat.interview": {
+    accepts: ["prompt", "config"],
+    produces: ["text", "data", "transcript"],
+    capabilities: ["structured-interview"],
+  },
+  "iem.chat.approval": {
+    accepts: ["any"],
+    produces: ["approval", "any"],
+    capabilities: ["approval-workflow"],
+  },
+  "iem.chat.inbox": {
+    accepts: ["notification", "text"],
+    produces: ["text"],
+    capabilities: ["message-aggregation"],
+  },
+  "iem.chat.comment": {
+    accepts: ["text"],
+    produces: ["text", "comment"],
+    capabilities: ["threaded-discussion"],
+  },
+  "iem.chat.voice": {
+    accepts: ["audio"],
+    produces: ["audio", "transcript", "text"],
+    capabilities: ["voice-recording", "transcription"],
+  },
+  "iem.chat.notification": {
+    accepts: ["text", "any"],
+    produces: ["notification"],
+    capabilities: ["alerting"],
+  },
+  "iem.chat.feed": {
+    accepts: ["any"],
+    produces: ["text", "event-stream"],
+    capabilities: ["agent-monitoring"],
+  },
+  "iem.chat.orchestrator": {
+    accepts: ["prompt", "text", "any"],
+    produces: ["text", "workflow", "any"],
+    capabilities: ["orchestration", "canvas-control"],
+  },
+
+  // --- Text & Knowledge ---
+  "iem.text.note": {
+    accepts: ["text"],
+    produces: ["text"],
+    capabilities: ["note-taking"],
+  },
+  "iem.text.rich": {
+    accepts: ["text", "rich-text", "markdown"],
+    produces: ["rich-text", "text"],
+    capabilities: ["rich-text-editing"],
+  },
+  "iem.text.markdown": {
+    accepts: ["text", "markdown"],
+    produces: ["markdown", "text"],
+    capabilities: ["markdown-editing"],
+  },
+  "iem.text.table": {
+    accepts: ["data", "csv", "text"],
+    produces: ["data", "csv", "text"],
+    capabilities: ["tabular-data"],
+  },
+  "iem.text.checklist": {
+    accepts: ["task", "text"],
+    produces: ["task", "text"],
+    capabilities: ["task-tracking"],
+  },
+  "iem.text.code": {
+    accepts: ["code", "text"],
+    produces: ["code", "text"],
+    capabilities: ["code-display"],
+  },
+  "iem.text.prompt": {
+    accepts: ["text"],
+    produces: ["prompt", "text"],
+    capabilities: ["prompt-authoring"],
+  },
+  "iem.text.citation": {
+    accepts: ["url", "text"],
+    produces: ["citation", "text"],
+    capabilities: ["reference-management"],
+  },
+  "iem.text.knowledge": {
+    accepts: ["text", "data"],
+    produces: ["knowledge-card", "text"],
+    capabilities: ["knowledge-synthesis"],
+  },
+  "iem.text.transcript": {
+    accepts: ["audio", "video"],
+    produces: ["transcript", "text"],
+    capabilities: ["transcription"],
+  },
+  "iem.text.brief": {
+    accepts: ["text", "citation", "data"],
+    produces: ["research-brief", "text"],
+    capabilities: ["research-summarization"],
+  },
+
+  // --- Generative Media ---
+  "iem.media.image-gen": {
+    accepts: ["prompt", "text"],
+    produces: ["image"],
+    capabilities: ["image-generation"],
+  },
+  "iem.media.image-edit": {
+    accepts: ["image", "prompt"],
+    produces: ["image"],
+    capabilities: ["image-editing"],
+  },
+  "iem.media.video-gen": {
+    accepts: ["prompt", "text", "image"],
+    produces: ["video"],
+    capabilities: ["video-generation"],
+  },
+  "iem.media.video-edit": {
+    accepts: ["video", "audio"],
+    produces: ["video"],
+    capabilities: ["video-editing"],
+  },
+  "iem.media.audio-gen": {
+    accepts: ["prompt", "text"],
+    produces: ["audio"],
+    capabilities: ["audio-generation"],
+  },
+  "iem.media.voice": {
+    accepts: ["text"],
+    produces: ["audio"],
+    capabilities: ["text-to-speech"],
+  },
+  "iem.media.music": {
+    accepts: ["prompt", "text"],
+    produces: ["audio"],
+    capabilities: ["music-generation"],
+  },
+  "iem.media.3d": {
+    accepts: ["prompt", "image"],
+    produces: ["3d-model"],
+    capabilities: ["3d-generation"],
+  },
+  "iem.media.storyboard": {
+    accepts: ["text", "image"],
+    produces: ["storyboard", "image"],
+    capabilities: ["storyboard-layout"],
+  },
+  "iem.media.creative": {
+    accepts: ["text", "image", "prompt"],
+    produces: ["image", "rich-text"],
+    capabilities: ["brand-asset-creation"],
+  },
+  "iem.media.board": {
+    accepts: ["image", "video", "audio", "file"],
+    produces: ["collection", "image"],
+    capabilities: ["media-curation"],
+  },
+
+  // --- Studios ---
+  "iem.studio.video": {
+    accepts: ["prompt", "text", "image", "video", "audio"],
+    produces: ["video", "image", "audio"],
+    capabilities: ["video-production"],
+  },
+  "iem.studio.game": {
+    accepts: ["prompt", "text", "code", "3d-model", "image"],
+    produces: ["game-project", "code", "3d-model"],
+    capabilities: ["game-development"],
+  },
+  "iem.studio.app": {
+    accepts: ["prompt", "text", "code", "requirement"],
+    produces: ["app-project", "code", "file"],
+    capabilities: ["app-development"],
+  },
+  "iem.studio.writer": {
+    accepts: ["prompt", "text", "rich-text"],
+    produces: ["manuscript", "rich-text", "text"],
+    capabilities: ["narrative-design"],
+  },
+  "iem.studio.launch": {
+    accepts: ["text", "image", "config"],
+    produces: ["deployment", "config"],
+    capabilities: ["deployment", "marketing"],
+  },
+  "iem.studio.research": {
+    accepts: ["prompt", "text", "url"],
+    produces: ["research-brief", "text", "citation"],
+    capabilities: ["deep-research"],
+  },
+  "iem.studio.commerce": {
+    accepts: ["config", "data", "text"],
+    produces: ["storefront", "product", "data"],
+    capabilities: ["commerce-management"],
+  },
+  "iem.studio.knowledge": {
+    accepts: ["text", "file", "url"],
+    produces: ["knowledge-card", "embedding", "data"],
+    capabilities: ["knowledge-management"],
+  },
+  "iem.studio.automation": {
+    accepts: ["workflow", "config", "prompt"],
+    produces: ["workflow", "data", "any"],
+    capabilities: ["workflow-automation"],
+  },
+  "iem.studio.brand": {
+    accepts: ["text", "image", "prompt"],
+    produces: ["image", "rich-text", "config"],
+    capabilities: ["brand-design"],
+  },
+  "iem.studio.saas": {
+    accepts: ["prompt", "code", "requirement"],
+    produces: ["app-project", "code"],
+    capabilities: ["saas-development"],
+  },
+  "iem.studio.world": {
+    accepts: ["prompt", "text", "3d-model"],
+    produces: ["world-data", "3d-model", "text"],
+    capabilities: ["world-building"],
+  },
+
+  // --- Runtime & Apps ---
+  "iem.app.iframe": {
+    accepts: ["url"],
+    produces: ["html"],
+    capabilities: ["web-embedding"],
+  },
+  "iem.app.web": {
+    accepts: ["code", "url"],
+    produces: ["html", "app-project"],
+    capabilities: ["web-hosting"],
+  },
+  "iem.app.game": {
+    accepts: ["game-project", "code"],
+    produces: ["game-runtime"],
+    capabilities: ["game-execution"],
+  },
+  "iem.app.simulation": {
+    accepts: ["config", "data", "code"],
+    produces: ["data", "visualization"],
+    capabilities: ["simulation-execution"],
+  },
+  "iem.app.terminal": {
+    accepts: ["command", "code"],
+    produces: ["text", "data"],
+    capabilities: ["command-execution"],
+  },
+  "iem.app.browser": {
+    accepts: ["url"],
+    produces: ["html", "data", "image"],
+    capabilities: ["web-browsing"],
+  },
+  "iem.app.api": {
+    accepts: ["url", "config"],
+    produces: ["data"],
+    capabilities: ["api-testing"],
+  },
+  "iem.app.db": {
+    accepts: ["config", "query"],
+    produces: ["data"],
+    capabilities: ["database-querying"],
+  },
+  "iem.app.dashboard": {
+    accepts: ["data"],
+    produces: ["visualization"],
+    capabilities: ["data-visualization"],
+  },
+  "iem.app.files": {
+    accepts: ["file"],
+    produces: ["file"],
+    capabilities: ["file-management"],
+  },
+  "iem.app.code-workspace": {
+    accepts: ["code", "file"],
+    produces: ["code", "file"],
+    capabilities: ["code-editing"],
+  },
+  "iem.app.preview": {
+    accepts: ["code", "html", "markdown"],
+    produces: ["html", "image"],
+    capabilities: ["live-preview"],
+  },
+
+  // --- Commerce & Intentcasting ---
+  "iem.commerce.wallet": {
+    accepts: ["config"],
+    produces: ["identity", "config"],
+    capabilities: ["wallet-management"],
+  },
+  "iem.commerce.checkout": {
+    accepts: ["product", "cart"],
+    produces: ["transaction"],
+    capabilities: ["checkout-flow"],
+  },
+  "iem.commerce.payment": {
+    accepts: ["transaction"],
+    produces: ["receipt", "transaction"],
+    capabilities: ["payment-processing"],
+  },
+  "iem.commerce.offer": {
+    accepts: ["product", "text"],
+    produces: ["offer"],
+    capabilities: ["offer-creation"],
+  },
+  "iem.commerce.intentcast": {
+    accepts: ["text", "prompt"],
+    produces: ["intent-broadcast"],
+    capabilities: ["intentcasting"],
+  },
+  "iem.commerce.brand-response": {
+    accepts: ["intent-broadcast"],
+    produces: ["offer", "text"],
+    capabilities: ["brand-response"],
+  },
+  "iem.commerce.negotiation": {
+    accepts: ["offer", "text"],
+    produces: ["agreement", "offer"],
+    capabilities: ["negotiation"],
+  },
+  "iem.commerce.storefront": {
+    accepts: ["product", "config"],
+    produces: ["storefront"],
+    capabilities: ["storefront-display"],
+  },
+  "iem.commerce.product": {
+    accepts: ["text", "image", "config"],
+    produces: ["product"],
+    capabilities: ["product-definition"],
+  },
+  "iem.commerce.digital-asset": {
+    accepts: ["file", "config"],
+    produces: ["product", "transaction"],
+    capabilities: ["digital-sales"],
+  },
+  "iem.commerce.creator": {
+    accepts: ["product", "config"],
+    produces: ["storefront", "data"],
+    capabilities: ["creator-commerce"],
+  },
+  "iem.commerce.cart": {
+    accepts: ["product", "offer"],
+    produces: ["cart"],
+    capabilities: ["cart-management"],
+  },
+
+  // --- Files & Data ---
+  "iem.data.file": {
+    accepts: ["file"],
+    produces: ["file", "text"],
+    capabilities: ["file-storage"],
+  },
+  "iem.data.dropzone": {
+    accepts: ["file"],
+    produces: ["file"],
+    capabilities: ["file-upload"],
+  },
+  "iem.data.dataset": {
+    accepts: ["data", "csv", "file"],
+    produces: ["data"],
+    capabilities: ["dataset-management"],
+  },
+  "iem.data.csv": {
+    accepts: ["csv", "file"],
+    produces: ["data", "csv"],
+    capabilities: ["csv-import"],
+  },
+  "iem.data.pod": {
+    accepts: ["text", "embedding"],
+    produces: ["embedding", "data"],
+    capabilities: ["vector-storage"],
+  },
+  "iem.data.stream": {
+    accepts: ["url", "config"],
+    produces: ["data", "event-stream"],
+    capabilities: ["data-streaming"],
+  },
+  "iem.data.cluster": {
+    accepts: ["text", "data"],
+    produces: ["data", "knowledge-card"],
+    capabilities: ["memory-clustering"],
+  },
+  "iem.data.artifact": {
+    accepts: ["any"],
+    produces: ["artifact", "file"],
+    capabilities: ["artifact-storage"],
+  },
+  "iem.data.provenance": {
+    accepts: ["any"],
+    produces: ["provenance", "data"],
+    capabilities: ["provenance-tracking"],
+  },
+  "iem.data.view": {
+    accepts: ["data"],
+    produces: ["visualization", "data"],
+    capabilities: ["data-lens"],
+  },
+
+  // --- System & Utility ---
+  "iem.sys.timer": {
+    accepts: ["config"],
+    produces: ["event"],
+    capabilities: ["timer"],
+  },
+  "iem.sys.monitor": {
+    accepts: ["any"],
+    produces: ["data", "event-stream"],
+    capabilities: ["observability"],
+  },
+  "iem.sys.settings": {
+    accepts: ["config"],
+    produces: ["config"],
+    capabilities: ["configuration"],
+  },
+  "iem.sys.env": {
+    accepts: ["config"],
+    produces: ["config"],
+    capabilities: ["secret-management"],
+  },
+  "iem.sys.trace": {
+    accepts: ["any"],
+    produces: ["data", "text"],
+    capabilities: ["debug-tracing"],
+  },
+  "iem.sys.log": {
+    accepts: ["any"],
+    produces: ["text", "data"],
+    capabilities: ["logging"],
+  },
+  "iem.sys.event-stream": {
+    accepts: ["config"],
+    produces: ["event-stream", "data"],
+    capabilities: ["event-streaming"],
+  },
+  "iem.sys.compiler": {
+    accepts: ["any"],
+    produces: ["file", "data"],
+    capabilities: ["artifact-compilation"],
+  },
+  "iem.sys.runner": {
+    accepts: ["workflow", "dag"],
+    produces: ["data", "any"],
+    capabilities: ["workflow-execution"],
+  },
+  "iem.sys.export": {
+    accepts: ["any"],
+    produces: ["file"],
+    capabilities: ["export"],
+  },
+};
+
+// Apply enrichment data to all registered blocks
+for (const [blockId, enrichment] of Object.entries(BLOCK_DATA_ENRICHMENT)) {
+  const block = blockRegistry.get(blockId);
+  if (block) {
+    if (enrichment.accepts && block.accepts?.length === 0) {
+      block.accepts = enrichment.accepts;
+    }
+    if (enrichment.produces && block.produces?.length === 0) {
+      block.produces = enrichment.produces;
+    }
+    if (enrichment.capabilities && block.capabilities?.length === 0) {
+      block.capabilities = enrichment.capabilities;
+    }
+  }
+}

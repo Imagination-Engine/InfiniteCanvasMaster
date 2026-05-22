@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
@@ -82,6 +82,11 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/generated-media": {
         target: "http://localhost:3001",
         changeOrigin: true,
         secure: false,
