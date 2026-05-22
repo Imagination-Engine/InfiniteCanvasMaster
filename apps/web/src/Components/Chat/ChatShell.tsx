@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../../auth/AuthContext";
 import { Markdown } from "./Markdown";
@@ -22,20 +22,52 @@ interface ChatShellProps {
   apiEndpoint?: string; // Allow overriding the default API
 }
 
-export const ChatShell: React.FC<ChatShellProps> = ({
+export const ChatShell: React.FC<ChatShellProps> = (props) => {
+  const { accessToken, loading } = useAuth();
+
+  // 1. Wait for auth to be resolved to prevent 401 on initial handshake
+  if (loading || !accessToken) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-brand-bg-surface/50">
+        <div className="w-8 h-8 rounded-full border-2 border-brand-purple/20 border-t-brand-purple animate-spin mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-brand-text-muted">
+          Authenticating Engine...
+        </p>
+      </div>
+    );
+  }
+
+  // 2. FORCE RE-INITIALIZATION: Use a unique key based on block/project/token
+  // This ensures that useChat (which can be non-reactive to option changes)
+  // always has the latest config when the context shifts.
+  const instanceKey = `${props.projectId}-${props.blockId || "main"}-${accessToken.slice(-8)}`;
+
+  return (
+    <ChatInternal {...props} key={instanceKey} accessToken={accessToken} />
+  );
+};
+
+/**
+ * Internal Chat Component: Handles the actual useChat hook logic.
+ * Isolate here so it can be completely unmounted/remounted by the parent's key.
+ */
+const ChatInternal: React.FC<ChatShellProps & { accessToken: string }> = ({
   projectId,
   blockId,
   initialMessages = [],
   fullScreen = false,
   apiEndpoint = "/api/chat",
+  accessToken,
 }) => {
-  const { accessToken } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const objects = useCanvasStore((s) => s.objects);
   const connections = useConnectionStore((s) => s.connections);
 
   // Determine final API endpoint based on blockId
-  const finalApi = blockId ? `${apiEndpoint}/block` : apiEndpoint;
+  const baseApi = blockId ? `${apiEndpoint}/block` : apiEndpoint;
+
+  // ROBUST AUTH FALLBACK: Use query param as tertiary fallback for standard fetch handlers
+  const finalApi = `${baseApi}?token=${accessToken}`;
 
   // LOCAL STATE OVERRIDE for input to bypass SDK synchronization issues
   const [localInput, setLocalInput] = useState("");
@@ -43,12 +75,12 @@ export const ChatShell: React.FC<ChatShellProps> = ({
   const chatResult = useChat({
     api: finalApi,
     headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      Authorization: `Bearer ${accessToken}`,
     },
     body: {
       sessionId: projectId,
-      projectId, // Pass both for compatibility
-      blockId, // Specifically for specialized chat
+      projectId,
+      blockId,
       canvasContext: {
         nodes: Object.values(objects).map((n: any) => ({
           id: n.id,
@@ -62,9 +94,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
   });
 
   // ROBUST PROPERTY RESOLUTION
-  // Detect if the hook returned an array (legacy/alt pattern) or an object (standard/modern)
   const isArray = Array.isArray(chatResult);
-
   const messages = isArray ? chatResult[0] : chatResult.messages || [];
   const status = !isArray ? (chatResult as any).status : undefined;
   const isLoading = isArray
@@ -76,12 +106,10 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       false;
   const error = isArray ? chatResult[5] : chatResult.error;
 
-  // Handlers with exhaustive fallbacks
   const stop = isArray
     ? chatResult[6]
     : chatResult.stop || (chatResult as any).abort || (() => {});
 
-  // Submission resolution (append, sendMessage, handleSubmit, etc.)
   const append = isArray
     ? chatResult[7]
     : chatResult.append ||
@@ -94,18 +122,19 @@ export const ChatShell: React.FC<ChatShellProps> = ({
     const content = localInput.trim();
     if (!content || isLoading) return;
 
-    console.log("[CHAT-SHELL] Manual submit initiated:", {
-      content,
-      isArray,
-      hasAppend: typeof append === "function",
-      keys: isArray ? "array" : Object.keys(chatResult),
+    console.log("[CHAT-SHELL] Manual submit triggered:", {
+      projectId,
+      blockId,
+      finalApi: finalApi.split("?")[0],
+      hasToken: !!accessToken,
+      isLoading,
+      status,
     });
 
     try {
       setLocalInput(""); // Clear immediately for UX
 
       if (typeof append === "function") {
-        // Handle different call signatures (standard append vs modern sendMessage)
         if ((chatResult as any).sendMessage) {
           await (append as any)({
             role: "user",
@@ -117,9 +146,6 @@ export const ChatShell: React.FC<ChatShellProps> = ({
             content,
           } as any);
         }
-      } else if (typeof (chatResult as any).append === "function") {
-        // Direct access fallback
-        await (chatResult as any).append({ role: "user", content });
       } else {
         throw new Error(
           `No submission handler found. Keys: ${isArray ? "array" : Object.keys(chatResult).join(", ")}`,
@@ -130,15 +156,6 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       setLocalInput(content); // Restore on failure
     }
   };
-
-  console.log("[CHAT-SHELL] Component Render State:", {
-    projectId,
-    blockId,
-    finalApi,
-    isArray,
-    keys: isArray ? "array" : Object.keys(chatResult),
-    isLoading,
-  });
 
   // Automatically scroll to bottom as new messages stream in
   useAutoScroll(messagesEndRef, [messages, isLoading, error]);
