@@ -21,3 +21,12 @@ export * from "./fabric/index.js";
 export * from "./studio/index.js";
 
 export * from "./bus/MessageBus.js";
+
+// Export Balnce universal block contract & runtime systems
+export * from "./canvas/blocks/core/BlockPorts.js";
+export * from "./canvas/blocks/core/BalnceBlockSpec.js";
+export * from "./canvas/blocks/core/BalnceBlockInstance.js";
+export * from "./canvas/blocks/core/BlockEvents.js";
+export * from "./canvas/blocks/core/BalnceBlockRuntime.js";
+export * from "./canvas/runtime/BlockRuntimeRegistry.js";
+export * from "./canvas/runtime/RuntimeEventBus.js";
