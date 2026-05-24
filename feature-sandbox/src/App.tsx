@@ -1,13 +1,63 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import GoalChatPage from "./GoalChatPage";
 import WorkflowPage from "./WorkflowPage";
+import AuthPage from "./AuthPage";
+import GalleryPage from "./GalleryPage";
+import { supabase } from "./supabase";
+import { useWorkflowStore } from "./store";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { session } = useWorkflowStore();
+  if (!session) return <Navigate to="/auth" />;
+  return <>{children}</>;
+}
 
 export default function App() {
+  const { setSession } = useWorkflowStore();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setSession]);
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<GoalChatPage />} />
-        <Route path="/workflow" element={<WorkflowPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <GoalChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workflow"
+          element={
+            <ProtectedRoute>
+              <WorkflowPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gallery"
+          element={
+            <ProtectedRoute>
+              <GalleryPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
