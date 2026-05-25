@@ -59,12 +59,12 @@ export declare const ModelAliasSchema: z.ZodObject<
           "strip",
           z.ZodTypeAny,
           {
-            model: string;
             provider: string;
+            model: string;
           },
           {
-            model: string;
             provider: string;
+            model: string;
           }
         >,
         "many"
@@ -74,24 +74,24 @@ export declare const ModelAliasSchema: z.ZodObject<
   "strip",
   z.ZodTypeAny,
   {
-    model: string;
     alias: string;
     provider: string;
+    model: string;
     fallbacks?:
       | {
-          model: string;
           provider: string;
+          model: string;
         }[]
       | undefined;
   },
   {
-    model: string;
     alias: string;
     provider: string;
+    model: string;
     fallbacks?:
       | {
-          model: string;
           provider: string;
+          model: string;
         }[]
       | undefined;
   }
@@ -108,19 +108,19 @@ export declare const ToolMountSchema: z.ZodObject<
   "strip",
   z.ZodTypeAny,
   {
+    provider: string;
     status: "mock" | "configured" | "active";
     id: string;
-    description: string;
     name: string;
-    provider: string;
+    description: string;
     configSchema?: Record<string, unknown> | undefined;
   },
   {
+    provider: string;
     status: "mock" | "configured" | "active";
     id: string;
-    description: string;
     name: string;
-    provider: string;
+    description: string;
     configSchema?: Record<string, unknown> | undefined;
   }
 >;
@@ -181,7 +181,6 @@ export declare const StudioArtifactSchema: z.ZodObject<
       "strip",
       z.ZodTypeAny,
       {
-        version: number;
         sourceBlockId: string;
         studioId:
           | "agent-studio"
@@ -197,9 +196,9 @@ export declare const StudioArtifactSchema: z.ZodObject<
           | "automation-studio"
           | "brand-studio";
         createdAt: string;
+        version: number;
       },
       {
-        version: number;
         sourceBlockId: string;
         studioId:
           | "agent-studio"
@@ -215,14 +214,15 @@ export declare const StudioArtifactSchema: z.ZodObject<
           | "automation-studio"
           | "brand-studio";
         createdAt: string;
+        version: number;
       }
     >;
   },
   "strip",
   z.ZodTypeAny,
   {
+    contractId: string;
     metadata: {
-      version: number;
       sourceBlockId: string;
       studioId:
         | "agent-studio"
@@ -238,13 +238,13 @@ export declare const StudioArtifactSchema: z.ZodObject<
         | "automation-studio"
         | "brand-studio";
       createdAt: string;
+      version: number;
     };
-    contractId: string;
     data?: unknown;
   },
   {
+    contractId: string;
     metadata: {
-      version: number;
       sourceBlockId: string;
       studioId:
         | "agent-studio"
@@ -260,8 +260,8 @@ export declare const StudioArtifactSchema: z.ZodObject<
         | "automation-studio"
         | "brand-studio";
       createdAt: string;
+      version: number;
     };
-    contractId: string;
     data?: unknown;
   }
 >;
@@ -276,14 +276,14 @@ export declare const CapabilityDefinitionSchema: z.ZodObject<
   z.ZodTypeAny,
   {
     id: string;
-    description: string;
     name: string;
+    description: string;
     requiresToolMounts?: string[] | undefined;
   },
   {
     id: string;
-    description: string;
     name: string;
+    description: string;
     requiresToolMounts?: string[] | undefined;
   }
 >;
@@ -344,14 +344,14 @@ export declare const StudioManifestSchema: z.ZodObject<
         z.ZodTypeAny,
         {
           id: string;
-          description: string;
           name: string;
+          description: string;
           requiresToolMounts?: string[] | undefined;
         },
         {
           id: string;
-          description: string;
           name: string;
+          description: string;
           requiresToolMounts?: string[] | undefined;
         }
       >,
@@ -370,19 +370,19 @@ export declare const StudioManifestSchema: z.ZodObject<
         "strip",
         z.ZodTypeAny,
         {
+          provider: string;
           status: "mock" | "configured" | "active";
           id: string;
-          description: string;
           name: string;
-          provider: string;
+          description: string;
           configSchema?: Record<string, unknown> | undefined;
         },
         {
+          provider: string;
           status: "mock" | "configured" | "active";
           id: string;
-          description: string;
           name: string;
-          provider: string;
+          description: string;
           configSchema?: Record<string, unknown> | undefined;
         }
       >,
@@ -435,12 +435,12 @@ export declare const StudioManifestSchema: z.ZodObject<
                 "strip",
                 z.ZodTypeAny,
                 {
-                  model: string;
                   provider: string;
+                  model: string;
                 },
                 {
-                  model: string;
                   provider: string;
+                  model: string;
                 }
               >,
               "many"
@@ -450,24 +450,24 @@ export declare const StudioManifestSchema: z.ZodObject<
         "strip",
         z.ZodTypeAny,
         {
-          model: string;
           alias: string;
           provider: string;
+          model: string;
           fallbacks?:
             | {
-                model: string;
                 provider: string;
+                model: string;
               }[]
             | undefined;
         },
         {
-          model: string;
           alias: string;
           provider: string;
+          model: string;
           fallbacks?:
             | {
-                model: string;
                 provider: string;
+                model: string;
               }[]
             | undefined;
         }
@@ -513,23 +513,23 @@ export declare const StudioManifestSchema: z.ZodObject<
       | "media-studio"
       | "automation-studio"
       | "brand-studio";
-    capabilities: {
-      id: string;
-      description: string;
-      name: string;
-      requiresToolMounts?: string[] | undefined;
-    }[];
-    description: string;
     name: string;
+    description: string;
     icon: string;
     accent: string;
     blockIds: string[];
+    capabilities: {
+      id: string;
+      name: string;
+      description: string;
+      requiresToolMounts?: string[] | undefined;
+    }[];
     toolMounts: {
+      provider: string;
       status: "mock" | "configured" | "active";
       id: string;
-      description: string;
       name: string;
-      provider: string;
+      description: string;
       configSchema?: Record<string, unknown> | undefined;
     }[];
     artifactContracts: {
@@ -541,13 +541,13 @@ export declare const StudioManifestSchema: z.ZodObject<
       schema?: Record<string, unknown> | undefined;
     }[];
     modelAliases: {
-      model: string;
       alias: string;
       provider: string;
+      model: string;
       fallbacks?:
         | {
-            model: string;
             provider: string;
+            model: string;
           }[]
         | undefined;
     }[];
@@ -572,23 +572,23 @@ export declare const StudioManifestSchema: z.ZodObject<
       | "media-studio"
       | "automation-studio"
       | "brand-studio";
-    capabilities: {
-      id: string;
-      description: string;
-      name: string;
-      requiresToolMounts?: string[] | undefined;
-    }[];
-    description: string;
     name: string;
+    description: string;
     icon: string;
     accent: string;
     blockIds: string[];
+    capabilities: {
+      id: string;
+      name: string;
+      description: string;
+      requiresToolMounts?: string[] | undefined;
+    }[];
     toolMounts: {
+      provider: string;
       status: "mock" | "configured" | "active";
       id: string;
-      description: string;
       name: string;
-      provider: string;
+      description: string;
       configSchema?: Record<string, unknown> | undefined;
     }[];
     artifactContracts: {
@@ -600,13 +600,13 @@ export declare const StudioManifestSchema: z.ZodObject<
       schema?: Record<string, unknown> | undefined;
     }[];
     modelAliases: {
-      model: string;
       alias: string;
       provider: string;
+      model: string;
       fallbacks?:
         | {
-            model: string;
             provider: string;
+            model: string;
           }[]
         | undefined;
     }[];

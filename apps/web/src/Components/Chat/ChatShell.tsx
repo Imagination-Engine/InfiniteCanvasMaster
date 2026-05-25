@@ -1,9 +1,9 @@
 // @ts-nocheck
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../../auth/AuthContext";
 import { Markdown } from "./Markdown";
-import { Bot, ChevronRight, ArrowUp, Square } from "lucide-react";
+import { Bot, ChevronRight, ArrowUp, Square, ChevronDown } from "lucide-react";
 import {
   GrowingTextarea,
   ToolCallBlock,
@@ -17,35 +17,71 @@ import {
 
 interface ChatShellProps {
   projectId: string;
+  blockId?: string; // Added for specialized block agent chat
   initialMessages?: any[];
   fullScreen?: boolean;
+  apiEndpoint?: string; // Allow overriding the default API
 }
 
-export const ChatShell: React.FC<ChatShellProps> = ({
+export const ChatShell: React.FC<ChatShellProps> = (props) => {
+  const { accessToken, loading } = useAuth();
+
+  // 1. Wait for auth to be resolved to prevent 401 on initial handshake
+  if (loading || !accessToken) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-brand-bg-surface/50">
+        <div className="w-8 h-8 rounded-full border-2 border-brand-purple/20 border-t-brand-purple animate-spin mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-brand-text-muted">
+          Authenticating Engine...
+        </p>
+      </div>
+    );
+  }
+
+  // 2. FORCE RE-INITIALIZATION: Use a unique key based on block/project/token
+  // This ensures that useChat (which can be non-reactive to option changes)
+  // always has the latest config when the context shifts.
+  const instanceKey = `${props.projectId}-${props.blockId || "main"}-${accessToken.slice(-8)}`;
+
+  return (
+    <ChatInternal {...props} key={instanceKey} accessToken={accessToken} />
+  );
+};
+
+/**
+ * Internal Chat Component: Handles the actual useChat hook logic.
+ * Isolate here so it can be completely unmounted/remounted by the parent's key.
+ */
+const ChatInternal: React.FC<ChatShellProps & { accessToken: string }> = ({
   projectId,
+  blockId,
   initialMessages = [],
   fullScreen = false,
+  apiEndpoint = "/api/chat",
+  accessToken,
 }) => {
-  const { accessToken } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { objects } = useCanvasStore();
-  const { connections } = useConnectionStore();
+  const objects = useCanvasStore((s) => s.objects);
+  const connections = useConnectionStore((s) => s.connections);
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-    stop,
-  } = useChat({
-    api: "http://localhost:3001/api/chat",
+  // Determine final API endpoint based on blockId
+  const baseApi = blockId ? `${apiEndpoint}/block` : apiEndpoint;
+
+  // ROBUST AUTH FALLBACK: Use query param as tertiary fallback for standard fetch handlers
+  const finalApi = `${baseApi}?token=${accessToken}`;
+
+  // LOCAL STATE OVERRIDE for input to bypass SDK synchronization issues
+  const [localInput, setLocalInput] = useState("");
+
+  const chatResult = useChat({
+    api: finalApi,
     headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      Authorization: `Bearer ${accessToken}`,
     },
     body: {
       sessionId: projectId,
+      projectId,
+      blockId,
       canvasContext: {
         nodes: Object.values(objects).map((n: any) => ({
           id: n.id,
@@ -56,14 +92,78 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       },
     },
     initialMessages: initialMessages as any,
-  } as any) as any;
+  });
+
+  // ROBUST PROPERTY RESOLUTION
+  const isArray = Array.isArray(chatResult);
+  const messages = isArray ? chatResult[0] : chatResult.messages || [];
+  const status = !isArray ? (chatResult as any).status : undefined;
+  const isLoading = isArray
+    ? chatResult[4]
+    : chatResult.isLoading ||
+      status === "loading" ||
+      status === "streaming" ||
+      status === "submitting" ||
+      false;
+  const error = isArray ? chatResult[5] : chatResult.error;
+
+  const stop = isArray
+    ? chatResult[6]
+    : chatResult.stop || (chatResult as any).abort || (() => {});
+
+  const append = isArray
+    ? chatResult[7]
+    : chatResult.append ||
+      (chatResult as any).sendMessage ||
+      (chatResult as any).handleSubmit ||
+      (chatResult as any).onSubmit;
+
+  const handleManualSubmit = async (e?: any) => {
+    if (e?.preventDefault) e.preventDefault();
+    const content = localInput.trim();
+    if (!content || isLoading) return;
+
+    console.log("[CHAT-SHELL] Manual submit triggered:", {
+      projectId,
+      blockId,
+      finalApi: finalApi.split("?")[0],
+      hasToken: !!accessToken,
+      isLoading,
+      status,
+    });
+
+    try {
+      setLocalInput(""); // Clear immediately for UX
+
+      if (typeof append === "function") {
+        if ((chatResult as any).sendMessage) {
+          await (append as any)({
+            role: "user",
+            content,
+          });
+        } else {
+          await append({
+            role: "user",
+            content,
+          } as any);
+        }
+      } else {
+        throw new Error(
+          `No submission handler found. Keys: ${isArray ? "array" : Object.keys(chatResult).join(", ")}`,
+        );
+      }
+    } catch (err) {
+      console.error("[CHAT-SHELL] Manual submit failed:", err);
+      setLocalInput(content); // Restore on failure
+    }
+  };
 
   // Automatically scroll to bottom as new messages stream in
   useAutoScroll(messagesEndRef, [messages, isLoading, error]);
 
   const { handleKeyDown, handleButtonClick } = useComposerSubmit({
-    onSubmit: () => handleSubmit(new Event("submit") as any),
-    onStop: stop,
+    onSubmit: handleManualSubmit,
+    onStop: stop as any,
     isStreaming: isLoading,
   });
 
@@ -138,19 +238,27 @@ export const ChatShell: React.FC<ChatShellProps> = ({
       )}
 
       <div className="p-4 bg-white/[0.02] border-t border-white/5">
-        <form onSubmit={handleSubmit} className="flex items-end group w-full">
+        <form
+          onSubmit={handleManualSubmit}
+          className="flex items-end group w-full"
+        >
           <GrowingTextarea
-            value={input}
-            onChange={handleInputChange}
+            value={localInput}
+            onChange={(e) => {
+              console.log("[CHAT-SHELL] Local Input change:", e.target.value);
+              setLocalInput(e.target.value);
+            }}
             placeholder="Instruct the engine..."
             onKeyDown={handleKeyDown as any}
-            onEnter={() => handleSubmit(new Event("submit") as any)}
+            onEnter={() => {
+              console.log("[CHAT-SHELL] Enter pressed");
+              handleManualSubmit();
+            }}
             onFileSelect={(files) => console.log("Files selected:", files)}
             actions={
               <button
-                type="button"
-                onClick={handleButtonClick}
-                disabled={!(input || "").trim() && !isLoading}
+                type="submit"
+                disabled={!localInput.trim() && !isLoading}
                 className="w-10 h-10 flex items-center justify-center bg-brand-purple hover:bg-brand-cyan text-white rounded-full transition-all disabled:opacity-50 disabled:hover:bg-brand-purple"
               >
                 {isLoading ? (

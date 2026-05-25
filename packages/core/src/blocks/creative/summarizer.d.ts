@@ -9,13 +9,13 @@ export declare const SummarizerInput: z.ZodObject<
   "strip",
   z.ZodTypeAny,
   {
-    text?: string | undefined;
     sources?: string[] | undefined;
+    text?: string | undefined;
     additionalInstructions?: string | undefined;
   },
   {
-    text?: string | undefined;
     sources?: string[] | undefined;
+    text?: string | undefined;
     additionalInstructions?: string | undefined;
   }
 >;

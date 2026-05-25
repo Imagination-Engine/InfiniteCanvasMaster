@@ -2,6 +2,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExpansionStore } from "../state/expansionStore";
+import { useShellStore } from "../state/shellStore";
 import { BaseCanvasObject } from "../contracts";
 
 interface ExpandableBlockWrapperProps {
@@ -15,11 +16,12 @@ export const ExpandableBlockWrapper: React.FC<ExpandableBlockWrapperProps> = ({
 }) => {
   const { activeExpansionId, activeMode, setExpanded, clearExpanded } =
     useExpansionStore();
+  const { canvasId: projectId } = useShellStore();
   const isExpanded = activeExpansionId === block.id;
 
   const handleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpanded(block.id, "fullscreen");
+    setExpanded(block.id, "fullscreen", projectId);
   };
 
   const handleClose = (e: React.MouseEvent) => {

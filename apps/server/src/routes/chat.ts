@@ -192,4 +192,151 @@ Identify the best blocks from the registry (scribe, playable, reel, forge, atlas
   }
 });
 
+chatRouter.post("/block", async (c) => {
+  const db = c.get("db") as any;
+  const user = c.get("user") as any;
+  const body = await c.req.json();
+
+  const { blockId, projectId, messages } = body;
+
+  if (!blockId || !projectId) {
+    return c.json({ error: "blockId and projectId are required" }, 400);
+  }
+
+  // 1. Verify ownership and existence
+  const [workspace] = await db
+    .select()
+    .from(workspaces as any)
+    .where(eq((workspaces as any).id, projectId));
+
+  if (!workspace || workspace.ownerId !== user.sub) {
+    return c.json({ error: "Project not found or unauthorized" }, 403);
+  }
+
+  try {
+    const { AgentFactory, mastra } = await import("@iem/agents");
+    const { blockRegistry } = await import("@iem/core");
+    const { nodes } = await import("@iem/db");
+
+    // 2. Resolve Block Definition from DB
+    const [node] = await db
+      .select()
+      .from(nodes as any)
+      .where(eq((nodes as any).id, blockId));
+
+    if (!node) {
+      return c.json({ error: "Block not found on canvas" }, 404);
+    }
+
+    // 3. Resolve Block Logic/Persona from Registry
+    const definition = (blockRegistry as any).get(node.type);
+    if (!definition) {
+      return c.json(
+        { error: `Block definition not found for type: ${node.type}` },
+        404,
+      );
+    }
+
+    // 4. Create Agent via Factory
+    const factory = new AgentFactory({ storage: mastra.storage });
+    const agent = await factory.createAgentForBlock(definition);
+
+    // 5. Scoped Thread ID (Project + Block isolation)
+    const threadId = `${projectId}:${blockId}`;
+
+    // 6. Stream Chat using Mastra Agent
+    console.log(
+      `[BLOCK-CHAT] Initiating stream for block: ${node.id} (${node.type}) on thread: ${threadId}`,
+    );
+
+    const result = await agent.stream(messages, {
+      threadId,
+      resourceId: user.sub,
+    });
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of result.textStream) {
+            controller.enqueue(encoder.encode(`0:${JSON.stringify(chunk)}\n`));
+          }
+
+          const rawToolCalls = await result.toolCalls;
+          const rawToolResults = await result.toolResults;
+          const steps = await (result as any).steps;
+
+          if (rawToolCalls && rawToolCalls.length > 0) {
+            for (const wrapper of rawToolCalls) {
+              const toolCall = wrapper.payload || wrapper;
+              const resultWrapper = rawToolResults?.find((r: any) => {
+                const resPayload = r.payload || r;
+                return resPayload.toolCallId === toolCall.toolCallId;
+              });
+              const toolResult = resultWrapper
+                ? resultWrapper.payload || resultWrapper
+                : undefined;
+
+              const uiToolPayload = {
+                toolCallId: toolCall.toolCallId,
+                toolName: toolCall.toolName,
+                args: toolCall.args,
+                result: toolResult ? toolResult.result : undefined,
+              };
+              controller.enqueue(
+                encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
+              );
+            }
+          } else if (steps && steps.length > 0) {
+            for (const step of steps) {
+              if (step.toolCalls && step.toolCalls.length > 0) {
+                for (const wrapper of step.toolCalls) {
+                  const toolCall = wrapper.payload || wrapper;
+                  const resultWrapper = step.toolResults?.find((r: any) => {
+                    const resPayload = r.payload || r;
+                    return resPayload.toolCallId === toolCall.toolCallId;
+                  });
+                  const toolResult = resultWrapper
+                    ? resultWrapper.payload || resultWrapper
+                    : undefined;
+
+                  const uiToolPayload = {
+                    toolCallId: toolCall.toolCallId,
+                    toolName: toolCall.toolName,
+                    args: toolCall.args,
+                    result: toolResult ? toolResult.result : undefined,
+                  };
+                  controller.enqueue(
+                    encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
+                  );
+                }
+              }
+            }
+          }
+        } catch (err: any) {
+          console.error("[BLOCK-STREAM-ERROR]:", err);
+          controller.enqueue(
+            encoder.encode(`3:{"message":${JSON.stringify(err.message)}}\n`),
+          );
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "x-vercel-ai-data-stream": "v1",
+      },
+    });
+  } catch (error: any) {
+    console.error("[BLOCK-CHAT-ERROR]:", error);
+    return c.json(
+      { error: "Block agent chat failed", message: error.message },
+      500,
+    );
+  }
+});
+
 export { chatRouter };

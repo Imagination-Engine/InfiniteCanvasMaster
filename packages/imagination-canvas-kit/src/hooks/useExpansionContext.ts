@@ -2,12 +2,14 @@
 import { useCallback } from "react";
 import { useExpansionStore, ExpansionMode } from "../state/expansionStore";
 import { useViewportStore } from "../state/viewportStore";
+import { useShellStore } from "../state/shellStore";
 
 export const useExpansionContext = () => {
   const triggerExpansion = useCallback(
     (blockId: string, mode: ExpansionMode) => {
       const viewportStore = useViewportStore.getState();
       const expansionStore = useExpansionStore.getState();
+      const shellStore = useShellStore.getState();
 
       // Push current camera state
       viewportStore.focusOn(
@@ -16,7 +18,7 @@ export const useExpansionContext = () => {
       );
 
       // Set expansion
-      expansionStore.setExpanded(blockId, mode);
+      expansionStore.setExpanded(blockId, mode, shellStore.canvasId);
     },
     [],
   );

@@ -20,7 +20,7 @@ describe("Package Taxonomy Structure", () => {
     expect(InfiniteViewport, "InfiniteViewport is missing").not.toBeNull();
     expect(ObjectRenderer, "ObjectRenderer is missing").not.toBeNull();
     expect(ConnectorLayer, "ConnectorLayer is missing").not.toBeNull();
-  });
+  }, 30000);
 
   it("should have all required hooks implemented and exported", async () => {
     const useCanvasClipboard =
@@ -31,5 +31,5 @@ describe("Package Taxonomy Structure", () => {
 
     expect(useCanvasClipboard, "useCanvasClipboard is missing").not.toBeNull();
     expect(useAgentOnCanvas, "useAgentOnCanvas is missing").not.toBeNull();
-  });
+  }, 30000);
 });

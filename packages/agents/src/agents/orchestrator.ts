@@ -61,7 +61,7 @@ export const createOrchestrator = async (storage?: any) => {
       Studio blocks (iem.studio.*) produce typed artifacts (manuscript, video-project, game-project, etc.).
       Suggest compatible next-step blocks only when their accepts overlap the source produces.
     `,
-    model: google("gemini-2.5-pro"),
+    model: google("gemini-2.5-flash"),
     tools,
     memory: storage ? new Memory({ storage }) : undefined,
   });
@@ -71,6 +71,6 @@ export const orchestrator = new Agent({
   id: "orchestrator",
   name: "Imagination Orchestrator",
   instructions: "Initializing...",
-  model: google("gemini-2.5-pro"),
+  model: google("gemini-2.5-flash"),
   tools: { generate_canvas_blueprint },
 });

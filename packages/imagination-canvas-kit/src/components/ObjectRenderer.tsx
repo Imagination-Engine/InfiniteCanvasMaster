@@ -4,6 +4,7 @@ import type { CanvasObject } from "../contracts";
 import { useSelectionStore } from "../state/selectionStore";
 import { useExpansionStore } from "../state/expansionStore";
 import { useViewportStore } from "../state/viewportStore";
+import { useShellStore } from "../state/shellStore";
 import { useCanvasStore } from "../state/canvasStore";
 import { useConnectionStore } from "../state/connectionStore";
 import { BlockRegistry } from "../contracts/BlockRegistry";
@@ -43,6 +44,7 @@ export const ObjectRenderer: React.FC<{
   const { selectedIds, setSelection, setHovered, hoveredId } =
     useSelectionStore();
   const { setExpanded } = useExpansionStore();
+  const { canvasId: projectId } = useShellStore();
   const { x: viewportX, y: viewportY, zoom: viewportZoom } = useViewportStore();
   const updateObject = useCanvasStore((s) => s.updateObject);
   const addConnection = useConnectionStore((s) => s.addConnection);
@@ -115,7 +117,7 @@ export const ObjectRenderer: React.FC<{
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpanded(object.id, "fullscreen");
+    setExpanded(object.id, "fullscreen", projectId);
   };
 
   const handleParamsChange = (newParams: any) => {
@@ -262,11 +264,11 @@ export const ObjectRenderer: React.FC<{
               onMouseLeave={() => setIsExpandHovered(false)}
               onPointerUp={(e) => {
                 e.stopPropagation();
-                setExpanded(object.id, "fullscreen");
+                setExpanded(object.id, "fullscreen", projectId);
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                setExpanded(object.id, "fullscreen");
+                setExpanded(object.id, "fullscreen", projectId);
               }}
               className="p-1.5 text-brand-cyan hover:bg-brand-cyan rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
               title="Expand"
