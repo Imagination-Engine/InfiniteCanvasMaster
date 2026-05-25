@@ -2,7 +2,6 @@
 import React from "react";
 import {
   buildManuscriptArtifact,
-  buildVideoProjectArtifact,
   buildGameProjectArtifact,
   buildAppProjectArtifact,
   buildStorefrontArtifact,
@@ -10,6 +9,7 @@ import {
   buildResearchBriefArtifact,
 } from "@iem/core";
 import { createStudioBlock } from "./createStudioBlock";
+import { VideoStudioBlock } from "./VideoStudioBlock";
 
 const summaryText = (payload: Record<string, unknown>, key: string) =>
   String(payload[key] || "Empty — open fullscreen to edit");
@@ -30,20 +30,7 @@ export const WriterStudioBlock = createStudioBlock({
   renderSummary: (p) => summaryText(p, "body"),
 });
 
-export const VideoStudioBlock = createStudioBlock({
-  blockId: "iem.studio.video",
-  contractId: "video-project",
-  compactLabel: "Video Project",
-  fullscreenTitle: "Video Studio — Timeline",
-  placeholder: "Describe your first scene…",
-  defaultPayload: { title: "Untitled Reel", scenes: [] },
-  buildArtifact: (_id, p) =>
-    buildVideoProjectArtifact("iem.studio.video", {
-      title: String(p.title ?? "Untitled Reel"),
-      scenes: Array.isArray(p.scenes) ? p.scenes : [],
-    }),
-  renderSummary: (p) => summaryText(p, "title"),
-});
+export { VideoStudioBlock };
 
 export const GameStudioBlock = createStudioBlock({
   blockId: "iem.studio.game",

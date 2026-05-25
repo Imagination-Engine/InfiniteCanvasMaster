@@ -25,7 +25,7 @@ describe("orchestratorContext", () => {
   });
 
   it("detects mocked tool mounts for video studio blocks", () => {
-    const missing = getMissingToolMountsForBlock("iem.media.video-gen");
+    const missing = getMissingToolMountsForBlock("iem.studio.video");
     expect(missing.some((m) => m.status === "mock")).toBe(true);
   });
 });

@@ -1,3 +1,4 @@
+import { normalizeCanvasBlockId } from "@iem/core";
 import { apiRequest } from "../../lib/api";
 
 /**
@@ -14,7 +15,9 @@ export async function runCreativeNode(
   try {
     // 1. Map legacy frontend IDs to canonical reverse-DNS IDs if needed
     // In a mature system, nodeType would always be the canonical ID (e.g. iem.core.refiner)
-    const blockId = nodeType.includes(".") ? nodeType : `iem.core.${nodeType}`;
+    const blockId = normalizeCanvasBlockId(
+      nodeType.includes(".") ? nodeType : `iem.core.${nodeType}`,
+    );
 
     console.log(`[EXECUTION] Dispatching ${blockId} to server...`);
 

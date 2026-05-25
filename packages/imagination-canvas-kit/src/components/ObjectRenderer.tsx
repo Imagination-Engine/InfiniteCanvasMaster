@@ -16,7 +16,7 @@ import { OpenClawAgentGroupBlock } from "./blocks/OpenClawAgentGroupBlock";
 import { CommonBlockView } from "./blocks/CommonBlockView";
 import { resolveBlockIcon } from "../utils/blockIconMap";
 import { Maximize2, GripHorizontal, Activity, AlertCircle } from "lucide-react";
-import { studioInteropResolver } from "@iem/core";
+import { normalizeCanvasBlockId, studioInteropResolver } from "@iem/core";
 
 export type ComponentRegistry = Record<
   string,
@@ -121,15 +121,7 @@ export const ObjectRenderer: React.FC<{
   };
 
   const handleParamsChange = (newParams: any) => {
-    updateObject(object.id, {
-      metadata: {
-        ...object.metadata,
-        inputs: {
-          ...(object.metadata.inputs || {}),
-          ...newParams,
-        },
-      },
-    });
+    useCanvasStore.getState().patchObjectMetadata(object.id, newParams);
   };
 
   const polyfilledData = {
@@ -196,7 +188,12 @@ export const ObjectRenderer: React.FC<{
           (sourceObj as any)?.blockKind || sourceObj?.type || sourceId;
         const targetKind = (object as any).blockKind || object.type;
 
-        if (!studioInteropResolver.canConnectBlocks(sourceKind, targetKind)) {
+        if (
+          !studioInteropResolver.canConnectBlocks(
+            normalizeCanvasBlockId(sourceKind),
+            normalizeCanvasBlockId(targetKind),
+          )
+        ) {
           e.preventDefault();
           return;
         }

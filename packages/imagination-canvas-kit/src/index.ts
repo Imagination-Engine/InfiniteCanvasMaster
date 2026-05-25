@@ -8,6 +8,7 @@ export * from "./state/connectionStore";
 export * from "./state/expansionStore";
 
 export * from "./utils/camera";
+export * from "./utils/spatialDocumentBridge";
 
 export * from "./components/InfiniteViewport";
 export * from "./components/ObjectRenderer";

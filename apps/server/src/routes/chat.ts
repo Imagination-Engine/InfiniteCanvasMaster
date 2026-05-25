@@ -90,7 +90,14 @@ CRITICAL MISSION: When a user describes a goal, idea, or request, you MUST decon
 
 The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_id' parameter of every tool call. Also, pass the session thread ID "${sessionId}" to the 'session_id' parameter if generating a blueprint to link history.
 
-Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.${canvasSystemPrompt}`,
+Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.
+
+REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
+- Reference stills: "iem.reel.textToImage" (one node per key frame; put the full Gemini image prompt in node description and recommended_params.prompt).
+- Video forge: "iem.studio.video" — REQUIRED when the user wants a reel, video, animation, or to forge footage from reference images.
+- Pattern: connect each iem.reel.textToImage → iem.studio.video (edges source→target). Put the motion/Veo prompt on the video studio node description.
+- Anime / screencap requests: preserve style instructions in EACH textToImage description (e.g. ufotable style, Fate/stay night UBW, "Are you my Master" scene) — do not shorten them.
+- If the user only asked for images with no mention of video/reel/animation, textToImage nodes alone are fine; if they want a final video, always include iem.studio.video.${canvasSystemPrompt}`,
       },
       ...sanitizedMessages,
     ];

@@ -1,7 +1,8 @@
 import { Hono } from "hono";
-import { writeFile, mkdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
+import { getVeoJob, startVeoForgeJob } from "../services/veoForge.js";
+import { generateGeminiImageToMedia } from "../services/geminiImagePersist.js";
 
 const reelRouter = new Hono();
 
@@ -22,89 +23,18 @@ reelRouter.post("/generate-image", async (c) => {
     return c.json({ error: "prompt is required" }, 400);
   }
 
-  const apiKey =
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-    process.env.NANOBANANA_API_KEY;
-
-  if (!apiKey) {
-    return c.json({ error: "No Gemini/Imagen API key configured" }, 500);
-  }
-
   try {
     console.log(
       `[REEL] Generating image for prompt: "${prompt.slice(0, 80)}..."`,
     );
 
-    // Use Gemini's Nano Banana model (gemini-2.5-flash-image) for image generation
-    // Verified via ListModels API: display name "Nano Banana", supports generateContent
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Generate an image: ${prompt}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"],
-          },
-        }),
-      },
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`[REEL] Gemini API error ${res.status}: ${errText}`);
-      return c.json(
-        { error: `Gemini API error: ${res.status}`, details: errText },
-        502,
-      );
-    }
-
-    const data = await res.json();
-
-    // Walk the response parts looking for inline image data
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part.inlineData) {
-        const mimeType = part.inlineData.mimeType || "image/png";
-        const b64 = part.inlineData.data;
-        const ext = mimeType.includes("jpeg") ? "jpg" : "png";
-
-        // Save to disk so the URL is stable across sessions
-        await mkdir(MEDIA_DIR, { recursive: true });
-        const filename = `${randomUUID()}.${ext}`;
-        const filepath = join(MEDIA_DIR, filename);
-        await writeFile(filepath, Buffer.from(b64, "base64"));
-
-        // Return a URL the frontend can persist in localStorage
-        const stableUrl = `/generated-media/${filename}`;
-        console.log(`[REEL] Image saved to ${filepath} → ${stableUrl}`);
-
-        return c.json({ imageUrl: stableUrl });
-      }
-    }
-
-    // If no image was returned, the model might have only returned text
-    console.warn(
-      "[REEL] No image in response, parts:",
-      JSON.stringify(parts).slice(0, 200),
-    );
-    return c.json(
-      {
-        error: "Model did not return an image. Try a more descriptive prompt.",
-      },
-      422,
-    );
+    const stableUrl = await generateGeminiImageToMedia(prompt, MEDIA_DIR);
+    console.log(`[REEL] Image saved → ${stableUrl}`);
+    return c.json({ imageUrl: stableUrl });
   } catch (err: any) {
+    if (err.message?.includes("No Gemini API key")) {
+      return c.json({ error: "No Gemini/Imagen API key configured" }, 500);
+    }
     console.error("[REEL] Image generation failed:", err);
     return c.json({ error: err.message }, 500);
   }
@@ -114,6 +44,59 @@ reelRouter.post("/generate-image", async (c) => {
  * GET /api/reel/media/:filename
  * Serves persisted generated media files.
  */
+/**
+ * POST /api/reel/generate-video
+ *
+ * Starts a Veo 3.1 job using up to 3 reference images + prompt.
+ * Poll GET /api/reel/generate-video/:operationId until status is done.
+ */
+reelRouter.post("/generate-video", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+  const referenceImages = Array.isArray(body.referenceImages)
+    ? body.referenceImages
+        .filter(
+          (r: unknown) => r && typeof (r as { url?: string }).url === "string",
+        )
+        .slice(0, 3)
+        .map((r: { url: string; mimeType?: string }) => ({
+          url: r.url,
+          mimeType: r.mimeType,
+        }))
+    : [];
+
+  if (!prompt) {
+    return c.json({ error: "prompt is required" }, 400);
+  }
+
+  const { operationId } = await startVeoForgeJob({
+    prompt,
+    referenceImages,
+    mediaDir: MEDIA_DIR,
+  });
+
+  return c.json({ operationId, status: "pending" });
+});
+
+/**
+ * GET /api/reel/generate-video/:operationId
+ */
+reelRouter.get("/generate-video/:operationId", async (c) => {
+  const operationId = c.req.param("operationId");
+  const job = getVeoJob(operationId);
+
+  if (!job) {
+    return c.json({ error: "Unknown operation" }, 404);
+  }
+
+  return c.json({
+    operationId,
+    status: job.status,
+    clipUrl: job.clipUrl,
+    error: job.error,
+  });
+});
+
 reelRouter.get("/media/:filename", async (c) => {
   const filename = c.req.param("filename");
   const filepath = join(MEDIA_DIR, filename);

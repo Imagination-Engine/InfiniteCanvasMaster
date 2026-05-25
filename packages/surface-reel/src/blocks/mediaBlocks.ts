@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { BlockDefinition, MCPToolBinding } from "@iem/core";
+import { generateGeminiImage, geminiImageToDataUrl } from "@iem/core";
 
 export const timelineBlock: BlockDefinition<any, any> = {
   id: "iem.reel.timeline",
@@ -219,25 +220,31 @@ export const textToImageBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "gen_image",
-    invoke: async (input: any) => {
+    invoke: async (input: { prompt: string }) => {
       if (process.env.IEM_MOCK_MODELS === "1") {
         return { imageUrl: "https://placehold.co/600x400/png?text=Mock+Image" };
       }
 
-      const apiKey =
+      const geminiKey =
+        process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+      if (geminiKey) {
+        const image = await generateGeminiImage(input.prompt, geminiKey);
+        return { imageUrl: geminiImageToDataUrl(image) };
+      }
+
+      const legacyKey =
         process.env.NANOBANANA_API_KEY || process.env.IMAGE_API_KEY;
-      if (!apiKey) {
-        // Fallback to placeholder if they only have Gemini keys (no image API)
-        return {
-          imageUrl: "https://placehold.co/600x400/png?text=Generated+Image",
-        };
+      if (!legacyKey) {
+        throw new Error(
+          "No GEMINI_API_KEY or image API key configured for text-to-image",
+        );
       }
 
       const res = await fetch("https://api.nanobanana.ai/v1/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${legacyKey}`,
         },
         body: JSON.stringify({ prompt: input.prompt }),
       });

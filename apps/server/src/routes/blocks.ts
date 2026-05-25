@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 // @ts-ignore
-import { blockRegistry } from "@iem/core";
+import { blockRegistry, normalizeCanvasBlockId } from "@iem/core";
 import jwt from "jsonwebtoken";
 
 const blocksRouter = new Hono();
@@ -60,12 +60,13 @@ blocksRouter.use("/execute", authMiddleware);
  * Body: { blockId: string, inputs: Record<string, unknown> }
  */
 blocksRouter.post("/execute", async (c) => {
-  const { blockId, inputs } = await c.req.json();
+  const { blockId: rawBlockId, inputs } = await c.req.json();
 
-  if (!blockId) {
+  if (!rawBlockId) {
     return c.json({ error: "blockId is required" }, 400);
   }
 
+  const blockId = normalizeCanvasBlockId(rawBlockId);
   const blockDef = blockRegistry.get(blockId);
   if (!blockDef) {
     return c.json({ error: `Block not found: ${blockId}` }, 404);

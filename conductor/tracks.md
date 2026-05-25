@@ -106,3 +106,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Studio Capability Manifest Final Verification**
       _Link: [./tracks/studio_manifest_verification_20260504/](./tracks/studio_manifest_verification_20260504/)_
+
+---
+
+- [x] **Track: Reel Veo Reference Forge**
+      _Link: [./tracks/reel_veo_forge_20260520/](./tracks/reel_veo_forge_20260520/)_

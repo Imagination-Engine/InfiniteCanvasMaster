@@ -62,6 +62,7 @@ import {
   transitionBlock,
   vfxBlock,
   audioTrackBlock,
+  textToImageBlock,
 } from "@iem/surface-reel";
 
 import {
@@ -151,6 +152,7 @@ export function initializeBlockRegistry() {
     transitionBlock,
     vfxBlock,
     audioTrackBlock,
+    textToImageBlock,
 
     // Atlas
     documentLoaderBlock,

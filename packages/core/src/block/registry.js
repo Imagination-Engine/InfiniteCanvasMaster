@@ -645,6 +645,33 @@ createBlock({
   runtime: "document",
   studio: "Media Studio",
 });
+createBlock({
+  id: "iem.reel.textToImage",
+  name: "Text to Image",
+  category: "Generative Media",
+  description: "Generate a reference still from a text prompt.",
+  icon: "Image",
+  runtime: "media",
+  studio: "Video Studio",
+});
+createBlock({
+  id: "iem.reel.character",
+  name: "Reel Character",
+  category: "Generative Media",
+  description: "Character reference for reel production.",
+  icon: "User",
+  runtime: "media",
+  studio: "Video Studio",
+});
+createBlock({
+  id: "iem.reel.scene",
+  name: "Reel Scene",
+  category: "Generative Media",
+  description: "Scene layout for reel production.",
+  icon: "Clapperboard",
+  runtime: "media",
+  studio: "Video Studio",
+});
 // --- Studios ---
 createBlock({
   id: "iem.studio.video",
@@ -1387,6 +1414,36 @@ const BLOCK_DATA_ENRICHMENT = {
     accepts: ["image", "video", "audio", "file"],
     produces: ["collection", "image"],
     capabilities: ["media-curation"],
+  },
+  "iem.reel.textToImage": {
+    accepts: ["prompt", "text"],
+    produces: ["image"],
+    capabilities: ["image-generation"],
+  },
+  "iem.reel.character": {
+    accepts: ["prompt", "text"],
+    produces: ["image"],
+    capabilities: ["image-generation"],
+  },
+  "iem.reel.scene": {
+    accepts: ["prompt", "text", "image"],
+    produces: ["image", "storyboard"],
+    capabilities: ["storyboard-layout"],
+  },
+  "iem.reel.dialogue": {
+    accepts: ["text"],
+    produces: ["audio"],
+    capabilities: ["text-to-speech"],
+  },
+  "iem.reel.timeline": {
+    accepts: ["image", "video", "audio"],
+    produces: ["video"],
+    capabilities: ["storyboard-layout"],
+  },
+  "iem.reel.export": {
+    accepts: ["video"],
+    produces: ["video", "file"],
+    capabilities: ["video-editing"],
   },
   // --- Studios ---
   "iem.studio.video": {

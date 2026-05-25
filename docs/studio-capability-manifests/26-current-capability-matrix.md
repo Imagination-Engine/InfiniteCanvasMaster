@@ -191,20 +191,26 @@
 
 ### Surface Reel — `mediaBlocks.ts` (12 blocks)
 
-| Block ID                | Name           | Has Typed I/O | Has Real Agent Logic  | Risk |
-| ----------------------- | -------------- | ------------- | --------------------- | ---- |
-| `iem.reel.timeline`     | Timeline       | ✓             | Mock                  | Low  |
-| `iem.reel.export`       | Export         | ✓             | Mock                  | Low  |
-| `iem.reel.scene`        | Scene          | ✓             | Semi-real             | Med  |
-| `iem.reel.character`    | Character      | ✓             | Real (NanoBanana API) | Med  |
-| `iem.reel.dialogue`     | Dialogue       | ✓             | Mock                  | Low  |
-| `iem.reel.camera`       | Camera         | ✓             | Mock                  | Low  |
-| `iem.reel.lighting`     | Lighting       | ✓             | Mock                  | Low  |
-| `iem.reel.transition`   | Transition     | ✓             | Mock                  | Low  |
-| `iem.reel.vfx`          | VFX            | ✓             | Mock                  | Low  |
-| `iem.reel.audioTrack`   | Audio Track    | ✓             | Mock                  | Low  |
-| `iem.reel.textToImage`  | Text to Image  | ✓             | Real (NanoBanana API) | Med  |
-| `iem.reel.textToSpeech` | Text to Speech | ✓             | Real (ElevenLabs API) | Med  |
+| Block ID                | Name           | Has Typed I/O | Has Real Agent Logic    | Risk |
+| ----------------------- | -------------- | ------------- | ----------------------- | ---- |
+| `iem.reel.timeline`     | Timeline       | ✓             | Mock                    | Low  |
+| `iem.reel.export`       | Export         | ✓             | Mock                    | Low  |
+| `iem.reel.scene`        | Scene          | ✓             | Semi-real               | Med  |
+| `iem.reel.character`    | Character      | ✓             | Real (NanoBanana API)   | Med  |
+| `iem.reel.dialogue`     | Dialogue       | ✓             | Mock                    | Low  |
+| `iem.reel.camera`       | Camera         | ✓             | Mock                    | Low  |
+| `iem.reel.lighting`     | Lighting       | ✓             | Mock                    | Low  |
+| `iem.reel.transition`   | Transition     | ✓             | Mock                    | Low  |
+| `iem.reel.vfx`          | VFX            | ✓             | Mock                    | Low  |
+| `iem.reel.audioTrack`   | Audio Track    | ✓             | Mock                    | Low  |
+| `iem.reel.textToImage`  | Text to Image  | ✓             | Real (Gemini image API) | Med  |
+| `iem.reel.textToSpeech` | Text to Speech | ✓             | Real (ElevenLabs API)   | Med  |
+
+### Studios — video forge
+
+| Block ID           | Name         | Has Typed I/O | Implementation                                                          | Risk |
+| ------------------ | ------------ | ------------- | ----------------------------------------------------------------------- | ---- |
+| `iem.studio.video` | Video Studio | ✓             | Real (Veo 3.1 via `/api/reel/generate-video`, up to 3 reference images) | Med  |
 
 ### Surface Conductor — `orchestrationBlocks.ts` (14 blocks)
 
