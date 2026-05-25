@@ -14,10 +14,29 @@ export interface ManuscriptArtifact {
   format: "markdown" | "plain";
 }
 
+export type VideoForgeStatus = "idle" | "generating" | "ready" | "error";
+
+export interface VideoReferenceAsset {
+  objectId: string;
+  blockId: string;
+  imageUrl: string;
+  label?: string;
+}
+
+export interface VideoForgeState {
+  prompt: string;
+  status: VideoForgeStatus;
+  clipUrl?: string;
+  veoOperationId?: string;
+  error?: string;
+}
+
 export interface VideoProjectArtifact {
   title: string;
   scenes: Array<{ id: string; label: string; durationSec: number }>;
   status: "draft" | "editing" | "ready";
+  references?: VideoReferenceAsset[];
+  forge?: VideoForgeState;
 }
 
 export interface GameProjectArtifact {
@@ -102,6 +121,11 @@ export function buildManuscriptArtifact(
   } satisfies ManuscriptArtifact);
 }
 
+const defaultForgeState = (): VideoForgeState => ({
+  prompt: "",
+  status: "idle",
+});
+
 export function buildVideoProjectArtifact(
   sourceBlockId: string,
   payload: Partial<VideoProjectArtifact> & { title: string },
@@ -110,6 +134,8 @@ export function buildVideoProjectArtifact(
     title: payload.title,
     scenes: payload.scenes ?? [],
     status: payload.status ?? "draft",
+    references: payload.references ?? [],
+    forge: payload.forge ?? defaultForgeState(),
   } satisfies VideoProjectArtifact);
 }
 

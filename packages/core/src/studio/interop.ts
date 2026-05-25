@@ -11,6 +11,7 @@
 
 import type { BlockDefinition } from "../block/protocol";
 import type { ArtifactContract } from "./contracts";
+import { normalizeCanvasBlockId } from "../block/blockIdAliases.js";
 import { blockRegistry } from "../block/registry";
 import { ALL_STUDIO_MANIFESTS } from "./manifests/index";
 
@@ -97,8 +98,8 @@ export class StudioInteropResolver {
    * matches everything.
    */
   canConnectBlocks(sourceId: string, targetId: string): boolean {
-    const source = blockRegistry.get(sourceId);
-    const target = blockRegistry.get(targetId);
+    const source = blockRegistry.get(normalizeCanvasBlockId(sourceId));
+    const target = blockRegistry.get(normalizeCanvasBlockId(targetId));
 
     if (!source || !target) return false;
 

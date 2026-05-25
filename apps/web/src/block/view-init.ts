@@ -6,6 +6,7 @@ import { SpriteView } from "../blocks/playable/SpriteView";
 import { PhysicsEntityView } from "../blocks/playable/PhysicsEntityView";
 import { ColliderView } from "../blocks/playable/ColliderView";
 import { ReelMediaView } from "../blocks/reel/ReelMediaView";
+import { VideoStudioForgeView } from "../blocks/reel/VideoStudioForgeView";
 
 export function initializeViewRegistry() {
   // Scribe Surface
@@ -23,14 +24,18 @@ export function initializeViewRegistry() {
   viewRegistry.register("iem.reel.scene", ReelMediaView);
   viewRegistry.register("iem.reel.character", ReelMediaView);
   viewRegistry.register("iem.reel.textToImage", ReelMediaView);
+  viewRegistry.register("iem.studio.video", VideoStudioForgeView);
+  viewRegistry.register("reel.forge", VideoStudioForgeView);
 
-  // Register directly with the canvas kit registry as well
+  // Register reel views on the infinite canvas kit (do not override iem.studio.video —
+  // kit already registers VideoStudioBlock which reads connection + object stores).
   import("@iem/imagination-canvas-kit")
     .then(({ BlockRegistry }) => {
       if (BlockRegistry) {
         BlockRegistry.register("iem.reel.scene", ReelMediaView as any);
         BlockRegistry.register("iem.reel.character", ReelMediaView as any);
         BlockRegistry.register("iem.reel.textToImage", ReelMediaView as any);
+        BlockRegistry.register("reel.forge", VideoStudioForgeView as any);
       }
     })
     .catch((e) => console.warn("Could not load BlockRegistry", e));

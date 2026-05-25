@@ -10,3 +10,11 @@ export * from "./manifests/index.js";
 export * from "./interop.js";
 export * from "./artifacts.js";
 export * from "./orchestratorContext.js";
+export {
+  collectReelReferences,
+  mergeForgeConnections,
+  normalizeForgeCanvasObjects,
+  forgeNeighbourId,
+  VEO_MAX_REFERENCE_IMAGES,
+} from "./reelForge.js";
+export { normalizeCanvasBlockId } from "../block/blockIdAliases.js";

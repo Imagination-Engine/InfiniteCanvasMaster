@@ -25,11 +25,18 @@ export function buildManuscriptArtifact(sourceBlockId, payload) {
     format: payload.format ?? "markdown",
   });
 }
+const defaultForgeState = () => ({
+  prompt: "",
+  status: "idle",
+});
+
 export function buildVideoProjectArtifact(sourceBlockId, payload) {
   return buildStudioArtifact("video-project", "video-studio", sourceBlockId, {
     title: payload.title,
     scenes: payload.scenes ?? [],
     status: payload.status ?? "draft",
+    references: payload.references ?? [],
+    forge: payload.forge ?? defaultForgeState(),
   });
 }
 export function buildGameProjectArtifact(sourceBlockId, payload) {

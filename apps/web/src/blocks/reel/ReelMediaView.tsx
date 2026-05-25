@@ -33,12 +33,24 @@ export const ReelMediaView: React.FC<
     setError(null);
 
     try {
-      const name = object?.metadata?.label || object?.metadata?.title || "";
-      const desc = object?.metadata?.description || name;
-      const prompt = `Anime character portrait, highly detailed, cinematic lighting: ${desc}`;
+      const inputs = (data?.input ?? object?.metadata?.inputs ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const prompt = String(
+        inputs.prompt ??
+          object?.metadata?.description ??
+          data?.params?.prompt ??
+          object?.metadata?.label ??
+          "",
+      ).trim();
 
-      // Call the backend server which has the Gemini API key
-      // Uses relative URL so it goes through Vite's dev proxy
+      if (!prompt) {
+        throw new Error(
+          "Add a prompt in the block description or inputs first.",
+        );
+      }
+
       const res = await fetch(`/api/reel/generate-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,8 +66,10 @@ export const ReelMediaView: React.FC<
 
       const result = await res.json();
       if (result.imageUrl) {
-        // Save directly into metadata.inputs so the canvas store persists it
-        onParamsChange({ imageUrl: result.imageUrl });
+        onParamsChange({
+          prompt,
+          imageUrl: result.imageUrl,
+        });
       } else {
         throw new Error("No image returned from API");
       }

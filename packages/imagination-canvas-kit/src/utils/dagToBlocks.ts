@@ -100,3 +100,62 @@ export function compileDagToBlocks(
 
   return { objects, connections };
 }
+
+/**
+ * Blueprint for a reference-forge reel: N image sources → Video Studio forge.
+ */
+export function compileReelForgeBlueprint(
+  imageNodeCount: number,
+  motionPrompt: string,
+  startX = 0,
+  startY = 0,
+): { objects: CanvasObject[]; connections: CanvasConnection[] } {
+  const count = Math.min(Math.max(imageNodeCount, 1), 3);
+  const nodes: PlanNode[] = [];
+  const edges: { source: string; target: string }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    nodes.push({
+      id: `reel-img-${i}`,
+      type: "image",
+      title: `Reference ${i + 1}`,
+    });
+    edges.push({ source: `reel-img-${i}`, target: "reel-forge" });
+  }
+
+  nodes.push({
+    id: "reel-forge",
+    type: "video",
+    title: motionPrompt.slice(0, 48) || "Reel Forge",
+  });
+
+  const graph = compileDagToBlocks({ nodes, edges }, startX, startY);
+  const forge = graph.objects.find((o) => o.id === "reel-forge");
+  if (forge?.metadata) {
+    forge.metadata = {
+      ...forge.metadata,
+      studioPayload: {
+        title: "Reel Forge",
+        scenes: [],
+        forge: { prompt: motionPrompt, status: "idle" },
+      },
+    };
+  }
+
+  graph.objects.forEach((obj, i) => {
+    if (obj.id.startsWith("reel-img-")) {
+      (obj as any).blockKind = "iem.reel.textToImage";
+      obj.x = startX + i * 360;
+      obj.y = startY;
+    }
+    if (obj.id === "reel-forge") {
+      (obj as any).blockKind = "iem.studio.video";
+      obj.x = startX + ((count - 1) * 360) / 2;
+      obj.y = startY + 280;
+      obj.width = 400;
+      obj.height = 320;
+    }
+  });
+
+  return graph;
+}

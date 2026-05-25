@@ -374,6 +374,26 @@ const BASE_CATALOG: NodeCatalog = {
   ),
 
   // --- Reel Surface ---
+  "reel.forge": createEntry(
+    "reel.forge",
+    "creative",
+    "Reel Forge",
+    "Forge a playable video from connected reference images via Google Veo.",
+    { prompt: "text" },
+    { clipUrl: "text" },
+    { inputs: { prompt: "" } },
+    "tool",
+  ),
+  "reel.textToImage": createEntry(
+    "reel.textToImage",
+    "creative",
+    "Text to Image",
+    "Generate a reference still for the reel forge.",
+    { prompt: "text" },
+    { imageUrl: "text" },
+    { inputs: { prompt: "" } },
+    "tool",
+  ),
   "reel.timeline": createEntry(
     "reel.timeline",
     "creative",

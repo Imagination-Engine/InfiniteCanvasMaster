@@ -11,9 +11,12 @@ interface CanvasState {
   objects: Record<string, CanvasObject>;
   connections: CanvasConnection[];
   bindings: CanvasBinding[];
+  _hasHydrated: boolean;
 
+  setHasHydrated: (value: boolean) => void;
   addObject: (obj: CanvasObject) => void;
   updateObject: (id: string, updates: Partial<CanvasObject>) => void;
+  patchObjectMetadata: (id: string, patch: Record<string, unknown>) => void;
   removeObject: (id: string) => void;
 
   addConnection: (conn: CanvasConnection) => void;
@@ -31,22 +34,136 @@ interface CanvasState {
   ) => void;
 }
 
+/** Routed into metadata.inputs / metadata.outputs only — never top-level metadata. */
+const METADATA_PATCH_ROUTED_KEYS = [
+  "imageUrl",
+  "thumbnailUrl",
+  "clipUrl",
+  "fileUrl",
+  "audioUrl",
+  "prompt",
+] as const;
+
+const OUTPUT_MEDIA_KEYS = METADATA_PATCH_ROUTED_KEYS.filter(
+  (k) => k !== "prompt",
+);
+
 export const useCanvasStore = create<CanvasState>()(
   persist(
     (set) => ({
       objects: {},
       connections: [],
       bindings: [],
+      _hasHydrated: false,
+
+      setHasHydrated: (value) => set({ _hasHydrated: value }),
 
       addObject: (obj) =>
         set((state) => ({ objects: { ...state.objects, [obj.id]: obj } })),
-      updateObject: (id, updates) =>
+
+      patchObjectMetadata: (id, patch) =>
         set((state) => {
-          if (!state.objects[id]) return state;
+          const existing = state.objects[id];
+          if (!existing) return state;
+          const meta = existing.metadata ?? {};
+          const prevInputs =
+            (meta.inputs as Record<string, unknown> | undefined) ?? {};
+          const prevOutputs =
+            (meta.outputs as Record<string, unknown> | undefined) ?? {};
+
+          const patchRecord = patch as Record<string, unknown>;
+          const patchInputs =
+            patchRecord.inputs && typeof patchRecord.inputs === "object"
+              ? (patchRecord.inputs as Record<string, unknown>)
+              : {};
+          const patchOutputs =
+            patchRecord.outputs && typeof patchRecord.outputs === "object"
+              ? (patchRecord.outputs as Record<string, unknown>)
+              : {};
+
+          const outputScalars: Record<string, unknown> = {};
+          for (const key of OUTPUT_MEDIA_KEYS) {
+            if (typeof patchRecord[key] === "string") {
+              outputScalars[key] = patchRecord[key];
+            }
+          }
+
+          const nextOutputs = {
+            ...prevOutputs,
+            ...patchOutputs,
+            ...outputScalars,
+          };
+          const nextInputs = { ...prevInputs, ...patchInputs };
+          if (typeof patchRecord.imageUrl === "string") {
+            nextInputs.imageUrl = patchRecord.imageUrl;
+            nextOutputs.imageUrl = patchRecord.imageUrl;
+          }
+          if (typeof patchRecord.prompt === "string") {
+            nextInputs.prompt = patchRecord.prompt;
+          }
+
+          const {
+            inputs: _inputs,
+            outputs: _outputs,
+            imageUrl: _imageUrl,
+            thumbnailUrl: _thumbnailUrl,
+            clipUrl: _clipUrl,
+            fileUrl: _fileUrl,
+            audioUrl: _audioUrl,
+            prompt: _prompt,
+            ...metaPatch
+          } = patchRecord;
+
+          const nextMetadata: Record<string, unknown> = {
+            ...meta,
+            ...metaPatch,
+            inputs: nextInputs,
+            outputs: nextOutputs,
+          };
+          for (const key of METADATA_PATCH_ROUTED_KEYS) {
+            delete nextMetadata[key];
+          }
+
           return {
             objects: {
               ...state.objects,
-              [id]: { ...state.objects[id], ...updates } as any,
+              [id]: {
+                ...existing,
+                metadata: nextMetadata,
+              },
+            },
+          };
+        }),
+
+      updateObject: (id, updates) =>
+        set((state) => {
+          if (!state.objects[id]) return state;
+          const existing = state.objects[id];
+          let next = { ...existing, ...updates } as CanvasObject;
+          if (updates.metadata) {
+            const prevMeta = existing.metadata ?? {};
+            const nextMeta = updates.metadata;
+            next = {
+              ...next,
+              metadata: {
+                ...prevMeta,
+                ...nextMeta,
+                inputs: {
+                  ...(prevMeta.inputs as object),
+                  ...(nextMeta.inputs as object),
+                },
+                outputs: {
+                  ...(prevMeta.outputs as object),
+                  ...(nextMeta.outputs as object),
+                },
+                studioPayload: nextMeta.studioPayload ?? prevMeta.studioPayload,
+              },
+            };
+          }
+          return {
+            objects: {
+              ...state.objects,
+              [id]: next,
             },
           };
         }),
@@ -168,6 +285,9 @@ export const useCanvasStore = create<CanvasState>()(
     }),
     {
       name: "iem-canvas-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );

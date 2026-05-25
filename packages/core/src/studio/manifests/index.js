@@ -40,6 +40,14 @@ export const TOOL_MOUNTS = {
     provider: "nanobanana",
     status: "mock",
   },
+  "google-veo": {
+    id: "google-veo",
+    name: "Google Veo",
+    description:
+      "Video generation via Gemini API (Veo 3.1) with optional reference images.",
+    provider: "google",
+    status: "configured",
+  },
   "openai-embeddings": {
     id: "openai-embeddings",
     name: "OpenAI Embeddings",
@@ -147,7 +155,7 @@ export const videoStudioManifest = {
       id: "video-generation",
       name: "Video Generation",
       description: "Generate video clips from prompts.",
-      requiresToolMounts: ["gemini-vision"],
+      requiresToolMounts: ["google-veo", "gemini-vision"],
     },
     {
       id: "storyboard-layout",
@@ -156,6 +164,7 @@ export const videoStudioManifest = {
     },
   ],
   toolMounts: [
+    TOOL_MOUNTS["google-veo"],
     TOOL_MOUNTS["gemini-vision"],
     TOOL_MOUNTS["nanobanana-image"],
     TOOL_MOUNTS["elevenlabs-tts"],
