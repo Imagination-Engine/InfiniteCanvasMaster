@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useWorkflowStore } from "./store";
 import { chatAboutGoal, generateWorkflowPlan, identifyAppType } from "./ai";
-import { Send, ArrowRight, Bot, User, LayoutGrid, LogOut } from "lucide-react";
-import { supabase } from "./supabase";
+import { Send, ArrowRight, Bot, User } from "lucide-react";
 
 export default function GoalChatPage() {
   const [input, setInput] = useState("");
@@ -16,7 +15,6 @@ export default function GoalChatPage() {
     setNodes,
     setEdges,
     setAppType,
-    session,
   } = useWorkflowStore();
   const navigate = useNavigate();
 
@@ -81,40 +79,9 @@ export default function GoalChatPage() {
     }
   };
 
-  const handleLogout = () => {
-    supabase.auth.signOut();
-  };
-
   return (
-    <div className="flex flex-col h-screen bg-brand-bg relative">
-      {/* Header */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-brand-surface/50 backdrop-blur-xl z-20">
-        <h1 className="font-black tracking-tighter text-xl">
-          IMAGINATION ENGINE
-        </h1>
-        <div className="flex items-center gap-6">
-          <Link
-            to="/gallery"
-            className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors"
-          >
-            <LayoutGrid size={16} /> Gallery
-          </Link>
-          <div className="h-4 w-px bg-white/10" />
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-white/40 font-mono">
-              {session?.user?.email}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="text-white/40 hover:text-white transition-colors"
-            >
-              <LogOut size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full p-6 pt-12">
+    <div className="flex flex-col h-full bg-brand-bg relative">
+      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full p-6 pt-12 overflow-hidden">
         <div className="flex-1 overflow-y-auto space-y-6 pb-6 custom-scrollbar pr-2">
           {goalMessages.map((msg, i) => (
             <div
@@ -161,23 +128,31 @@ export default function GoalChatPage() {
             </button>
           )}
           <div className="relative group">
-            <input
-              type="text"
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder="I want to build a..."
               disabled={isGenerating || isTyping}
-              className="w-full bg-brand-surface border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-brand-purple/50 focus:bg-black/40 transition-all pr-14 disabled:opacity-50 text-sm"
+              rows={3}
+              className="w-full bg-brand-surface border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-brand-purple/50 focus:bg-black/40 transition-all pr-14 disabled:opacity-50 text-sm resize-none custom-scrollbar"
             />
             <button
               onClick={handleSend}
               disabled={isGenerating || isTyping}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-brand-purple text-white hover:bg-brand-purple/80 transition-colors cursor-pointer"
+              className="absolute right-3 bottom-4 p-2 rounded-lg bg-brand-purple text-white hover:bg-brand-purple/80 transition-colors cursor-pointer"
             >
               <Send size={18} />
             </button>
           </div>
+          <p className="text-[10px] text-center text-white/20 uppercase tracking-widest font-black">
+            Shift + Enter for new line
+          </p>
         </div>
       </div>
     </div>

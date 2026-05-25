@@ -4,13 +4,19 @@ import GoalChatPage from "./GoalChatPage";
 import WorkflowPage from "./WorkflowPage";
 import AuthPage from "./AuthPage";
 import GalleryPage from "./GalleryPage";
+import Navbar from "./Navbar";
 import { supabase } from "./supabase";
 import { useWorkflowStore } from "./store";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session } = useWorkflowStore();
   if (!session) return <Navigate to="/auth" />;
-  return <>{children}</>;
+  return (
+    <div className="flex flex-col h-screen">
+      <Navbar />
+      <div className="flex-1 overflow-hidden">{children}</div>
+    </div>
+  );
 }
 
 export default function App() {

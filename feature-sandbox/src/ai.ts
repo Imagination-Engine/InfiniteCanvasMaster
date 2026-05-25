@@ -50,8 +50,8 @@ export async function generateWorkflowPlan(
   const typeSpecificInstructions = {
     WEB: "Focus on HTML, CSS (Tailwind/Vanilla), and JS. Ensure it is responsive and has a clear entry point (index.html).",
     DESKTOP:
-      "Use Python (Tkinter/PyQt) or Electron. Provide clear instructions for running locally.",
-    CLI: "Use Python. Include a requirements.txt and an OS-neutral install.py script that sets up a venv and adds the tool to PATH.",
+      "Use Python (Tkinter/PyQt). MUST include nodes for: 1. Core Logic, 2. requirements.txt, 3. install_windows.bat, 4. install_mac.command. The .bat/.command scripts must create a venv, install dependencies, and run the app.",
+    CLI: "Use Python. MUST include nodes for: 1. Core Logic, 2. requirements.txt, 3. install_windows.bat, 4. install_mac.command. The scripts must setup a venv and run the tool.",
     UNKNOWN: "",
   };
 
@@ -60,19 +60,21 @@ export async function generateWorkflowPlan(
   ${modifications ? `Modifications: "${modifications}"` : ""}
   ${typeSpecificInstructions[appType]}
   
-  Create a sequence of logical nodes. Each node takes the previous node's output as 'input' (except the first).
+  Create a sequence of logical nodes. Each node takes the PREVIOUSLY GENERATED CODEBASE as 'input'.
   Nodes should have:
   - id: unique string
   - label: short name
   - instruction: what the AI should generate here.
   
-  Final node MUST be a 'Package/Finalize' step that prepares everything for download or preview.
+  MANDATORY: 
+  - For Desktop/CLI, you MUST have nodes for OS-specific installers (.bat and .command).
+  - The second-to-last node MUST be 'QA Review'. Instruction: 'Review all previous files for bugs, missing imports, or errors. Output the final corrected versions of any files that need fixing.'
+  - Final node MUST be 'Finalize'. Instruction: 'Prepare the final list of artifacts for the ZIP download.'
   
   Return ONLY JSON:
   {
     "nodes": [
-      { "id": "1", "label": "Structure", "instruction": "Define file structure..." },
-      { "id": "2", "label": "Code", "instruction": "Write main logic..." }
+      { "id": "1", "label": "Structure", "instruction": "Define file structure..." }
     ],
     "edges": [
       { "source": "1", "target": "2" }
@@ -86,16 +88,20 @@ export async function generateWorkflowPlan(
 export async function executeWorkflowNode(
   nodeLabel: string,
   instruction: string,
-  input: string,
+  accumulatedContext: string,
   retryCount: number = 0,
+  previousResponse?: string,
+  previousError?: string,
 ): Promise<any> {
   console.log(`[AI] Executing Node: ${nodeLabel} (Attempt ${retryCount + 1})`);
 
   const basePrompt = `Executing Step: ${nodeLabel}
   Instruction: ${instruction}
-  Input/Context from previous step: ${input || "None"}
   
-  Perform the task. If generating code/files, provide the content.
+  Accumulated Codebase Context (Files already created):
+  ${accumulatedContext || "None"}
+  
+  Execute the instruction. If you are fixing bugs or generating installers, refer to the context above.
   Return ONLY JSON:
   {
     "artifactName": "filename.ext",
@@ -104,38 +110,65 @@ export async function executeWorkflowNode(
     "explanation": "What was done in this step"
   }`;
 
-  const prompt =
-    retryCount > 0
-      ? `${basePrompt}\n\nIMPORTANT: Your previous response failed to parse as valid JSON. Ensure all backslashes are escaped (\\\\), newlines are represented as \\n, and quotes inside strings are escaped (\\").`
-      : basePrompt;
+  let prompt = basePrompt;
+  if (retryCount > 0) {
+    prompt += `\n\nCRITICAL: Your previous response failed to parse as valid JSON.
+    
+    FAILED RESPONSE FROM PREVIOUS ATTEMPT:
+    ${previousResponse}
+    
+    PARSING ERROR:
+    ${previousError}
+    
+    PLEASE FIX:
+    1. Escape all backslashes properly (e.g., use \\\\ in strings).
+    2. Use literal \\n for newlines within strings.
+    3. Escape double quotes (\\") inside the artifactContent string.
+    4. Ensure the response is a single, valid JSON object.`;
+  }
 
   try {
     const result = await jsonModel.generateContent(prompt);
     const responseText = result.response.text();
 
-    // Attempt to sanitize common JSON issues (like backticks or raw newlines in strings)
+    // Attempt to sanitize common JSON issues
     let sanitized = responseText.trim();
     if (sanitized.startsWith("```json"))
       sanitized = sanitized.replace(/^```json/, "").replace(/```$/, "");
 
     try {
       return JSON.parse(sanitized);
-    } catch (parseError) {
+    } catch (parseError: any) {
       if (retryCount < 2) {
-        console.warn(`[AI] JSON Parse failed for ${nodeLabel}, retrying...`);
+        console.warn(
+          `[AI] JSON Parse failed for ${nodeLabel}, retrying with failure context...`,
+        );
         return executeWorkflowNode(
           nodeLabel,
           instruction,
-          input,
+          accumulatedContext,
           retryCount + 1,
+          responseText,
+          parseError.message,
         );
       }
-      throw parseError;
+      throw new Error(
+        `Final JSON Parse Failure: ${parseError.message}\nRaw AI Output: ${responseText}`,
+      );
     }
   } catch (error: any) {
     console.error(`[AI] Error in executeWorkflowNode (${nodeLabel}):`, error);
-    if (retryCount < 2 && !error.message?.includes("404")) {
-      return executeWorkflowNode(nodeLabel, instruction, input, retryCount + 1);
+    if (
+      retryCount < 2 &&
+      !error.message?.includes("404") &&
+      !error.message?.includes("JSON")
+    ) {
+      return executeWorkflowNode(
+        nodeLabel,
+        instruction,
+        accumulatedContext,
+        retryCount + 1,
+      );
     }
     throw error;
   }

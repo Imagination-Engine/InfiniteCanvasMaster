@@ -9,7 +9,8 @@ export type AppNodeData = {
   instruction: string;
   input?: string;
   output?: string;
-  status: "idle" | "running" | "success" | "failed";
+  status: "idle" | "running" | "success" | "failed" | "skipped";
+  lastError?: string;
 };
 
 export type AppType = "WEB" | "DESKTOP" | "CLI" | "UNKNOWN";

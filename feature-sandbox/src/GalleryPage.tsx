@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { useWorkflowStore } from "./store";
-import { useNavigate, Link } from "react-router-dom";
-import { Folder, Play, Clock, ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Folder, Play, Clock } from "lucide-react";
 
 export default function GalleryPage() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -40,26 +40,15 @@ export default function GalleryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-white p-8">
+    <div className="h-full bg-brand-bg text-white p-8 overflow-y-auto custom-scrollbar">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-white/50 hover:text-white mb-4 transition-colors"
-            >
-              <ChevronLeft size={16} /> Back to Architect
-            </Link>
-            <h1 className="text-4xl font-black tracking-tighter">
-              PROJECT GALLERY
-            </h1>
-          </div>
-          <div className="text-right">
-            <p className="text-white/30 text-xs uppercase tracking-widest mb-1">
-              User
-            </p>
-            <p className="font-bold">{session?.user?.email}</p>
-          </div>
+        <div className="mb-12">
+          <h1 className="text-4xl font-black tracking-tighter">
+            PROJECT GALLERY
+          </h1>
+          <p className="text-white/40 text-sm mt-2 uppercase tracking-widest font-bold">
+            Your Saved Architectures
+          </p>
         </div>
 
         {projects.length === 0 ? (

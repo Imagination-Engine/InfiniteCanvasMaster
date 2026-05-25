@@ -17,6 +17,8 @@ import {
   Terminal,
   ExternalLink,
   X,
+  ShieldAlert,
+  Zap,
 } from "lucide-react";
 import { downloadArtifactsAsZip } from "./zipUtils";
 import { supabase } from "./supabase";
@@ -99,36 +101,58 @@ export default function WorkflowPage() {
     }
   };
 
-  const handleRunWorkflow = async () => {
+  const handleRunWorkflow = async (startFromId?: string) => {
     setIsRunning(true);
-    clearArtifacts();
-    let currentInput = "";
+    if (!startFromId) clearArtifacts();
 
-    for (const node of nodes) {
-      updateNodeData(node.id, { status: "running" });
+    let accumulatedContext = "";
+    let startIndex = 0;
+
+    if (startFromId) {
+      startIndex = nodes.findIndex((n) => n.id === startFromId);
+      // Rebuild context up to the starting node
+      const previousNodes = nodes.slice(0, startIndex);
+      accumulatedContext = previousNodes
+        .map(
+          (n) =>
+            `File: ${n.data.label}\nContent:\n${n.data.output || "No output"}`,
+        )
+        .join("\n\n");
+    }
+
+    const nodesToRun = nodes.slice(startIndex);
+
+    for (const node of nodesToRun) {
+      updateNodeData(node.id, { status: "running", lastError: undefined });
       try {
         const result = await executeWorkflowNode(
           node.data.label,
           node.data.instruction,
-          currentInput,
+          accumulatedContext,
         );
 
         addArtifact({
-          name: result.artifactName,
+          name: result.artifactName || `file_${Date.now()}.txt`,
           content: result.artifactContent,
           type: result.type,
         });
 
-        currentInput = result.artifactContent;
+        // Add this node's output to the context for the next node
+        accumulatedContext += `\n\nFile: ${result.artifactName}\nContent:\n${result.artifactContent}`;
+
         updateNodeData(node.id, {
           status: "success",
           output: result.artifactContent,
-          input: node.data.input || currentInput, // store what went in
+          input: accumulatedContext,
         });
-      } catch (e) {
-        updateNodeData(node.id, { status: "failed" });
-        console.error(e);
-        break;
+      } catch (e: any) {
+        updateNodeData(node.id, {
+          status: "failed",
+          lastError: e.message || "Unknown AI error",
+        });
+        setIsRunning(false);
+        setSelectedNodeId(node.id); // Open the inspector to show the error
+        return; // Pause execution
       }
     }
     setIsRunning(false);
@@ -164,9 +188,10 @@ export default function WorkflowPage() {
 
   const webPreviewContent = useMemo(() => {
     if (appType !== "WEB") return null;
-    const html = artifacts.find((a) => a.name.endsWith(".html"))?.content || "";
-    const css = artifacts.find((a) => a.name.endsWith(".css"))?.content || "";
-    const js = artifacts.find((a) => a.name.endsWith(".js"))?.content || "";
+    const html =
+      artifacts.find((a) => a.name?.endsWith(".html"))?.content || "";
+    const css = artifacts.find((a) => a.name?.endsWith(".css"))?.content || "";
+    const js = artifacts.find((a) => a.name?.endsWith(".js"))?.content || "";
 
     return `
       <html>
@@ -214,6 +239,12 @@ export default function WorkflowPage() {
             {n.data.status === "success" && (
               <div className="w-2 h-2 bg-green-500 rounded-full" />
             )}
+            {n.data.status === "failed" && (
+              <div className="w-2 h-2 bg-red-500 rounded-full" />
+            )}
+            {n.data.status === "skipped" && (
+              <div className="w-2 h-2 bg-white/20 rounded-full" />
+            )}
           </div>
           <div className="text-[10px] text-white/40 line-clamp-2 mt-1">
             {n.data.instruction}
@@ -258,21 +289,29 @@ export default function WorkflowPage() {
         </div>
         <div className="p-4 border-t border-white/5">
           <div className="relative">
-            <input
-              type="text"
+            <textarea
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendChat();
+                }
+              }}
               placeholder="Refine workflow..."
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-brand-purple transition-all pr-10"
+              rows={3}
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-brand-purple transition-all pr-10 resize-none custom-scrollbar"
             />
             <button
               onClick={handleSendChat}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-purple"
+              className="absolute right-3 bottom-4 text-brand-purple"
             >
               <Send size={14} />
             </button>
           </div>
+          <p className="text-[9px] text-center text-white/20 uppercase tracking-widest font-black mt-2">
+            Shift + Enter for new line
+          </p>
         </div>
       </div>
 
@@ -281,7 +320,7 @@ export default function WorkflowPage() {
         <div className="absolute top-6 left-6 right-6 z-10 flex items-center justify-between pointer-events-none">
           <div className="flex items-center gap-3 pointer-events-auto">
             <button
-              onClick={handleRunWorkflow}
+              onClick={() => handleRunWorkflow()}
               disabled={isRunning}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black font-black text-xs uppercase tracking-widest hover:bg-brand-cyan transition-all shadow-xl"
             >
@@ -339,35 +378,125 @@ export default function WorkflowPage() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {selectedNode.data.lastError && (
+                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex gap-3">
+                  <ShieldAlert size={16} className="text-red-500 shrink-0" />
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-red-500 uppercase tracking-widest">
+                      Execution Failed
+                    </p>
+                    <p className="text-[10px] text-red-200/60 leading-relaxed">
+                      {selectedNode.data.lastError}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleRunWorkflow(selectedNode.id)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-[10px] font-bold rounded-lg hover:bg-red-600 transition-colors uppercase tracking-widest"
+                      >
+                        <Zap size={10} /> Retry this step
+                      </button>
+                      <button
+                        onClick={() => {
+                          updateNodeData(selectedNode.id, {
+                            status: "skipped",
+                            lastError: undefined,
+                          });
+                          const nextNodeIndex =
+                            nodes.findIndex((n) => n.id === selectedNode.id) +
+                            1;
+                          if (nextNodeIndex < nodes.length) {
+                            handleRunWorkflow(nodes[nextNodeIndex].id);
+                          }
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white/10 text-white text-[10px] font-bold rounded-lg hover:bg-white/20 transition-colors uppercase tracking-widest"
+                      >
+                        Skip Step
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <section>
-                <label className="text-[10px] font-black text-brand-purple uppercase tracking-widest block mb-2">
-                  Instruction
-                </label>
-                <p className="text-sm text-white/70 leading-relaxed bg-black/20 p-4 rounded-2xl border border-white/5">
-                  {selectedNode.data.instruction}
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[10px] font-black text-brand-purple uppercase tracking-widest">
+                    Instruction
+                  </label>
+                  <button
+                    onClick={() => handleRunWorkflow(selectedNode.id)}
+                    className="text-[10px] text-brand-purple hover:text-white transition-colors uppercase font-bold"
+                  >
+                    Regenerate
+                  </button>
+                </div>
+                <textarea
+                  value={selectedNode.data.instruction}
+                  onChange={(e) =>
+                    updateNodeData(selectedNode.id, {
+                      instruction: e.target.value,
+                    })
+                  }
+                  className="w-full h-32 text-sm text-white/70 leading-relaxed bg-black/20 p-4 rounded-2xl border border-white/5 outline-none focus:border-brand-purple/50 resize-none"
+                />
               </section>
+
+              {selectedNode.data.status === "success" && (
+                <section>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[10px] font-black text-green-500 uppercase tracking-widest block">
+                      Generated Output
+                    </label>
+                  </div>
+                  <textarea
+                    value={selectedNode.data.output}
+                    onChange={(e) =>
+                      updateNodeData(selectedNode.id, {
+                        output: e.target.value,
+                      })
+                    }
+                    className="w-full h-80 text-[10px] bg-black/40 p-4 rounded-2xl overflow-x-auto font-mono text-white/80 outline-none focus:border-green-500/30 resize-none"
+                  />
+                </section>
+              )}
+
+              {(selectedNode.data.status === "idle" ||
+                selectedNode.data.status === "skipped" ||
+                selectedNode.data.status === "failed") && (
+                <button
+                  onClick={() => handleRunWorkflow(selectedNode.id)}
+                  className="w-full py-3 bg-white/5 border border-white/10 text-white font-black uppercase text-xs tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
+                >
+                  Run From This Step <Play size={14} fill="currentColor" />
+                </button>
+              )}
+
               {selectedNode.data.input && (
                 <section>
                   <label className="text-[10px] font-black text-brand-cyan uppercase tracking-widest block mb-2">
-                    Input Context
+                    Input Context (Previous Step Output)
                   </label>
                   <pre className="text-[10px] bg-black/40 p-4 rounded-2xl overflow-x-auto font-mono text-white/50 max-h-40">
                     {selectedNode.data.input}
                   </pre>
                 </section>
               )}
-              {selectedNode.data.output && (
-                <section>
-                  <label className="text-[10px] font-black text-green-500 uppercase tracking-widest block mb-2">
-                    Generated Output
-                  </label>
-                  <pre className="text-[10px] bg-black/40 p-4 rounded-2xl overflow-x-auto font-mono text-white/80 max-h-80">
-                    {selectedNode.data.output}
-                  </pre>
-                </section>
-              )}
             </div>
+            {selectedNode.data.status === "success" && (
+              <div className="p-6 border-t border-white/5">
+                <button
+                  onClick={() => {
+                    const nextNodeIndex =
+                      nodes.findIndex((n) => n.id === selectedNode.id) + 1;
+                    if (nextNodeIndex < nodes.length) {
+                      handleRunWorkflow(nodes[nextNodeIndex].id);
+                    }
+                  }}
+                  className="w-full py-3 bg-brand-cyan text-black font-black uppercase text-xs tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-all shadow-lg"
+                >
+                  Resume Workflow From Next Step <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
