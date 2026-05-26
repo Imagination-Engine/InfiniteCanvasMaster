@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   ifBlock,
-  forEachBlock,
+  loopBlock,
   webhookTriggerBlock,
+  webhookCallBlock,
+  functionBlock,
+  functionCallBlock,
+  codeBlock,
   agentBlock,
 } from "./orchestrationBlocks";
 
@@ -27,7 +31,7 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
       expect(ifBlock.input.parse(validIn)).toEqual(validIn);
     });
 
-    it("successfully evaluates condition to true using LLM", async () => {
+    it("successfully evaluates condition to true path", async () => {
       const output = await ifBlock.agent.invoke({
         condition: "5 > 3",
         context: { value: 10 },
@@ -36,7 +40,7 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
       expect(output.context).toEqual({ value: 10 });
     });
 
-    it("successfully evaluates condition to false using LLM", async () => {
+    it("successfully evaluates condition to false path", async () => {
       const output = await ifBlock.agent.invoke({
         condition: "value > 5",
         context: { value: 3 },
@@ -44,25 +48,22 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
       expect(output).toHaveProperty("branch", "falsePath");
       expect(output.context).toEqual({ value: 3 });
     });
-
-    it("handles unexpected LLM output gracefully", async () => {
-      const output = await ifBlock.agent.invoke({
-        condition: "value > 5",
-        context: { value: 3 },
-      });
-      expect(output).toHaveProperty("branch", "falsePath"); // Defaults to false
-    });
   });
 
-  describe("ForEach Block", () => {
+  describe("Loop Block", () => {
     it("has valid metadata and schema", () => {
-      expect(forEachBlock.id).toBe("iem.conductor.foreach");
-      const validIn = { collection: [1, 2, 3], loopTarget: "processItem" };
-      expect(forEachBlock.input.parse(validIn)).toEqual(validIn);
+      expect(loopBlock.id).toBe("iem.conductor.loop");
+      const validIn = {
+        collection: [1, 2, 3],
+        loopTarget: "processItem",
+        maxIterations: 5,
+        breakCondition: "i > 3",
+      };
+      expect(loopBlock.input.parse(validIn)).toEqual(validIn);
     });
 
     it("passes through the collection", async () => {
-      const output = await forEachBlock.agent.invoke({
+      const output = await loopBlock.agent.invoke({
         collection: ["a", "b"],
         loopTarget: "node2",
       });
@@ -72,11 +73,63 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
   });
 
-  describe("Webhook Trigger Block", () => {
-    it("has valid metadata and schema", () => {
+  describe("Webhook Blocks", () => {
+    it("Webhook Trigger has valid metadata and schema", () => {
       expect(webhookTriggerBlock.id).toBe("iem.conductor.webhook");
       const validIn = { path: "/api/trigger" };
       expect(webhookTriggerBlock.input.parse(validIn)).toEqual(validIn);
+    });
+
+    it("Webhook Call has valid metadata and schema", () => {
+      expect(webhookCallBlock.id).toBe("iem.conductor.webhookCall");
+      const validIn = {
+        url: "https://example.com/api",
+        method: "POST" as const,
+        headers: { Authorization: "Bearer token" },
+      };
+      expect(webhookCallBlock.input.parse(validIn)).toEqual(validIn);
+    });
+  });
+
+  describe("Function Blocks", () => {
+    it("Function Definition has valid metadata and schema", () => {
+      expect(functionBlock.id).toBe("iem.conductor.function");
+      const validIn = {
+        name: "MyFunc",
+        inputs: ["arg1", "arg2"],
+        globalAccess: true,
+      };
+      expect(functionBlock.input.parse(validIn)).toEqual(validIn);
+    });
+
+    it("Function Call has valid metadata and schema", () => {
+      expect(functionCallBlock.id).toBe("iem.conductor.functionCall");
+      const validIn = {
+        functionId: "fn_123",
+        arguments: { arg1: "val" },
+        concurrent: true,
+      };
+      expect(functionCallBlock.input.parse(validIn)).toEqual(validIn);
+    });
+  });
+
+  describe("Code Block", () => {
+    it("has valid metadata and schema", () => {
+      expect(codeBlock.id).toBe("iem.conductor.code");
+      const validIn = {
+        language: "python" as const,
+        code: "print('hello')",
+        variables: { input1: "test" },
+      };
+      expect(codeBlock.input.parse(validIn)).toEqual(validIn);
+    });
+
+    it("executes mock sandbox logic", async () => {
+      const output = await codeBlock.agent.invoke({
+        language: "python",
+        code: "print('hello')",
+      });
+      expect(output.result).toContain("Executed python code");
     });
   });
 

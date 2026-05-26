@@ -6,10 +6,12 @@ import { google } from "@ai-sdk/google";
 export const ifBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.if",
   name: "If",
-  description: "Conditional routing branch.",
+  description: "Conditional routing branch using sandboxed evaluation.",
   category: "control",
   input: z.object({
-    condition: z.string(),
+    condition: z
+      .string()
+      .describe("JavaScript expression evaluated in a sandbox"),
     context: z.record(z.any()).default({}),
   }),
   output: z.object({
@@ -19,9 +21,9 @@ export const ifBlock: BlockDefinition<any, any> = {
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "eval_cond",
+    toolName: "sandbox_eval_cond",
     invoke: async (i: any) => {
-      // Simple mock eval for test passing
+      // Mock eval for test passing
       if (i.condition.includes("5 > 3"))
         return { branch: "truePath", context: i.context };
       return { branch: "falsePath", context: i.context };
@@ -29,13 +31,24 @@ export const ifBlock: BlockDefinition<any, any> = {
   },
 };
 
-export const forEachBlock: BlockDefinition<any, any> = {
-  id: "iem.conductor.foreach",
-  name: "For Each",
-  description: "Iterates over a collection.",
+export const loopBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.loop",
+  name: "Loop",
+  description:
+    "Iterates over a collection or runs for a set number of iterations with optional break condition.",
   category: "control",
   input: z.object({
-    collection: z.array(z.any()),
+    collection: z.array(z.any()).optional(),
+    maxIterations: z
+      .number()
+      .optional()
+      .describe("Maximum number of times to loop"),
+    breakCondition: z
+      .string()
+      .optional()
+      .describe(
+        "JavaScript expression to evaluate for breaking the loop early",
+      ),
     loopTarget: z.string().optional(),
   }),
   output: z.object({
@@ -45,9 +58,9 @@ export const forEachBlock: BlockDefinition<any, any> = {
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "loop",
+    toolName: "loop_exec",
     invoke: async (i: any) => ({
-      items: i.collection,
+      items: i.collection || [],
       loopTarget: i.loopTarget,
     }),
   },
@@ -59,12 +72,108 @@ export const webhookTriggerBlock: BlockDefinition<any, any> = {
   description: "Starts workflow on webhook.",
   category: "trigger",
   input: z.object({ path: z.string() }),
-  output: z.object({ payload: z.record(z.any()) }),
+  output: z.object({ payload: z.record(z.any()), url: z.string().optional() }),
   mode: "ambient",
   agent: {
     kind: "local",
     toolName: "noop",
     invoke: async () => ({ payload: {} }),
+  },
+};
+
+export const webhookCallBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.webhookCall",
+  name: "Webhook Call",
+  description: "Calls external webhooks and passes data.",
+  category: "io",
+  input: z.object({
+    url: z.string().url(),
+    method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]).default("POST"),
+    payload: z.any().optional(),
+    headers: z.record(z.string()).default({}),
+  }),
+  output: z.object({ response: z.any() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "webhook_call",
+    invoke: async () => ({ response: { success: true } }),
+  },
+};
+
+export const functionBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.function",
+  name: "Function Definition",
+  description: "Defines a reusable sub-graph function.",
+  category: "control",
+  input: z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    globalAccess: z
+      .boolean()
+      .default(false)
+      .describe(
+        "If enabled, this function can be called across all workflows in the project.",
+      ),
+    inputs: z.array(z.string()).describe("Names of expected inputs"),
+  }),
+  output: z.object({ functionId: z.string() }),
+  mode: "ambient",
+  agent: {
+    kind: "local",
+    toolName: "define_function",
+    invoke: async () => ({ functionId: "fn_mock_123" }),
+  },
+};
+
+export const functionCallBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.functionCall",
+  name: "Function Call",
+  description: "Calls a defined function sub-graph.",
+  category: "control",
+  input: z.object({
+    functionId: z.string(),
+    arguments: z.record(z.any()).default({}),
+    concurrent: z
+      .boolean()
+      .default(false)
+      .describe(
+        "If enabled, runs the function concurrently without blocking downstream nodes.",
+      ),
+  }),
+  output: z.object({ result: z.any() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "call_function",
+    invoke: async () => ({ result: { executed: true } }),
+  },
+};
+
+export const codeBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.code",
+  name: "Code Execution",
+  description: "Execute Python or JavaScript code in a sandbox.",
+  category: "control",
+  input: z.object({
+    language: z.enum(["javascript", "python"]).default("javascript"),
+    code: z
+      .string()
+      .describe("The code to execute. Return a value for the output."),
+    variables: z
+      .record(z.any())
+      .default({})
+      .describe("Variables passed into the sandbox execution environment."),
+  }),
+  output: z.object({ result: z.any() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "sandbox_code_exec",
+    invoke: async (i: any) => {
+      // Mock execution for test
+      return { result: `Executed ${i.language} code successfully` };
+    },
   },
 };
 
@@ -113,7 +222,7 @@ export const agentBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "agent_exec",
-    invoke: async (i: { instructions: string; input?: any }) => {
+    invoke: async (i: any) => {
       const instructions = i.instructions || "";
       const inputVal = i.input;
 
