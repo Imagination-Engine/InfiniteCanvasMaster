@@ -733,6 +733,9 @@ importers:
       "@iem/core":
         specifier: workspace:^
         version: link:../core
+      "@iem/db":
+        specifier: workspace:^
+        version: link:../db
       "@types/express":
         specifier: ^5.0.6
         version: 5.0.6
@@ -742,9 +745,15 @@ importers:
       ai:
         specifier: ^6.0.168
         version: 6.0.168(zod@3.25.76)
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260423.1)(@types/pg@8.20.0)(pg@8.20.0)
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      jexl:
+        specifier: ^2.3.0
+        version: 2.3.0
       supertest:
         specifier: ^7.2.2
         version: 7.2.2
@@ -1354,7 +1363,6 @@ packages:
         integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==,
       }
     engines: { node: ">=6.9.0" }
-    dev: true
 
   /@babel/template@7.28.6:
     resolution:
@@ -11042,6 +11050,15 @@ packages:
       "@isaacs/cliui": 8.0.2
     optionalDependencies:
       "@pkgjs/parseargs": 0.11.0
+    dev: false
+
+  /jexl@2.3.0:
+    resolution:
+      {
+        integrity: sha512-ecqln4kTWNkMwbFvTukOMDq1jy1GcPzvshhMp/s4pxU86xdLDq7HbDRa87DfMfbSAOS8V6EwvCdfs0S+w/iycA==,
+      }
+    dependencies:
+      "@babel/runtime": 7.29.2
     dev: false
 
   /jiti@2.6.1:

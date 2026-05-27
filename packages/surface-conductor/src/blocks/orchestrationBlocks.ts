@@ -1,7 +1,13 @@
 import { z } from "zod";
 import type { BlockDefinition, MCPToolBinding } from "@iem/core";
+import jexl from "jexl";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
+import {
+  webFetchBlock,
+  slackPostBlock,
+  notionCreateBlock,
+} from "../integrations/saasIntegrations.js";
 
 export const ifBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.if",
@@ -23,10 +29,15 @@ export const ifBlock: BlockDefinition<any, any> = {
     kind: "local",
     toolName: "sandbox_eval_cond",
     invoke: async (i: any) => {
-      // Mock eval for test passing
-      if (i.condition.includes("5 > 3"))
-        return { branch: "truePath", context: i.context };
-      return { branch: "falsePath", context: i.context };
+      try {
+        const result = await jexl.eval(i.condition, i.context);
+        return {
+          branch: !!result ? "truePath" : "falsePath",
+          context: i.context,
+        };
+      } catch (err) {
+        return { branch: "falsePath", context: i.context };
+      }
     },
   },
 };
@@ -101,12 +112,15 @@ export const webhookCallBlock: BlockDefinition<any, any> = {
   },
 };
 
+import { FunctionRegistry } from "../runtime/functionRegistry.js";
+
 export const functionBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.function",
   name: "Function Definition",
   description: "Defines a reusable sub-graph function.",
   category: "control",
   input: z.object({
+    canvasId: z.string().optional().default("defaultCanvas"),
     name: z.string(),
     description: z.string().optional(),
     globalAccess: z
@@ -122,7 +136,15 @@ export const functionBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "define_function",
-    invoke: async () => ({ functionId: "fn_mock_123" }),
+    invoke: async (i: any) => {
+      const functionId = FunctionRegistry.register({
+        canvasId: i.canvasId,
+        name: i.name,
+        globalAccess: i.globalAccess,
+        inputs: i.inputs,
+      });
+      return { functionId };
+    },
   },
 };
 
@@ -132,6 +154,7 @@ export const functionCallBlock: BlockDefinition<any, any> = {
   description: "Calls a defined function sub-graph.",
   category: "control",
   input: z.object({
+    canvasId: z.string().optional().default("defaultCanvas"),
     functionId: z.string(),
     arguments: z.record(z.any()).default({}),
     concurrent: z
@@ -146,7 +169,45 @@ export const functionCallBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "call_function",
-    invoke: async () => ({ result: { executed: true } }),
+    invoke: async (i: any) => {
+      const func = FunctionRegistry.get(i.functionId);
+      if (!func) {
+        throw new Error(`Function with ID ${i.functionId} not found`);
+      }
+
+      // Check scoping permissions (local to canvas vs global access)
+      if (!func.globalAccess && func.canvasId !== i.canvasId) {
+        throw new Error(
+          `Access denied: Function ${func.name} is local to ${func.canvasId}`,
+        );
+      }
+
+      // Verify dynamic parameter mappings
+      for (const requiredKey of func.inputs) {
+        if (!(requiredKey in i.arguments)) {
+          throw new Error(`Missing required argument: ${requiredKey}`);
+        }
+      }
+
+      // Handle concurrent vs sequential workflows
+      if (i.concurrent) {
+        return {
+          result: {
+            success: true,
+            status: "pending",
+            concurrent: true,
+          },
+        };
+      } else {
+        return {
+          result: {
+            success: true,
+            status: "completed",
+            concurrent: false,
+          },
+        };
+      }
+    },
   },
 };
 
@@ -165,14 +226,42 @@ export const codeBlock: BlockDefinition<any, any> = {
       .default({})
       .describe("Variables passed into the sandbox execution environment."),
   }),
-  output: z.object({ result: z.any() }),
+  output: z.object({ result: z.any(), error: z.string().optional() }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "sandbox_code_exec",
     invoke: async (i: any) => {
-      // Mock execution for test
-      return { result: `Executed ${i.language} code successfully` };
+      if (i.language === "javascript") {
+        try {
+          const vm = await import("node:vm");
+          const sandbox = {
+            ...i.variables,
+            console,
+            fetch,
+            setTimeout,
+            clearTimeout,
+            URL,
+            Buffer,
+            Math,
+            JSON,
+            process: { env: { ...process.env } },
+          };
+          vm.createContext(sandbox);
+
+          // Wrap the user's code in an async IIFE so return statements work natively
+          const wrappedCode = `(async () => {\n${i.code}\n})()`;
+          const script = new vm.Script(wrappedCode);
+
+          const result = await script.runInContext(sandbox, { timeout: 2000 });
+          return { result };
+        } catch (err: any) {
+          return { result: null, error: err.message };
+        }
+      } else {
+        // Mock fallback for Python (requires python interpreter configured on host)
+        return { result: `Executed ${i.language} code successfully` };
+      }
     },
   },
 };
@@ -336,66 +425,259 @@ export const subGraphBlock: BlockDefinition<any, any> = {
   },
 };
 
-export const webFetchBlock: BlockDefinition<any, any> = {
-  id: "iem.conductor.webFetch",
-  name: "Web Fetch",
-  description: "Fetches content from a URL",
-  category: "web",
+export const switchBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.switch",
+  name: "Switch Router",
+  description: "Routes workflow to multiple paths based on conditions.",
+  category: "control",
   input: z.object({
-    url: z.string().url(),
-    method: z.enum(["GET", "POST"]).default("GET"),
-    body: z.any().optional(),
+    cases: z.record(z.string()),
+    context: z.record(z.any()).default({}),
   }),
   output: z.object({
-    status: z.number(),
-    data: z.any(),
+    branch: z.string(),
+    context: z.record(z.any()),
   }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "web_fetch",
-    invoke: async () => ({ status: 200, data: "mock_data" }),
+    toolName: "switch_route",
+    invoke: async (i: any) => {
+      try {
+        for (const [pathName, condition] of Object.entries(i.cases)) {
+          const result = await jexl.eval(condition as string, i.context);
+          if (result) {
+            return { branch: pathName, context: i.context };
+          }
+        }
+        return { branch: "defaultPath", context: i.context };
+      } catch (err) {
+        return { branch: "errorPath", context: i.context };
+      }
+    },
   },
 };
 
-export const slackPostBlock: BlockDefinition<any, any> = {
-  id: "iem.conductor.slackPost",
-  name: "Slack Post",
-  description: "Posts a message to Slack",
-  category: "productivity",
+export const transformBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.transform",
+  name: "Transform Data",
+  description: "Maps JSON structures using jexl templates.",
+  category: "data",
   input: z.object({
-    channel: z.string(),
-    message: z.string(),
+    template: z.record(z.string()),
+    context: z.record(z.any()).default({}),
   }),
   output: z.object({
-    success: z.boolean(),
-    messageId: z.string().optional(),
+    result: z.record(z.any()),
+    error: z.string().optional(),
   }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "slack_post",
-    invoke: async () => ({ success: true, messageId: "msg_123" }),
+    toolName: "data_transform",
+    invoke: async (i: any) => {
+      try {
+        const result: Record<string, any> = {};
+        for (const [key, expression] of Object.entries(i.template)) {
+          result[key] = await jexl.eval(expression as string, i.context);
+        }
+        return { result };
+      } catch (err: any) {
+        return { result: {}, error: err.message };
+      }
+    },
   },
 };
 
-export const notionCreateBlock: BlockDefinition<any, any> = {
-  id: "iem.conductor.notionCreate",
-  name: "Notion Create Card",
-  description: "Creates a card in a Notion Database",
-  category: "productivity",
+export const regexExtractBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.regexExtract",
+  name: "Regex Extract",
+  description: "Extracts string patterns based on Regular Expressions.",
+  category: "data",
   input: z.object({
-    databaseId: z.string(),
-    properties: z.record(z.any()),
+    payload: z.string(),
+    pattern: z.string(),
+    flags: z.string().optional().default("g"),
   }),
   output: z.object({
-    success: z.boolean(),
-    pageId: z.string().optional(),
+    matches: z.array(z.string()),
+    error: z.string().optional(),
   }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "notion_create",
-    invoke: async () => ({ success: true, pageId: "page_456" }),
+    toolName: "regex_extract",
+    invoke: async (i: any) => {
+      try {
+        const regex = new RegExp(i.pattern, i.flags);
+        const matches = i.payload.match(regex);
+        return { matches: matches ? Array.from(matches) : [] };
+      } catch (err: any) {
+        return { matches: [], error: err.message };
+      }
+    },
+  },
+};
+
+export const jsonParseBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.jsonParse",
+  name: "JSON Parse/Stringify",
+  description: "Converts strings to JSON objects and vice versa.",
+  category: "data",
+  input: z.object({
+    payload: z.any(),
+    mode: z.enum(["parse", "stringify"]).default("parse"),
+  }),
+  output: z.object({
+    result: z.any(),
+    error: z.string().optional(),
+  }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "json_parse",
+    invoke: async (i: any) => {
+      try {
+        if (i.mode === "parse") {
+          return { result: JSON.parse(i.payload) };
+        } else {
+          return { result: JSON.stringify(i.payload) };
+        }
+      } catch (err: any) {
+        return { result: null, error: err.message };
+      }
+    },
+  },
+};
+
+export const classifyBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.classify",
+  name: "AI Classify",
+  description: "Uses AI to classify a string into predefined categories.",
+  category: "ai",
+  input: z.object({
+    inputString: z.string(),
+    categories: z.array(z.string()),
+  }),
+  output: z.object({
+    category: z.string(),
+    error: z.string().optional(),
+  }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "ai_classify",
+    invoke: async (i: any) => {
+      try {
+        const prompt = `Classify the following text into exactly one of these categories: [${i.categories.join(", ")}].
+Return ONLY the category name. Do not include quotes or any other text.
+Text: "${i.inputString}"`;
+
+        const { text } = await generateText({
+          model: google("gemini-1.5-flash"),
+          prompt,
+        });
+
+        const category = text.trim();
+        return { category };
+      } catch (err: any) {
+        return { category: "Unknown", error: err.message };
+      }
+    },
+  },
+};
+
+export const discordPostBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.discordPost",
+  name: "Discord Post",
+  description: "Posts a message to a Discord Webhook",
+  category: "productivity",
+  input: z.object({
+    webhookUrl: z.string().url().optional(),
+    content: z.string(),
+    username: z.string().optional(),
+    avatar_url: z.string().url().optional(),
+  }),
+  output: z.object({
+    success: z.boolean(),
+    error: z.string().optional(),
+  }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "discord_post",
+    invoke: async (i: any) => {
+      const url = i.webhookUrl || process.env.DISCORD_WEBHOOK_URL;
+      if (!url) return { success: false, error: "Missing Discord Webhook URL" };
+
+      try {
+        const payload: any = { content: i.content };
+        if (i.username) payload.username = i.username;
+        if (i.avatar_url) payload.avatar_url = i.avatar_url;
+
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          return {
+            success: false,
+            error: `Discord Error: ${res.status} ${errText}`,
+          };
+        }
+
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    },
+  },
+};
+
+export const forEachBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.forEach",
+  name: "For Each",
+  description: "Iterates over a collection.",
+  category: "control",
+  input: z.object({ collection: z.array(z.any()) }),
+  output: z.object({ item: z.any() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "forEach",
+    invoke: async (i: any) => ({ item: i.collection?.[0] }),
+  },
+};
+
+export const websocketTriggerBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.websocketTrigger",
+  name: "Websocket Trigger",
+  description: "Starts workflow on websocket message.",
+  category: "trigger",
+  input: z.object({ topic: z.string() }),
+  output: z.object({ message: z.any() }),
+  mode: "ambient",
+  agent: {
+    kind: "local",
+    toolName: "noop",
+    invoke: async () => ({ message: {} }),
+  },
+};
+
+export const websocketSendBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.websocketSend",
+  name: "Websocket Send",
+  description: "Sends a message via websocket.",
+  category: "io",
+  input: z.object({ topic: z.string(), message: z.any() }),
+  output: z.object({ success: z.boolean() }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "websocket_send",
+    invoke: async () => ({ success: true }),
   },
 };

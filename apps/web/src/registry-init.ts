@@ -23,6 +23,7 @@ import {
   subGraphBlock,
   webFetchBlock,
   slackPostBlock,
+  notionCreateBlock,
   websocketTriggerBlock,
   websocketSendBlock,
 } from "@iem/surface-conductor";

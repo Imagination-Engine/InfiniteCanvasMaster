@@ -98,6 +98,7 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
         name: "MyFunc",
         inputs: ["arg1", "arg2"],
         globalAccess: true,
+        canvasId: "canvas-123",
       };
       expect(functionBlock.input.parse(validIn)).toEqual(validIn);
     });
@@ -108,8 +109,118 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
         functionId: "fn_123",
         arguments: { arg1: "val" },
         concurrent: true,
+        canvasId: "canvas-123",
       };
       expect(functionCallBlock.input.parse(validIn)).toEqual(validIn);
+    });
+
+    it("restricts local function access to the same canvas only", async () => {
+      // Define local function on canvasA
+      const defResult = await functionBlock.agent.invoke({
+        canvasId: "canvasA",
+        name: "localMath",
+        globalAccess: false,
+        inputs: ["x", "y"],
+      });
+      const funcId = defResult.functionId;
+      expect(funcId).toBeDefined();
+
+      // Invoke successfully from canvasA
+      const callSuccess = await functionCallBlock.agent.invoke({
+        canvasId: "canvasA",
+        functionId: funcId,
+        arguments: { x: 10, y: 20 },
+      });
+      expect(callSuccess.result.success).toBe(true);
+
+      // Fail invocation from canvasB (access violation)
+      await expect(
+        functionCallBlock.agent.invoke({
+          canvasId: "canvasB",
+          functionId: funcId,
+          arguments: { x: 10, y: 20 },
+        }),
+      ).rejects.toThrow(
+        "Access denied: Function localMath is local to canvasA",
+      );
+    });
+
+    it("allows global function access project-wide across any canvas", async () => {
+      // Define global function on canvasA
+      const defResult = await functionBlock.agent.invoke({
+        canvasId: "canvasA",
+        name: "globalLogger",
+        globalAccess: true,
+        inputs: ["message"],
+      });
+      const funcId = defResult.functionId;
+
+      // Invoke successfully from canvasB
+      const callSuccess = await functionCallBlock.agent.invoke({
+        canvasId: "canvasB",
+        functionId: funcId,
+        arguments: { message: "Hello world!" },
+      });
+      expect(callSuccess.result.success).toBe(true);
+    });
+
+    it("throws error for missing or incorrect function call parameters", async () => {
+      const defResult = await functionBlock.agent.invoke({
+        canvasId: "canvasA",
+        name: "strictFunc",
+        globalAccess: true,
+        inputs: ["requiredArg"],
+      });
+      const funcId = defResult.functionId;
+
+      // Call without required argument
+      await expect(
+        functionCallBlock.agent.invoke({
+          canvasId: "canvasA",
+          functionId: funcId,
+          arguments: {},
+        }),
+      ).rejects.toThrow("Missing required argument: requiredArg");
+    });
+
+    it("handles concurrent option correctly", async () => {
+      const defResult = await functionBlock.agent.invoke({
+        canvasId: "canvasA",
+        name: "asyncTask",
+        globalAccess: true,
+        inputs: ["taskName"],
+      });
+      const funcId = defResult.functionId;
+
+      // Call with concurrent: true
+      const concurrentResult = await functionCallBlock.agent.invoke({
+        canvasId: "canvasA",
+        functionId: funcId,
+        arguments: { taskName: "CleanUp" },
+        concurrent: true,
+      });
+      expect(concurrentResult.result.concurrent).toBe(true);
+      expect(concurrentResult.result.status).toBe("pending");
+
+      // Call with concurrent: false
+      const sequentialResult = await functionCallBlock.agent.invoke({
+        canvasId: "canvasA",
+        functionId: funcId,
+        arguments: { taskName: "CleanUp" },
+        concurrent: false,
+      });
+      expect(sequentialResult.result.concurrent).toBe(false);
+      expect(sequentialResult.result.status).toBe("completed");
+    });
+
+    it("Adversarial: throws error when calling non-existent function ID", async () => {
+      await expect(
+        functionCallBlock.agent.invoke({
+          canvasId: "canvasA",
+          functionId: "fn_nonexistent",
+          arguments: {},
+        }),
+      ).rejects.toThrow("Function with ID fn_nonexistent not found");
     });
   });
 
@@ -117,19 +228,57 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     it("has valid metadata and schema", () => {
       expect(codeBlock.id).toBe("iem.conductor.code");
       const validIn = {
-        language: "python" as const,
-        code: "print('hello')",
+        language: "javascript" as const,
+        code: "return 1 + 2;",
         variables: { input1: "test" },
       };
       expect(codeBlock.input.parse(validIn)).toEqual(validIn);
     });
 
-    it("executes mock sandbox logic", async () => {
+    it("executes standard JavaScript and resolves returned value", async () => {
       const output = await codeBlock.agent.invoke({
-        language: "python",
-        code: "print('hello')",
+        language: "javascript",
+        code: "return 100 * 2;",
       });
-      expect(output.result).toContain("Executed python code");
+      expect(output.result).toBe(200);
+    });
+
+    it("successfully accesses variables inside sandbox context", async () => {
+      const output = await codeBlock.agent.invoke({
+        language: "javascript",
+        code: "return x + y;",
+        variables: { x: 5, y: 15 },
+      });
+      expect(output.result).toBe(20);
+    });
+
+    it("resolves asynchronous promises and native awaits inside sandbox", async () => {
+      const output = await codeBlock.agent.invoke({
+        language: "javascript",
+        code: `
+          const val = await Promise.resolve("async success");
+          return val.toUpperCase();
+        `,
+      });
+      expect(output.result).toBe("ASYNC SUCCESS");
+    });
+
+    it("gracefully catches syntax errors in user script", async () => {
+      const output = await codeBlock.agent.invoke({
+        language: "javascript",
+        code: "return * 2;",
+      });
+      expect(output.result).toBeNull();
+      expect(output.error).toBeDefined();
+    });
+
+    it("safely exits infinite loop blocks through VM execution timeout", async () => {
+      const output = await codeBlock.agent.invoke({
+        language: "javascript",
+        code: "while(true) {}",
+      });
+      expect(output.result).toBeNull();
+      expect(output.error).toContain("Script execution timed out");
     });
   });
 
