@@ -14,6 +14,10 @@ chatRouter.post("/", async (c) => {
   const db = c.get("db") as any;
   const user = c.get("user") as any;
   const body = await c.req.json();
+  // Debug: log incoming payload for block context
+  if (body.blockContext) {
+    console.log("[CHAT ROUTE] Received blockContext:", body.blockContext);
+  }
 
   const { sessionId } = body;
 
@@ -58,8 +62,13 @@ chatRouter.post("/", async (c) => {
     return c.json({ error: "Messages array is required" }, 400);
   }
 
-  // Only enforce workspace existence if this is not marked as a draft session
-  if (sessionId && !sessionId.startsWith("draft-") && !body.isDraft) {
+  // Only enforce workspace existence if this is not marked as a draft/block session
+  if (
+    sessionId &&
+    !sessionId.startsWith("draft-") &&
+    !sessionId.startsWith("block-chat-") &&
+    !body.isDraft
+  ) {
     const [workspace] = await db
       .select()
       .from(workspaces as any)
@@ -72,25 +81,105 @@ chatRouter.post("/", async (c) => {
 
   try {
     // @ts-ignore
-    const { createOrchestrator, mastra } = await import("@iem/agents");
-    const agent = await createOrchestrator(mastra.storage);
+    const { createOrchestrator, createBlockAssistant, mastra } =
+      await import("@iem/agents");
 
-    let canvasSystemPrompt = "";
-    if (body.canvasContext) {
-      canvasSystemPrompt = `\n\nCURRENT CANVAS STATE:\nNodes: ${JSON.stringify(body.canvasContext.nodes)}\nEdges: ${JSON.stringify(body.canvasContext.edges)}\nBe aware of these existing nodes and connections when suggesting changes, discussing the workspace, or generating blueprints. You are contiguous with the canvas experience.`;
-    }
+    let agent;
+    let systemInstruction = "";
 
-    // Pass the ENTIRE message history from the UI (which already contains the context),
-    // and prepend the dynamic system message so the model has the rules.
-    const finalMessages = [
-      {
-        role: "system",
-        content: `You are the Imagination Engine Orchestrator. 
+    if (body.blockContext) {
+      // Debug: log block context details before constructing system instruction
+      console.log("[CHAT ROUTE] Preparing system instruction for block:", {
+        instanceId: body.blockContext.instanceId,
+        type: body.blockContext.type,
+        currentData: body.blockContext.currentData,
+      });
+      agent = await createBlockAssistant(mastra.storage);
+
+      const { instanceId, type, currentData } = body.blockContext;
+      let blockDef: any = null;
+      try {
+        // @ts-ignore
+        const { blockRegistry } = await import("@iem/core");
+        blockDef = blockRegistry.get(type);
+      } catch (e) {
+        console.warn(
+          `[CHAT ROUTE] Could not get block registry definition for ${type}`,
+        );
+      }
+
+      const blockName = blockDef?.name || type;
+      const blockDesc =
+        blockDef?.description || "A functional node on the canvas.";
+      const blockCategory = blockDef?.category || "general";
+
+      let schemaStr = "";
+      if (blockDef?.input) {
+        try {
+          if (blockDef.input.shape) {
+            const shapeKeys = Object.keys(blockDef.input.shape);
+            schemaStr = shapeKeys
+              .map((key: string) => {
+                const field = blockDef.input.shape[key];
+                const desc = field.description || field._def?.description || "";
+                return `- **${key}**: ${desc || "Any value"}`;
+              })
+              .join("\n");
+          }
+        } catch (e) {
+          schemaStr = "Zod validation schema";
+        }
+      }
+
+      systemInstruction = `You are a specialized Block Configuration Assistant within the Imagination Engine.
+Your ROLE is to help the user configure the parameters and settings of a SINGLE specific block on the canvas.
+
+HARD LIMITS:
+1. You are LOCKED into the block instance provided in the context.
+2. You MUST NOT suggest or attempt to modify other nodes, structural changes, or the overall canvas layout.
+3. Your ONLY way to apply changes is through the 'configure_block' tool.
+4. You do NOT have access to 'generate_canvas_blueprint'.
+
+OPERATIONAL GUIDELINES:
+- Be precise. If a user says "change the color to blue", identify the correct parameter in the block's schema and call 'configure_block'.
+- Be conversational but focused. Do not wander into architectural discussions.
+- If the user asks for something outside your scope (like "add a new node"), explain that you are a specialized assistant for this block and suggest they ask the main Orchestrator for canvas-level changes.
+
+CURRENT BLOCK CONTEXT:
+- **Block ID/Instance ID**: \`${instanceId}\`
+- **Block Type**: \`${type}\`
+- **Block Name**: ${blockName}
+- **Description**: ${blockDesc}
+- **Category**: ${blockCategory}
+
+### ACCEPTED PARAMETERS (SCHEMA):
+${schemaStr || "No specific schema registered."}
+
+### CURRENT CONFIGURATION:
+\`\`\`json
+${JSON.stringify(currentData || {}, null, 2)}
+\`\`\`
+`;
+    } else {
+      agent = await createOrchestrator(mastra.storage);
+
+      let canvasSystemPrompt = "";
+      if (body.canvasContext) {
+        canvasSystemPrompt = `\n\nCURRENT CANVAS STATE:\nNodes: ${JSON.stringify(body.canvasContext.nodes)}\nEdges: ${JSON.stringify(body.canvasContext.edges)}\nBe aware of these existing nodes and connections when suggesting changes, discussing the workspace, or generating blueprints. You are contiguous with the canvas experience.`;
+      }
+
+      systemInstruction = `You are the Imagination Engine Orchestrator. 
 CRITICAL MISSION: When a user describes a goal, idea, or request, you MUST deconstruct it into a functional architecture and call the 'generate_canvas_blueprint' tool to place blocks on the canvas. 
 
 The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_id' parameter of every tool call. Also, pass the session thread ID "${sessionId}" to the 'session_id' parameter if generating a blueprint to link history.
 
-Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.${canvasSystemPrompt}`,
+Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.${canvasSystemPrompt}`;
+    }
+
+    const finalMessages = [
+      {
+        role: "system",
+        content: systemInstruction,
       },
       ...sanitizedMessages,
     ];

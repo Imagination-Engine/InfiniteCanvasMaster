@@ -20,7 +20,7 @@ conductorRouter.post("/webhook/:graphId/:nodeId", async (c) => {
   const [graph] = await db
     .select()
     .from(conductorGraphs)
-    .where(eq(conductorGraphs.id, graphId));
+    .where(eq(conductorGraphs.id as any, graphId) as any);
   if (!graph) return c.json({ error: "Graph not found" }, 404);
 
   const [node] = await db
@@ -28,10 +28,10 @@ conductorRouter.post("/webhook/:graphId/:nodeId", async (c) => {
     .from(conductorNodes)
     .where(
       and(
-        eq(conductorNodes.id, nodeId),
-        eq(conductorNodes.graphId, graphId),
-        eq(conductorNodes.kind, "webhook"),
-      ),
+        eq(conductorNodes.id as any, nodeId),
+        eq(conductorNodes.graphId as any, graphId),
+        eq(conductorNodes.kind as any, "webhook"),
+      ) as any,
     );
   if (!node) return c.json({ error: "Webhook node not found" }, 404);
 

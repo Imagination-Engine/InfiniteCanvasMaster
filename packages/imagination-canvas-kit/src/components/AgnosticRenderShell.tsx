@@ -69,11 +69,6 @@ export const AgnosticRenderShell: React.FC<AgnosticRenderShellProps> = ({
 
   return (
     <div className="w-full h-full relative overflow-hidden flex flex-col">
-      {/* Background Studio Watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {getStudioIcon()}
-      </div>
-
       <div className="flex-1 overflow-auto custom-scrollbar relative z-10">
         <Component
           object={object}

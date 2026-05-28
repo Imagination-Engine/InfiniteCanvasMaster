@@ -13,6 +13,8 @@ import {
   buildSuggestionChips,
   resolveOrchestratorReply,
 } from "../utils/orchestratorSuggestions";
+import { useConnectionStore } from "../state/connectionStore";
+import { useShellStore } from "../state/shellStore";
 
 /**
  * Orchestrator Drawer: Fixed-width, right-docked production chat interface.
@@ -51,10 +53,18 @@ export const FloatingOrchestratorChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const addObject = useCanvasStore((s) => s.addObject);
+  const accessToken = useCanvasStore((s) => s.accessToken);
+  const canvasId = useShellStore((s) => s.canvasId);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const aiGeneratedBlockIdsRef = useRef<Set<string>>(new Set());
 
   // React to canvas changes
   useEffect(() => {
     if (lastDroppedBlock) {
+      // Ignore blocks that were generated programmatically by the AI Orchestrator
+      if (aiGeneratedBlockIdsRef.current.has(lastDroppedBlock.id)) {
+        return;
+      }
       const blockName =
         lastDroppedBlock.metadata?.label || lastDroppedBlock.type;
       setMessages((prev) => [
@@ -78,26 +88,12 @@ export const FloatingOrchestratorChat: React.FC = () => {
         messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
       } catch (e) {}
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, isStreaming]);
 
-  const handleSubmit = () => {
-    if (!input.trim()) return;
-
-    const userMsg = {
-      id: `msg-${Date.now()}`,
-      role: "user",
-      content: input,
-      type: "text",
-    };
-    setMessages((prev) => [...prev, userMsg]);
-
-    // Classify intent
-    const intent = classifyOrchestratorIntent(input);
-    setInput("");
-
-    // --- Intent Analysis & Canvas Interaction ---
+  const executeOfflineFallback = (userInput: string) => {
+    const intent = classifyOrchestratorIntent(userInput);
     setTimeout(() => {
-      let response = resolveOrchestratorReply(input, selectedBlockKind) ?? "";
+      let response = resolveOrchestratorReply(userInput, selectedBlockKind) ?? "";
 
       if (response) {
         // registry-aware answer handled
@@ -109,7 +105,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
         ];
         response = reactions[Math.floor(Math.random() * reactions.length)];
       } else if (intent === "create_block") {
-        const lowerInput = input.toLowerCase();
+        const lowerInput = userInput.toLowerCase();
 
         // Calculate intelligent placement (center of viewport)
         const viewport = useViewportStore.getState();
@@ -119,7 +115,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
         const dropY = viewport.y + vh / 2 / viewport.zoom - 100;
 
         if (lowerInput.includes("agent") || lowerInput.includes("claw")) {
-          const traits = extractAgentTraits(input);
+          const traits = extractAgentTraits(userInput);
           const label = traits.role
             ? `${traits.role.charAt(0).toUpperCase() + traits.role.slice(1)} Agent`
             : "Autonomous Builder";
@@ -128,8 +124,10 @@ export const FloatingOrchestratorChat: React.FC = () => {
             ? `Initializing ${label} runtime. Dropping them onto the canvas for you.`
             : "Initializing OpenClaw runtime. Spinning up a builder agent on the canvas.";
 
+          const agentId = `agent-${Date.now()}`;
+          aiGeneratedBlockIdsRef.current.add(agentId);
           addObject({
-            id: `agent-${Date.now()}`,
+            id: agentId,
             type: "agent",
             x: dropX,
             y: dropY,
@@ -148,8 +146,10 @@ export const FloatingOrchestratorChat: React.FC = () => {
           lowerInput.includes("write")
         ) {
           response = `I've drafted a narrative spine related to "${sessionContext || "your project"}". Dropping a Note block onto the canvas for you.`;
+          const noteId = `note-${Date.now()}`;
+          aiGeneratedBlockIdsRef.current.add(noteId);
           addObject({
-            id: `note-${Date.now()}`,
+            id: noteId,
             type: "note",
             x: dropX,
             y: dropY,
@@ -189,7 +189,162 @@ export const FloatingOrchestratorChat: React.FC = () => {
           type: "text",
         },
       ]);
+      setIsStreaming(false);
     }, 800);
+  };
+
+  const handleSubmit = async () => {
+    if (!input.trim() || isStreaming) return;
+
+    const userMsg = {
+      id: `msg-${Date.now()}`,
+      role: "user",
+      content: input,
+      type: "text",
+    };
+    setMessages((prev) => [...prev, userMsg]);
+
+    const promptInput = input;
+    setInput("");
+    setIsStreaming(true);
+
+    // 1. Gather active canvas context (nodes and edges)
+    const currentObjects = useCanvasStore.getState().objects || {};
+    const currentConnections = useConnectionStore.getState().connections || {};
+
+    const canvasContext = {
+      nodes: Object.values(currentObjects).map((obj) => ({
+        id: obj.id,
+        type: obj.type,
+        title: obj.metadata?.label || obj.type,
+        description: obj.metadata?.description || "",
+      })),
+      edges: Object.values(currentConnections).map((conn) => ({
+        source: conn.fromId,
+        target: conn.toId,
+        label: conn.label || "",
+      })),
+    };
+
+    // 2. Format history array for Mastra Agent format
+    const chatHistory = [...messages, userMsg]
+      .filter((m) => m.role === "user" || m.role === "agent" || m.role === "assistant")
+      .map((m) => ({
+        role: m.role === "agent" ? "assistant" : m.role,
+        content: m.content,
+      }));
+
+    try {
+      const url = "http://localhost:3001/api/chat";
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          sessionId: canvasId || `draft-${Date.now()}`,
+          messages: chatHistory,
+          canvasContext,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("No response stream reader available");
+
+      let assistantResponseContent = "";
+      const assistantId = `msg-${Date.now() + 1}`;
+
+      // Initialize response placeholder
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantId,
+          role: "agent",
+          content: "",
+          type: "text",
+        },
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter(Boolean);
+
+        for (const line of lines) {
+          if (line.startsWith("0:")) {
+            try {
+              const textChunk = JSON.parse(line.slice(2));
+              assistantResponseContent += textChunk;
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantId
+                    ? { ...msg, content: assistantResponseContent }
+                    : msg
+                )
+              );
+            } catch (e) {
+              console.error("Error parsing text chunk:", e);
+            }
+          } else if (line.startsWith("9:")) {
+            try {
+              const toolData = JSON.parse(line.slice(2));
+              if (toolData.toolName === "generate_canvas_blueprint") {
+                const result = toolData.result;
+                if (result && result.success && Array.isArray(result.nodes)) {
+                  // Paint nodes dynamically on the canvas
+                  result.nodes.forEach((node: any) => {
+                    aiGeneratedBlockIdsRef.current.add(node.id);
+                    const obj = {
+                      id: node.id,
+                      type: node.type,
+                      x: node.positionX ?? 100,
+                      y: node.positionY ?? 100,
+                      width: 320,
+                      height: 240,
+                      zIndex: 1,
+                      status: "idle",
+                      metadata: {
+                        label: node.data?.label || node.type,
+                        description: node.data?.description || "",
+                        inputs: node.data?.inputs || {},
+                      },
+                    };
+                    useCanvasStore.getState().addObject(obj);
+                  });
+
+                  // Paint connections dynamically on the canvas
+                  if (Array.isArray(result.edges)) {
+                    result.edges.forEach((edge: any) => {
+                      const conn = {
+                        id: edge.id,
+                        fromId: edge.sourceId,
+                        toId: edge.targetId,
+                        label: edge.data?.condition || edge.data?.label || "",
+                      };
+                      useConnectionStore.getState().addConnection(conn);
+                    });
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("Error processing orchestrator tool data:", e);
+            }
+          }
+        }
+      }
+      setIsStreaming(false); // Stream finished successfully
+    } catch (err: any) {
+      console.warn("Canvas Orchestrator backend unavailable, using offline fallback.", err);
+      executeOfflineFallback(promptInput);
+    }
   };
 
   const { activeExpansionId } = useExpansionStore();
@@ -293,6 +448,18 @@ export const FloatingOrchestratorChat: React.FC = () => {
                   </motion.div>
                 ))}
               </AnimatePresence>
+              {isStreaming && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-xs text-white/90 flex items-center gap-1.5 shrink-0 animate-pulse">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest pl-1">Orchestrator thinking...</span>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} className="h-4 shrink-0" />
             </div>
 

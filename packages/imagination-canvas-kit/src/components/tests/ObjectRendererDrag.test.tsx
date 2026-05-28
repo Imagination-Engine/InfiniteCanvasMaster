@@ -28,10 +28,12 @@ describe("ObjectRenderer Drag Interaction", () => {
     useCanvasStore.setState({
       objects: { [mockObject.id]: mockObject as any },
     });
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => cb(0));
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("should update coordinates in store during drag", () => {

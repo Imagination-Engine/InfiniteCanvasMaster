@@ -1,8 +1,8 @@
-// @ts-nocheck
 import React, { useEffect } from "react";
 import { useSessionStore } from "../../../store/useSessionStore";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
 import { ChatShell } from "../../Chat/ChatShell";
+import { useAuth } from "../../../auth/AuthContext";
 
 import {
   CanvasShell,
@@ -24,6 +24,13 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   initialDocument,
   initialMessages,
 }) => {
+  const { accessToken } = useAuth();
+
+  useEffect(() => {
+    if (accessToken) {
+      useCanvasStore.getState().setAccessToken(accessToken);
+    }
+  }, [accessToken]);
   // --- Create Session Context Summary ---
   const sessionSummary = React.useMemo(() => {
     const userMessages = (initialMessages || [])

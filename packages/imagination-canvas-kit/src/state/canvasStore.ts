@@ -11,6 +11,8 @@ interface CanvasState {
   objects: Record<string, CanvasObject>;
   connections: CanvasConnection[];
   bindings: CanvasBinding[];
+  accessToken?: string;
+  setAccessToken: (token: string) => void;
 
   addObject: (obj: CanvasObject) => void;
   updateObject: (id: string, updates: Partial<CanvasObject>) => void;
@@ -37,6 +39,8 @@ export const useCanvasStore = create<CanvasState>()(
       objects: {},
       connections: [],
       bindings: [],
+      accessToken: undefined,
+      setAccessToken: (token) => set({ accessToken: token }),
 
       addObject: (obj) =>
         set((state) => ({ objects: { ...state.objects, [obj.id]: obj } })),

@@ -3,7 +3,12 @@ import { describe, it, expect, vi } from "vitest";
 import { verifyGaps } from "../gap-verifier";
 import fs from "fs";
 
-vi.mock("fs");
+vi.mock("fs", () => ({
+  default: {
+    existsSync: vi.fn(),
+  },
+  existsSync: vi.fn(),
+}));
 
 describe("Gap Verifier", () => {
   it("should pass if a Verified gap has a corresponding test file", () => {

@@ -53,11 +53,11 @@ export const BlockLibraryCard: React.FC<BlockLibraryCardProps> = ({
               {block.name}
             </h3>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[8px] font-black uppercase tracking-tighter text-white/40">
+              <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-white/40">
                 {block.category}
               </span>
               {block.studio && (
-                <span className="text-[8px] px-1.5 py-0.5 bg-brand-cyan/10 border border-brand-cyan/20 rounded text-brand-cyan font-bold uppercase tracking-tighter scale-90 origin-left">
+                <span className="text-[8px] px-1.5 py-0.5 bg-brand-cyan/10 border border-brand-cyan/20 rounded text-brand-cyan font-bold uppercase tracking-[0.15em] scale-90 origin-left">
                   {block.studio}
                 </span>
               )}
@@ -65,7 +65,7 @@ export const BlockLibraryCard: React.FC<BlockLibraryCardProps> = ({
           </div>
         </div>
         {block.agentic && (
-          <div className="px-2 py-0.5 bg-brand-purple/20 text-brand-purple border border-brand-purple/30 rounded text-[9px] font-black uppercase tracking-widest">
+          <div className="px-2 py-0.5 bg-brand-purple/20 text-brand-purple border border-brand-purple/30 rounded text-[9px] font-bold uppercase tracking-[0.15em]">
             Agentic
           </div>
         )}
@@ -119,7 +119,7 @@ export const BlockLibraryCard: React.FC<BlockLibraryCardProps> = ({
         <div className="flex items-center">
           <div
             data-testid="runtime-badge"
-            className={`px-1.5 py-0.5 border rounded text-[8px] font-bold uppercase tracking-widest ${getRuntimeBadgeColor(block.runtime)}`}
+            className={`px-1.5 py-0.5 border rounded text-[8px] font-bold uppercase tracking-[0.15em] ${getRuntimeBadgeColor(block.runtime)}`}
           >
             {block.runtime || "Static"}
           </div>
@@ -127,7 +127,7 @@ export const BlockLibraryCard: React.FC<BlockLibraryCardProps> = ({
 
         {/* Hover-only drag handle */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-white/20">
-          <span className="text-[7px] font-black uppercase tracking-tighter">
+          <span className="text-[7px] font-bold uppercase tracking-[0.15em]">
             Drag
           </span>
           <GripHorizontal size={12} />

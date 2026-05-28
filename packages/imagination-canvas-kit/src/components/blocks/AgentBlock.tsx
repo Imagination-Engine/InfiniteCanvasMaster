@@ -82,7 +82,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
           <div>
             <label
               htmlFor="agent-label"
-              className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2"
+              className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1.5"
             >
               Display Name
             </label>
@@ -91,7 +91,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
               type="text"
               value={object.metadata.label || ""}
               onChange={(e) => handleChange("label", e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-purple/50 outline-none transition-all"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all"
               placeholder="e.g., Marketing Copywriter"
             />
           </div>
@@ -99,7 +99,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
           <div>
             <label
               htmlFor="agent-role"
-              className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2"
+              className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1.5"
             >
               Agent Role
             </label>
@@ -108,7 +108,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
               type="text"
               value={object.metadata.role || ""}
               onChange={(e) => handleChange("role", e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-purple/50 outline-none transition-all font-mono"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all font-mono"
               placeholder="e.g., Researcher, Builder, Critic"
             />
           </div>
@@ -116,7 +116,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
           <div>
             <label
               htmlFor="agent-instructions"
-              className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2"
+              className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1.5"
             >
               Instructions
             </label>
@@ -124,7 +124,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
               id="agent-instructions"
               value={object.metadata.instructions || ""}
               onChange={(e) => handleChange("instructions", e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-purple/50 outline-none transition-all min-h-[120px] resize-none"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all min-h-[120px] resize-none"
               placeholder="Define exactly how this agent should behave..."
             />
           </div>

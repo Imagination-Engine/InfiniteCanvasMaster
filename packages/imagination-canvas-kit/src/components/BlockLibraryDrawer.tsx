@@ -54,7 +54,7 @@ export const BlockLibraryDrawer: React.FC = () => {
           <div className="flex flex-col items-center gap-2">
             <Library size={20} />
             <span
-              className="text-[10px] font-bold uppercase tracking-widest"
+              className="text-[10px] font-bold uppercase tracking-[0.15em]"
               style={{ writingMode: "vertical-rl" }}
             >
               Library
@@ -68,7 +68,7 @@ export const BlockLibraryDrawer: React.FC = () => {
           <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 text-brand-cyan">
               <Library size={18} />
-              <h2 className="text-xs font-black uppercase tracking-widest">
+              <h2 className="text-xs font-bold uppercase tracking-[0.15em]">
                 Block Library
               </h2>
             </div>
@@ -100,7 +100,7 @@ export const BlockLibraryDrawer: React.FC = () => {
             <button
               onClick={() => setActiveCategory(null)}
               className={
-                "shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border " +
+                "shrink-0 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] transition-all border " +
                 (activeCategory === null
                   ? "bg-brand-cyan text-black border-brand-cyan shadow-[0_0_15px_rgba(0,194,255,0.4)]"
                   : "bg-white/5 text-white/40 border-white/5 hover:text-white hover:bg-white/10")
@@ -113,7 +113,7 @@ export const BlockLibraryDrawer: React.FC = () => {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={
-                  "shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border " +
+                  "shrink-0 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] transition-all border " +
                   (activeCategory === cat
                     ? "bg-brand-cyan text-black border-brand-cyan shadow-[0_0_15px_rgba(0,194,255,0.4)]"
                     : "bg-white/5 text-white/40 border-white/5 hover:text-white hover:bg-white/10")
@@ -132,7 +132,7 @@ export const BlockLibraryDrawer: React.FC = () => {
             {filteredBlocks.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-20">
                 <Search size={48} className="mb-4" />
-                <p className="text-xs uppercase font-black tracking-widest">
+                <p className="text-xs uppercase font-bold tracking-[0.15em]">
                   No matching tools found
                 </p>
               </div>

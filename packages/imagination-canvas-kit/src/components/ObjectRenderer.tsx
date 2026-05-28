@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { memo, useRef, useState } from "react";
+import React, { memo, useRef, useState, Suspense } from "react";
 import type { CanvasObject } from "../contracts";
 import { useSelectionStore } from "../state/selectionStore";
 import { useExpansionStore } from "../state/expansionStore";
@@ -15,7 +15,8 @@ import { OpenClawBlock as OpenClawBlockComponent } from "./blocks/OpenClawBlock"
 import { OpenClawAgentGroupBlock } from "./blocks/OpenClawAgentGroupBlock";
 import { CommonBlockView } from "./blocks/CommonBlockView";
 import { resolveBlockIcon } from "../utils/blockIconMap";
-import { Maximize2, GripHorizontal, Activity, AlertCircle } from "lucide-react";
+import { Maximize2, GripHorizontal, Activity, AlertCircle, Trash2 } from "lucide-react";
+import { useCanvasHistory } from "../hooks/useCanvasHistory";
 import { studioInteropResolver } from "@iem/core";
 
 export type ComponentRegistry = Record<
@@ -38,19 +39,82 @@ const defaultRegistry: ComponentRegistry = {
 };
 
 export const ObjectRenderer: React.FC<{
-  object: CanvasObject;
+  objectId?: string;
+  object?: CanvasObject;
   registry?: ComponentRegistry;
-}> = memo(({ object, registry = defaultRegistry }) => {
-  const { selectedIds, setSelection, setHovered, hoveredId } =
+}> = memo(({ objectId, object: propObject, registry = defaultRegistry }) => {
+  const storeObject = useCanvasStore((s) => objectId ? s.objects[objectId] : undefined);
+  const object = propObject || storeObject;
+
+  const { selectedIds, setSelection, setHovered, hoveredId, clearSelection } =
     useSelectionStore();
   const { setExpanded } = useExpansionStore();
   const { canvasId: projectId } = useShellStore();
   const { x: viewportX, y: viewportY, zoom: viewportZoom } = useViewportStore();
   const updateObject = useCanvasStore((s) => s.updateObject);
+  const removeObject = useCanvasStore((s) => s.removeObject);
+  const { capture } = useCanvasHistory();
   const addConnection = useConnectionStore((s) => s.addConnection);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragPos = useRef({ x: object?.x || 0, y: object?.y || 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isExpandHovered, setIsExpandHovered] = useState(false);
+
+  // Keep dragPos in sync when not dragging
+  if (!isDragging && object) {
+    dragPos.current = { x: object.x, y: object.y };
+  }
+
+  // Define all React hooks unconditionally at the top of the component, before early returns
+  const handleParamsChange = React.useCallback((newParams: any) => {
+    if (!object) return;
+    updateObject(object.id, {
+      metadata: {
+        ...object.metadata,
+        inputs: {
+          ...(object.metadata?.inputs || {}),
+          ...newParams,
+        },
+      },
+    });
+  }, [object?.id, object?.metadata, updateObject]);
+
+  const polyfilledData = React.useMemo(() => {
+    if (!object) return { input: {}, output: {} };
+    return {
+      input: object.metadata?.inputs || object.metadata || {},
+      output: object.metadata?.outputs || {},
+    };
+  }, [object?.metadata]);
+
+  const Component = React.useMemo(() => {
+    if (!object) return CommonBlockView;
+    return (
+      BlockRegistry.resolve((object as any).blockKind) ||
+      BlockRegistry.resolve(object.type) ||
+      registry[object.type] ||
+      CommonBlockView
+    );
+  }, [object?.blockKind, object?.type, registry]);
+
+  const contentArea = React.useMemo(() => {
+    if (!object) return null;
+    return (
+      <div className="flex-1 min-h-0 overflow-auto custom-scrollbar mb-4 pr-1">
+        <Suspense fallback={<div className="flex-1 animate-pulse bg-white/5" />}>
+          <Component
+            object={object}
+            mode="compact"
+            data={polyfilledData}
+            onParamsChange={handleParamsChange}
+          />
+        </Suspense>
+      </div>
+    );
+  }, [object?.id, object?.type, Component, polyfilledData, handleParamsChange]);
+
+  if (!object) return null;
 
   const screenW = window.innerWidth / viewportZoom;
   const screenH = window.innerHeight / viewportZoom;
@@ -68,11 +132,6 @@ export const ObjectRenderer: React.FC<{
   const isSelected = selectedIds.includes(object.id);
   const isHovered = hoveredId === object.id;
 
-  const Component =
-    BlockRegistry.resolve((object as any).blockKind) ||
-    BlockRegistry.resolve(object.type) ||
-    registry[object.type] ||
-    CommonBlockView;
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -94,18 +153,45 @@ export const ObjectRenderer: React.FC<{
     const initialObjY = object.y;
 
     let moved = false;
+    let animationFrameId: number | null = null;
+    let latestDx = 0;
+    let latestDy = 0;
 
     const onMove = (moveEvent: PointerEvent) => {
       if (!moved) {
         setIsDragging(true);
         moved = true;
       }
-      const dx = (moveEvent.clientX - startX) / viewportZoom;
-      const dy = (moveEvent.clientY - startY) / viewportZoom;
-      updateObject(object.id, { x: initialObjX + dx, y: initialObjY + dy });
+      latestDx = (moveEvent.clientX - startX) / viewportZoom;
+      latestDy = (moveEvent.clientY - startY) / viewportZoom;
+      
+      const newX = initialObjX + latestDx;
+      const newY = initialObjY + latestDy;
+
+      dragPos.current = { x: newX, y: newY };
+
+      // 1. Instant zero-latency hardware transform
+      if (containerRef.current) {
+        containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0) rotate(${(object as any).rotation || 0}deg)`;
+      }
+
+      // 2. Sync React state for lines
+      if (!animationFrameId) {
+        animationFrameId = requestAnimationFrame(() => {
+          updateObject(object.id, { x: dragPos.current.x, y: dragPos.current.y });
+          animationFrameId = null;
+        });
+      }
     };
 
-    const onUp = () => {
+    const onUp = (upEvent: PointerEvent) => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      if (moved) {
+        updateObject(object.id, { x: initialObjX + latestDx, y: initialObjY + latestDy });
+      }
       setIsDragging(false);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
@@ -120,22 +206,7 @@ export const ObjectRenderer: React.FC<{
     setExpanded(object.id, "fullscreen", projectId);
   };
 
-  const handleParamsChange = (newParams: any) => {
-    updateObject(object.id, {
-      metadata: {
-        ...object.metadata,
-        inputs: {
-          ...(object.metadata.inputs || {}),
-          ...newParams,
-        },
-      },
-    });
-  };
-
-  const polyfilledData = {
-    input: object.metadata.inputs || object.metadata || {},
-    output: object.metadata.outputs || {},
-  };
+  // Hooks successfully defined above early return statements
 
   const blockTypeLabel = object.type.split(".").pop() || "";
   const displayLabel =
@@ -153,6 +224,8 @@ export const ObjectRenderer: React.FC<{
       case "thinking":
       case "generating":
         return "text-brand-cyan";
+      case "complete":
+        return "text-emerald-400";
       case "error":
         return "text-rose-400";
       case "waiting-for-user":
@@ -171,12 +244,12 @@ export const ObjectRenderer: React.FC<{
 
   return (
     <div
-      className={`absolute transition-all duration-300 ${isSelected ? "z-[1000] ring-2 ring-brand-cyan shadow-[0_0_40px_rgba(0,194,255,0.3)] scale-[1.01]" : "z-[10] shadow-xl"} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "z-[10000] scale-[1.03] shadow-2xl opacity-90 cursor-grabbing" : "cursor-grab"}`}
+      ref={containerRef}
+      className={`absolute transition-[box-shadow,opacity,ring] duration-300 ${isSelected ? "z-[1000] ring-2 ring-brand-cyan shadow-[0_0_40px_rgba(0,194,255,0.3)] scale-[1.01]" : "z-[10] shadow-xl"} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "z-[10000] scale-[1.03] shadow-2xl opacity-90 cursor-grabbing transition-none" : "cursor-grab"}`}
       style={{
-        left: object.x,
-        top: object.y,
-        transform: `rotate(${(object as any).rotation || 0}deg)`,
+        transform: `translate3d(${isDragging ? dragPos.current.x : object.x}px, ${isDragging ? dragPos.current.y : object.y}px, 0) rotate(${(object as any).rotation || 0}deg)`,
         userSelect: "none",
+        willChange: "transform",
       }}
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
@@ -218,7 +291,7 @@ export const ObjectRenderer: React.FC<{
       </div>
 
       <div
-        className={`bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-all duration-300 ${isHovered || isSelected ? "border-brand-cyan/20" : ""}`}
+        className={`bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-shadow duration-300 ${isHovered || isSelected ? "border-brand-cyan/20" : ""}`}
         style={{
           width: object.width,
           height: object.height,
@@ -244,7 +317,7 @@ export const ObjectRenderer: React.FC<{
               <BlockIcon size={14} />
             </div>
 
-            <span className="text-[11px] font-black uppercase tracking-widest text-white truncate drop-shadow-md">
+            <span className="text-[11px] font-black uppercase tracking-[0.15em] text-white truncate drop-shadow-md">
               {String(displayLabel)}
             </span>
 
@@ -271,13 +344,33 @@ export const ObjectRenderer: React.FC<{
                 setExpanded(object.id, "fullscreen", projectId);
               }}
               className="p-1.5 text-brand-cyan hover:bg-brand-cyan rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
-              title="Expand"
+              title="Immersive View"
             >
               <Maximize2
                 size={14}
                 stroke={isExpandHovered ? "black" : "currentColor"}
                 className="transition-colors"
               />
+            </button>
+
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+                capture();
+                removeObject(object.id);
+                clearSelection();
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                capture();
+                removeObject(object.id);
+                clearSelection();
+              }}
+              className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(244,63,94,0.1)]"
+              title="Delete Block"
+            >
+              <Trash2 size={14} className="transition-colors" />
             </button>
           </div>
         </div>
@@ -286,14 +379,14 @@ export const ObjectRenderer: React.FC<{
         <div className="flex-1 flex flex-col p-4 overflow-hidden relative">
           {/* Primary Role/Purpose */}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[9px] font-black uppercase tracking-tighter text-white/30">
+            <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
               {object.metadata?.role || object.type.split(".")[1] || "Process"}
             </span>
             <div className="flex items-center gap-1">
               <Activity size={10} className="text-white/20" />
               <span
                 data-testid="block-status"
-                className={`text-[10px] font-bold uppercase tracking-widest ${getStatusColor(object.status)}`}
+                className={`text-[10px] font-bold uppercase tracking-[0.15em] ${getStatusColor(object.status)}`}
               >
                 {object.status || "idle"}
               </span>
@@ -311,14 +404,7 @@ export const ObjectRenderer: React.FC<{
           )}
 
           {/* Content Area */}
-          <div className="flex-1 min-h-0 overflow-auto custom-scrollbar mb-4 pr-1">
-            <Component
-              object={object}
-              mode="compact"
-              data={polyfilledData}
-              onParamsChange={handleParamsChange}
-            />
-          </div>
+          {contentArea}
 
           {/* Footer: Capabilities & Runtime */}
           <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
@@ -338,7 +424,7 @@ export const ObjectRenderer: React.FC<{
               <div
                 className={`w-1 h-1 rounded-full ${object.status === "error" ? "bg-red-500" : "bg-emerald-500"}`}
               />
-              <span className="text-[8px] font-black uppercase tracking-widest text-white/20">
+              <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/20">
                 {object.metadata?.runtime || "LIVE"}
               </span>
             </div>

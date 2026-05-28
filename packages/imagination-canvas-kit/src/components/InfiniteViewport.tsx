@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from "react";
 import { useViewportCamera } from "../hooks/useViewportCamera";
 import { useCanvasStore } from "../state/canvasStore";
+import { useShallow } from "zustand/react/shallow";
 import { useSelectionStore } from "../state/selectionStore";
 import { ObjectRenderer, type ComponentRegistry } from "./ObjectRenderer";
 import { ConnectorLayer } from "./ConnectorLayer";
@@ -16,10 +17,8 @@ export const InfiniteViewport: React.FC<{
 }> = ({ children, registry }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { viewport, pan, zoomAt } = useViewportCamera();
-  const objectsRecord = useCanvasStore((state) => state.objects);
-  const objects = React.useMemo(
-    () => Object.values(objectsRecord),
-    [objectsRecord],
+  const objectIds = useCanvasStore(
+    useShallow((state) => Object.keys(state.objects))
   );
   const { clearSelection } = useSelectionStore();
 
@@ -206,8 +205,8 @@ export const InfiniteViewport: React.FC<{
       >
         <ConnectorLayer />
         <AgentActivityLayer />
-        {objects.map((obj) => (
-          <ObjectRenderer key={obj.id} object={obj} registry={registry} />
+        {objectIds.map((id) => (
+          <ObjectRenderer key={id} objectId={id} registry={registry} />
         ))}
         {children}
       </div>

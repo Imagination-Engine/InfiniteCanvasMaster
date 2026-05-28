@@ -7,6 +7,8 @@ import { useShellStore } from "../state/shellStore";
 import { BlockLibraryDrawer } from "./BlockLibraryDrawer";
 import { ImmersiveBlockModal } from "./ImmersiveBlockModal";
 import { FloatingOrchestratorChat } from "./FloatingOrchestratorChat";
+import { ConductorInspector } from "./ConductorInspector";
+import { RunWorkflowBar } from "./RunWorkflowBar";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -72,6 +74,8 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
     >
       <BlockLibraryDrawer />
       {children}
+      <ConductorInspector />
+      <RunWorkflowBar />
       <ImmersiveBlockModal ChatComponent={ChatComponent} />
       <FloatingOrchestratorChat />
     </div>

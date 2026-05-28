@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Send, Bot, User, Settings2, Sparkles } from "lucide-react";

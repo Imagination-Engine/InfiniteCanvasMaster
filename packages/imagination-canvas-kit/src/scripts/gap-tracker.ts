@@ -13,7 +13,7 @@ export interface GapEntry {
 
 export function parseGapList(markdown: string): GapEntry[] {
   const gaps: GapEntry[] = [];
-  const lines = markdown.split("\n");
+  const lines = markdown.split(/\r?\n/);
 
   let currentGap: Partial<GapEntry> | null = null;
 

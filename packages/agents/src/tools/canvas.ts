@@ -90,13 +90,24 @@ export const generate_canvas_blueprint = createTool({
         activeWorkspaceId = existing.id;
       }
 
-      const [canvas] = await db
-        .insert(canvases)
-        .values({
-          workspaceId: activeWorkspaceId,
-          name: "Main Canvas",
-        })
-        .returning();
+      let [canvas] = await db
+        .select()
+        .from(canvases)
+        .where(eq(canvases.workspaceId, activeWorkspaceId));
+
+      if (!canvas) {
+        [canvas] = await db
+          .insert(canvases)
+          .values({
+            workspaceId: activeWorkspaceId,
+            name: "Main Canvas",
+          })
+          .returning();
+      } else {
+        // Canvas exists: Clear old nodes and edges to avoid duplication/overlapping
+        await db.delete(nodesTable).where(eq(nodesTable.canvasId, canvas.id));
+        await db.delete(edgesTable).where(eq(edgesTable.canvasId, canvas.id));
+      }
 
       // Topological/Hierarchical DAG layout calculation
       const safeNodes = nodes || [];
@@ -207,8 +218,8 @@ export const generate_canvas_blueprint = createTool({
         projectId: activeWorkspaceId,
         blueprint_name,
         description,
-        nodes,
-        edges,
+        nodes: mappedNodes,
+        edges: mappedEdges,
       };
     } catch (error: any) {
       console.error("[BLUEPRINT PERSISTENCE ERROR]:", error);
@@ -219,5 +230,24 @@ export const generate_canvas_blueprint = createTool({
         error: error.message || "Failed to persist to database",
       };
     }
+  },
+});
+
+export const configure_block = createTool({
+  id: "configure_block",
+  description:
+    "Configure or update the parameters/settings of the active block.",
+  inputSchema: z.object({
+    params: z
+      .record(z.any())
+      .describe("The new key-value parameters to apply to the block config."),
+  }),
+  execute: async (args: any) => {
+    const input = args.input || args;
+    return {
+      success: true,
+      message: "Configuration generated successfully.",
+      params: input.params || {},
+    };
   },
 });

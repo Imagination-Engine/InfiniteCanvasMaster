@@ -10,6 +10,16 @@ export function useKeyboardShortcuts() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
       // Direct access to state to avoid dependency on rapidly changing 'objects'
       const { objects, updateObject } = useCanvasStore.getState();
 
@@ -18,6 +28,18 @@ export function useKeyboardShortcuts() {
           if (e.shiftKey) redo();
           else undo();
         }
+        return;
+      }
+
+      // Deletion shortcut
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        capture();
+        const removeObject = useCanvasStore.getState().removeObject;
+        selectedIds.forEach((id) => {
+          removeObject(id);
+        });
+        useSelectionStore.getState().clearSelection();
         return;
       }
 
