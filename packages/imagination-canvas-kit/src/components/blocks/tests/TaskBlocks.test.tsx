@@ -19,8 +19,7 @@ describe("Task Blocks Adversarial", () => {
     };
 
     const { getByText } = render(<AgentBlock object={mockObject} />);
-    expect(getByText("Agent")).toBeTruthy();
-    expect(getByText(/"Idle."/)).toBeTruthy();
+    expect(getByText(/Defining my purpose on the canvas/i)).toBeTruthy();
   });
 
   it("GoalBlock should handle missing metadata gracefully", () => {

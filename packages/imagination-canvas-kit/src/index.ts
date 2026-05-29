@@ -8,6 +8,7 @@ export * from "./state/connectionStore";
 export * from "./state/expansionStore";
 
 export * from "./utils/camera";
+export * from "./utils/spatialDocumentBridge";
 
 export * from "./components/InfiniteViewport";
 export * from "./components/ObjectRenderer";
@@ -27,6 +28,7 @@ import { ArtifactBlock } from "./components/blocks/ArtifactBlock";
 import { ChatBlock } from "./components/blocks/ChatBlock";
 import { MemoryClusterBlock } from "./components/blocks/MemoryClusterBlock";
 import { AppBlock } from "./components/blocks/AppBlock";
+import { STUDIO_BLOCK_REGISTRATIONS } from "./components/blocks/studio/studioBlocks";
 
 // Register default blocks with both short and full IDs
 BlockRegistry.register("note", NoteBlock as any);
@@ -58,6 +60,10 @@ BlockRegistry.register("iem.data.cluster", MemoryClusterBlock as any);
 BlockRegistry.register("app", AppBlock as any);
 BlockRegistry.register("iem.app.web", AppBlock as any);
 BlockRegistry.register("iem.app.iframe", AppBlock as any);
+
+for (const [blockId, Component] of STUDIO_BLOCK_REGISTRATIONS) {
+  BlockRegistry.register(blockId, Component as any);
+}
 
 export * from "./components/BlockLibraryDrawer";
 export * from "./components/BlockLibraryCard";

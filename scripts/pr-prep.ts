@@ -1,76 +1,81 @@
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '..');
+const rootDir = path.resolve(__dirname, "..");
 
-function safeExec(command: string) {
+function safeExec(command: string): boolean {
   try {
-    return execSync(command, { stdio: 'inherit', cwd: rootDir });
+    execSync(command, { stdio: "inherit", cwd: rootDir });
+    return true;
   } catch (error) {
-    return null;
+    console.error(`Error executing "${command}":`, error);
+    return false;
   }
 }
 
 async function run() {
-  console.log('=== IEM PR-PREP SEQUENCE ===');
+  console.log("=== IEM PR-PREP SEQUENCE ===");
 
-  console.log('\n--- STEP 1: LINTING ---');
-  const lintResult = safeExec('pnpm lint');
-  if (lintResult === null) {
-    console.error('❌ Linting failed.');
+  console.log("\n--- STEP 1: LINTING ---");
+  const lintResult = safeExec("pnpm lint");
+  if (!lintResult) {
+    console.error("❌ Linting failed.");
   } else {
-    console.log('✅ Linting passed.');
+    console.log("✅ Linting passed.");
   }
 
-  console.log('\n--- STEP 2: TYPE CHECKING ---');
-  const typecheckResult = safeExec('pnpm typecheck');
-  if (typecheckResult === null) {
-    console.error('❌ Type checking failed.');
+  console.log("\n--- STEP 2: TYPE CHECKING ---");
+  const typecheckResult = safeExec("pnpm typecheck");
+  if (!typecheckResult) {
+    console.error("❌ Type checking failed.");
   } else {
-    console.log('✅ Type checking passed.');
+    console.log("✅ Type checking passed.");
   }
 
-  console.log('\n--- STEP 3: TESTING ---');
-  const testResult = safeExec('pnpm test');
-  if (testResult === null) {
-    console.error('❌ Tests failed.');
+  console.log("\n--- STEP 3: TESTING ---");
+  const testResult = safeExec("pnpm test");
+  if (!testResult) {
+    console.error("❌ Tests failed.");
   } else {
-    console.log('✅ Tests passed.');
+    console.log("✅ Tests passed.");
   }
 
-  console.log('\n--- STEP 4: EVALUATIONS ---');
-  const evalResult = safeExec('pnpm iem:eval');
-  if (evalResult === null) {
-    console.error('❌ Evals failed. Agent logic degraded.');
+  console.log("\n--- STEP 4: EVALUATIONS ---");
+  const evalResult = safeExec("pnpm iem:eval");
+  if (!evalResult) {
+    console.error("❌ Evals failed. Agent logic degraded.");
   } else {
-    console.log('✅ Evals passed. Agent blueprint generation is stable.');
+    console.log("✅ Evals passed. Agent blueprint generation is stable.");
   }
 
-  console.log('\n--- STEP 5: SCANNING FOR TODO/FIXME ---');
+  console.log("\n--- STEP 5: SCANNING FOR TODO/FIXME ---");
   try {
-    const todos = execSync('grep -rE "TODO|FIXME" apps packages scripts --exclude-dir=node_modules --exclude-dir=dist || true', { encoding: 'utf8' });
+    const todos = execSync(
+      'grep -rE "TODO|FIXME" apps packages scripts --exclude-dir=node_modules --exclude-dir=dist || true',
+      { encoding: "utf8" },
+    );
     if (todos.trim()) {
-      console.warn('⚠️ Found TODOs/FIXMEs:');
+      console.warn("⚠️ Found TODOs/FIXMEs:");
       console.log(todos);
     } else {
-      console.log('✅ No TODOs/FIXMEs found.');
+      console.log("✅ No TODOs/FIXMEs found.");
     }
   } catch (err) {
-    console.log('✅ No TODOs/FIXMEs found.');
+    console.log("✅ No TODOs/FIXMEs found.");
   }
 
-  console.log('\n--- STEP 5: VERIFYING READMES ---');
+  console.log("\n--- STEP 5: VERIFYING READMES ---");
   const criticalReadmes = [
-    'README.md',
-    'apps/web/README.md',
-    'apps/server/README.md',
-    'packages/core/README.md',
-    'packages/db/README.md',
-    'conductor/README.md'
+    "README.md",
+    "apps/web/README.md",
+    "apps/server/README.md",
+    "packages/core/README.md",
+    "packages/db/README.md",
+    "conductor/README.md",
   ];
   let readmeMissing = false;
   for (const r of criticalReadmes) {
@@ -79,13 +84,15 @@ async function run() {
       readmeMissing = true;
     }
   }
-  if (!readmeMissing) console.log('✅ All critical READMES present.');
+  if (!readmeMissing) console.log("✅ All critical READMES present.");
 
-  console.log('\n=== PR-PREP COMPLETE ===');
-  console.log('If all steps above are green (or acceptable yellows), you are ready to commit.');
+  console.log("\n=== PR-PREP COMPLETE ===");
+  console.log(
+    "If all steps above are green (or acceptable yellows), you are ready to commit.",
+  );
 }
 
-run().catch(err => {
+run().catch((err) => {
   console.error(err);
   process.exit(1);
 });

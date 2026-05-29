@@ -1,9 +1,10 @@
 // @ts-nocheck
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSessionStore } from "../../../store/useSessionStore";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
 import { apiRequest } from "../../../lib/api";
 import { useAuth } from "../../../auth/AuthContext";
+import { CopilotSidebar } from "../../Chat/CopilotSidebar";
 import {
   Download,
   FileText,
@@ -12,6 +13,9 @@ import {
   Code,
   File,
   ExternalLink,
+  Film,
+  Play,
+  X,
 } from "lucide-react";
 
 import {
@@ -19,7 +23,11 @@ import {
   InfiniteViewport,
   useCanvasStore,
   useConnectionStore,
+  mergeDocumentIntoCanvasObjects,
+  documentEdgesToConnections,
+  exportCanvasToDocument,
 } from "@iem/imagination-canvas-kit";
+import { useViewportStore } from "@iem/imagination-canvas-kit";
 
 interface DualViewContainerProps {
   projectId: string;
@@ -33,12 +41,38 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   projectId,
   initialDocument,
   initialMessages,
+  saveCanvas,
 }) => {
   const { accessToken } = useAuth();
   const [isRunning, setIsRunning] = useState(false);
   const [lastRun, setLastRun] = useState<any>(null);
   const [isRunPanelOpen, setIsRunPanelOpen] = useState(false);
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
 
+  const documentSyncedRef = useRef<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persistSpatialToServer = useCallback(() => {
+    if (!saveCanvas) return;
+    const objects = useCanvasStore.getState().objects;
+    const connections = useConnectionStore.getState().connections;
+    const viewport = useViewportStore.getState();
+    const doc = exportCanvasToDocument(objects, connections, {
+      x: viewport.x,
+      y: viewport.y,
+      zoom: viewport.zoom,
+    }) as UnifiedCanvasDocument;
+    void saveCanvas(doc).catch((err) =>
+      console.warn("[DualView] Failed to persist spatial canvas:", err),
+    );
+  }, [saveCanvas]);
+
+  const schedulePersist = useCallback(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      persistSpatialToServer();
+    }, 800);
+  }, [persistSpatialToServer]);
   // --- Create Session Context Summary ---
   const sessionSummary = React.useMemo(() => {
     const userMessages = (initialMessages || [])
@@ -49,43 +83,42 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     return userMessages || "New Creative Session";
   }, [initialMessages]);
 
-  // --- Spatial Sync: Initialize Stores from Document ---
+  const applyDocumentToStores = useCallback((doc: UnifiedCanvasDocument) => {
+    const currentObjects = useCanvasStore.getState().objects;
+    const merged = mergeDocumentIntoCanvasObjects(currentObjects, doc);
+    useCanvasStore.setState({ objects: merged });
+
+    const serverConnections = documentEdgesToConnections(doc);
+    const localConnections = useConnectionStore.getState().connections;
+    useConnectionStore.setState({
+      connections: { ...localConnections, ...serverConnections },
+    });
+  }, []);
+
+  // --- Spatial Sync: merge server document after localStorage hydration ---
   useEffect(() => {
     if (!initialDocument) return;
 
-    const objects: Record<string, any> = {};
-    (initialDocument.nodes || []).forEach((node) => {
-      objects[node.id] = {
-        id: node.id,
-        type: node.type || "note",
-        x: node.position?.x || (node as any).x || 0,
-        y: node.position?.y || (node as any).y || 0,
-        width: node.width || 320,
-        height: node.height || 240,
-        zIndex: 1,
-        status: "idle",
-        metadata: {
-          label: node.data?.label,
-          description: node.data?.description,
-          ...node.data,
-        },
-      };
-    });
-    useCanvasStore.setState({ objects: objects as any });
+    const docKey = `${projectId}:${initialDocument.nodes?.length ?? 0}:${initialDocument.edges?.length ?? 0}`;
+    if (documentSyncedRef.current === docKey) return;
 
-    const connections: Record<string, any> = {};
-    (initialDocument.edges || []).forEach((edge) => {
-      connections[edge.id] = {
-        id: edge.id,
-        fromId: edge.source,
-        toId: edge.target,
-        label: edge.label || edge.data?.label,
-      };
-    });
-    useConnectionStore.setState({ connections });
-  }, [initialDocument]);
+    const runMerge = () => {
+      applyDocumentToStores(initialDocument);
+      documentSyncedRef.current = docKey;
+    };
 
-  const handleRunGraph = async () => {
+    if (useCanvasStore.persist.hasHydrated()) {
+      runMerge();
+      return;
+    }
+
+    const unsub = useCanvasStore.persist.onFinishHydration(() => {
+      runMerge();
+    });
+    return unsub;
+  }, [initialDocument, projectId, applyDocumentToStores]);
+
+  const handleRunGraph = useCallback(async () => {
     if (!accessToken) return;
     setIsRunning(true);
 
@@ -142,7 +175,25 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     } finally {
       setIsRunning(false);
     }
-  };
+  }, [accessToken, projectId]);
+
+  useEffect(() => {
+    const unsub = useCanvasStore.subscribe((state, prev) => {
+      if (state.objects === prev.objects) return;
+      schedulePersist();
+    });
+
+    const handleRemoteRun = () => {
+      handleRunGraph();
+    };
+    window.addEventListener("iem:run-graph", handleRemoteRun);
+
+    return () => {
+      unsub();
+      window.removeEventListener("iem:run-graph", handleRemoteRun);
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [schedulePersist, handleRunGraph]);
 
   const downloadFile = (
     filename: string,
@@ -252,6 +303,13 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           icon: Music,
         },
         {
+          key: "video-project",
+          type: "video",
+          ext: "mp4",
+          mime: "video/mp4",
+          icon: Film,
+        },
+        {
           key: "results",
           type: "text",
           ext: "txt",
@@ -316,7 +374,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
 
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">
-      {/* New Spatial Engine Canvas - The sole source of truth */}
+      {/* 1. Main Area: Spatial Engine Canvas */}
       <CanvasShell
         canvasId={projectId}
         sessionContext={sessionSummary}
@@ -325,6 +383,46 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       >
         <InfiniteViewport />
       </CanvasShell>
+
+      {/* 2. Right Sidebar: The Sandbox-style Copilot */}
+      <CopilotSidebar projectId={projectId} />
+
+      {/* 3. Cinematic Movie Preview Modal */}
+      {previewVideoUrl && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/95 backdrop-blur-3xl animate-in fade-in duration-300">
+          <div className="relative w-full max-w-6xl aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(123,92,234,0.3)] border border-white/10 group">
+            <video
+              src={previewVideoUrl}
+              autoPlay
+              controls
+              className="w-full h-full object-contain"
+            />
+            <button
+              onClick={() => setPreviewVideoUrl(null)}
+              className="absolute top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all backdrop-blur-xl border border-white/10 z-10"
+            >
+              <X size={24} />
+            </button>
+
+            {/* Cinematic Overlay UI */}
+            <div className="absolute bottom-10 left-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-brand-purple rounded-2xl shadow-2xl shadow-brand-purple/20">
+                  <Film size={24} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-widest text-white drop-shadow-lg">
+                    Cinema Mode
+                  </h3>
+                  <p className="text-xs font-bold text-white/50 uppercase tracking-widest">
+                    Sovereign Imagination Engine
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isRunPanelOpen && (
         <div className="absolute right-4 bottom-4 z-[60] w-[520px] max-w-[92vw] max-h-[60vh] overflow-hidden rounded-2xl border border-white/10 bg-brand-bg-page/90 backdrop-blur-2xl shadow-2xl text-white">
@@ -399,6 +497,19 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
+                        {art.type === "video" && (
+                          <button
+                            onClick={() =>
+                              setPreviewVideoUrl(
+                                art.content?.clipUrl || art.content,
+                              )
+                            }
+                            className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple hover:bg-brand-purple/30 transition-colors"
+                            title="Play Movie"
+                          >
+                            <Play size={14} fill="currentColor" />
+                          </button>
+                        )}
                         {art.type === "image" &&
                           typeof art.content === "string" && (
                             <a

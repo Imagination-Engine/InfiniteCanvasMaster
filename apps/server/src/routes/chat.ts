@@ -85,12 +85,25 @@ chatRouter.post("/", async (c) => {
     const finalMessages = [
       {
         role: "system",
-        content: `You are the Imagination Engine Orchestrator. 
-CRITICAL MISSION: When a user describes a goal, idea, or request, you MUST deconstruct it into a functional architecture and call the 'generate_canvas_blueprint' tool to place blocks on the canvas. 
+        content: `You are the AI Architect. Your mission is to deconstruct user goals into functional technical architectures on a visual canvas.
 
-The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_id' parameter of every tool call. Also, pass the session thread ID "${sessionId}" to the 'session_id' parameter if generating a blueprint to link history.
+DECONSTRUCTION PROTOCOL:
+1. PHASE 1: RESEARCH & PLAN (turns 1-3)
+- If this is a new request, do NOT call tools yet. Engage conversationally to define the Narrative Tone, Visual Style, and Technical Requirements.
+- Proactively recommend Studios: 
+  * "Reel Studio" (iem.reel.*) for movies/visualization.
+  * "Scribe Studio" (iem.scribe.*) for writing/documentation.
+- Once the plan is solid, say "Let's generate the workflow!" and call 'generate_canvas_blueprint'.
 
-Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.${canvasSystemPrompt}`,
+2. PHASE 2: SURGICAL MUTATION (Ongoing)
+- After the canvas exists, you MUST respond to every request by surgically mutating the state.
+- Use 'add_block' to drop in new ideas.
+- Use 'connect_blocks' to refine logic.
+- Use 'update_block' to tweak existing nodes.
+- If user wants a movie scene, use: iem.reel.textToImage (stills) -> iem.studio.video (forge).
+
+The user's ID is "${user.sub}". Thread ID: "${sessionId}". 
+${canvasSystemPrompt}`,
       },
       ...sanitizedMessages,
     ];
@@ -187,6 +200,153 @@ Identify the best blocks from the registry (scribe, playable, reel, forge, atlas
         error: "Agent orchestration failed",
         message: error.message,
       },
+      500,
+    );
+  }
+});
+
+chatRouter.post("/block", async (c) => {
+  const db = c.get("db") as any;
+  const user = c.get("user") as any;
+  const body = await c.req.json();
+
+  const { blockId, projectId, messages } = body;
+
+  if (!blockId || !projectId) {
+    return c.json({ error: "blockId and projectId are required" }, 400);
+  }
+
+  // 1. Verify ownership and existence
+  const [workspace] = await db
+    .select()
+    .from(workspaces as any)
+    .where(eq((workspaces as any).id, projectId));
+
+  if (!workspace || workspace.ownerId !== user.sub) {
+    return c.json({ error: "Project not found or unauthorized" }, 403);
+  }
+
+  try {
+    const { AgentFactory, mastra } = await import("@iem/agents");
+    const { blockRegistry } = await import("@iem/core");
+    const { nodes } = await import("@iem/db");
+
+    // 2. Resolve Block Definition from DB
+    const [node] = await db
+      .select()
+      .from(nodes as any)
+      .where(eq((nodes as any).id, blockId));
+
+    if (!node) {
+      return c.json({ error: "Block not found on canvas" }, 404);
+    }
+
+    // 3. Resolve Block Logic/Persona from Registry
+    const definition = (blockRegistry as any).get(node.type);
+    if (!definition) {
+      return c.json(
+        { error: `Block definition not found for type: ${node.type}` },
+        404,
+      );
+    }
+
+    // 4. Create Agent via Factory
+    const factory = new AgentFactory({ storage: mastra.storage });
+    const agent = await factory.createAgentForBlock(definition);
+
+    // 5. Scoped Thread ID (Project + Block isolation)
+    const threadId = `${projectId}:${blockId}`;
+
+    // 6. Stream Chat using Mastra Agent
+    console.log(
+      `[BLOCK-CHAT] Initiating stream for block: ${node.id} (${node.type}) on thread: ${threadId}`,
+    );
+
+    const result = await agent.stream(messages, {
+      threadId,
+      resourceId: user.sub,
+    });
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of result.textStream) {
+            controller.enqueue(encoder.encode(`0:${JSON.stringify(chunk)}\n`));
+          }
+
+          const rawToolCalls = await result.toolCalls;
+          const rawToolResults = await result.toolResults;
+          const steps = await (result as any).steps;
+
+          if (rawToolCalls && rawToolCalls.length > 0) {
+            for (const wrapper of rawToolCalls) {
+              const toolCall = wrapper.payload || wrapper;
+              const resultWrapper = rawToolResults?.find((r: any) => {
+                const resPayload = r.payload || r;
+                return resPayload.toolCallId === toolCall.toolCallId;
+              });
+              const toolResult = resultWrapper
+                ? resultWrapper.payload || resultWrapper
+                : undefined;
+
+              const uiToolPayload = {
+                toolCallId: toolCall.toolCallId,
+                toolName: toolCall.toolName,
+                args: toolCall.args,
+                result: toolResult ? toolResult.result : undefined,
+              };
+              controller.enqueue(
+                encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
+              );
+            }
+          } else if (steps && steps.length > 0) {
+            for (const step of steps) {
+              if (step.toolCalls && step.toolCalls.length > 0) {
+                for (const wrapper of step.toolCalls) {
+                  const toolCall = wrapper.payload || wrapper;
+                  const resultWrapper = step.toolResults?.find((r: any) => {
+                    const resPayload = r.payload || r;
+                    return resPayload.toolCallId === toolCall.toolCallId;
+                  });
+                  const toolResult = resultWrapper
+                    ? resultWrapper.payload || resultWrapper
+                    : undefined;
+
+                  const uiToolPayload = {
+                    toolCallId: toolCall.toolCallId,
+                    toolName: toolCall.toolName,
+                    args: toolCall.args,
+                    result: toolResult ? toolResult.result : undefined,
+                  };
+                  controller.enqueue(
+                    encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
+                  );
+                }
+              }
+            }
+          }
+        } catch (err: any) {
+          console.error("[BLOCK-STREAM-ERROR]:", err);
+          controller.enqueue(
+            encoder.encode(`3:{"message":${JSON.stringify(err.message)}}\n`),
+          );
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "x-vercel-ai-data-stream": "v1",
+      },
+    });
+  } catch (error: any) {
+    console.error("[BLOCK-CHAT-ERROR]:", error);
+    return c.json(
+      { error: "Block agent chat failed", message: error.message },
       500,
     );
   }

@@ -4,6 +4,7 @@ import type { CanvasObject } from "../contracts";
 import { useSelectionStore } from "../state/selectionStore";
 import { useExpansionStore } from "../state/expansionStore";
 import { useViewportStore } from "../state/viewportStore";
+import { useShellStore } from "../state/shellStore";
 import { useCanvasStore } from "../state/canvasStore";
 import { useConnectionStore } from "../state/connectionStore";
 import { BlockRegistry } from "../contracts/BlockRegistry";
@@ -15,6 +16,7 @@ import { OpenClawAgentGroupBlock } from "./blocks/OpenClawAgentGroupBlock";
 import { CommonBlockView } from "./blocks/CommonBlockView";
 import { resolveBlockIcon } from "../utils/blockIconMap";
 import { Maximize2, GripHorizontal, Activity, AlertCircle } from "lucide-react";
+import { normalizeCanvasBlockId, studioInteropResolver } from "@iem/core";
 
 export type ComponentRegistry = Record<
   string,
@@ -42,6 +44,7 @@ export const ObjectRenderer: React.FC<{
   const { selectedIds, setSelection, setHovered, hoveredId } =
     useSelectionStore();
   const { setExpanded } = useExpansionStore();
+  const { canvasId: projectId } = useShellStore();
   const { x: viewportX, y: viewportY, zoom: viewportZoom } = useViewportStore();
   const updateObject = useCanvasStore((s) => s.updateObject);
   const addConnection = useConnectionStore((s) => s.addConnection);
@@ -114,19 +117,11 @@ export const ObjectRenderer: React.FC<{
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpanded(object.id, "fullscreen");
+    setExpanded(object.id, "fullscreen", projectId);
   };
 
   const handleParamsChange = (newParams: any) => {
-    updateObject(object.id, {
-      metadata: {
-        ...object.metadata,
-        inputs: {
-          ...(object.metadata.inputs || {}),
-          ...newParams,
-        },
-      },
-    });
+    useCanvasStore.getState().patchObjectMetadata(object.id, newParams);
   };
 
   const polyfilledData = {
@@ -194,13 +189,28 @@ export const ObjectRenderer: React.FC<{
       onDrop={(e) => {
         e.stopPropagation();
         const sourceId = e.dataTransfer.getData("application/iem-connection");
-        if (sourceId && sourceId !== object.id) {
-          addConnection({
-            id: `edge-${Date.now()}`,
-            fromId: sourceId,
-            toId: object.id,
-          });
+        if (!sourceId || sourceId === object.id) return;
+
+        const sourceObj = useCanvasStore.getState().objects[sourceId];
+        const sourceKind =
+          (sourceObj as any)?.blockKind || sourceObj?.type || sourceId;
+        const targetKind = (object as any).blockKind || object.type;
+
+        if (
+          !studioInteropResolver.canConnectBlocks(
+            normalizeCanvasBlockId(sourceKind),
+            normalizeCanvasBlockId(targetKind),
+          )
+        ) {
+          e.preventDefault();
+          return;
         }
+
+        addConnection({
+          id: `edge-${Date.now()}`,
+          fromId: sourceId,
+          toId: object.id,
+        });
       }}
     >
       {/* Left Input Connector Handle */}
@@ -259,11 +269,11 @@ export const ObjectRenderer: React.FC<{
               onMouseLeave={() => setIsExpandHovered(false)}
               onPointerUp={(e) => {
                 e.stopPropagation();
-                setExpanded(object.id, "fullscreen");
+                setExpanded(object.id, "fullscreen", projectId);
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                setExpanded(object.id, "fullscreen");
+                setExpanded(object.id, "fullscreen", projectId);
               }}
               className="p-1.5 text-brand-cyan hover:bg-brand-cyan rounded-md transition-all ml-1 shadow-[0_0_10px_rgba(0,194,255,0.2)]"
               title="Expand"

@@ -9,5 +9,6 @@
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
     "jsx": "react-jsx"
-  }
+  },
+  "exclude": ["node_modules", "dist", "vitest.config.ts"]
 }

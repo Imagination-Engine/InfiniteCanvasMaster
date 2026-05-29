@@ -1,1 +1,2 @@
-export * from "./blocks/mediaBlocks.ts";
+export * from "./blocks/mediaBlocks.js";
+export * from "./ui/ReelForgePanel.js";

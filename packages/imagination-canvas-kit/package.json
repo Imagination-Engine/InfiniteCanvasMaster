@@ -13,6 +13,7 @@
   "dependencies": {
     "@iem/chat-interaction-kit": "workspace:^",
     "@iem/core": "workspace:*",
+    "@iem/surface-reel": "workspace:^",
     "@tldraw/sync": "^4.5.10",
     "@xyflow/react": "^12.10.1",
     "clsx": "^2.1.1",
@@ -39,6 +40,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "jsdom": "^29.0.0",
+    "globals": "^16.5.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.4"
   }

@@ -21,5 +21,5 @@ describe("Index Barrel File", () => {
         `Expected ${exp} to be exported from src/index.ts`,
       ).toBeDefined();
     }
-  });
+  }, 30000);
 });

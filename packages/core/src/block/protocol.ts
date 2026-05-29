@@ -1,5 +1,11 @@
 // @ts-nocheck
 import { z } from "zod";
+import type {
+  StudioId,
+  ModelAlias,
+  SecurityClass,
+  RuntimeKind,
+} from "../studio/contracts";
 
 export type BlockExecutionMode = "triggered" | "streaming" | "ambient";
 
@@ -38,12 +44,15 @@ export interface BlockDefinition<
     | "System & Utility"
     | string;
 
-  /** Optional studio association */
+  /**
+   * @deprecated Use `studioAffinity` instead. Kept for backward compatibility.
+   * Optional studio association (legacy loose string).
+   */
   studio?:
     | "Agent Studio"
     | "Video Studio"
     | "Game Studio"
-    | "Writer’s Studio"
+    | "Writer's Studio"
     | "App Creation Studio"
     | "Commerce Studio"
     | "Research Studio"
@@ -52,6 +61,12 @@ export interface BlockDefinition<
     | "Media Studio"
     | "Automation Studio"
     | string;
+
+  /**
+   * Formal studio binding using canonical StudioId(s).
+   * A block may belong to one or more studios.
+   */
+  studioAffinity?: StudioId | StudioId[];
 
   /** Icon identifier (e.g. lucide name) */
   icon?: string;
@@ -69,16 +84,7 @@ export interface BlockDefinition<
   agentic?: boolean;
 
   /** The type of runtime this block represents */
-  runtime?:
-    | "none"
-    | "agent"
-    | "studio"
-    | "generator"
-    | "sandbox"
-    | "app"
-    | "commerce"
-    | "media"
-    | "document";
+  runtime?: RuntimeKind;
 
   /** Which UI variant to use in the library drawer */
   libraryCardVariant?: string;
@@ -109,6 +115,32 @@ export interface BlockDefinition<
 
   /** Optional: capability tags for the AI to reason about composition. */
   capabilities?: string[];
+
+  /** Optional: specialized agent persona configuration for immersive mode. */
+  persona?: AgenticPersona;
+
+  /** Named model pointers (e.g. "fast-draft" → "gemini-2.5-flash") */
+  modelAliases?: ModelAlias[];
+
+  /** Tool mount IDs this block requires from the ToolMountRegistry */
+  toolMountIds?: string[];
+
+  /** Message fabric lanes this block participates in */
+  fabricLanes?: string[];
+
+  /** Security classification for isolation decisions */
+  securityClass?: SecurityClass;
+}
+
+export interface AgenticPersona {
+  /** Custom identity name for the agent (e.g. "Script Doctor") */
+  name?: string;
+  /** Specialized instructions that override or augment the generic block prompt */
+  instructions?: string;
+  /** Specific knowledge sources or RAG paths for this agent */
+  knowledge?: string[];
+  /** Specific tools this agent should prioritize or has exclusive access to */
+  tools?: string[];
 }
 
 export interface BlockViewProps<I, O> {

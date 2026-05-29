@@ -70,3 +70,5 @@ data-node/
 *.tsbuildinfo
 
 
+public/generated-media/
+apps/server/public/generated-media/

@@ -27,6 +27,12 @@ export interface CanvasShellProps {
   onRunGraph?: () => void;
   isRunning?: boolean;
   children: React.ReactNode;
+  /** Injected specialized chat component */
+  ChatComponent?: React.ComponentType<{
+    projectId: string;
+    blockId: string;
+    fullScreen?: boolean;
+  }>;
 }
 
 /**
@@ -41,9 +47,11 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
   onRunGraph,
   isRunning,
   children,
+  ChatComponent,
 }) => {
   const storeMode = useShellStore((state) => state.mode);
   const setSessionContext = useShellStore((state) => state.setSessionContext);
+  const setCanvasId = useShellStore((state) => state.setCanvasId);
   const mode = controlledMode ?? storeMode;
 
   React.useEffect(() => {
@@ -51,6 +59,10 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
       setSessionContext(sessionContext);
     }
   }, [sessionContext, setSessionContext]);
+
+  React.useEffect(() => {
+    setCanvasId(canvasId);
+  }, [canvasId, setCanvasId]);
 
   return (
     <div
@@ -64,11 +76,9 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
     >
       {/* 1. Base Layer: The Infinite Viewport (children) */}
       {children}
-
       {/* 2. UI Overlays */}
       <BlockLibraryDrawer onRunGraph={onRunGraph} isRunning={isRunning} />
-      <ImmersiveBlockModal />
-      <FloatingOrchestratorChat />
+      <ImmersiveBlockModal ChatComponent={ChatComponent} />
     </div>
   );
 };

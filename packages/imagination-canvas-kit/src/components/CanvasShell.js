@@ -43,7 +43,6 @@ export const CanvasShell = ({
       children,
       _jsx(BlockLibraryDrawer, { onRunGraph, isRunning }),
       _jsx(ImmersiveBlockModal, {}),
-      _jsx(FloatingOrchestratorChat, {}),
     ],
   });
 };

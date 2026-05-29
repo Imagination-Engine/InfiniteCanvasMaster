@@ -156,7 +156,7 @@ export default function SessionPage() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 relative">
+        <div className="flex min-h-0 flex-1 relative z-[20]">
           <DualViewContainer
             projectId={projectId}
             initialDocument={document}

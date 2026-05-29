@@ -5,7 +5,7 @@ export interface MCPToolDescriptor {
 }
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -43,9 +43,9 @@ export interface ModelProvider {
 }
 
 export class GeminiProvider implements ModelProvider {
-  id = 'gemini';
-  name = 'Google Gemini';
-  supportedModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+  id = "gemini";
+  name = "Google Gemini";
+  supportedModels = ["gemini-2.5-flash", "gemini-2.5-pro"];
   supportsTools = true;
 
   constructor(private apiKey: string) {}
@@ -53,30 +53,30 @@ export class GeminiProvider implements ModelProvider {
   async chat(request: ChatRequest): Promise<ChatResponse> {
     const start = Date.now();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${request.model}:generateContent?key=${this.apiKey}`;
-    
+
     // Simplistic mapping for tests
-    const contents = request.messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
+    const contents = request.messages.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
     }));
 
     try {
       const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contents }),
       });
 
       if (!res.ok) {
         if (res.status === 429) {
-          throw new Error('Rate limit exceeded');
+          throw new Error("Rate limit exceeded");
         }
         throw new Error(`Gemini API Error: ${res.statusText}`);
       }
 
       const data = await res.json();
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
+      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
       return {
         content,
         usage: {
@@ -86,31 +86,32 @@ export class GeminiProvider implements ModelProvider {
         latencyMs: Date.now() - start,
       };
     } catch (e: any) {
-      if (e.name === 'AbortError' || e.message.includes('Timeout')) {
-        throw new Error('Timeout');
+      if (e.name === "AbortError" || e.message.includes("Timeout")) {
+        throw new Error("Timeout");
       }
       throw e;
     }
   }
 
   async *stream(request: ChatRequest): AsyncIterable<ChatChunk> {
-    yield { content: 'mock stream' };
+    yield { content: "mock stream" };
   }
 }
 
 export class OllamaProvider implements ModelProvider {
-  id = 'ollama';
-  name = 'Ollama Local';
-  supportedModels = ['llama3', 'qwen2.5:7b'];
+  id = "ollama";
+  name = "Ollama Local";
+  supportedModels = ["llama3", "qwen2.5:7b"];
   supportsTools = true;
 
-  constructor(private baseUrl: string = 'http://localhost:11434') {}
+  constructor(private baseUrl: string = "http://localhost:11434") {}
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
-    throw new Error('Not implemented');
+    throw new Error("Not implemented");
   }
 
   async *stream(request: ChatRequest): AsyncIterable<ChatChunk> {
-    throw new Error('Not implemented');
+    throw new Error("Not implemented");
+    yield { content: "" };
   }
 }
