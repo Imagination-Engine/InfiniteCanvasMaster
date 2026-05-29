@@ -26,6 +26,7 @@ import {
   notionCreateBlock,
   websocketTriggerBlock,
   websocketSendBlock,
+  manualTriggerBlock,
 } from "@iem/surface-conductor";
 
 import {
@@ -106,6 +107,7 @@ export function initializeWebRegistry() {
     notionCreateBlock,
     websocketTriggerBlock,
     websocketSendBlock,
+    manualTriggerBlock,
 
     // Forge
     architectBlock,

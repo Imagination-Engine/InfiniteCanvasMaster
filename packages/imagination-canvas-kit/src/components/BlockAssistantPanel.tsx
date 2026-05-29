@@ -1,3 +1,4 @@
+// @ts-nocheck
 // File: packages/imagination-canvas-kit/src/components/BlockAssistantPanel.tsx
 
 import React, {

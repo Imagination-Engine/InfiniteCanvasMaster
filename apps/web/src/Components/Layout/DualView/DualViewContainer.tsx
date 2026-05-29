@@ -13,8 +13,8 @@ import {
   mergeDocumentIntoCanvasObjects,
   documentEdgesToConnections,
   exportCanvasToDocument,
+  useViewportStore,
 } from "@iem/imagination-canvas-kit";
-import { useViewportStore } from "@iem/imagination-canvas-kit";
 
 interface DualViewContainerProps {
   projectId: string;
@@ -31,6 +31,9 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   saveCanvas,
 }) => {
   const { accessToken } = useAuth();
+  const hasInitialized = React.useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const documentSyncedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (accessToken) {
@@ -38,11 +41,8 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     }
   }, [accessToken]);
 
-  const documentSyncedRef = useRef<string | null>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const persistSpatialToServer = useCallback(() => {
-    if (!saveCanvas) return;
+    if (!saveCanvas || !hasInitialized.current) return;
     const objects = useCanvasStore.getState().objects;
     const connections = useConnectionStore.getState().connections;
     const viewport = useViewportStore.getState();
@@ -62,6 +62,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       persistSpatialToServer();
     }, 800);
   }, [persistSpatialToServer]);
+
   // --- Create Session Context Summary ---
   const sessionSummary = React.useMemo(() => {
     const userMessages = (initialMessages || [])
@@ -94,6 +95,10 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     const runMerge = () => {
       applyDocumentToStores(initialDocument);
       documentSyncedRef.current = docKey;
+      // Mark as initialized to enable future autosaves
+      setTimeout(() => {
+        hasInitialized.current = true;
+      }, 200);
     };
 
     if (useCanvasStore.persist.hasHydrated()) {
@@ -107,17 +112,28 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     return unsub;
   }, [initialDocument, projectId, applyDocumentToStores]);
 
-  // Persist generated images / forge output to server when local canvas changes
+  // Persist generated changes, additions, deletions, or connections to server
   useEffect(() => {
-    const unsub = useCanvasStore.subscribe((state, prev) => {
+    if (!saveCanvas) return;
+
+    const unsubscribeCanvas = useCanvasStore.subscribe((state, prev) => {
       if (state.objects === prev.objects) return;
       schedulePersist();
     });
+
+    const unsubscribeConnection = useConnectionStore.subscribe(
+      (state, prev) => {
+        if (state.connections === prev.connections) return;
+        schedulePersist();
+      },
+    );
+
     return () => {
-      unsub();
+      unsubscribeCanvas();
+      unsubscribeConnection();
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [schedulePersist]);
+  }, [saveCanvas, schedulePersist]);
 
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">

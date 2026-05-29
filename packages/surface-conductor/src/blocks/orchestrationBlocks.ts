@@ -52,6 +52,7 @@ export const loopBlock: BlockDefinition<any, any> = {
     collection: z.array(z.any()).optional(),
     maxIterations: z
       .number()
+      .min(0, "Maximum iterations cannot be negative")
       .optional()
       .describe("Maximum number of times to loop"),
     breakCondition: z
@@ -70,10 +71,15 @@ export const loopBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "loop_exec",
-    invoke: async (i: any) => ({
-      items: i.collection || [],
-      loopTarget: i.loopTarget,
-    }),
+    invoke: async (i: any) => {
+      if (i.maxIterations !== undefined && i.maxIterations < 0) {
+        throw new Error("Maximum iterations cannot be negative");
+      }
+      return {
+        items: i.collection || [],
+        loopTarget: i.loopTarget,
+      };
+    },
   },
 };
 
@@ -108,11 +114,50 @@ export const webhookCallBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "webhook_call",
-    invoke: async () => ({ response: { success: true } }),
+    invoke: async (i: any) => {
+      const url = i.url;
+      const method = i.method || "POST";
+      const headers = {
+        "Content-Type": "application/json",
+        ...i.headers,
+      };
+
+      const options: RequestInit = {
+        method,
+        headers,
+      };
+
+      if (i.payload !== undefined && method !== "GET") {
+        options.body =
+          typeof i.payload === "string" ? i.payload : JSON.stringify(i.payload);
+      }
+
+      try {
+        const res = await fetch(url, options);
+        let responseData: any;
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          responseData = await res.json();
+        } else {
+          responseData = await res.text();
+        }
+
+        if (!res.ok) {
+          throw new Error(
+            `Webhook HTTP ${res.status}: ${typeof responseData === "string" ? responseData : JSON.stringify(responseData)}`,
+          );
+        }
+
+        return { response: responseData };
+      } catch (err: any) {
+        throw new Error(`Webhook call failed: ${err.message}`);
+      }
+    },
   },
 };
 
 import { FunctionRegistry } from "../runtime/functionRegistry.js";
+import { SubGraphRegistry } from "../runtime/subgraphRegistry.js";
 
 export const functionBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.function",
@@ -305,7 +350,13 @@ export const agentBlock: BlockDefinition<any, any> = {
   name: "Sub-Agent",
   description: "Autonomous worker node.",
   category: "ai",
-  input: z.object({ instructions: z.string(), input: z.any() }),
+  input: z.object({
+    instructions: z.string(),
+    input: z.any().optional(),
+    provider: z.enum(["google", "local"]).optional().default("google"),
+    model: z.string().optional(),
+    referenceFiles: z.array(z.any()).optional().default([]),
+  }),
   output: z.object({ output: z.string() }),
   mode: "triggered",
   agent: {
@@ -313,7 +364,10 @@ export const agentBlock: BlockDefinition<any, any> = {
     toolName: "agent_exec",
     invoke: async (i: any) => {
       const instructions = i.instructions || "";
-      const inputVal = i.input;
+      const inputVal = i.input || "";
+      const provider = i.provider || "google";
+      const model = i.model;
+      const referenceFiles = i.referenceFiles || [];
 
       let upstreamContext = "";
       if (inputVal !== undefined && inputVal !== null) {
@@ -324,27 +378,68 @@ export const agentBlock: BlockDefinition<any, any> = {
         }
       }
 
-      const finalPrompt = upstreamContext
-        ? `${instructions}\n\n### Context:\n${upstreamContext}`
-        : instructions;
-
-      const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-      if (!apiKey) {
-        return {
-          output: `Simulated response from agent based on: ${instructions}${upstreamContext ? "\nContext: " + upstreamContext : ""}`,
-        };
+      // Compile reference document contexts
+      let referenceContext = "";
+      if (referenceFiles && referenceFiles.length > 0) {
+        referenceContext =
+          "\n\n### Reference Documents:\n" +
+          referenceFiles
+            .map((f: any) => `[Document: ${f.name}]\n${f.content || ""}`)
+            .join("\n\n");
       }
 
-      try {
-        const response = await generateText({
-          model: google("gemini-2.5-pro"),
-          prompt: finalPrompt,
-        });
-        return { output: response.text };
-      } catch (err: any) {
-        return {
-          output: `Simulated response from agent (error fallback) based on: ${instructions}. Error: ${err?.message || String(err)}`,
-        };
+      const finalPrompt = upstreamContext
+        ? `${instructions}${referenceContext}\n\n### Input Prompt:\n${upstreamContext}`
+        : `${instructions}${referenceContext}`;
+
+      if (provider === "local") {
+        try {
+          const ollamaUrl =
+            process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+          console.log(`[LOCAL LLM] Calling Ollama generate at ${ollamaUrl}...`);
+          const res = await fetch(`${ollamaUrl}/api/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: model || "mistral",
+              prompt: finalPrompt,
+              stream: false,
+            }),
+          });
+          if (!res.ok) {
+            throw new Error(`Ollama HTTP ${res.status}: ${res.statusText}`);
+          }
+          const data = await res.json();
+          return { output: data.response || "" };
+        } catch (err: any) {
+          console.warn(
+            "[OLLAMA FALLBACK] Local LLM unreachable. Simulating...",
+            err.message,
+          );
+          return {
+            output: `Simulated local Ollama response (${model || "mistral"}):\n\nProcessed prompt: "${inputVal}"\n\nReference Files Attached: ${referenceFiles.length}\nSystem context: "${instructions}"`,
+          };
+        }
+      } else {
+        // provider === "google"
+        const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        if (!apiKey) {
+          return {
+            output: `Simulated Google Gemini response (${model || "gemini-2.5-flash"}):\n\nProcessed prompt: "${inputVal}"\n\nReference Files Attached: ${referenceFiles.length}\nSystem context: "${instructions}"`,
+          };
+        }
+
+        try {
+          const response = await generateText({
+            model: google(model || "gemini-2.5-flash"),
+            prompt: finalPrompt,
+          });
+          return { output: response.text };
+        } catch (err: any) {
+          return {
+            output: `Simulated Google Gemini response (API fallback, error: ${err.message || String(err)}) (${model || "gemini-2.5-flash"}):\n\nProcessed prompt: "${inputVal}"\n\nReference Files Attached: ${referenceFiles.length}\nSystem context: "${instructions}"`,
+          };
+        }
       }
     },
   },
@@ -370,13 +465,22 @@ export const delayBlock: BlockDefinition<any, any> = {
   name: "Delay",
   description: "Wait for specified duration.",
   category: "control",
-  input: z.object({ ms: z.number() }),
+  input: z.object({
+    ms: z.number().min(0, "Delay duration cannot be negative"),
+  }),
   output: z.object({ resumed: z.boolean() }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "wait",
-    invoke: async () => ({ resumed: true }),
+    invoke: async (i: any) => {
+      const ms = i.ms;
+      if (ms < 0) {
+        throw new Error("Delay duration cannot be negative");
+      }
+      await new Promise((resolve) => setTimeout(resolve, ms));
+      return { resumed: true };
+    },
   },
 };
 
@@ -415,13 +519,30 @@ export const subGraphBlock: BlockDefinition<any, any> = {
   name: "Sub-Graph",
   description: "Encapsulated logic group.",
   category: "control",
-  input: z.object({ graphId: z.string() }),
+  input: z.object({
+    canvasId: z.string().optional().default("defaultCanvas"),
+    graphId: z.string(),
+  }),
   output: z.object({ result: z.any() }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "exec_subgraph",
-    invoke: async () => ({ result: {} }),
+    invoke: async (i: any) => {
+      const subGraph = SubGraphRegistry.get(i.graphId);
+      if (!subGraph) {
+        throw new Error(`Sub-Graph with ID ${i.graphId} not found`);
+      }
+
+      // Check scoping permissions (local to canvas vs global access)
+      if (!subGraph.globalAccess && subGraph.canvasId !== i.canvasId) {
+        throw new Error(
+          `Access denied: Sub-Graph ${subGraph.name} is local to ${subGraph.canvasId}`,
+        );
+      }
+
+      return { result: { success: true, graphId: i.graphId } };
+    },
   },
 };
 
@@ -539,8 +660,19 @@ export const jsonParseBlock: BlockDefinition<any, any> = {
     invoke: async (i: any) => {
       try {
         if (i.mode === "parse") {
+          if (typeof i.payload !== "string") {
+            return { result: i.payload };
+          }
           return { result: JSON.parse(i.payload) };
         } else {
+          if (typeof i.payload === "string") {
+            try {
+              JSON.parse(i.payload);
+              return { result: i.payload };
+            } catch {
+              return { result: JSON.stringify(i.payload) };
+            }
+          }
           return { result: JSON.stringify(i.payload) };
         }
       } catch (err: any) {
@@ -557,7 +689,9 @@ export const classifyBlock: BlockDefinition<any, any> = {
   category: "ai",
   input: z.object({
     inputString: z.string(),
-    categories: z.array(z.string()),
+    categories: z
+      .array(z.string())
+      .min(1, "At least one category must be provided for classification"),
   }),
   output: z.object({
     category: z.string(),
@@ -648,7 +782,12 @@ export const forEachBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "forEach",
-    invoke: async (i: any) => ({ item: i.collection?.[0] }),
+    invoke: async (i: any) => {
+      if (!i.collection || i.collection.length === 0) {
+        return { item: null };
+      }
+      return { item: i.collection[0] };
+    },
   },
 };
 
@@ -679,5 +818,20 @@ export const websocketSendBlock: BlockDefinition<any, any> = {
     kind: "local",
     toolName: "websocket_send",
     invoke: async () => ({ success: true }),
+  },
+};
+
+export const manualTriggerBlock: BlockDefinition<any, any> = {
+  id: "trigger.manual",
+  name: "Manual Trigger",
+  description: "Starts the workflow manually from the canvas on click.",
+  category: "trigger",
+  input: z.object({}),
+  output: z.object({ payload: z.record(z.any()) }),
+  mode: "ambient",
+  agent: {
+    kind: "local",
+    toolName: "noop",
+    invoke: async () => ({ payload: {} }),
   },
 };

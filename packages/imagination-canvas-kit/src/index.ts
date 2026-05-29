@@ -69,6 +69,13 @@ BlockRegistry.register("conductor.webhook", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.webhook", ConductorBlockView as any);
 BlockRegistry.register("trigger.webhook", ConductorBlockView as any);
 
+BlockRegistry.register("conductor.manualTrigger", ConductorBlockView as any);
+BlockRegistry.register(
+  "iem.conductor.manualTrigger",
+  ConductorBlockView as any,
+);
+BlockRegistry.register("trigger.manual", ConductorBlockView as any);
+
 BlockRegistry.register("conductor.schedule", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.schedule", ConductorBlockView as any);
 BlockRegistry.register("trigger.time", ConductorBlockView as any);

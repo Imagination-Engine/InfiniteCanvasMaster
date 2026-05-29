@@ -1,5 +1,3 @@
-import { crypto } from "node:crypto";
-
 export interface FunctionDef {
   functionId: string;
   canvasId: string;

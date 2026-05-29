@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import React from "react";
 import { ConnectorLayer } from "../ConnectorLayer";
 import { useConnectionStore } from "../../state/connectionStore";
@@ -24,6 +24,7 @@ describe("ConnectorLayer", () => {
     useCanvasStore.setState({ objects: mockObjects as any });
     useConnectionStore.setState({
       connections: { [mockConnection.id]: mockConnection },
+      draftConnection: null,
     });
   });
 
@@ -42,5 +43,39 @@ describe("ConnectorLayer", () => {
     const marker = container.querySelector("marker");
     expect(marker).toBeDefined();
     expect(marker?.id).toBe("arrowhead");
+  });
+
+  it("should render a draft spline when draftConnection is active", () => {
+    useConnectionStore.setState({
+      draftConnection: {
+        fromId: "obj-1",
+        x: 300,
+        y: 200,
+      },
+    });
+
+    const { container } = render(<ConnectorLayer />);
+    const draftPath = container.querySelector('path[stroke-dasharray="5 5"]');
+    expect(draftPath).not.toBeNull();
+  });
+
+  it("should render the delete button on mouse enter and call removeConnection on click", () => {
+    const { container } = render(<ConnectorLayer />);
+    const edgeGroup = container.querySelector(".group\\/edge");
+    expect(edgeGroup).not.toBeNull();
+
+    // Trigger mouse enter to show the delete button
+    fireEvent.mouseEnter(edgeGroup!);
+
+    // Now the delete button should be visible
+    const deleteBtn = container.querySelector('g[class*="cursor-pointer"]');
+    expect(deleteBtn).not.toBeNull();
+
+    // Click it!
+    fireEvent.click(deleteBtn!);
+
+    // The connections in the store should now be empty!
+    const connections = useConnectionStore.getState().connections;
+    expect(connections).toEqual({});
   });
 });

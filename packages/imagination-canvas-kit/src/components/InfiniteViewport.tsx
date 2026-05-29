@@ -4,6 +4,7 @@ import { useViewportCamera } from "../hooks/useViewportCamera";
 import { useCanvasStore } from "../state/canvasStore";
 import { useShallow } from "zustand/react/shallow";
 import { useSelectionStore } from "../state/selectionStore";
+import { useConnectionStore } from "../state/connectionStore";
 import { ObjectRenderer, type ComponentRegistry } from "./ObjectRenderer";
 import { ConnectorLayer } from "./ConnectorLayer";
 import { AgentActivityLayer } from "./AgentActivityLayer";
@@ -18,7 +19,7 @@ export const InfiniteViewport: React.FC<{
   const containerRef = useRef<HTMLDivElement>(null);
   const { viewport, pan, zoomAt } = useViewportCamera();
   const objectIds = useCanvasStore(
-    useShallow((state) => Object.keys(state.objects))
+    useShallow((state) => Object.keys(state.objects)),
   );
   const { clearSelection } = useSelectionStore();
 
@@ -129,14 +130,65 @@ export const InfiniteViewport: React.FC<{
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
+
+    const draftConnection = useConnectionStore.getState().draftConnection;
+    if (draftConnection && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const canvasPoint = screenToCanvas(
+        { x: e.clientX - rect.left, y: e.clientY - rect.top },
+        viewport,
+      );
+      useConnectionStore
+        .getState()
+        .updateDraftPosition(canvasPoint.x, canvasPoint.y);
+    }
   };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
 
-    const type =
-      e.dataTransfer.getData("application/reactflow") ||
-      e.dataTransfer.getData("text/plain");
+    // Ignore connection drops on the empty canvas space
+    if (
+      e.dataTransfer.types &&
+      e.dataTransfer.types.includes("application/iem-connection")
+    ) {
+      return;
+    }
+
+    let type = e.dataTransfer.getData("application/reactflow");
+    if (!type) {
+      const plainText = e.dataTransfer.getData("text/plain");
+      // Only accept plain text drops if they correspond to an explicitly recognized block type, preventing empty blocks
+      const knownTypes = [
+        "note",
+        "rich-text",
+        "agent",
+        "chat",
+        "app",
+        "goal",
+        "artifact",
+        "memory-cluster",
+        "openclaw-block",
+        "openclaw.block",
+        "openclaw.agent_group",
+        "trigger.manual",
+        "trigger.webhook",
+        "conductor.manualTrigger",
+        "conductor.webhook",
+        "conductor.schedule",
+      ];
+      if (
+        plainText &&
+        (knownTypes.includes(plainText) ||
+          plainText.startsWith("iem.") ||
+          plainText.startsWith("conductor.") ||
+          (blockRegistry &&
+            typeof blockRegistry.get === "function" &&
+            blockRegistry.get(plainText)))
+      ) {
+        type = plainText;
+      }
+    }
 
     if (!type || !containerRef.current) return;
 

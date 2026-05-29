@@ -42,6 +42,7 @@ import {
   webFetchBlock,
   slackPostBlock,
   notionCreateBlock,
+  manualTriggerBlock,
 } from "@iem/surface-conductor";
 
 import {
@@ -134,6 +135,7 @@ export function initializeBlockRegistry() {
     webFetchBlock,
     slackPostBlock,
     notionCreateBlock,
+    manualTriggerBlock,
 
     // Forge
     architectBlock,

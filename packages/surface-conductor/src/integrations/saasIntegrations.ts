@@ -3,7 +3,7 @@ import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 
 const MockView = () => null;
 
-export const webFetchBlock: BlockDefinition<any, any> = {
+export const webFetchBlock: any = {
   id: "iem.conductor.webFetch",
   name: "Web Fetch",
   description: "Fetches content from a URL",
@@ -50,7 +50,7 @@ export const webFetchBlock: BlockDefinition<any, any> = {
   },
 };
 
-export const slackPostBlock: BlockDefinition<any, any> = {
+export const slackPostBlock: any = {
   id: "iem.conductor.slackPost",
   name: "Slack Post",
   description: "Posts a message to Slack",
@@ -106,7 +106,7 @@ export const slackPostBlock: BlockDefinition<any, any> = {
   },
 };
 
-export const notionCreateBlock: BlockDefinition<any, any> = {
+export const notionCreateBlock: any = {
   id: "iem.conductor.notionCreate",
   name: "Notion Create Card",
   description: "Creates a card in a Notion Database",

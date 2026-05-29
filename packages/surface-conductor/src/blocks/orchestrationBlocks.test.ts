@@ -8,7 +8,14 @@ import {
   functionCallBlock,
   codeBlock,
   agentBlock,
+  delayBlock,
+  subGraphBlock,
+  jsonParseBlock,
+  classifyBlock,
+  forEachBlock,
 } from "./orchestrationBlocks";
+import { SubGraphRegistry } from "../runtime/subgraphRegistry";
+import { FunctionRegistry } from "../runtime/functionRegistry";
 
 // Mock the AI SDK
 vi.mock("ai", () => ({
@@ -305,9 +312,7 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
         instructions: "Translate",
         input: "hello",
       });
-      expect(res.output).toContain(
-        "Simulated response from agent based on: Translate",
-      );
+      expect(res.output).toContain("Simulated Google Gemini response");
       expect(res.output).toContain("hello");
     });
 
@@ -328,6 +333,280 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
       });
 
       expect(res.output).toBe("Real response from sub-agent block");
+    });
+  });
+
+  describe("Delay Block", () => {
+    it("successfully delays for a positive duration", async () => {
+      const start = Date.now();
+      const output = await delayBlock.agent.invoke({ ms: 5 });
+      const duration = Date.now() - start;
+      expect(output).toEqual({ resumed: true });
+      expect(duration).toBeGreaterThanOrEqual(4);
+    });
+
+    it("throws error for negative delay duration", async () => {
+      await expect(delayBlock.agent.invoke({ ms: -10 })).rejects.toThrow(
+        "Delay duration cannot be negative",
+      );
+
+      expect(() => delayBlock.input.parse({ ms: -10 })).toThrow();
+    });
+  });
+
+  describe("Sub-Graph Block & Scope Scenarios", () => {
+    beforeEach(() => {
+      SubGraphRegistry.clear();
+    });
+
+    it("registers and calls local subgraph on same canvas", async () => {
+      const graphId = SubGraphRegistry.register({
+        canvasId: "canvas-main",
+        name: "MyLocalSubgraph",
+        globalAccess: false,
+      });
+
+      const output = await subGraphBlock.agent.invoke({
+        canvasId: "canvas-main",
+        graphId,
+      });
+
+      expect(output.result.success).toBe(true);
+      expect(output.result.graphId).toBe(graphId);
+    });
+
+    it("throws access denied for local subgraph accessed from different canvas", async () => {
+      const graphId = SubGraphRegistry.register({
+        canvasId: "canvas-main",
+        name: "MyLocalSubgraph",
+        globalAccess: false,
+      });
+
+      await expect(
+        subGraphBlock.agent.invoke({
+          canvasId: "canvas-other",
+          graphId,
+        }),
+      ).rejects.toThrow(
+        "Access denied: Sub-Graph MyLocalSubgraph is local to canvas-main",
+      );
+    });
+
+    it("allows global subgraph access project-wide across any canvas", async () => {
+      const graphId = SubGraphRegistry.register({
+        canvasId: "canvas-main",
+        name: "MyGlobalSubgraph",
+        globalAccess: true,
+      });
+
+      const output = await subGraphBlock.agent.invoke({
+        canvasId: "canvas-other",
+        graphId,
+      });
+
+      expect(output.result.success).toBe(true);
+    });
+
+    it("throws error when calling non-existent subgraph", async () => {
+      await expect(
+        subGraphBlock.agent.invoke({
+          canvasId: "canvas-main",
+          graphId: "sg_nonexistent",
+        }),
+      ).rejects.toThrow("Sub-Graph with ID sg_nonexistent not found");
+    });
+  });
+
+  describe("JSON Parse/Stringify Block", () => {
+    it("parses valid JSON string", async () => {
+      const output = await jsonParseBlock.agent.invoke({
+        payload: '{"key": "value"}',
+        mode: "parse",
+      });
+      expect(output.result).toEqual({ key: "value" });
+      expect(output.error).toBeUndefined();
+    });
+
+    it("handles already parsed JSON objects in parse mode", async () => {
+      const inputObj = { already: "parsed" };
+      const output = await jsonParseBlock.agent.invoke({
+        payload: inputObj,
+        mode: "parse",
+      });
+      expect(output.result).toBe(inputObj);
+    });
+
+    it("returns error on invalid JSON in parse mode", async () => {
+      const output = await jsonParseBlock.agent.invoke({
+        payload: "{invalid json}",
+        mode: "parse",
+      });
+      expect(output.result).toBeNull();
+      expect(output.error).toBeDefined();
+    });
+
+    it("stringifies object payload", async () => {
+      const output = await jsonParseBlock.agent.invoke({
+        payload: { key: "value" },
+        mode: "stringify",
+      });
+      expect(output.result).toBe('{"key":"value"}');
+    });
+
+    it("returns already stringified JSON in stringify mode without double serialization", async () => {
+      const output = await jsonParseBlock.agent.invoke({
+        payload: '{"key":"value"}',
+        mode: "stringify",
+      });
+      expect(output.result).toBe('{"key":"value"}');
+    });
+
+    it("stringifies plain strings in stringify mode if not valid JSON", async () => {
+      const output = await jsonParseBlock.agent.invoke({
+        payload: "hello world",
+        mode: "stringify",
+      });
+      expect(output.result).toBe('"hello world"');
+    });
+  });
+
+  describe("AI Classify Block", () => {
+    it("fails Zod schema validation with 0 categories", () => {
+      expect(() =>
+        classifyBlock.input.parse({
+          inputString: "hello",
+          categories: [],
+        }),
+      ).toThrow();
+    });
+
+    it("passes Zod schema validation with 1 or more categories", () => {
+      const parsed = classifyBlock.input.parse({
+        inputString: "hello",
+        categories: ["greeting"],
+      });
+      expect(parsed.categories).toEqual(["greeting"]);
+    });
+  });
+
+  describe("For Each Block", () => {
+    it("returns first item from collection", async () => {
+      const output = await forEachBlock.agent.invoke({
+        collection: ["first", "second"],
+      });
+      expect(output.item).toBe("first");
+    });
+
+    it("returns null gracefully for empty/missing collection", async () => {
+      const output = await forEachBlock.agent.invoke({
+        collection: [],
+      });
+      expect(output.item).toBeNull();
+    });
+  });
+
+  describe("Webhook Call Block (Real Execution)", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("successfully calls fetch with options and parses JSON response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: () => "application/json",
+        },
+        json: async () => ({ success: true, data: "ok" }),
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const output = await webhookCallBlock.agent.invoke({
+        url: "https://api.example.com/webhook",
+        method: "POST",
+        payload: { test: 123 },
+        headers: { "X-Test": "yes" },
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://api.example.com/webhook",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            "X-Test": "yes",
+          }),
+          body: JSON.stringify({ test: 123 }),
+        }),
+      );
+      expect(output.response).toEqual({ success: true, data: "ok" });
+    });
+
+    it("successfully calls fetch with options and parses Text response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: () => "text/plain",
+        },
+        text: async () => "raw response",
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const output = await webhookCallBlock.agent.invoke({
+        url: "https://api.example.com/webhook",
+        method: "GET",
+      });
+
+      expect(output.response).toBe("raw response");
+    });
+
+    it("throws descriptive error when fetch returns non-ok status", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        headers: {
+          get: () => "application/json",
+        },
+        json: async () => ({ message: "Bad Request" }),
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      await expect(
+        webhookCallBlock.agent.invoke({
+          url: "https://api.example.com/webhook",
+          method: "POST",
+        }),
+      ).rejects.toThrow(
+        'Webhook call failed: Webhook HTTP 400: {"message":"Bad Request"}',
+      );
+    });
+  });
+
+  describe("Loop Block Edge Cases", () => {
+    it("throws Zod validation error for negative maxIterations", () => {
+      expect(() =>
+        loopBlock.input.parse({
+          collection: [1, 2],
+          maxIterations: -5,
+        }),
+      ).toThrow();
+    });
+
+    it("throws direct error if negative iterations are passed", async () => {
+      await expect(
+        loopBlock.agent.invoke({
+          collection: [1, 2],
+          maxIterations: -5,
+        }),
+      ).rejects.toThrow("Maximum iterations cannot be negative");
+    });
+
+    it("handles empty or missing collection gracefully", async () => {
+      const output = await loopBlock.agent.invoke({
+        collection: undefined,
+        loopTarget: "targetNode",
+      });
+      expect(output.items).toEqual([]);
+      expect(output.loopTarget).toBe("targetNode");
     });
   });
 });

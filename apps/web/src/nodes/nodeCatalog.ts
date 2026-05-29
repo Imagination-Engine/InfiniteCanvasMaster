@@ -618,6 +618,16 @@ const BASE_CATALOG: NodeCatalog = {
     { config: { cron: "0 14 * * 2", timezone: "America/Los_Angeles" } },
     "trigger",
   ),
+  "trigger.manual": createEntry(
+    "trigger.manual",
+    "workflow",
+    "Manual Trigger",
+    "Starts the workflow manually from the canvas on click.",
+    {},
+    { payload: "trigger" },
+    { config: { description: "Trigger this workflow execution manually." } },
+    "trigger",
+  ),
   "trigger.webhook": createEntry(
     "trigger.webhook",
     "workflow",

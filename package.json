@@ -18,6 +18,10 @@
     "iem:eval": "tsx packages/agents/src/evals/runner.ts",
     "iem:security-audit": "tsx scripts/security/audit.ts",
     "iem:check-rotation": "tsx scripts/security/check-rotation.ts",
+    "check-ports": "node scratch/check_ports.js",
+    "kill-5173": "powershell -Command \"Get-Process -Id (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force\"",
+    "test:e2e": "playwright test",
+    "playwright:install": "playwright install",
     "prepare": "husky"
   },
   "devDependencies": {

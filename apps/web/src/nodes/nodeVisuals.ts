@@ -82,6 +82,7 @@ const NODE_ICON_BY_TYPE: Record<string, LucideIcon> = {
   programmer: Code,
   fileUpload: Upload,
   // Triggers
+  "trigger.manual": Zap,
   "trigger.time": Timer,
   "trigger.webhook": GitBranch,
   "trigger.slackMessage": MessageSquare,

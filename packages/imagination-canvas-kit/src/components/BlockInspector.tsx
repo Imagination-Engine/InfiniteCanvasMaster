@@ -2,6 +2,7 @@
 import React from "react";
 import { Settings, Save, Trash2, Sliders } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
+import { useExpansionStore } from "../state/expansionStore";
 
 interface BlockInspectorProps {
   object: any;
@@ -16,6 +17,8 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({
   onClose,
 }) => {
   const updateObject = useCanvasStore((s) => s.updateObject);
+  const removeObject = useCanvasStore((s) => s.removeObject);
+  const clearExpanded = useExpansionStore((s) => s.clearExpanded);
   const inputs = object.metadata?.inputs || {};
 
   const handleInputChange = (key: string, value: any) => {
@@ -128,7 +131,14 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({
           <Save size={14} />
           Sync Changes
         </button>
-        <button className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all">
+        <button
+          onClick={() => {
+            removeObject(object.id);
+            clearExpanded();
+          }}
+          className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all"
+          title="Delete Block"
+        >
           <Trash2 size={14} />
         </button>
       </div>

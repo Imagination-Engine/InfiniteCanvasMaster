@@ -133,20 +133,27 @@ export class GenericBlockExecutor implements ConductorNodeExecutor {
     }
 
     // DELAY: Real async delay
-    if (node.config?.ms && typeof node.config.ms === "number") {
+    if (node.config?.ms !== undefined && typeof node.config.ms === "number") {
       const blockId = this.resolveBlockId(node.kind);
       if (blockId === "iem.conductor.delay") {
-        const ms = Math.min(node.config.ms as number, 30000); // Cap at 30s
-        await new Promise((resolve) => setTimeout(resolve, ms));
+        const ms = node.config.ms as number;
+        if (ms < 0) {
+          throw new Error("Delay duration cannot be negative");
+        }
+        const cappedMs = Math.min(ms, 30000); // Cap at 30s
+        await new Promise((resolve) => setTimeout(resolve, cappedMs));
         return {
           outputs: [
             this.createEnvelope(node, state, "data", {
               resumed: true,
-              delayMs: ms,
+              delayMs: cappedMs,
             }),
           ],
           logs: [
-            { message: `Delayed ${ms}ms`, timestamp: new Date().toISOString() },
+            {
+              message: `Delayed ${cappedMs}ms`,
+              timestamp: new Date().toISOString(),
+            },
           ],
         };
       }
