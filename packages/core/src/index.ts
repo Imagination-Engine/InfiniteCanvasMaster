@@ -1,12 +1,12 @@
 // @ts-nocheck
-export * from "./block/protocol.js";
-export * from "./block/registry.js";
-export * from "./block/adapter.js";
-export * from "./block/factory.js";
-export * from "./blocks/creative/index.js";
-export * from "./agent/provider.js";
-export * from "./agent/runtime.js";
-export * from "./chain/ChainExecutor.js";
+export * from "./block/protocol";
+export * from "./block/registry";
+export * from "./block/adapter";
+export * from "./block/factory";
+export * from "./blocks/creative/index";
+export * from "./agent/provider";
+export * from "./agent/runtime";
+export * from "./chain/ChainExecutor";
 
 // Export from bus/protocol selectively to avoid collision with fabric
 export {
@@ -15,19 +15,19 @@ export {
   Topics,
   wrapInEnvelope,
   serializeEnvelope,
-} from "./bus/protocol.js";
+} from "./bus/protocol";
 
-export * from "./fabric/index.js";
-export * from "./studio/index.js";
-export * from "./media/geminiImage.js";
+export * from "./fabric/index";
+export * from "./studio/index";
+export * from "./media/geminiImage";
 
-export * from "./bus/MessageBus.js";
+export * from "./bus/MessageBus";
 
 // Export Balnce universal block contract & runtime systems
-export * from "./canvas/blocks/core/BlockPorts.js";
-export * from "./canvas/blocks/core/BalnceBlockSpec.js";
-export * from "./canvas/blocks/core/BalnceBlockInstance.js";
-export * from "./canvas/blocks/core/BlockEvents.js";
-export * from "./canvas/blocks/core/BalnceBlockRuntime.js";
-export * from "./canvas/runtime/BlockRuntimeRegistry.js";
-export * from "./canvas/runtime/RuntimeEventBus.js";
+export * from "./canvas/blocks/core/BlockPorts";
+export * from "./canvas/blocks/core/BalnceBlockSpec";
+export * from "./canvas/blocks/core/BalnceBlockInstance";
+export * from "./canvas/blocks/core/BlockEvents";
+export * from "./canvas/blocks/core/BalnceBlockRuntime";
+export * from "./canvas/runtime/BlockRuntimeRegistry";
+export * from "./canvas/runtime/RuntimeEventBus";
