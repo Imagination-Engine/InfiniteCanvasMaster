@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { createRequire } from "module";
+import { fileURLToPath } from "url";
 const require = createRequire(import.meta.url);
 
 const isTest = process.env.NODE_ENV === "test" || !!process.env.VITEST;
@@ -57,18 +58,24 @@ export default defineConfig({
     alias: {
       "lucide-react": "lucide-react/dist/esm/lucide-react",
       "stream/web": require.resolve("web-streams-polyfill"),
-      "@iem/core": new URL("../../packages/core/src/index.ts", import.meta.url)
-        .pathname,
-      "@iem/db": new URL("../../packages/db/src/index.ts", import.meta.url)
-        .pathname,
-      "@iem/chat-interaction-kit": new URL(
-        "../../packages/chat-interaction-kit/src/index.ts",
-        import.meta.url,
-      ).pathname,
-      "@iem/imagination-canvas-kit": new URL(
-        "../../packages/imagination-canvas-kit/src/index.ts",
-        import.meta.url,
-      ).pathname,
+      "@iem/core": fileURLToPath(
+        new URL("../../packages/core/src/index.ts", import.meta.url),
+      ),
+      "@iem/db": fileURLToPath(
+        new URL("../../packages/db/src/index.ts", import.meta.url),
+      ),
+      "@iem/chat-interaction-kit": fileURLToPath(
+        new URL(
+          "../../packages/chat-interaction-kit/src/index.ts",
+          import.meta.url,
+        ),
+      ),
+      "@iem/imagination-canvas-kit": fileURLToPath(
+        new URL(
+          "../../packages/imagination-canvas-kit/src/index.ts",
+          import.meta.url,
+        ),
+      ),
     },
   },
   build: {
