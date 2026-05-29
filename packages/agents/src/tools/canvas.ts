@@ -15,7 +15,7 @@ const {
 export const generate_canvas_blueprint = createTool({
   id: "generate_canvas_blueprint",
   description:
-    "Deconstruct a user goal into a complete, interconnected canvas blueprint containing multiple blocks (nodes) and their relationships (edges). Use this to orchestrate complex solutions using the 50+ block system.",
+    "Deconstruct a user goal into a complete, interconnected canvas blueprint containing multiple blocks (nodes) and their relationships (edges). Use EXACT registry block type IDs (e.g. iem.reel.textToImage, iem.studio.video). For anime/visual scenes: create one iem.reel.textToImage per key frame with the FULL image-generation prompt in description and recommended_params.prompt; add iem.studio.video when the user wants video/reel/animation; edge each image node into the video studio for Veo forge.",
   inputSchema: z.object({
     owner_id: z
       .string()

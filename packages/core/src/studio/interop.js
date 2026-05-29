@@ -8,6 +8,7 @@
  * @module @iem/core/studio
  * @track cross_studio_interop_20260504 (Track 5)
  */
+import { normalizeCanvasBlockId } from "../block/blockIdAliases.js";
 import { blockRegistry } from "../block/registry";
 import { ALL_STUDIO_MANIFESTS } from "./manifests/index";
 // ============================================================================
@@ -75,8 +76,8 @@ export class StudioInteropResolver {
    * matches everything.
    */
   canConnectBlocks(sourceId, targetId) {
-    const source = blockRegistry.get(sourceId);
-    const target = blockRegistry.get(targetId);
+    const source = blockRegistry.get(normalizeCanvasBlockId(sourceId));
+    const target = blockRegistry.get(normalizeCanvasBlockId(targetId));
     if (!source || !target) return false;
     const sourceProduces = source.produces || [];
     const targetAccepts = target.accepts || [];

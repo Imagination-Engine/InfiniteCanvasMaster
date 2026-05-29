@@ -15,9 +15,15 @@ import { OpenClawBlock as OpenClawBlockComponent } from "./blocks/OpenClawBlock"
 import { OpenClawAgentGroupBlock } from "./blocks/OpenClawAgentGroupBlock";
 import { CommonBlockView } from "./blocks/CommonBlockView";
 import { resolveBlockIcon } from "../utils/blockIconMap";
-import { Maximize2, GripHorizontal, Activity, AlertCircle, Trash2 } from "lucide-react";
+import {
+  Maximize2,
+  GripHorizontal,
+  Activity,
+  AlertCircle,
+  Trash2,
+} from "lucide-react";
 import { useCanvasHistory } from "../hooks/useCanvasHistory";
-import { studioInteropResolver } from "@iem/core";
+import { normalizeCanvasBlockId, studioInteropResolver } from "@iem/core";
 
 export type ComponentRegistry = Record<
   string,
@@ -43,7 +49,9 @@ export const ObjectRenderer: React.FC<{
   object?: CanvasObject;
   registry?: ComponentRegistry;
 }> = memo(({ objectId, object: propObject, registry = defaultRegistry }) => {
-  const storeObject = useCanvasStore((s) => objectId ? s.objects[objectId] : undefined);
+  const storeObject = useCanvasStore((s) =>
+    objectId ? s.objects[objectId] : undefined,
+  );
   const object = propObject || storeObject;
 
   const { selectedIds, setSelection, setHovered, hoveredId, clearSelection } =
@@ -66,19 +74,13 @@ export const ObjectRenderer: React.FC<{
     dragPos.current = { x: object.x, y: object.y };
   }
 
-  // Define all React hooks unconditionally at the top of the component, before early returns
-  const handleParamsChange = React.useCallback((newParams: any) => {
-    if (!object) return;
-    updateObject(object.id, {
-      metadata: {
-        ...object.metadata,
-        inputs: {
-          ...(object.metadata?.inputs || {}),
-          ...newParams,
-        },
-      },
-    });
-  }, [object?.id, object?.metadata, updateObject]);
+  const handleParamsChange = React.useCallback(
+    (newParams: any) => {
+      if (!object) return;
+      useCanvasStore.getState().patchObjectMetadata(object.id, newParams);
+    },
+    [object?.id],
+  );
 
   const polyfilledData = React.useMemo(() => {
     if (!object) return { input: {}, output: {} };
@@ -102,7 +104,9 @@ export const ObjectRenderer: React.FC<{
     if (!object) return null;
     return (
       <div className="flex-1 min-h-0 overflow-auto custom-scrollbar mb-4 pr-1">
-        <Suspense fallback={<div className="flex-1 animate-pulse bg-white/5" />}>
+        <Suspense
+          fallback={<div className="flex-1 animate-pulse bg-white/5" />}
+        >
           <Component
             object={object}
             mode="compact"
@@ -131,7 +135,6 @@ export const ObjectRenderer: React.FC<{
 
   const isSelected = selectedIds.includes(object.id);
   const isHovered = hoveredId === object.id;
-
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -164,7 +167,7 @@ export const ObjectRenderer: React.FC<{
       }
       latestDx = (moveEvent.clientX - startX) / viewportZoom;
       latestDy = (moveEvent.clientY - startY) / viewportZoom;
-      
+
       const newX = initialObjX + latestDx;
       const newY = initialObjY + latestDy;
 
@@ -178,7 +181,10 @@ export const ObjectRenderer: React.FC<{
       // 2. Sync React state for lines
       if (!animationFrameId) {
         animationFrameId = requestAnimationFrame(() => {
-          updateObject(object.id, { x: dragPos.current.x, y: dragPos.current.y });
+          updateObject(object.id, {
+            x: dragPos.current.x,
+            y: dragPos.current.y,
+          });
           animationFrameId = null;
         });
       }
@@ -190,7 +196,10 @@ export const ObjectRenderer: React.FC<{
         animationFrameId = null;
       }
       if (moved) {
-        updateObject(object.id, { x: initialObjX + latestDx, y: initialObjY + latestDy });
+        updateObject(object.id, {
+          x: initialObjX + latestDx,
+          y: initialObjY + latestDy,
+        });
       }
       setIsDragging(false);
       window.removeEventListener("pointermove", onMove);
@@ -269,7 +278,12 @@ export const ObjectRenderer: React.FC<{
           (sourceObj as any)?.blockKind || sourceObj?.type || sourceId;
         const targetKind = (object as any).blockKind || object.type;
 
-        if (!studioInteropResolver.canConnectBlocks(sourceKind, targetKind)) {
+        if (
+          !studioInteropResolver.canConnectBlocks(
+            normalizeCanvasBlockId(sourceKind),
+            normalizeCanvasBlockId(targetKind),
+          )
+        ) {
           e.preventDefault();
           return;
         }

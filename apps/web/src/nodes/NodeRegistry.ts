@@ -25,6 +25,8 @@ const resolveComponent = (nodeType: string) => {
   if (nodeType === "formatter") return FormatterNode;
   if (nodeType === "colorSwapper") return ColorSwapperNode;
 
+  if (nodeType === "iem.studio.video") return ReelNode;
+
   const prefix = nodeType.split(".")[0];
   if (prefix === "scribe") return ScribeNode;
   if (prefix === "playable") return PlayableNode;

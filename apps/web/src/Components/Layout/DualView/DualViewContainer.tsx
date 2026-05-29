@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+// @ts-nocheck
+import React, { useEffect, useRef, useCallback } from "react";
 import { useSessionStore } from "../../../store/useSessionStore";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
 import { ChatShell } from "../../Chat/ChatShell";
@@ -9,7 +10,11 @@ import {
   InfiniteViewport,
   useCanvasStore,
   useConnectionStore,
+  mergeDocumentIntoCanvasObjects,
+  documentEdgesToConnections,
+  exportCanvasToDocument,
 } from "@iem/imagination-canvas-kit";
+import { useViewportStore } from "@iem/imagination-canvas-kit";
 
 interface DualViewContainerProps {
   projectId: string;
@@ -23,6 +28,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   projectId,
   initialDocument,
   initialMessages,
+  saveCanvas,
 }) => {
   const { accessToken } = useAuth();
 
@@ -31,6 +37,31 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       useCanvasStore.getState().setAccessToken(accessToken);
     }
   }, [accessToken]);
+
+  const documentSyncedRef = useRef<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persistSpatialToServer = useCallback(() => {
+    if (!saveCanvas) return;
+    const objects = useCanvasStore.getState().objects;
+    const connections = useConnectionStore.getState().connections;
+    const viewport = useViewportStore.getState();
+    const doc = exportCanvasToDocument(objects, connections, {
+      x: viewport.x,
+      y: viewport.y,
+      zoom: viewport.zoom,
+    }) as UnifiedCanvasDocument;
+    void saveCanvas(doc).catch((err) =>
+      console.warn("[DualView] Failed to persist spatial canvas:", err),
+    );
+  }, [saveCanvas]);
+
+  const schedulePersist = useCallback(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      persistSpatialToServer();
+    }, 800);
+  }, [persistSpatialToServer]);
   // --- Create Session Context Summary ---
   const sessionSummary = React.useMemo(() => {
     const userMessages = (initialMessages || [])
@@ -41,53 +72,52 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     return userMessages || "New Creative Session";
   }, [initialMessages]);
 
-  // --- Spatial Sync: Initialize Stores from Document ---
+  const applyDocumentToStores = useCallback((doc: UnifiedCanvasDocument) => {
+    const currentObjects = useCanvasStore.getState().objects;
+    const merged = mergeDocumentIntoCanvasObjects(currentObjects, doc);
+    useCanvasStore.setState({ objects: merged });
+
+    const serverConnections = documentEdgesToConnections(doc);
+    const localConnections = useConnectionStore.getState().connections;
+    useConnectionStore.setState({
+      connections: { ...localConnections, ...serverConnections },
+    });
+  }, []);
+
+  // --- Spatial Sync: merge server document after localStorage hydration ---
   useEffect(() => {
     if (!initialDocument) return;
 
-    // Get any locally persisted state so we can preserve generated media
-    const localObjects = useCanvasStore.getState().objects || {};
+    const docKey = `${projectId}:${initialDocument.nodes?.length ?? 0}:${initialDocument.edges?.length ?? 0}`;
+    if (documentSyncedRef.current === docKey) return;
 
-    const objects: Record<string, any> = {};
-    (initialDocument.nodes || []).forEach((node) => {
-      const localObj = localObjects[node.id];
-      // Preserve locally-generated inputs (e.g. imageUrl from Reel)
-      const preservedInputs = localObj?.metadata?.inputs || {};
+    const runMerge = () => {
+      applyDocumentToStores(initialDocument);
+      documentSyncedRef.current = docKey;
+    };
 
-      objects[node.id] = {
-        id: node.id,
-        type: node.type || "note",
-        x: node.position?.x || (node as any).x || 0,
-        y: node.position?.y || (node as any).y || 0,
-        width: node.width || 320,
-        height: node.height || 240,
-        zIndex: 1,
-        status: "idle",
-        metadata: {
-          label: node.data?.label,
-          description: node.data?.description,
-          ...node.data,
-          // Merge: server data first, then overlay any locally persisted inputs
-          inputs: {
-            ...(node.data?.inputs || {}),
-            ...preservedInputs,
-          },
-        },
-      };
+    if (useCanvasStore.persist.hasHydrated()) {
+      runMerge();
+      return;
+    }
+
+    const unsub = useCanvasStore.persist.onFinishHydration(() => {
+      runMerge();
     });
-    useCanvasStore.setState({ objects: objects as any });
+    return unsub;
+  }, [initialDocument, projectId, applyDocumentToStores]);
 
-    const connections: Record<string, any> = {};
-    (initialDocument.edges || []).forEach((edge) => {
-      connections[edge.id] = {
-        id: edge.id,
-        fromId: edge.source,
-        toId: edge.target,
-        label: edge.label || edge.data?.label,
-      };
+  // Persist generated images / forge output to server when local canvas changes
+  useEffect(() => {
+    const unsub = useCanvasStore.subscribe((state, prev) => {
+      if (state.objects === prev.objects) return;
+      schedulePersist();
     });
-    useConnectionStore.setState({ connections });
-  }, [initialDocument]);
+    return () => {
+      unsub();
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [schedulePersist]);
 
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">

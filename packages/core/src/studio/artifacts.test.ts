@@ -40,6 +40,8 @@ describe("studio artifacts", () => {
     expect(artifact.data).toMatchObject({
       status: "draft",
       scenes: [{ id: "s1" }],
+      references: [],
+      forge: { prompt: "", status: "idle" },
     });
   });
 

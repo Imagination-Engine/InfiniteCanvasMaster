@@ -45,13 +45,12 @@ describe("Media-Primitive Blocks (Red/Green Phase)", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it("adversarial: returns fallback if API key is missing", async () => {
+    it("adversarial: throws if API key is missing", async () => {
       process.env.NANOBANANA_API_KEY = "";
       process.env.IMAGE_API_KEY = "";
-      const output = await textToImageBlock.agent.invoke({ prompt: "test" });
-      expect(output.imageUrl).toBe(
-        "https://placehold.co/600x400/png?text=Generated+Image",
-      );
+      await expect(
+        textToImageBlock.agent.invoke({ prompt: "test" }),
+      ).rejects.toThrow("Missing API key");
     });
 
     it("adversarial: throws if API fails", async () => {
@@ -86,12 +85,11 @@ describe("Media-Primitive Blocks (Red/Green Phase)", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it("adversarial: returns fallback if API key is missing", async () => {
+    it("adversarial: throws if API key is missing", async () => {
       process.env.ELEVENLABS_API_KEY = "";
-      const output = await textToSpeechBlock.agent.invoke({ text: "test" });
-      expect(output.audioUrl).toBe(
-        "data:audio/mpeg;base64,mock_audio_data_generated",
-      );
+      await expect(
+        textToSpeechBlock.agent.invoke({ text: "test" }),
+      ).rejects.toThrow("Missing ElevenLabs API key");
     });
 
     it("adversarial: throws if API fails", async () => {
