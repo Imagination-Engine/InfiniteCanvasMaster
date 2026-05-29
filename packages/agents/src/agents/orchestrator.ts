@@ -45,7 +45,7 @@ export const createOrchestrator = async (storage?: any) => {
       - Playable (Games): iem.playable.joystick, iem.playable.collider, iem.playable.score, iem.playable.spawner, iem.playable.timer, iem.playable.camera, iem.playable.lighting, iem.playable.audio, iem.playable.particle, iem.playable.sprite, iem.playable.physicsEntity, iem.playable.input, iem.playable.rule
       - Atlas (Data/RAG): iem.atlas.documentLoader, iem.atlas.chunker, iem.atlas.vectorSearch, iem.atlas.graphKnowledge, iem.atlas.indexer, iem.atlas.query, iem.atlas.embed, iem.atlas.upsert, iem.atlas.semanticRouter
       - Reel (Video): iem.reel.timeline, iem.reel.export, iem.reel.scene, iem.reel.character, iem.reel.dialogue, iem.reel.camera, iem.reel.lighting, iem.reel.transition, iem.reel.vfx, iem.reel.audioTrack
-      - Conductor (Orchestration): iem.conductor.if, iem.conductor.forEach, iem.conductor.webhook, iem.conductor.schedule, iem.conductor.saas, iem.conductor.agent, iem.conductor.router, iem.conductor.delay, iem.conductor.state, iem.conductor.errorBoundary, iem.conductor.subGraph
+      - Conductor (Orchestration): iem.conductor.if, iem.conductor.foreach, iem.conductor.webhook, iem.conductor.schedule, iem.conductor.saas, iem.conductor.agent, iem.conductor.router, iem.conductor.delay, iem.conductor.state, iem.conductor.errorBoundary, iem.conductor.subGraph
       - Core Tools: iem.core.refiner, iem.core.summarizer, iem.core.translator, iem.core.colorSwapper, iem.core.filter, iem.core.webScraper, iem.core.formatter, iem.core.programmer
       
       Ensure logical flow in your edges (e.g., a documentLoader should output to a chunker; a joystick should control a sprite).

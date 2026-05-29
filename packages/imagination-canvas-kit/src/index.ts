@@ -58,6 +58,8 @@ BlockRegistry.register("iem.data.cluster", MemoryClusterBlock as any);
 BlockRegistry.register("app", AppBlock as any);
 BlockRegistry.register("iem.app.web", AppBlock as any);
 BlockRegistry.register("iem.app.iframe", AppBlock as any);
+BlockRegistry.register("iem.app.game", AppBlock as any);
+BlockRegistry.register("iem.app.simulation", AppBlock as any);
 
 export * from "./components/BlockLibraryDrawer";
 export * from "./components/BlockLibraryCard";

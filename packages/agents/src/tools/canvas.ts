@@ -10,7 +10,43 @@ const {
   canvases,
   nodes: nodesTable,
   edges: edgesTable,
+  users,
 } = dbModule as any;
+
+const isUuid = (value?: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value || "",
+  );
+
+async function ensureOwnerId(ownerId: string): Promise<string | null> {
+  if (!isUuid(ownerId)) return null;
+
+  const [existingById] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, ownerId));
+  if (existingById?.id) return existingById.id;
+
+  try {
+    const [created] = await db
+      .insert(users)
+      .values({
+        id: ownerId,
+        email: `token-${ownerId}@local.invalid`,
+        passwordHash: "token-user-autocreated",
+      })
+      .returning();
+    if (created?.id) return created.id;
+  } catch {
+    const [existingAfterInsert] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, ownerId));
+    if (existingAfterInsert?.id) return existingAfterInsert.id;
+  }
+
+  return null;
+}
 
 export const generate_canvas_blueprint = createTool({
   id: "generate_canvas_blueprint",
@@ -62,12 +98,20 @@ export const generate_canvas_blueprint = createTool({
       input;
 
     try {
+      const resolvedOwnerId = await ensureOwnerId(owner_id);
+      if (!resolvedOwnerId) {
+        return {
+          success: false,
+          nodes,
+          edges,
+          error:
+            "Unable to resolve a valid workspace owner from owner_id. Re-authenticate and retry.",
+        };
+      }
+
       // Create the workspace using the current chat session_id to maintain continuity.
       // If the session_id is a UUID we use it, otherwise we fall back to a new one.
-      const isValidUUID =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          session_id || "",
-        );
+      const isValidUUID = isUuid(session_id || "");
       const finalWorkspaceId = isValidUUID ? session_id : crypto.randomUUID();
 
       const [workspace] = await db
@@ -75,7 +119,7 @@ export const generate_canvas_blueprint = createTool({
         .values({
           id: finalWorkspaceId,
           name: blueprint_name || "Neural Blueprint",
-          ownerId: owner_id,
+          ownerId: resolvedOwnerId,
         })
         .onConflictDoNothing() // In case it was already created somehow
         .returning();
@@ -90,13 +134,23 @@ export const generate_canvas_blueprint = createTool({
         activeWorkspaceId = existing.id;
       }
 
-      const [canvas] = await db
-        .insert(canvases)
-        .values({
-          workspaceId: activeWorkspaceId,
-          name: "Main Canvas",
-        })
-        .returning();
+      let [canvas] = await db
+        .select()
+        .from(canvases)
+        .where(eq(canvases.workspaceId, activeWorkspaceId));
+
+      if (!canvas) {
+        [canvas] = await db
+          .insert(canvases)
+          .values({
+            workspaceId: activeWorkspaceId,
+            name: "Main Canvas",
+          })
+          .returning();
+      } else {
+        await db.delete(edgesTable).where(eq(edgesTable.canvasId, canvas.id));
+        await db.delete(nodesTable).where(eq(nodesTable.canvasId, canvas.id));
+      }
 
       // Topological/Hierarchical DAG layout calculation
       const safeNodes = nodes || [];
@@ -167,6 +221,14 @@ export const generate_canvas_blueprint = createTool({
             label: n.title,
             description: n.description,
             inputs: n.recommended_params || {},
+            title:
+              n.type === "iem.app.game"
+                ? n.recommended_params?.title || n.title || "Playable Runtime"
+                : n.title,
+            appUrl:
+              n.type === "iem.app.game"
+                ? n.recommended_params?.appUrl || "/playable-runtime.html"
+                : undefined,
           },
           positionX: pos.x,
           positionY: pos.y,

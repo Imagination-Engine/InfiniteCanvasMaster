@@ -25,7 +25,8 @@ const resolveComponent = (nodeType: string) => {
   if (nodeType === "formatter") return FormatterNode;
   if (nodeType === "colorSwapper") return ColorSwapperNode;
 
-  const prefix = nodeType.split(".")[0];
+  const segments = nodeType.split(".");
+  const prefix = segments[0] === "iem" ? segments[1] : segments[0];
   if (prefix === "scribe") return ScribeNode;
   if (prefix === "playable") return PlayableNode;
   if (prefix === "atlas") return AtlasNode;

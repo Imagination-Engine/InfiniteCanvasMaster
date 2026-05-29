@@ -3,6 +3,7 @@ import React, { useRef, useEffect } from "react";
 import { useViewportCamera } from "../hooks/useViewportCamera";
 import { useCanvasStore } from "../state/canvasStore";
 import { useSelectionStore } from "../state/selectionStore";
+import { useViewportStore } from "../state/viewportStore";
 import { ObjectRenderer, type ComponentRegistry } from "./ObjectRenderer";
 import { ConnectorLayer } from "./ConnectorLayer";
 import { AgentActivityLayer } from "./AgentActivityLayer";
@@ -16,12 +17,28 @@ export const InfiniteViewport: React.FC<{
 }> = ({ children, registry }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { viewport, pan, zoomAt } = useViewportCamera();
+  const resizeViewport = useViewportStore((state) => state.resize);
   const objectsRecord = useCanvasStore((state) => state.objects);
   const objects = React.useMemo(
     () => Object.values(objectsRecord),
     [objectsRecord],
   );
   const { clearSelection } = useSelectionStore();
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect();
+      resizeViewport(rect.width, rect.height);
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [resizeViewport]);
 
   // --- Gesture State ---
   const lastTouchRef = useRef<{
@@ -103,8 +120,11 @@ export const InfiniteViewport: React.FC<{
       clearSelection();
     }
 
-    // Panning with Middle Mouse (1), Right Click (2), or Alt+Left (0)
-    if (e.button === 1 || e.button === 2 || (e.button === 0 && e.altKey)) {
+    // Pan naturally from empty canvas space; object dragging is handled by ObjectRenderer.
+    if (
+      e.target === containerRef.current &&
+      (e.button === 0 || e.button === 1 || e.button === 2 || e.altKey)
+    ) {
       e.preventDefault();
       const startX = e.clientX;
       const startY = e.clientY;
@@ -191,7 +211,7 @@ export const InfiniteViewport: React.FC<{
       onDragOver={onDragOver}
       onDrop={onDrop}
       style={{
-        cursor: "crosshair",
+        cursor: "grab",
         backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)`,
         backgroundSize: `${20 * viewport.zoom}px ${20 * viewport.zoom}px`,
         backgroundPosition: `${viewport.x}px ${viewport.y}px`,
