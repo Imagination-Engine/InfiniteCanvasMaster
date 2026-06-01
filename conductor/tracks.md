@@ -111,3 +111,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Reel Veo Reference Forge**
       _Link: [./tracks/reel_veo_forge_20260520/](./tracks/reel_veo_forge_20260520/)_
+
+---
+
+- [ ] **Track: Optimize canvas rendering, reduce drag lag, and add connection handles to nodes.**
+      _Link: [./tracks/canvas_optimization_20260601/](./tracks/canvas_optimization_20260601/)_

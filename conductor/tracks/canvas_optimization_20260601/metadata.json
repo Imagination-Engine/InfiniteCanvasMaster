@@ -1,0 +1,8 @@
+{
+  "track_id": "canvas_optimization_20260601",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-06-01T00:00:00Z",
+  "updated_at": "2026-06-01T00:00:00Z",
+  "description": "Optimize canvas rendering, reduce drag lag, and add connection handles to nodes."
+}
