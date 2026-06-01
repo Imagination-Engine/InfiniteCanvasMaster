@@ -6,7 +6,6 @@ import { useShellStore } from "../state/shellStore";
 
 import { BlockLibraryDrawer } from "./BlockLibraryDrawer";
 import { ImmersiveBlockModal } from "./ImmersiveBlockModal";
-import { FloatingOrchestratorChat } from "./FloatingOrchestratorChat";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

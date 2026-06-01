@@ -1,0 +1,7 @@
+name = "iem-server"
+main = "src/index.ts"
+compatibility_date = "2024-04-20"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Add env variables here if needed

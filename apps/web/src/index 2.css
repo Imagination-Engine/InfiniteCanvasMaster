@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg-page: #0A0A0F;
+  --color-brand-bg-surface: #111128;
+  --color-brand-bg-glass: rgba(255, 255, 255, 0.03);
+  
+  --color-brand-purple: #7B5CEA;
+  --color-brand-cyan: #00C2FF;
+  
+  --color-brand-text-headline: #FFFFFF;
+  --color-brand-text-body: #B0B8CC;
+  --color-brand-text-muted: #6B7A99;
+  
+  --color-brand-border: rgba(255, 255, 255, 0.08);
+  --color-brand-border-glow: rgba(123, 100, 255, 0.2);
+}
+
+/* ─── Global Reset ─────────────────────────────────────────────── */
+:root {
+  background-color: #0A0A0F;
+  color: #B0B8CC;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #0A0A0F;
+  color: #B0B8CC;
+  font-family: "Inter", "Outfit", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Custom Scrollbar Utility ───────────────────────────────────── */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(123, 92, 234, 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, transparent, rgba(123, 92, 234, 0.3), transparent);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #7B5CEA, #00C2FF);
+  box-shadow: 0 0 10px rgba(123, 92, 234, 0.5);
+}

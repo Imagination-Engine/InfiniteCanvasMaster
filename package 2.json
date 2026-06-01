@@ -1,0 +1,42 @@
+{
+  "name": "imagination-engine",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "docs:map": "tsx scripts/docs-map.ts",
+    "setup:models": "tsx scripts/setup-models.ts",
+    "iem:new-block": "tsx scripts/new-block.ts",
+    "iem:boot": "tsx scripts/boot/index.ts",
+    "iem:pr-prep": "tsx scripts/pr-prep.ts",
+    "iem:eval": "tsx packages/agents/src/evals/runner.ts",
+    "iem:security-audit": "tsx scripts/security/audit.ts",
+    "iem:check-rotation": "tsx scripts/security/check-rotation.ts",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
+    "turbo": "latest"
+  },
+  "packageManager": "pnpm@8.15.5",
+  "lint-staged": {
+    "!(scripts/test-git-secrets.sh)": ["node scripts/scan-secrets.js"],
+    "*.{ts,tsx,js,jsx}": ["prettier --write"],
+    "*.{json,md,yml,yaml}": ["prettier --write"]
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "zod": "^3.24.1"
+    }
+  }
+}

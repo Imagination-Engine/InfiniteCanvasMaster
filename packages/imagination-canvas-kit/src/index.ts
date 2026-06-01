@@ -69,5 +69,3 @@ export * from "./components/BlockLibraryDrawer";
 export * from "./components/BlockLibraryCard";
 
 export * from "./components/ImmersiveBlockModal";
-
-export * from "./components/FloatingOrchestratorChat";

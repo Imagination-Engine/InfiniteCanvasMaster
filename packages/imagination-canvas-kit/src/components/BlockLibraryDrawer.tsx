@@ -65,32 +65,6 @@ export const BlockLibraryDrawer: React.FC<{
               </span>
             </div>
           </button>
-
-          {onRunGraph && (
-            <button
-              className="p-3 bg-brand-bg-surface/80 backdrop-blur-xl border border-brand-cyan/20 rounded-2xl shadow-2xl text-brand-cyan hover:border-brand-cyan/40 hover:bg-brand-cyan/5 transition-colors disabled:opacity-50"
-              onClick={onRunGraph}
-              disabled={isRunning}
-              title="Run Graph"
-            >
-              <div className="flex flex-col items-center gap-2">
-                {(Icons as any).Play ? (
-                  React.createElement((Icons as any).Play, {
-                    size: 20,
-                    fill: "currentColor",
-                  })
-                ) : (
-                  <Library size={20} />
-                )}
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ writingMode: "vertical-rl" }}
-                >
-                  Run
-                </span>
-              </div>
-            </button>
-          )}
         </div>
       )}
 

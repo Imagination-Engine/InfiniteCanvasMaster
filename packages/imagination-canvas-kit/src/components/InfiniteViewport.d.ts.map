@@ -1,1 +1,0 @@
-{"version":3,"file":"InfiniteViewport.d.ts","sourceRoot":"","sources":["InfiniteViewport.tsx"],"names":[],"mappings":"AACA,OAAO,KAA4B,MAAM,OAAO,CAAC;AAIjD,OAAO,EAAkB,KAAK,iBAAiB,EAAE,MAAM,kBAAkB,CAAC;AAO1E,eAAO,MAAM,gBAAgB,EAAE,KAAK,CAAC,EAAE,CAAC;IACtC,QAAQ,CAAC,EAAE,KAAK,CAAC,SAAS,CAAC;IAC3B,QAAQ,CAAC,EAAE,iBAAiB,CAAC;CAC9B,CAyMA,CAAC"}

@@ -46,6 +46,7 @@ This document is not enterprise security theater. It is the smallest set of meas
 **Part XIV** — The Top Ten Student Leak Patterns
 
 Appendices
+
 - A. The 5-Minute Hardening Checklist
 - B. Per-Provider Key Rotation Guides
 - C. The "Did You Leak?" Checklist
@@ -185,6 +186,7 @@ Every student's first commit will hit this hook at some point. The failure messa
 GitHub offers free push protection on public repos (and on private repos at higher plan tiers). It scans pushed commits for known secret patterns and refuses the push if any are found.
 
 Enable at repo level:
+
 - Repository → Settings → Code security and analysis
 - Secret scanning: Enabled
 - Push protection: Enabled
@@ -222,7 +224,7 @@ jobs:
 
 `--only-verified` reduces false positives by actually attempting the secret against its provider. This means a committed key is confirmed live before the CI fails. In incident response terms: if TruffleHog flags, you must rotate. No "probably not real" judgment calls.
 
-## 3.5 The "no VITE_ for secrets" lint rule
+## 3.5 The "no VITE\_ for secrets" lint rule
 
 The most insidious leak pattern is prefixing a backend secret with `VITE_`. Vite bundles anything prefixed `VITE_` directly into the client-side bundle, where it is visible to anyone who opens browser dev tools on the deployed site.
 
@@ -231,33 +233,41 @@ A custom ESLint rule in `packages/core/eslint-rules/no-vite-secrets.js`:
 ```javascript
 // Detects usage of VITE_*_KEY, VITE_*_TOKEN, VITE_*_SECRET, VITE_*_PASSWORD
 module.exports = {
-  meta: { type: 'problem', docs: { description: 'VITE_ vars are exposed to browser. Never use for secrets.' } },
+  meta: {
+    type: "problem",
+    docs: {
+      description: "VITE_ vars are exposed to browser. Never use for secrets.",
+    },
+  },
   create(context) {
-    const forbidden = /^VITE_.*_(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)$/i
+    const forbidden = /^VITE_.*_(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)$/i;
     return {
       MemberExpression(node) {
         if (
-          node.object?.object?.name === 'import' &&
-          node.object?.property?.name === 'meta' &&
-          node.property?.name === 'env'
+          node.object?.object?.name === "import" &&
+          node.object?.property?.name === "meta" &&
+          node.property?.name === "env"
         ) {
           // Flagged by parent check
         }
-        if (node.object?.name === 'process' && node.property?.name === 'env') {
-          const parent = node.parent
-          if (parent.type === 'MemberExpression' && parent.property.type === 'Identifier') {
+        if (node.object?.name === "process" && node.property?.name === "env") {
+          const parent = node.parent;
+          if (
+            parent.type === "MemberExpression" &&
+            parent.property.type === "Identifier"
+          ) {
             if (forbidden.test(parent.property.name)) {
               context.report({
                 node: parent,
                 message: `'${parent.property.name}' looks like a secret but has VITE_ prefix, which exposes it to the browser. Remove VITE_ and access it only from server code.`,
-              })
+              });
             }
           }
         }
       },
-    }
+    };
   },
-}
+};
 ```
 
 Enabled in `.eslintrc.json` at the root. Any PR that adds `VITE_GEMINI_API_KEY` or similar fails lint before reaching CI.
@@ -294,18 +304,21 @@ Every route under `/api/*` requires a valid JWT. No unauthenticated route leaks 
 
 ```typescript
 // apps/server/src/middleware/auth.ts
-import type { Request, Response, NextFunction } from 'express'
-import { verify } from 'jsonwebtoken'
+import type { Request, Response, NextFunction } from "express";
+import { verify } from "jsonwebtoken";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies?.access_token || extractBearer(req.headers.authorization)
-  if (!token) return res.status(401).json({ error: 'unauthenticated' })
+  const token =
+    req.cookies?.access_token || extractBearer(req.headers.authorization);
+  if (!token) return res.status(401).json({ error: "unauthenticated" });
   try {
-    const payload = verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] })
-    req.user = payload as UserPayload
-    next()
+    const payload = verify(token, process.env.JWT_SECRET!, {
+      algorithms: ["HS256"],
+    });
+    req.user = payload as UserPayload;
+    next();
   } catch {
-    return res.status(401).json({ error: 'invalid_token' })
+    return res.status(401).json({ error: "invalid_token" });
   }
 }
 ```
@@ -314,8 +327,8 @@ Applied globally:
 
 ```typescript
 // apps/server/src/app.ts
-app.use('/api', requireAuth)     // every /api/* route requires auth
-app.use('/public', publicRouter) // explicitly public: /health, /login, /signup
+app.use("/api", requireAuth); // every /api/* route requires auth
+app.use("/public", publicRouter); // explicitly public: /health, /login, /signup
 ```
 
 A new route inherits auth by default. Opting out requires explicit placement under `/public`.
@@ -324,24 +337,24 @@ A new route inherits auth by default. Opting out requires explicit placement und
 
 ```typescript
 // apps/server/src/middleware/cors.ts
-import cors from 'cors'
+import cors from "cors";
 
-const allowlist = (process.env.CORS_ALLOWED_ORIGINS || '')
-  .split(',')
+const allowlist = (process.env.CORS_ALLOWED_ORIGINS || "")
+  .split(",")
   .map((s) => s.trim())
-  .filter(Boolean)
+  .filter(Boolean);
 
 export const corsMiddleware = cors({
   origin(origin, cb) {
-    if (!origin) return cb(null, true)  // allow same-origin, curl, server-to-server
-    if (allowlist.includes(origin)) return cb(null, true)
-    cb(new Error(`CORS: ${origin} not in allowlist`))
+    if (!origin) return cb(null, true); // allow same-origin, curl, server-to-server
+    if (allowlist.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: ${origin} not in allowlist`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   maxAge: 86400,
-})
+});
 ```
 
 `CORS_ALLOWED_ORIGINS` in `.env.local`:
@@ -358,46 +371,52 @@ Rate limiting protects against two threats: a leaked key being abused quickly, a
 
 ```typescript
 // apps/server/src/middleware/rate-limit.ts
-import rateLimit from 'express-rate-limit'
-import RedisStore from 'rate-limit-redis'
-import { redisClient } from '../redis'
+import rateLimit from "express-rate-limit";
+import RedisStore from "rate-limit-redis";
+import { redisClient } from "../redis";
 
 // Strict limit for sensitive operations
 export const authLimiter = rateLimit({
-  store: new RedisStore({ sendCommand: (...args) => redisClient.sendCommand(args) }),
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+  }),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,                    // 5 attempts
-  message: { error: 'rate_limited', retryAfterSec: 900 },
+  max: 5, // 5 attempts
+  message: { error: "rate_limited", retryAfterSec: 900 },
   standardHeaders: true,
   legacyHeaders: false,
-})
+});
 
 // Default limit for authenticated API
 export const apiLimiter = rateLimit({
-  store: new RedisStore({ sendCommand: (...args) => redisClient.sendCommand(args) }),
-  windowMs: 60 * 1000,       // 1 minute
-  max: 60,                   // 60 requests
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+  }),
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // 60 requests
   keyGenerator: (req) => req.user?.id || req.ip,
-})
+});
 
 // Expensive-operation limit (AI calls)
 export const aiLimiter = rateLimit({
-  store: new RedisStore({ sendCommand: (...args) => redisClient.sendCommand(args) }),
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+  }),
   windowMs: 60 * 1000,
-  max: 15,                   // 15 AI calls per minute per user
+  max: 15, // 15 AI calls per minute per user
   keyGenerator: (req) => req.user?.id || req.ip,
-})
+});
 ```
 
 Applied:
 
 ```typescript
-app.use('/public/login', authLimiter)
-app.use('/public/signup', authLimiter)
-app.use('/api', apiLimiter)
-app.use('/api/chat/stream', aiLimiter)
-app.use('/api/reel/generate', aiLimiter)
-app.use('/api/forge/run', aiLimiter)
+app.use("/public/login", authLimiter);
+app.use("/public/signup", authLimiter);
+app.use("/api", apiLimiter);
+app.use("/api/chat/stream", aiLimiter);
+app.use("/api/reel/generate", aiLimiter);
+app.use("/api/forge/run", aiLimiter);
 ```
 
 Redis is required. If the team opts for a simpler path, the `rate-limiter-flexible` package can run on Postgres too. Either way, rate limiting is not optional.
@@ -406,7 +425,7 @@ Redis is required. If the team opts for a simpler path, the `rate-limiter-flexib
 
 ```typescript
 // apps/server/src/app.ts
-import helmet from 'helmet'
+import helmet from "helmet";
 
 app.use(
   helmet({
@@ -415,14 +434,19 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"], // relaxed for Vite dev; tighten in prod
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", 'https://api.anthropic.com', 'https://generativelanguage.googleapis.com', 'https://queue.fal.run'],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: [
+          "'self'",
+          "https://api.anthropic.com",
+          "https://generativelanguage.googleapis.com",
+          "https://queue.fal.run",
+        ],
         frameAncestors: ["'none'"],
       },
     },
     crossOriginEmbedderPolicy: false,
-  })
-)
+  }),
+);
 ```
 
 The CSP `connectSrc` specifically allowlists the AI provider endpoints. Any new provider requires an explicit CSP update, which is a good forcing function for security review.
@@ -432,32 +456,32 @@ The CSP `connectSrc` specifically allowlists the AI provider endpoints. Any new 
 Auth cookies:
 
 ```typescript
-res.cookie('access_token', jwt, {
-  httpOnly: true,                 // not accessible to JavaScript
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
-  maxAge: 15 * 60 * 1000,         // 15 minutes
-  path: '/',
-})
+res.cookie("access_token", jwt, {
+  httpOnly: true, // not accessible to JavaScript
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 15 * 60 * 1000, // 15 minutes
+  path: "/",
+});
 
-res.cookie('refresh_token', refreshJwt, {
+res.cookie("refresh_token", refreshJwt, {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  path: '/public/refresh',         // only sent to refresh endpoint
-})
+  path: "/public/refresh", // only sent to refresh endpoint
+});
 ```
 
-Never use `localStorage` or `sessionStorage` for tokens. The frontend *never has access to them*. Session is maintained entirely via httpOnly cookies.
+Never use `localStorage` or `sessionStorage` for tokens. The frontend _never has access to them_. Session is maintained entirely via httpOnly cookies.
 
 ## 4.7 Request body size limits
 
 Prevent a 2GB payload from burning through AI credit:
 
 ```typescript
-app.use(express.json({ limit: '2mb' }))
-app.use(express.urlencoded({ extended: true, limit: '2mb' }))
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 ```
 
 Routes that legitimately accept larger payloads (image upload blocks) get per-route overrides with explicit limits.
@@ -475,42 +499,57 @@ The encryption happens in the application layer, not Postgres. The database sees
 `packages/core/src/crypto/secret-box.ts`:
 
 ```typescript
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'node:crypto'
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  createHash,
+} from "node:crypto";
 
-const ALG = 'aes-256-gcm'
-const IV_LENGTH = 12
-const TAG_LENGTH = 16
+const ALG = "aes-256-gcm";
+const IV_LENGTH = 12;
+const TAG_LENGTH = 16;
 
 function deriveKey(masterKey: string, service: string): Buffer {
   // Per-service subkey so leaking one service's wrapper doesn't leak all
-  return createHash('sha256').update(`${masterKey}:${service}`).digest()
+  return createHash("sha256").update(`${masterKey}:${service}`).digest();
 }
 
 export function encrypt(plaintext: string, service: string): string {
-  const masterKey = process.env.MASTER_ENCRYPTION_KEY
-  if (!masterKey) throw new Error('MASTER_ENCRYPTION_KEY not set')
-  const key = deriveKey(masterKey, service)
-  const iv = randomBytes(IV_LENGTH)
-  const cipher = createCipheriv(ALG, key, iv)
-  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
-  const tag = cipher.getAuthTag()
+  const masterKey = process.env.MASTER_ENCRYPTION_KEY;
+  if (!masterKey) throw new Error("MASTER_ENCRYPTION_KEY not set");
+  const key = deriveKey(masterKey, service);
+  const iv = randomBytes(IV_LENGTH);
+  const cipher = createCipheriv(ALG, key, iv);
+  const ciphertext = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
   // Format: v1.<service>.<iv>.<tag>.<ciphertext> (base64url each part)
-  return ['v1', service, iv.toString('base64url'), tag.toString('base64url'), ciphertext.toString('base64url')].join('.')
+  return [
+    "v1",
+    service,
+    iv.toString("base64url"),
+    tag.toString("base64url"),
+    ciphertext.toString("base64url"),
+  ].join(".");
 }
 
 export function decrypt(encoded: string): string {
-  const masterKey = process.env.MASTER_ENCRYPTION_KEY
-  if (!masterKey) throw new Error('MASTER_ENCRYPTION_KEY not set')
-  const [version, service, ivB64, tagB64, ctB64] = encoded.split('.')
-  if (version !== 'v1') throw new Error(`unsupported secret version: ${version}`)
-  const key = deriveKey(masterKey, service)
-  const iv = Buffer.from(ivB64, 'base64url')
-  const tag = Buffer.from(tagB64, 'base64url')
-  const ct = Buffer.from(ctB64, 'base64url')
-  const decipher = createDecipheriv(ALG, key, iv)
-  decipher.setAuthTag(tag)
-  const plaintext = Buffer.concat([decipher.update(ct), decipher.final()])
-  return plaintext.toString('utf8')
+  const masterKey = process.env.MASTER_ENCRYPTION_KEY;
+  if (!masterKey) throw new Error("MASTER_ENCRYPTION_KEY not set");
+  const [version, service, ivB64, tagB64, ctB64] = encoded.split(".");
+  if (version !== "v1")
+    throw new Error(`unsupported secret version: ${version}`);
+  const key = deriveKey(masterKey, service);
+  const iv = Buffer.from(ivB64, "base64url");
+  const tag = Buffer.from(tagB64, "base64url");
+  const ct = Buffer.from(ctB64, "base64url");
+  const decipher = createDecipheriv(ALG, key, iv);
+  decipher.setAuthTag(tag);
+  const plaintext = Buffer.concat([decipher.update(ct), decipher.final()]);
+  return plaintext.toString("utf8");
 }
 ```
 
@@ -529,28 +568,39 @@ Nothing else in the codebase calls `decrypt()` directly. One service does:
 export class CredentialResolver {
   constructor(private db: DrizzleDB) {}
 
-  async resolve(userId: string, service: string, label?: string): Promise<Credentials> {
+  async resolve(
+    userId: string,
+    service: string,
+    label?: string,
+  ): Promise<Credentials> {
     const row = await this.db.query.userIntegrations.findFirst({
       where: and(
         eq(userIntegrations.userId, userId),
         eq(userIntegrations.service, service),
-        label ? eq(userIntegrations.displayLabel, label) : undefined
+        label ? eq(userIntegrations.displayLabel, label) : undefined,
       ),
-    })
-    if (!row) throw new CredentialsNotFoundError(service)
+    });
+    if (!row) throw new CredentialsNotFoundError(service);
 
     if (row.expiresAt && row.expiresAt < new Date()) {
-      return this.refreshAndStore(row)
+      return this.refreshAndStore(row);
     }
 
-    const plaintext = decrypt(row.credentialsEncrypted)
-    return { ...JSON.parse(plaintext), _meta: { id: row.id, service } }
+    const plaintext = decrypt(row.credentialsEncrypted);
+    return { ...JSON.parse(plaintext), _meta: { id: row.id, service } };
   }
 
-  async store(userId: string, service: string, credentials: Credentials, label?: string) {
-    const plaintext = JSON.stringify(credentials)
-    const encrypted = encrypt(plaintext, service)
-    await this.db.insert(userIntegrations).values({ /* ... */ credentialsEncrypted: encrypted })
+  async store(
+    userId: string,
+    service: string,
+    credentials: Credentials,
+    label?: string,
+  ) {
+    const plaintext = JSON.stringify(credentials);
+    const encrypted = encrypt(plaintext, service);
+    await this.db
+      .insert(userIntegrations)
+      .values({ /* ... */ credentialsEncrypted: encrypted });
   }
 
   private async refreshAndStore(row: UserIntegrationRow): Promise<Credentials> {
@@ -585,63 +635,63 @@ Postgres does not log credentials because the application never passes credentia
 `apps/server/src/logging.ts`:
 
 ```typescript
-import pino from 'pino'
+import pino from "pino";
 
 export const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env.LOG_LEVEL || "info",
   redact: {
     paths: [
-      'req.headers.authorization',
-      'req.headers.cookie',
-      'req.body.password',
-      'req.body.credentials',
-      'req.body.apiKey',
-      'req.body.token',
-      '*.access_token',
-      '*.refresh_token',
-      '*.api_key',
-      '*.apiKey',
-      '*.credentials',
-      '*.password',
-      '*.secret',
-      '*.privateKey',
-      '*.clientSecret',
+      "req.headers.authorization",
+      "req.headers.cookie",
+      "req.body.password",
+      "req.body.credentials",
+      "req.body.apiKey",
+      "req.body.token",
+      "*.access_token",
+      "*.refresh_token",
+      "*.api_key",
+      "*.apiKey",
+      "*.credentials",
+      "*.password",
+      "*.secret",
+      "*.privateKey",
+      "*.clientSecret",
     ],
-    censor: '[REDACTED]',
+    censor: "[REDACTED]",
   },
   formatters: {
     level: (label) => ({ level: label }),
   },
-})
+});
 ```
 
 Every known secret-shaped field is redacted. If a student adds a new integration with a field like `serviceAccountJson`, they must add it to this redaction list in the same PR. The `.agent/rules/security.md` rule catches this in review.
 
 ## 5.5 Ephemeral secrets
 
-Some secrets are *only* held in memory (the JWT signing secret, the master encryption key, session nonces). These live as environment variables at process start, read once into a config object, never re-read from env.
+Some secrets are _only_ held in memory (the JWT signing secret, the master encryption key, session nonces). These live as environment variables at process start, read once into a config object, never re-read from env.
 
 ```typescript
 // apps/server/src/config.ts
-import { z } from 'zod'
+import { z } from "zod";
 
 const ConfigSchema = z.object({
   JWT_SECRET: z.string().min(32),
   MASTER_ENCRYPTION_KEY: z.string().min(32),
-  GEMINI_API_KEY: z.string().startsWith('AIza'),
-  ANTHROPIC_API_KEY: z.string().startsWith('sk-ant-'),
+  GEMINI_API_KEY: z.string().startsWith("AIza"),
+  ANTHROPIC_API_KEY: z.string().startsWith("sk-ant-"),
   FAL_KEY: z.string().min(16),
-  REPLICATE_API_TOKEN: z.string().startsWith('r8_').optional(),
-  DATABASE_URL: z.string().startsWith('postgres'),
+  REPLICATE_API_TOKEN: z.string().startsWith("r8_").optional(),
+  DATABASE_URL: z.string().startsWith("postgres"),
   CORS_ALLOWED_ORIGINS: z.string(),
   // ...
-})
+});
 
-export const config = ConfigSchema.parse(process.env)
+export const config = ConfigSchema.parse(process.env);
 
 // Export a "safe config" for logging/display (no secrets)
 export const safeConfig = {
-  cors: config.CORS_ALLOWED_ORIGINS.split(','),
+  cors: config.CORS_ALLOWED_ORIGINS.split(","),
   databasePresent: Boolean(config.DATABASE_URL),
   aiProvidersPresent: {
     gemini: Boolean(config.GEMINI_API_KEY),
@@ -649,7 +699,7 @@ export const safeConfig = {
     fal: Boolean(config.FAL_KEY),
     replicate: Boolean(config.REPLICATE_API_TOKEN),
   },
-}
+};
 ```
 
 Never log `config`. Log `safeConfig` at startup to confirm providers are wired without exposing keys.
@@ -679,25 +729,27 @@ Middleware:
 
 ```typescript
 // apps/server/src/middleware/error-handler.ts
-import type { ErrorRequestHandler } from 'express'
-import { logger } from '../logging'
+import type { ErrorRequestHandler } from "express";
+import { logger } from "../logging";
 
 export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
-  const requestId = req.id
-  const isProduction = process.env.NODE_ENV === 'production'
+  const requestId = req.id;
+  const isProduction = process.env.NODE_ENV === "production";
 
-  logger.error({ err, requestId, path: req.path }, 'request failed')
+  logger.error({ err, requestId, path: req.path }, "request failed");
 
-  if (res.headersSent) return
+  if (res.headersSent) return;
 
   // The client sees an opaque error with a request ID they can report.
   // The server has the full context in the log, keyed by that request ID.
   res.status(err.status || 500).json({
-    error: isProduction ? 'internal_error' : err.name,
-    message: isProduction ? 'An error occurred. Reference ID: ' + requestId : err.message,
+    error: isProduction ? "internal_error" : err.name,
+    message: isProduction
+      ? "An error occurred. Reference ID: " + requestId
+      : err.message,
     requestId,
-  })
-}
+  });
+};
 ```
 
 The browser never sees the actual exception stack or message in production. Developers debug via the request ID in the server log. This costs five seconds of debugging time and prevents a whole class of leak.
@@ -710,12 +762,12 @@ ESLint rule `no-secrets-in-url` (custom, in our eslint config) flags patterns li
 
 ```typescript
 // ❌ DETECTED AND FAILED
-fetch(`https://api.example.com?api_key=${apiKey}`)
+fetch(`https://api.example.com?api_key=${apiKey}`);
 
 // ✅ OK
 fetch(`https://api.example.com`, {
   headers: { Authorization: `Bearer ${apiKey}` },
-})
+});
 ```
 
 ---
@@ -726,14 +778,14 @@ Secrets have a lifetime. Assume every key is eventually going to leak. Rotation 
 
 ## 7.1 Rotation schedule
 
-| Secret | Rotation cadence | Triggered by |
-|---|---|---|
-| `JWT_SECRET` | Every 90 days | Calendar + any session compromise |
-| `MASTER_ENCRYPTION_KEY` | Every 180 days | Calendar + any team-member departure |
-| Gemini / Anthropic / fal.ai keys | Every 90 days | Calendar + any usage anomaly |
-| Database password | Every 90 days | Calendar + any infrastructure change |
-| OAuth tokens (user) | Automatic (refresh) | Provider expiry |
-| OAuth refresh tokens (user) | Every 180 days | Provider policy |
+| Secret                           | Rotation cadence    | Triggered by                         |
+| -------------------------------- | ------------------- | ------------------------------------ |
+| `JWT_SECRET`                     | Every 90 days       | Calendar + any session compromise    |
+| `MASTER_ENCRYPTION_KEY`          | Every 180 days      | Calendar + any team-member departure |
+| Gemini / Anthropic / fal.ai keys | Every 90 days       | Calendar + any usage anomaly         |
+| Database password                | Every 90 days       | Calendar + any infrastructure change |
+| OAuth tokens (user)              | Automatic (refresh) | Provider expiry                      |
+| OAuth refresh tokens (user)      | Every 180 days      | Provider policy                      |
 
 The calendar cadence is enforced by a GitHub Action that opens an issue 7 days before rotation is due:
 
@@ -741,7 +793,7 @@ The calendar cadence is enforced by a GitHub Action that opens an issue 7 days b
 # .github/workflows/rotation-reminder.yml
 on:
   schedule:
-    - cron: '0 9 * * 1' # Monday 09:00 UTC
+    - cron: "0 9 * * 1" # Monday 09:00 UTC
 jobs:
   check-rotation:
     runs-on: ubuntu-latest
@@ -759,19 +811,23 @@ jobs:
 # Rotation Log
 
 ## JWT_SECRET
+
 - 2026-01-15 — Initial value set
 - 2026-04-15 — Rotated (scheduled 90-day)
 - (next due 2026-07-14)
 
 ## MASTER_ENCRYPTION_KEY
+
 - 2026-01-15 — Initial value set
 - (next due 2026-07-14 — 180-day)
 
 ## GEMINI_API_KEY
+
 - 2026-01-15 — Created in console
 - (next due 2026-04-15)
 
 ## ANTHROPIC_API_KEY
+
 - 2026-01-15 — Created in console
 - (next due 2026-04-15)
 ```
@@ -807,7 +863,7 @@ private async refreshAndStore(row: UserIntegrationRow): Promise<Credentials> {
 }
 ```
 
-Refresh failures surface to the user in the Connections UI with a clear "reconnect this integration" CTA. They do *not* fail silently.
+Refresh failures surface to the user in the Connections UI with a clear "reconnect this integration" CTA. They do _not_ fail silently.
 
 ## 7.4 Scoped keys always
 
@@ -897,7 +953,7 @@ updates:
     groups:
       security:
         applies-to: security-updates
-        patterns: ['*']
+        patterns: ["*"]
     open-pull-requests-limit: 10
 ```
 
@@ -924,29 +980,35 @@ The script produces `docs/security/audit/week-NN.md`:
 # Security Audit — Week NN
 
 ## Secret scanning
+
 - Gitleaks: 0 findings this week.
 - TruffleHog CI runs: 12 runs, 0 findings.
 - GitHub push protection blocks: 0.
 
 ## Dependency health
+
 - pnpm audit: 0 high, 2 moderate (see list below).
 - Dependabot open PRs: 3 (groomed; 1 merged, 2 in review).
 
 ## Authentication health
+
 - Total logins: 427.
 - Failed logins: 8 (all same student debugging, not a pattern).
 - New IPs: 3 (all expected).
 
 ## Rotation
+
 - 0 keys rotated this week.
 - Next rotation due: 2026-MM-DD (JWT_SECRET).
 
 ## Anomalies
+
 - Gemini usage: 142k tokens. 18% above 4-week average. Within normal.
 - Anthropic usage: 89k tokens. Consistent.
 - fal.ai generations: 47. Consistent.
 
 ## Actions from this audit
+
 - [ ] None.
 ```
 
@@ -1011,6 +1073,7 @@ Every student re-clones after a force push. Their old local repos are frozen in 
 # Incident: Gemini API key committed to main
 
 ## Timeline
+
 - 14:23 PDT — Key committed in PR #142 (squash-merged).
 - 14:27 PDT — TruffleHog Action flagged the merge commit. Slack ping.
 - 14:29 PDT — Key revoked on Google AI Studio.
@@ -1020,27 +1083,31 @@ Every student re-clones after a force push. Their old local repos are frozen in 
 - 14:50 PDT — Force push; team notified to re-clone.
 
 ## Root cause
+
 Student was testing locally, placed GEMINI_API_KEY in a file named
 `test-config.json` instead of `.env.local`. The file matched no .gitignore
 pattern because it was a .json not a .env. Committed as part of the
 PR's test fixtures.
 
 ## What allowed it past prevention
-- Gitleaks did not scan *.json by default for Google API key patterns.
+
+- Gitleaks did not scan \*.json by default for Google API key patterns.
   The default config looks in text files for values but our config was
   missing the Google API key rule specifically.
 - Pre-commit hook was skipped with --no-verify because the student was
   in a rush.
 
 ## Corrective actions
+
 - [x] Added GEMINI_API_KEY pattern to .gitleaks.toml.
-- [x] Added *config*.json to .gitignore (negated *.example.json).
+- [x] Added _config_.json to .gitignore (negated \*.example.json).
 - [x] Husky hook now blocks --no-verify (config bypassable only with
       explicit admin override, not by individual students).
 - [x] ADR-0014: Config-file naming convention prohibits API key
       storage in any .json file.
 
 ## Learnings
+
 - Regex-based detection needs positive coverage across every file type
   a secret could plausibly live in, not just `.env`.
 - `--no-verify` is a foot-gun under time pressure. Policy-level blocking
@@ -1072,11 +1139,11 @@ The `.agent/rules/security.md` file, read by every CLI session per Part VI.3 of 
 ## Never echo secrets
 
 If you need to show the user what environment variables are set, show
-the *names*, never the values. `env | grep KEY` or `printenv GEMINI_API_KEY`
+the _names_, never the values. `env | grep KEY` or `printenv GEMINI_API_KEY`
 is forbidden in examples you generate.
 
 Safe: "Check that GEMINI_API_KEY is set in your .env.local."
-Unsafe: "Your GEMINI_API_KEY is AIzaSyC1..."
+Unsafe: "Your GEMINI_API_KEY is AIza_MOCK_KEY"
 
 ## Never write secrets to files
 
@@ -1101,6 +1168,7 @@ If the user's message contains a string matching a known secret pattern
 immediately respond:
 
 "I detected what looks like an API key in your message. Please:
+
 1. Revoke that key at the provider (it may be compromised now).
 2. Issue a new one.
 3. Put the new one in .env.local.
@@ -1161,6 +1229,7 @@ Every student, in their first week, completes this onboarding. It is tracked in 
 Completed on: YYYY-MM-DD
 
 ## Personal hygiene
+
 - [ ] I have installed 1Password (or the team-approved alternative).
 - [ ] I have a dedicated "iem" vault with a unique master password.
 - [ ] I have 2FA enabled on my GitHub account.
@@ -1168,6 +1237,7 @@ Completed on: YYYY-MM-DD
 - [ ] I have read IEM-MASTER-02 in full.
 
 ## Keys obtained
+
 - [ ] Gemini API key, stored in 1Password "iem" vault.
 - [ ] Anthropic API key, stored in 1Password.
 - [ ] fal.ai API key, stored in 1Password.
@@ -1176,24 +1246,28 @@ Completed on: YYYY-MM-DD
 - [ ] I understand each of these is MY key, not a shared team key.
 
 ## Local setup verified
+
 - [ ] `.env.local` exists, is gitignored, contains my keys.
 - [ ] `.env.example` exists, is committed, contains only placeholders.
 - [ ] `git status` shows no tracked `.env` files.
 - [ ] Husky hooks run on commit (tested with a dummy commit).
 
 ## Agent CLI configured
+
 - [ ] My agent CLI has `.agent/rules/security.md` in its context.
 - [ ] I verified the CLI refuses to echo pasted secrets (tested).
 - [ ] I verified the CLI refuses to hard-code keys in generated code (tested).
 
 ## Understood protocols
+
 - [ ] I understand the 15-minute leak drill (Part IX.1).
-- [ ] I understand "never in VITE_*" (Part III.5).
+- [ ] I understand "never in VITE\_\*" (Part III.5).
 - [ ] I understand "backend proxies all external calls" (Part IV.1).
 - [ ] I understand "rotate on suspicion" (Part IX.1).
 - [ ] I know which channel to use to report a suspected leak.
 
 ## Signed by
+
 - [ ] Student: [name]
 - [ ] Mentor: [name]
 ```
@@ -1208,6 +1282,7 @@ A one-page quick-reference:
 # How to get your own API keys
 
 ## Gemini (free tier)
+
 1. Go to https://aistudio.google.com/apikey
 2. Sign in with your personal Google account.
 3. Click "Create API Key" -> "Create API key in new project".
@@ -1219,6 +1294,7 @@ Free tier limits are generous. If you exceed, upgrade to pay-as-you-go
 with a $5/month cap set in the GCP billing console.
 
 ## Anthropic ($5 trial credit)
+
 1. Go to https://console.anthropic.com/
 2. Sign in or create account.
 3. Settings -> API Keys -> Create Key.
@@ -1228,12 +1304,14 @@ with a $5/month cap set in the GCP billing console.
 Set a billing alert at $5 so you know before you go over.
 
 ## fal.ai ($5 trial credit)
+
 1. Go to https://fal.ai/dashboard/keys
 2. Sign in with GitHub.
 3. Create API Key.
 4. Copy. 1Password. `.env.local`.
 
 ## Replicate (optional, for Reel)
+
 1. Go to https://replicate.com/account/api-tokens
 2. Create Token.
 3. Copy. 1Password. `.env.local`.
@@ -1255,27 +1333,27 @@ Shared keys are acceptable only for shared infrastructure (the production databa
 
 Every gate specified below is implemented in the first repo-upgrade PR. Every gate is required (no PR merges with a gate failing; no admin override without justification in an ADR).
 
-| Gate | Implementation | Blocks |
-|---|---|---|
-| Gitleaks pre-commit | Husky + gitleaks | Local commits with secrets |
-| GitHub secret scanning | Repo settings | Pushes with known-pattern secrets |
-| GitHub push protection | Repo settings | Same, tighter |
-| TruffleHog CI | `.github/workflows/security.yml` | PR merges with secrets |
-| VITE_*_KEY lint | Custom ESLint rule | PRs that expose secrets to browser |
-| No-secrets-in-url lint | Custom ESLint rule | PRs that put keys in URLs |
-| No-cors-wildcard lint | Custom ESLint rule | PRs with CORS `*` |
-| Dependency audit | `pnpm audit --audit-level=high` in CI | PRs with high CVEs |
-| Dependabot | Repo config | Outdated deps unclosed |
-| Helmet presence | Integration test | Server start without helmet |
-| CSP presence | Integration test | CSP headers missing |
-| httpOnly cookies | Integration test | Auth cookies without httpOnly |
-| HTTPS enforcement (prod) | Middleware + test | Non-HTTPS traffic in prod |
-| Rate limiter presence | Integration test | API routes without limiter |
-| Auth middleware presence | Integration test | /api/* routes missing auth |
-| JWT secret entropy | Startup check | JWT_SECRET < 32 chars |
-| Master key entropy | Startup check | MASTER_ENCRYPTION_KEY < 32 chars |
-| Pino redaction config | Integration test | New secret-shaped fields without redaction entry |
-| `.env` in git history | Pre-receive (manual check) | Attempts to introduce tracked .env |
+| Gate                     | Implementation                        | Blocks                                           |
+| ------------------------ | ------------------------------------- | ------------------------------------------------ |
+| Gitleaks pre-commit      | Husky + gitleaks                      | Local commits with secrets                       |
+| GitHub secret scanning   | Repo settings                         | Pushes with known-pattern secrets                |
+| GitHub push protection   | Repo settings                         | Same, tighter                                    |
+| TruffleHog CI            | `.github/workflows/security.yml`      | PR merges with secrets                           |
+| VITE\_\*\_KEY lint       | Custom ESLint rule                    | PRs that expose secrets to browser               |
+| No-secrets-in-url lint   | Custom ESLint rule                    | PRs that put keys in URLs                        |
+| No-cors-wildcard lint    | Custom ESLint rule                    | PRs with CORS `*`                                |
+| Dependency audit         | `pnpm audit --audit-level=high` in CI | PRs with high CVEs                               |
+| Dependabot               | Repo config                           | Outdated deps unclosed                           |
+| Helmet presence          | Integration test                      | Server start without helmet                      |
+| CSP presence             | Integration test                      | CSP headers missing                              |
+| httpOnly cookies         | Integration test                      | Auth cookies without httpOnly                    |
+| HTTPS enforcement (prod) | Middleware + test                     | Non-HTTPS traffic in prod                        |
+| Rate limiter presence    | Integration test                      | API routes without limiter                       |
+| Auth middleware presence | Integration test                      | /api/\* routes missing auth                      |
+| JWT secret entropy       | Startup check                         | JWT_SECRET < 32 chars                            |
+| Master key entropy       | Startup check                         | MASTER_ENCRYPTION_KEY < 32 chars                 |
+| Pino redaction config    | Integration test                      | New secret-shaped fields without redaction entry |
+| `.env` in git history    | Pre-receive (manual check)            | Attempts to introduce tracked .env               |
 
 A PR that fails any of these fails the merge, period. Admin bypass requires a one-line ADR justifying the exception.
 
@@ -1546,57 +1624,65 @@ More robust: a pre-receive hook in the server-side GitHub config (requires GitHu
 `apps/server/src/app.ts`:
 
 ```typescript
-import express from 'express'
-import cookieParser from 'cookie-parser'
-import { pinoHttp } from 'pino-http'
-import { config } from './config'
-import { logger } from './logging'
-import { corsMiddleware } from './middleware/cors'
-import { helmetMiddleware } from './middleware/helmet'
-import { apiLimiter, authLimiter } from './middleware/rate-limit'
-import { requireAuth } from './middleware/auth'
-import { errorHandler } from './middleware/error-handler'
-import { requestIdMiddleware } from './middleware/request-id'
-import { publicRouter } from './routes/public'
-import { apiRouter } from './routes/api'
+import express from "express";
+import cookieParser from "cookie-parser";
+import { pinoHttp } from "pino-http";
+import { config } from "./config";
+import { logger } from "./logging";
+import { corsMiddleware } from "./middleware/cors";
+import { helmetMiddleware } from "./middleware/helmet";
+import { apiLimiter, authLimiter } from "./middleware/rate-limit";
+import { requireAuth } from "./middleware/auth";
+import { errorHandler } from "./middleware/error-handler";
+import { requestIdMiddleware } from "./middleware/request-id";
+import { publicRouter } from "./routes/public";
+import { apiRouter } from "./routes/api";
 
-const app = express()
+const app = express();
 
 // Trust proxy for X-Forwarded-* headers from hosting platform
-app.set('trust proxy', 1)
+app.set("trust proxy", 1);
 
 // Security headers
-app.use(helmetMiddleware)
+app.use(helmetMiddleware);
 
 // Request ID for correlation
-app.use(requestIdMiddleware)
+app.use(requestIdMiddleware);
 
 // Logging with redaction
-app.use(pinoHttp({ logger, redact: { paths: ['req.headers.authorization', 'req.headers.cookie'], censor: '[REDACTED]' } }))
+app.use(
+  pinoHttp({
+    logger,
+    redact: {
+      paths: ["req.headers.authorization", "req.headers.cookie"],
+      censor: "[REDACTED]",
+    },
+  }),
+);
 
 // Body parsing with hard limit
-app.use(express.json({ limit: '2mb' }))
-app.use(express.urlencoded({ extended: true, limit: '2mb' }))
-app.use(cookieParser())
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
+app.use(cookieParser());
 
 // CORS
-app.use(corsMiddleware)
+app.use(corsMiddleware);
 
 // Rate limiters (applied per-route below)
 // Auth routes
-app.use('/public/login', authLimiter)
-app.use('/public/signup', authLimiter)
+app.use("/public/login", authLimiter);
+app.use("/public/signup", authLimiter);
 
 // Public routes (no auth required)
-app.use('/public', publicRouter)
+app.use("/public", publicRouter);
 
 // Authenticated routes (all /api/* require auth)
-app.use('/api', apiLimiter, requireAuth, apiRouter)
+app.use("/api", apiLimiter, requireAuth, apiRouter);
 
 // Error handler must be last
-app.use(errorHandler)
+app.use(errorHandler);
 
-export { app }
+export { app };
 ```
 
 ## 13.6 `.eslintrc.json` security-relevant rules
@@ -1643,7 +1729,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 6 * * 1'  # Mondays 06:00 UTC, catches drift
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC, catches drift
 
 jobs:
   secret-scan:
@@ -1701,7 +1787,7 @@ jobs:
           JWT_SECRET: ci_dummy_jwt_secret_must_be_32_characters_long
           MASTER_ENCRYPTION_KEY: ci_dummy_master_key_must_be_32_characters_long
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/iem
-          IEM_MOCK_MODELS: '1'
+          IEM_MOCK_MODELS: "1"
 ```
 
 ---
@@ -1742,7 +1828,7 @@ If a student can only do five things, these five:
 ☐ 1. Ensure .env.local is gitignored. Run `git status` and verify.
 ☐ 2. Remove any VITE_*_KEY, VITE_*_TOKEN, VITE_*_SECRET from any .env file.
 ☐ 3. Verify pre-commit hooks run. Make a dummy commit with a fake
-      AIza00000000000000000000000000000000000 and confirm gitleaks blocks it.
+      AIza_MOCK_TEST_KEY and confirm gitleaks blocks it.
 ☐ 4. Verify your keys are in 1Password, not in any chat history.
 ☐ 5. Read Part IX.1 (15-minute leak drill). Memorize the first two steps:
       revoke, then reissue.
@@ -1753,36 +1839,44 @@ If a student can only do five things, these five:
 # Appendix B — Per-Provider Key Rotation Guides
 
 ## Gemini
+
 - https://aistudio.google.com/apikey
 - "Delete" the compromised key. Create new. Update `.env.local`.
 - Billing impact takes effect within a minute.
 
 ## Anthropic
+
 - https://console.anthropic.com/settings/keys
 - "Disable" then "Delete". Issue new. Update.
 - Billing impact immediate.
 
 ## fal.ai
+
 - https://fal.ai/dashboard/keys
 - Revoke. Issue new. Update.
 
 ## Replicate
+
 - https://replicate.com/account/api-tokens
 - Revoke. Issue new. Update.
 
 ## GitHub (PAT or fine-grained token)
+
 - https://github.com/settings/tokens
 - Revoke the compromised token. Issue new. Update any CI or local git config.
 
 ## Google OAuth (Gmail, Calendar, Drive)
+
 - https://console.cloud.google.com/apis/credentials
 - Delete the OAuth client. Create new. Update `.env.local`. Re-authorize in the Connections UI.
 
 ## Slack
+
 - https://api.slack.com/apps
 - Select app → Settings → Install App → Revoke Tokens. Reinstall. Update.
 
 ## Notion
+
 - https://www.notion.so/my-integrations
 - Regenerate token. Update.
 
