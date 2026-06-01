@@ -114,5 +114,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Optimize canvas rendering, reduce drag lag, and add connection handles to nodes.**
+- [x] **Track: Optimize canvas rendering, reduce drag lag, and add connection handles to nodes.**
       _Link: [./tracks/canvas_optimization_20260601/](./tracks/canvas_optimization_20260601/)_

@@ -76,6 +76,7 @@ const EdgeRenderer = memo(({ connectionId }: { connectionId: string }) => {
         fill="none"
         stroke="url(#edge-gradient)"
         strokeWidth={3}
+        markerEnd="url(#arrowhead)"
         className="transition-colors transition-opacity duration-300 opacity-80 group-hover/edge:opacity-100 group-hover/edge:stroke-brand-cyan"
       />
 

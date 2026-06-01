@@ -54,15 +54,26 @@ export const ObjectRenderer: React.FC<{
   );
   const object = propObject || storeObject;
 
-  const { selectedIds, setSelection, setHovered, hoveredId, clearSelection } =
-    useSelectionStore();
-  const { setExpanded } = useExpansionStore();
-  const { canvasId: projectId } = useShellStore();
-  const { x: viewportX, y: viewportY, zoom: viewportZoom } = useViewportStore();
+  const isSelected = useSelectionStore((s) =>
+    s.selectedIds.includes(objectId || (object?.id as string)),
+  );
+  const isHovered = useSelectionStore(
+    (s) => s.hoveredId === (objectId || object?.id),
+  );
+  const selectedIds = useSelectionStore((s) => s.selectedIds);
+  const setSelection = useSelectionStore((s) => s.setSelection);
+  const setHovered = useSelectionStore((s) => s.setHovered);
+  const clearSelection = useSelectionStore((s) => s.clearSelection);
+  const setExpanded = useExpansionStore((s) => s.setExpanded);
+  const projectId = useShellStore((s) => s.canvasId);
+  const viewportX = useViewportStore((s) => s.x);
+  const viewportY = useViewportStore((s) => s.y);
+  const viewportZoom = useViewportStore((s) => s.zoom);
   const updateObject = useCanvasStore((s) => s.updateObject);
   const removeObject = useCanvasStore((s) => s.removeObject);
   const { capture } = useCanvasHistory();
   const addConnection = useConnectionStore((s) => s.addConnection);
+  const setDraftConnection = useConnectionStore((s) => s.setDraftConnection);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const dragPos = useRef({ x: object?.x || 0, y: object?.y || 0 });
@@ -132,9 +143,6 @@ export const ObjectRenderer: React.FC<{
     object.y < canvasViewportY + screenH + 1500;
 
   if (!isVisible) return null;
-
-  const isSelected = selectedIds.includes(object.id);
-  const isHovered = hoveredId === object.id;
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -298,10 +306,10 @@ export const ObjectRenderer: React.FC<{
       {/* Left Input Connector Handle */}
       <div
         title="Input — connect upstream"
-        className={`absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-0"}`}
+        className={`absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-80"}`}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-sm" />
+        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-full" />
       </div>
 
       <div
@@ -449,14 +457,20 @@ export const ObjectRenderer: React.FC<{
       {/* Right Output Connector Handle */}
       <div
         title="Output — drag to connect"
-        className={`absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-0"}`}
+        className={`absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-80"}`}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData("application/iem-connection", object.id);
+          setDraftConnection({
+            fromId: object.id,
+            x: object.x + object.width,
+            y: object.y + object.height / 2,
+          });
         }}
+        onDragEnd={() => setDraftConnection(null)}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-sm" />
+        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-full" />
       </div>
     </div>
   );
