@@ -1516,6 +1516,7 @@ useDefault = true
 [[rules]]
 id = "gemini-api-key"
 description = "Google Gemini / GCP API key"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
 keywords = ["AIza"]
 
 [[rules]]
