@@ -4,6 +4,7 @@ import { useCanvasStore } from "../state/canvasStore";
 import { useToolStore } from "../state/toolStore";
 import { useViewportStore } from "../state/viewportStore";
 import { getCenterOfViewport, findEmptySpace } from "../utils/placement";
+import { generateUUID } from "../utils/uuid";
 
 export const useNativeInteractions = () => {
   useEffect(() => {
@@ -31,7 +32,7 @@ export const useNativeInteractions = () => {
         objects as any[],
       );
 
-      const newId = `note-${Date.now()}`;
+      const newId = generateUUID();
       useCanvasStore.getState().addObject({
         id: newId,
         type: "block",
@@ -76,7 +77,7 @@ export const useNativeInteractions = () => {
         objects as any[],
       );
 
-      const newId = `note-${Date.now()}`;
+      const newId = generateUUID();
       useCanvasStore.getState().addObject({
         id: newId,
         type: "block",

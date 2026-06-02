@@ -2,7 +2,7 @@
 import { useSelectionStore } from "./selectionStore";
 import { create } from "zustand";
 import { usePresenceStore } from "./presenceStore";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { type CanvasViewport, type CanvasObject } from "../contracts/index";
 import { useCanvasStore } from "./canvasStore";
 
@@ -176,6 +176,16 @@ export const useViewportStore = create<ViewportState>()(
     }),
     {
       name: "iem-viewport-storage",
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined" && window.localStorage) {
+          return window.localStorage;
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
     },
   ),
 );

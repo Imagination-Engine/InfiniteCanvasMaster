@@ -32,6 +32,7 @@ export default function SessionPage() {
 
     setLoading(true);
     setError(null);
+    setDocument(null);
 
     try {
       // 1. Fetch project and messages

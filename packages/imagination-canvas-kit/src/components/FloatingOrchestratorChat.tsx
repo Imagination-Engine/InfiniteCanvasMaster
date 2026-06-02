@@ -15,6 +15,8 @@ import {
 } from "../utils/orchestratorSuggestions";
 import { useConnectionStore } from "../state/connectionStore";
 import { useShellStore } from "../state/shellStore";
+import { generateUUID } from "../utils/uuid";
+import { MarkdownText } from "./MarkdownText";
 
 /**
  * Orchestrator Drawer: Fixed-width, right-docked production chat interface.
@@ -57,14 +59,22 @@ export const FloatingOrchestratorChat: React.FC = () => {
   const canvasId = useShellStore((s) => s.canvasId);
   const [isStreaming, setIsStreaming] = useState(false);
   const aiGeneratedBlockIdsRef = useRef<Set<string>>(new Set());
+  const greetedBlockIdsRef = useRef<Set<string>>(new Set());
 
   // React to canvas changes
   useEffect(() => {
     if (lastDroppedBlock) {
+      const blockId = lastDroppedBlock.id;
       // Ignore blocks that were generated programmatically by the AI Orchestrator
-      if (aiGeneratedBlockIdsRef.current.has(lastDroppedBlock.id)) {
+      if (aiGeneratedBlockIdsRef.current.has(blockId)) {
         return;
       }
+      // Ensure we only greet each dropped block exactly once
+      if (greetedBlockIdsRef.current.has(blockId)) {
+        return;
+      }
+      greetedBlockIdsRef.current.add(blockId);
+
       const blockName =
         lastDroppedBlock.metadata?.label || lastDroppedBlock.type;
       setMessages((prev) => [
@@ -93,7 +103,8 @@ export const FloatingOrchestratorChat: React.FC = () => {
   const executeOfflineFallback = (userInput: string) => {
     const intent = classifyOrchestratorIntent(userInput);
     setTimeout(() => {
-      let response = resolveOrchestratorReply(userInput, selectedBlockKind) ?? "";
+      let response =
+        resolveOrchestratorReply(userInput, selectedBlockKind) ?? "";
 
       if (response) {
         // registry-aware answer handled
@@ -124,7 +135,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
             ? `Initializing ${label} runtime. Dropping them onto the canvas for you.`
             : "Initializing OpenClaw runtime. Spinning up a builder agent on the canvas.";
 
-          const agentId = `agent-${Date.now()}`;
+          const agentId = generateUUID();
           aiGeneratedBlockIdsRef.current.add(agentId);
           addObject({
             id: agentId,
@@ -146,7 +157,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
           lowerInput.includes("write")
         ) {
           response = `I've drafted a narrative spine related to "${sessionContext || "your project"}". Dropping a Note block onto the canvas for you.`;
-          const noteId = `note-${Date.now()}`;
+          const noteId = generateUUID();
           aiGeneratedBlockIdsRef.current.add(noteId);
           addObject({
             id: noteId,
@@ -228,7 +239,10 @@ export const FloatingOrchestratorChat: React.FC = () => {
 
     // 2. Format history array for Mastra Agent format
     const chatHistory = [...messages, userMsg]
-      .filter((m) => m.role === "user" || m.role === "agent" || m.role === "assistant")
+      .filter(
+        (m) =>
+          m.role === "user" || m.role === "agent" || m.role === "assistant",
+      )
       .map((m) => ({
         role: m.role === "agent" ? "assistant" : m.role,
         content: m.content,
@@ -236,7 +250,9 @@ export const FloatingOrchestratorChat: React.FC = () => {
 
     try {
       const url = "http://localhost:3001/api/chat";
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
       const response = await fetch(url, {
@@ -250,7 +266,9 @@ export const FloatingOrchestratorChat: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to send message: ${response.status} ${response.statusText}`,
+        );
       }
 
       const reader = response.body?.getReader();
@@ -287,8 +305,8 @@ export const FloatingOrchestratorChat: React.FC = () => {
                 prev.map((msg) =>
                   msg.id === assistantId
                     ? { ...msg, content: assistantResponseContent }
-                    : msg
-                )
+                    : msg,
+                ),
               );
             } catch (e) {
               console.error("Error parsing text chunk:", e);
@@ -342,7 +360,10 @@ export const FloatingOrchestratorChat: React.FC = () => {
       }
       setIsStreaming(false); // Stream finished successfully
     } catch (err: any) {
-      console.warn("Canvas Orchestrator backend unavailable, using offline fallback.", err);
+      console.warn(
+        "Canvas Orchestrator backend unavailable, using offline fallback.",
+        err,
+      );
       executeOfflineFallback(promptInput);
     }
   };
@@ -443,7 +464,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
                         wordBreak: "break-word",
                       }}
                     >
-                      {msg.content}
+                      <MarkdownText text={msg.content} />
                     </div>
                   </motion.div>
                 ))}
@@ -452,11 +473,22 @@ export const FloatingOrchestratorChat: React.FC = () => {
                 <div className="flex justify-start">
                   <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-xs text-white/90 flex items-center gap-1.5 shrink-0 animate-pulse">
                     <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                      <span
+                        className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <span
+                        className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <span
+                        className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      />
                     </div>
-                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest pl-1">Orchestrator thinking...</span>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest pl-1">
+                      Orchestrator thinking...
+                    </span>
                   </div>
                 </div>
               )}

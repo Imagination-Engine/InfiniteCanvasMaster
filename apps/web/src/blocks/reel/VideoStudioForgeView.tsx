@@ -21,7 +21,7 @@ const DEFAULT_PAYLOAD: VideoStudioPayload = {
   forge: { prompt: "", status: "idle" },
 };
 
-type ForgeViewProps = BlockViewProps<any, any> & {
+type ForgeViewProps = Partial<BlockViewProps<any, any>> & {
   object?: {
     id: string;
     metadata?: Record<string, unknown>;

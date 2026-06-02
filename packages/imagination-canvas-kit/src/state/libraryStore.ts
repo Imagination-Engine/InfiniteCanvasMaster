@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { blockRegistry } from "@iem/core";
 
 interface LibraryState {
@@ -47,6 +47,16 @@ export const useLibraryStore = create<LibraryState>()(
     }),
     {
       name: "iem-library-storage",
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined" && window.localStorage) {
+          return window.localStorage;
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
     },
   ),
 );

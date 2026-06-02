@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { eq, desc, asc } from "drizzle-orm";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { workspaces, messages, canvases, nodes, edges } from "@iem/db";
 
 const projectsRouter = new Hono();
@@ -83,12 +84,34 @@ projectsRouter.get("/:id", async (c) => {
     let history: any[] = [];
     try {
       // @ts-ignore
-      const { mastra } = await import("@iem/agents");
-      // Safely fetch messages, falling back if storage is uninitialized or missing tables
-      const { storage } = await import("@iem/agents");
-      const fetchedHistory = await (storage as any)
-        ?.getMessages({ threadId: projectId })
-        .catch(() => []);
+      const agents = await import("@iem/agents");
+      console.log("[PROJECTS DEBUG] agents keys:", Object.keys(agents));
+      const storage = agents.storage;
+      if (storage) {
+        console.log(
+          "[PROJECTS DEBUG] storage exists. type:",
+          typeof storage,
+          "constructor name:",
+          storage.constructor?.name,
+        );
+        try {
+          console.log(
+            "[PROJECTS DEBUG] storage keys/methods:",
+            Object.getOwnPropertyNames(Object.getPrototypeOf(storage)),
+          );
+        } catch (e) {}
+      } else {
+        console.log("[PROJECTS DEBUG] storage is undefined or null!");
+      }
+      const fetchedHistory =
+        storage && typeof storage.getMessages === "function"
+          ? await storage
+              .getMessages({ threadId: projectId })
+              .catch((err: any) => {
+                console.error("[PROJECTS DEBUG] getMessages error:", err);
+                return [];
+              })
+          : [];
       history = fetchedHistory || [];
     } catch (mastraErr) {
       console.warn(
@@ -247,9 +270,48 @@ projectsRouter.put("/:id/canvas", async (c) => {
     await db.delete(nodes as any).where(eq((nodes as any).canvasId, canvas.id));
     await db.delete(edges as any).where(eq((edges as any).canvasId, canvas.id));
 
-    if (document.nodes && document.nodes.length > 0) {
+    const isUUID = (str: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        str || "",
+      );
+
+    const idMap = new Map<string, string>();
+    const sanitizedNodes = (document.nodes || []).map((n: any) => {
+      let nodeId = n.id;
+      if (!isUUID(nodeId)) {
+        nodeId = crypto.randomUUID();
+        idMap.set(n.id, nodeId);
+      }
+      return {
+        ...n,
+        id: nodeId,
+      };
+    });
+
+    const sanitizedEdges = (document.edges || []).map((e: any) => {
+      let edgeId = e.id;
+      if (!isUUID(edgeId)) {
+        edgeId = crypto.randomUUID();
+      }
+      let source = e.source;
+      if (idMap.has(source)) {
+        source = idMap.get(source)!;
+      }
+      let target = e.target;
+      if (idMap.has(target)) {
+        target = idMap.get(target)!;
+      }
+      return {
+        ...e,
+        id: edgeId,
+        source,
+        target,
+      };
+    });
+
+    if (sanitizedNodes.length > 0) {
       await db.insert(nodes as any).values(
-        document.nodes.map((n: any) => ({
+        sanitizedNodes.map((n: any) => ({
           id: n.id,
           canvasId: canvas.id,
           type: n.type,
@@ -260,9 +322,9 @@ projectsRouter.put("/:id/canvas", async (c) => {
       );
     }
 
-    if (document.edges && document.edges.length > 0) {
+    if (sanitizedEdges.length > 0) {
       await db.insert(edges as any).values(
-        document.edges.map((e: any) => ({
+        sanitizedEdges.map((e: any) => ({
           id: e.id,
           canvasId: canvas.id,
           sourceId: e.source,

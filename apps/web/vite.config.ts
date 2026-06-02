@@ -48,6 +48,12 @@ export default defineConfig({
       "@iem/core",
       "@iem/agents",
       "@iem/chat-interaction-kit",
+      "@iem/surface-reel",
+      "@iem/surface-scribe",
+      "@iem/surface-conductor",
+      "@iem/surface-forge",
+      "@iem/surface-atlas",
+      "@iem/surface-playable",
     ],
   },
   test: {
@@ -74,6 +80,30 @@ export default defineConfig({
       "@iem/imagination-canvas-kit": fileURLToPath(
         new URL(
           "../../packages/imagination-canvas-kit/src/index.ts",
+          import.meta.url,
+        ),
+      ),
+      "@iem/surface-reel": fileURLToPath(
+        new URL("../../packages/surface-reel/src/index.ts", import.meta.url),
+      ),
+      "@iem/surface-scribe": fileURLToPath(
+        new URL("../../packages/surface-scribe/src/index.ts", import.meta.url),
+      ),
+      "@iem/surface-conductor": fileURLToPath(
+        new URL(
+          "../../packages/surface-conductor/src/index.ts",
+          import.meta.url,
+        ),
+      ),
+      "@iem/surface-forge": fileURLToPath(
+        new URL("../../packages/surface-forge/src/index.ts", import.meta.url),
+      ),
+      "@iem/surface-atlas": fileURLToPath(
+        new URL("../../packages/surface-atlas/src/index.ts", import.meta.url),
+      ),
+      "@iem/surface-playable": fileURLToPath(
+        new URL(
+          "../../packages/surface-playable/src/index.ts",
           import.meta.url,
         ),
       ),

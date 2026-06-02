@@ -99,7 +99,7 @@ export const ReelForgePanel: React.FC<ReelForgePanelProps> = ({
     () =>
       Object.entries(objects)
         .map(([id, obj]) => {
-          const meta = obj.metadata ?? {};
+          const meta = (obj as ReelForgeObject).metadata ?? {};
           const inputs = meta.inputs as Record<string, unknown> | undefined;
           const outputs = meta.outputs as Record<string, unknown> | undefined;
           const url =

@@ -14,6 +14,7 @@ import { useCanvasStore } from "../state/canvasStore";
 import { useSelectionStore } from "../state/selectionStore";
 import { useCanvasHistory } from "../hooks/useCanvasHistory";
 import { canvasTouchTargets } from "../tokens";
+import { generateUUID } from "../utils/uuid";
 
 export const CanvasToolbar: React.FC = () => {
   const addObject = useCanvasStore((s) => s.addObject);
@@ -23,7 +24,7 @@ export const CanvasToolbar: React.FC = () => {
 
   const handleAddNote = () => {
     capture();
-    const id = `note-${Date.now()}`;
+    const id = generateUUID();
     addObject({
       id,
       type: "note",

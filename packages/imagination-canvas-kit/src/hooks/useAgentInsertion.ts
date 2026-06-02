@@ -4,6 +4,7 @@ import { useCanvasStore } from "../state/canvasStore";
 import { useViewportStore } from "../state/viewportStore";
 import { getCenterOfViewport, findEmptySpace } from "../utils/placement";
 import { ProvenanceDescriptor } from "../contracts";
+import { generateUUID } from "../utils/uuid";
 
 export const useAgentInsertion = () => {
   const insertBatch = useCallback(
@@ -39,7 +40,7 @@ export const useAgentInsertion = () => {
         );
 
         const newObject = {
-          id: `${provenance.agentId}-${Date.now()}-${index}`,
+          id: generateUUID(),
           type: "block",
           blockKind: payload.type,
           x: pos.x,

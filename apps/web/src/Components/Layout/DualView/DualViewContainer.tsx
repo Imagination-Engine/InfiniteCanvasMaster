@@ -14,6 +14,7 @@ import {
   documentEdgesToConnections,
   exportCanvasToDocument,
   useViewportStore,
+  sanitizeCanvasData,
 } from "@iem/imagination-canvas-kit";
 
 interface DualViewContainerProps {
@@ -41,24 +42,93 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     }
   }, [accessToken]);
 
+  useEffect(() => {
+    console.log(
+      "[DualView] projectId changed. Resetting canvas states and clearing stores.",
+      { projectId },
+    );
+    hasInitialized.current = false;
+    documentSyncedRef.current = null;
+    if (saveTimerRef.current) {
+      console.log("[DualView] Clearing save timer due to project switch.");
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    useCanvasStore.setState({ objects: {}, connections: [], bindings: [] });
+    useConnectionStore.setState({ connections: {} });
+  }, [projectId]);
+
   const persistSpatialToServer = useCallback(() => {
-    if (!saveCanvas || !hasInitialized.current) return;
+    if (!saveCanvas) return;
+    if (!hasInitialized.current) {
+      console.warn(
+        "[DualView] persistSpatialToServer called, but hasInitialized is false. Ignoring auto-save.",
+      );
+      return;
+    }
     const objects = useCanvasStore.getState().objects;
     const connections = useConnectionStore.getState().connections;
+    const bindings = useCanvasStore.getState().bindings || [];
+
+    console.log("[DualView] persistSpatialToServer: starting save...", {
+      objectsCount: Object.keys(objects).length,
+      connectionsCount: Object.keys(connections).length,
+      bindingsCount: bindings.length,
+    });
+
+    // Sanitize before exporting to server to ensure 100% compliant UUID formats
+    const sanitized = sanitizeCanvasData(objects, connections, bindings);
+    if (sanitized.changed) {
+      console.log(
+        "[DualView] Sanitized non-UUID IDs in stores before save:",
+        sanitized.idMap,
+      );
+      useCanvasStore.setState({
+        objects: sanitized.objects,
+        bindings: sanitized.bindings,
+      });
+      useConnectionStore.setState({
+        connections: sanitized.connections,
+      });
+    }
+
     const viewport = useViewportStore.getState();
-    const doc = exportCanvasToDocument(objects, connections, {
-      x: viewport.x,
-      y: viewport.y,
-      zoom: viewport.zoom,
-    }) as UnifiedCanvasDocument;
-    void saveCanvas(doc).catch((err) =>
-      console.warn("[DualView] Failed to persist spatial canvas:", err),
+    const doc = exportCanvasToDocument(
+      sanitized.objects,
+      sanitized.connections,
+      {
+        x: viewport.x,
+        y: viewport.y,
+        zoom: viewport.zoom,
+      },
+    ) as UnifiedCanvasDocument;
+
+    console.log(
+      "[DualView] Calling saveCanvas with document:",
+      JSON.stringify(doc),
     );
+
+    void saveCanvas(doc)
+      .then(() => {
+        console.log("[DualView] saveCanvas request succeeded.");
+      })
+      .catch((err) =>
+        console.warn("[DualView] Failed to persist spatial canvas:", err),
+      );
   }, [saveCanvas]);
 
   const schedulePersist = useCallback(() => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    console.log(
+      "[DualView] schedulePersist triggered. Setting 800ms debounce timer.",
+    );
+    if (saveTimerRef.current) {
+      console.log("[DualView] Clearing existing save timer.");
+      clearTimeout(saveTimerRef.current);
+    }
     saveTimerRef.current = setTimeout(() => {
+      console.log(
+        "[DualView] Save timer fired. Invoking persistSpatialToServer.",
+      );
       persistSpatialToServer();
     }, 800);
   }, [persistSpatialToServer]);
@@ -76,37 +146,77 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   const applyDocumentToStores = useCallback((doc: UnifiedCanvasDocument) => {
     const currentObjects = useCanvasStore.getState().objects;
     const merged = mergeDocumentIntoCanvasObjects(currentObjects, doc);
-    useCanvasStore.setState({ objects: merged });
 
     const serverConnections = documentEdgesToConnections(doc);
     const localConnections = useConnectionStore.getState().connections;
+    const allConnections = { ...localConnections, ...serverConnections };
+
+    const bindings = useCanvasStore.getState().bindings || [];
+
+    // Sanitize after merging server data to protect UI state references
+    const sanitized = sanitizeCanvasData(merged, allConnections, bindings);
+
+    useCanvasStore.setState({
+      objects: sanitized.objects,
+      bindings: sanitized.bindings,
+    });
     useConnectionStore.setState({
-      connections: { ...localConnections, ...serverConnections },
+      connections: sanitized.connections,
     });
   }, []);
 
   // --- Spatial Sync: merge server document after localStorage hydration ---
   useEffect(() => {
-    if (!initialDocument) return;
+    if (!initialDocument) {
+      console.log(
+        "[DualView] initialDocument is null/undefined. Skipping sync.",
+      );
+      return;
+    }
 
     const docKey = `${projectId}:${initialDocument.nodes?.length ?? 0}:${initialDocument.edges?.length ?? 0}`;
+    console.log("[DualView] Spatial Sync useEffect triggered.", {
+      docKey,
+      docSynced: documentSyncedRef.current,
+    });
     if (documentSyncedRef.current === docKey) return;
 
     const runMerge = () => {
+      console.log(
+        "[DualView] runMerge executing. Merging server doc into store.",
+        {
+          serverNodesCount: initialDocument.nodes?.length ?? 0,
+          localObjectsCount: Object.keys(useCanvasStore.getState().objects)
+            .length,
+        },
+      );
       applyDocumentToStores(initialDocument);
       documentSyncedRef.current = docKey;
       // Mark as initialized to enable future autosaves
+      console.log("[DualView] Setting timer to flip hasInitialized to true.");
       setTimeout(() => {
         hasInitialized.current = true;
+        console.log(
+          "[DualView] hasInitialized flipped to true. Autosave is now active.",
+        );
       }, 200);
     };
 
     if (useCanvasStore.persist.hasHydrated()) {
+      console.log(
+        "[DualView] Canvas store already hydrated. Running merge immediately.",
+      );
       runMerge();
       return;
     }
 
+    console.log(
+      "[DualView] Canvas store not hydrated yet. Subscribing to onFinishHydration.",
+    );
     const unsub = useCanvasStore.persist.onFinishHydration(() => {
+      console.log(
+        "[DualView] onFinishHydration callback fired. Running merge.",
+      );
       runMerge();
     });
     return unsub;
@@ -116,22 +226,43 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   useEffect(() => {
     if (!saveCanvas) return;
 
-    const unsubscribeCanvas = useCanvasStore.subscribe((state, prev) => {
-      if (state.objects === prev.objects) return;
+    console.log(
+      "[DualView] Registering canvas and connection store subscribers.",
+    );
+    let prevObjects = useCanvasStore.getState().objects;
+    const unsubscribeCanvas = useCanvasStore.subscribe((state) => {
+      if (state.objects === prevObjects) return;
+      console.log("[DualView] Canvas objects reference changed.", {
+        prevCount: Object.keys(prevObjects).length,
+        nextCount: Object.keys(state.objects).length,
+        hasInitialized: hasInitialized.current,
+      });
+      prevObjects = state.objects;
       schedulePersist();
     });
 
-    const unsubscribeConnection = useConnectionStore.subscribe(
-      (state, prev) => {
-        if (state.connections === prev.connections) return;
-        schedulePersist();
-      },
-    );
+    let prevConnections = useConnectionStore.getState().connections;
+    const unsubscribeConnection = useConnectionStore.subscribe((state) => {
+      if (state.connections === prevConnections) return;
+      console.log("[DualView] Canvas connections reference changed.", {
+        prevCount: Object.keys(prevConnections).length,
+        nextCount: Object.keys(state.connections).length,
+        hasInitialized: hasInitialized.current,
+      });
+      prevConnections = state.connections;
+      schedulePersist();
+    });
 
     return () => {
+      console.log(
+        "[DualView] Cleaning up canvas and connection store subscribers.",
+      );
       unsubscribeCanvas();
       unsubscribeConnection();
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (saveTimerRef.current) {
+        console.log("[DualView] Clearing save timer during cleanup.");
+        clearTimeout(saveTimerRef.current);
+      }
     };
   }, [saveCanvas, schedulePersist]);
 

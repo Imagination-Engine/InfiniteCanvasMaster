@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 import { generateGeminiImage, geminiImageToDataUrl } from "@iem/core";
 
+declare const process: { env: Record<string, string | undefined> };
+
 export const timelineBlock: BlockDefinition<any, any> = {
   id: "iem.reel.timeline",
   name: "Timeline",
@@ -220,7 +222,7 @@ export const textToImageBlock: BlockDefinition<any, any> = {
   agent: {
     kind: "local",
     toolName: "gen_image",
-    invoke: async (input: { prompt: string }) => {
+    invoke: async (input: any) => {
       if (process.env.IEM_MOCK_MODELS === "1") {
         return { imageUrl: "https://placehold.co/600x400/png?text=Mock+Image" };
       }

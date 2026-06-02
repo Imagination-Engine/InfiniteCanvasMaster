@@ -3,6 +3,11 @@ import { mastra } from "@iem/agents";
 import { eq } from "drizzle-orm";
 import { workspaces } from "@iem/db";
 import jwt from "jsonwebtoken";
+import {
+  RequestContext,
+  MASTRA_RESOURCE_ID_KEY,
+  MASTRA_THREAD_ID_KEY,
+} from "@mastra/core/request-context";
 
 const chatRouter = new Hono();
 
@@ -94,7 +99,7 @@ chatRouter.post("/", async (c) => {
         type: body.blockContext.type,
         currentData: body.blockContext.currentData,
       });
-      agent = await createBlockAssistant(mastra.storage);
+      agent = await createBlockAssistant(mastra.storage, systemInstruction);
 
       const { instanceId, type, currentData } = body.blockContext;
       let blockDef: any = null;
@@ -161,7 +166,7 @@ ${JSON.stringify(currentData || {}, null, 2)}
 \`\`\`
 `;
     } else {
-      agent = await createOrchestrator(mastra.storage);
+      agent = await createOrchestrator(mastra.storage, systemInstruction);
 
       let canvasSystemPrompt = "";
       if (body.canvasContext) {
@@ -173,7 +178,6 @@ CRITICAL MISSION: When a user describes a goal, idea, or request, you MUST decon
 
 The user's ID is "${user.sub}". You MUST pass this exact string into the 'owner_id' parameter of every tool call. Also, pass the session thread ID "${sessionId}" to the 'session_id' parameter if generating a blueprint to link history.
 
-<<<<<<< HEAD
 Identify the best blocks from the registry (scribe, playable, reel, forge, atlas, workflow) to represent the solution. Wire them together using edges to form a logical flow.
 
 REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
@@ -192,9 +196,17 @@ REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
       ...sanitizedMessages,
     ];
 
-    const result = await agent.stream(finalMessages, {
+    const latestMsg = sanitizedMessages[sanitizedMessages.length - 1];
+    const prompt = latestMsg?.content || "";
+
+    const requestContext = new RequestContext();
+    requestContext.set(MASTRA_RESOURCE_ID_KEY, user.sub);
+    requestContext.set(MASTRA_THREAD_ID_KEY, sessionId);
+
+    const result = await agent.stream(prompt, {
       threadId: sessionId, // This tells Mastra to load history and save this turn!
       resourceId: user.sub,
+      requestContext,
     });
 
     const stream = new ReadableStream({
@@ -346,9 +358,20 @@ chatRouter.post("/block", async (c) => {
       `[BLOCK-CHAT] Initiating stream for block: ${node.id} (${node.type}) on thread: ${threadId}`,
     );
 
-    const result = await agent.stream(messages, {
+    const latestMessageObj = messages[messages.length - 1];
+    const prompt =
+      typeof latestMessageObj === "string"
+        ? latestMessageObj
+        : latestMessageObj?.content || latestMessageObj?.text || "";
+
+    const requestContext = new RequestContext();
+    requestContext.set(MASTRA_RESOURCE_ID_KEY, user.sub);
+    requestContext.set(MASTRA_THREAD_ID_KEY, threadId);
+
+    const result = await agent.stream(prompt, {
       threadId,
       resourceId: user.sub,
+      requestContext,
     });
 
     const stream = new ReadableStream({

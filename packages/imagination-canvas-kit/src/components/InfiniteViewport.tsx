@@ -11,6 +11,7 @@ import { AgentActivityLayer } from "./AgentActivityLayer";
 import { PresenceLayer } from "./PresenceLayer";
 import { screenToCanvas } from "../utils/camera";
 import { blockRegistry } from "@iem/core";
+import { generateUUID } from "../utils/uuid";
 
 export const InfiniteViewport: React.FC<{
   children?: React.ReactNode;
@@ -203,7 +204,7 @@ export const InfiniteViewport: React.FC<{
     const addObject = useCanvasStore.getState().addObject;
     const { select } = useSelectionStore.getState();
 
-    const newId = `${type}-${Date.now()}`;
+    const newId = generateUUID();
 
     // Look up block definition for better metadata
     const blockDef = blockRegistry.get(type);

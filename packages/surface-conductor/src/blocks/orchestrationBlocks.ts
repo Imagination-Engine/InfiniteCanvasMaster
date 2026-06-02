@@ -3,7 +3,7 @@ import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 import jexl from "jexl";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import {
+export {
   webFetchBlock,
   slackPostBlock,
   notionCreateBlock,

@@ -27,8 +27,16 @@
       "@iem/agents": ["../../packages/agents/src"],
       "@iem/core": ["../../packages/core/src"],
       "@iem/db": ["../../packages/db/src"],
-      "@iem/imagination-canvas-kit": ["../../packages/imagination-canvas-kit/src"],
-      "@iem/chat-interaction-kit": ["../../packages/chat-interaction-kit/src"]
+      "@iem/imagination-canvas-kit": [
+        "../../packages/imagination-canvas-kit/src"
+      ],
+      "@iem/chat-interaction-kit": ["../../packages/chat-interaction-kit/src"],
+      "@iem/surface-reel": ["../../packages/surface-reel/src"],
+      "@iem/surface-scribe": ["../../packages/surface-scribe/src"],
+      "@iem/surface-conductor": ["../../packages/surface-conductor/src"],
+      "@iem/surface-forge": ["../../packages/surface-forge/src"],
+      "@iem/surface-atlas": ["../../packages/surface-atlas/src"],
+      "@iem/surface-playable": ["../../packages/surface-playable/src"]
     }
   },
   "include": ["src"]

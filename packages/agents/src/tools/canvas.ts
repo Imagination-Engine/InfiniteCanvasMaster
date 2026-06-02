@@ -10,6 +10,7 @@ const {
   canvases,
   nodes: nodesTable,
   edges: edgesTable,
+  users,
 } = dbModule as any;
 
 export const generate_canvas_blueprint = createTool({
@@ -56,7 +57,7 @@ export const generate_canvas_blueprint = createTool({
       }),
     ),
   }),
-  execute: async (args: any) => {
+  execute: async (args: any, context?: any) => {
     const input = args.input || args;
     const { owner_id, session_id, blueprint_name, description, nodes, edges } =
       input;
@@ -70,12 +71,80 @@ export const generate_canvas_blueprint = createTool({
         );
       const finalWorkspaceId = isValidUUID ? session_id : crypto.randomUUID();
 
+      // Securely resolve owner ID from execution context if available (passed as resourceId in agent.stream)
+      const contextOwnerId = context?.agent?.resourceId;
+      if (contextOwnerId) {
+        console.log(
+          `[BLUEPRINT PERSISTENCE] Successfully resolved owner_id from Mastra context: ${contextOwnerId}`,
+        );
+      }
+      let finalOwnerId = contextOwnerId || owner_id;
+      let ownerExists = false;
+
+      const isOwnerUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          finalOwnerId || "",
+        );
+
+      if (isOwnerUUID) {
+        const [existingUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, finalOwnerId));
+        if (existingUser) {
+          ownerExists = true;
+        }
+      }
+
+      if (!ownerExists) {
+        console.warn(
+          `[BLUEPRINT PERSISTENCE] owner_id "${finalOwnerId}" is not a valid UUID or does not exist. Attempting fallback...`,
+        );
+        // Try to fetch the first user from the users table
+        const dbUsers = await db.select().from(users).limit(1);
+        if (dbUsers && dbUsers.length > 0) {
+          finalOwnerId = dbUsers[0].id;
+          console.log(
+            `[BLUEPRINT PERSISTENCE] Using fallback owner_id: ${finalOwnerId}`,
+          );
+        } else {
+          // If no users exist, create a default system user
+          const fallbackEmail = "system@balnce.ai";
+          console.log(
+            `[BLUEPRINT PERSISTENCE] No users found. Creating system fallback user...`,
+          );
+
+          // Check if system user already exists (might have been created previously)
+          const [existingSystemUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, fallbackEmail));
+
+          if (existingSystemUser) {
+            finalOwnerId = existingSystemUser.id;
+          } else {
+            const [newSystemUser] = await db
+              .insert(users)
+              .values({
+                email: fallbackEmail,
+                passwordHash: "$2a$10$dummyhashplaceholderforsecurityreasons", // dummy bcrypt hash
+                name: "System Operator",
+              })
+              .returning();
+            finalOwnerId = newSystemUser.id;
+          }
+          console.log(
+            `[BLUEPRINT PERSISTENCE] Created and using fallback owner_id: ${finalOwnerId}`,
+          );
+        }
+      }
+
       const [workspace] = await db
         .insert(workspaces)
         .values({
           id: finalWorkspaceId,
           name: blueprint_name || "Neural Blueprint",
-          ownerId: owner_id,
+          ownerId: finalOwnerId,
         })
         .onConflictDoNothing() // In case it was already created somehow
         .returning();
@@ -112,6 +181,62 @@ export const generate_canvas_blueprint = createTool({
       // Topological/Hierarchical DAG layout calculation
       const safeNodes = nodes || [];
       const safeEdges = edges || [];
+
+      // 1. Programmatically identify if a trigger node exists in the blueprint
+      const triggerTypes = new Set([
+        "trigger.manual",
+        "iem.conductor.webhook",
+        "iem.conductor.schedule",
+        "iem.conductor.trigger",
+        "trigger",
+      ]);
+      const hasTrigger = safeNodes.some(
+        (n: any) =>
+          triggerTypes.has(n.type) ||
+          (n.type || "").toLowerCase().includes("trigger"),
+      );
+
+      if (!hasTrigger && safeNodes.length > 0) {
+        // Find "root" nodes (nodes that have no incoming edges)
+        const targets = new Set(safeEdges.map((e: any) => e.target));
+        const rootNodes = safeNodes.filter((n: any) => !targets.has(n.id));
+
+        // Create a manual trigger node programmatically
+        const triggerNodeId = "trigger-manual-auto-gen";
+        const triggerNode = {
+          id: triggerNodeId,
+          type: "trigger.manual",
+          title: "Start Workflow",
+          description: "Manually trigger the workflow.",
+          recommended_params: {
+            mockInput: {
+              id: "evt_do87x9yf0",
+              timestamp: new Date().toISOString(),
+              event: "trigger",
+              payload: {
+                title: "Balnce AI Launch",
+                body: "Unlock your unlimited digital potential through personal agentic swarms.",
+                url: "https://balnce.ai/news/launch",
+                status: "active",
+                score: 95,
+              },
+            },
+          },
+        };
+
+        // Prepend it to safeNodes so it layout computes first
+        safeNodes.unshift(triggerNode);
+
+        // Add edges from manual trigger to the root nodes
+        const nodesToConnect =
+          rootNodes.length > 0 ? rootNodes : [safeNodes[safeNodes.length - 1]];
+        nodesToConnect.forEach((n: any) => {
+          safeEdges.push({
+            source: triggerNodeId,
+            target: n.id,
+          });
+        });
+      }
 
       const nodeLevels: Record<string, number> = {};
       safeNodes.forEach((n: any) => (nodeLevels[n.id] = 0));

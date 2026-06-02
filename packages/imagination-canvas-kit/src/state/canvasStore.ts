@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import {
   CanvasObject,
   CanvasConnection,
@@ -177,10 +177,10 @@ export const useCanvasStore = create<CanvasState>()(
           delete newObjects[id];
           return {
             objects: newObjects,
-            connections: state.connections.filter(
+            connections: (state.connections || []).filter(
               (c) => c.sourceId !== id && c.targetId !== id,
             ),
-            bindings: state.bindings.filter((b) => b.targetId !== id),
+            bindings: (state.bindings || []).filter((b) => b.targetId !== id),
           };
         }),
 
@@ -289,6 +289,16 @@ export const useCanvasStore = create<CanvasState>()(
     }),
     {
       name: "iem-canvas-storage",
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined" && window.localStorage) {
+          return window.localStorage;
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

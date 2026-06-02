@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { useCanvasStore } from "../state/canvasStore";
 import { OpenClawOutput } from "../contracts/openclaw";
 import { BalnceBlockKind, CanvasObject } from "../contracts";
+import { generateUUID } from "../utils/uuid";
 
 /**
  * Hook to convert OpenClaw task outputs into tangible blocks on the Imagination Canvas.
@@ -49,7 +50,7 @@ export function useOpenClawOutputConversion(blockId: string) {
         const spawnY = sourceObj.y;
 
         const newObject: CanvasObject = {
-          id: `obj-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          id: generateUUID(),
           type: targetKind, // In your registry, type often equals kind for basic blocks
           kind: targetKind,
           x: spawnX,

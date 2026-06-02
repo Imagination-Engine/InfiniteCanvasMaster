@@ -4,6 +4,7 @@
 
 import type { CanvasObject } from "../contracts/index";
 import type { Connection } from "../state/connectionStore";
+import { generateUUID } from "./uuid";
 
 export type UnifiedCanvasNodeLike = {
   id: string;
@@ -148,5 +149,122 @@ export function exportCanvasToDocument(
       label: c.label,
     })),
     viewport: viewport ?? { x: 0, y: 0, zoom: 1 },
+  };
+}
+
+/**
+ * Sweeps through canvas elements (objects, connections, and bindings) and ensures
+ * all IDs and referential connections strictly adhere to the UUID format.
+ * Replaces non-UUID keys dynamically while preserving metadata and visual structures.
+ */
+export function sanitizeCanvasData(
+  objects: Record<string, CanvasObject>,
+  connections: Record<string, Connection>,
+  bindings: any[] = [],
+): {
+  objects: Record<string, CanvasObject>;
+  connections: Record<string, Connection>;
+  bindings: any[];
+  idMap: Record<string, string>;
+  changed: boolean;
+} {
+  const isUUID = (str: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      str || "",
+    );
+
+  let changed = false;
+  const nextObjects: Record<string, CanvasObject> = {};
+  const nextConnections: Record<string, Connection> = {};
+  const nextBindings: any[] = [];
+  const idMap: Record<string, string> = {};
+
+  // 1. Sanitize object IDs
+  for (const [id, obj] of Object.entries(objects)) {
+    if (!isUUID(id)) {
+      const newId = generateUUID();
+      idMap[id] = newId;
+      nextObjects[newId] = {
+        ...obj,
+        id: newId,
+      };
+      changed = true;
+    } else {
+      nextObjects[id] = obj;
+    }
+  }
+
+  // 2. Sanitize connection IDs and references
+  for (const [id, conn] of Object.entries(connections)) {
+    let connChanged = false;
+    let sourceId = conn.fromId || (conn as any).sourceId;
+    let targetId = conn.toId || (conn as any).targetId;
+    let connId = conn.id;
+
+    if (idMap[sourceId]) {
+      sourceId = idMap[sourceId];
+      connChanged = true;
+    }
+    if (idMap[targetId]) {
+      targetId = idMap[targetId];
+      connChanged = true;
+    }
+    if (!isUUID(connId)) {
+      connId = generateUUID();
+      connChanged = true;
+    }
+
+    if (connChanged) {
+      nextConnections[connId] = {
+        ...conn,
+        id: connId,
+        fromId: sourceId,
+        toId: targetId,
+      } as Connection;
+      changed = true;
+    } else {
+      nextConnections[id] = conn;
+    }
+  }
+
+  // 3. Sanitize binding IDs and references
+  for (const binding of bindings) {
+    let bindingChanged = false;
+    let actorId = binding.actorId;
+    let targetId = binding.targetId;
+    let bindingId = binding.id;
+
+    if (idMap[actorId]) {
+      actorId = idMap[actorId];
+      bindingChanged = true;
+    }
+    if (idMap[targetId]) {
+      targetId = idMap[targetId];
+      bindingChanged = true;
+    }
+    if (!isUUID(bindingId)) {
+      bindingId = generateUUID();
+      bindingChanged = true;
+    }
+
+    if (bindingChanged) {
+      nextBindings.push({
+        ...binding,
+        id: bindingId,
+        actorId,
+        targetId,
+      });
+      changed = true;
+    } else {
+      nextBindings.push(binding);
+    }
+  }
+
+  return {
+    objects: nextObjects,
+    connections: nextConnections,
+    bindings: nextBindings,
+    idMap,
+    changed,
   };
 }
