@@ -23,8 +23,6 @@ export interface CanvasShellProps {
   mode?: CanvasMode;
   sessionContext?: string;
   className?: string;
-  onRunGraph?: () => void;
-  isRunning?: boolean;
   children: React.ReactNode;
   /** Injected specialized chat component */
   ChatComponent?: React.ComponentType<{
@@ -43,8 +41,6 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
   mode: controlledMode,
   sessionContext,
   className,
-  onRunGraph,
-  isRunning,
   children,
   ChatComponent,
 }) => {
@@ -76,7 +72,7 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
       {/* 1. Base Layer: The Infinite Viewport (children) */}
       {children}
       {/* 2. UI Overlays */}
-      <BlockLibraryDrawer onRunGraph={onRunGraph} isRunning={isRunning} />
+      <BlockLibraryDrawer />
       <ImmersiveBlockModal ChatComponent={ChatComponent} />
     </div>
   );

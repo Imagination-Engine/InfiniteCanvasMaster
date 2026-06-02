@@ -15,7 +15,7 @@ const {
 export const generate_canvas_blueprint = createTool({
   id: "generate_canvas_blueprint",
   description:
-    "Deconstruct a user goal into a complete, interconnected canvas blueprint containing multiple blocks (nodes) and their relationships (edges). Use EXACT registry block type IDs (e.g. iem.reel.textToImage, iem.studio.video). For anime/visual scenes: create one iem.reel.textToImage per key frame with the FULL image-generation prompt in description and recommended_params.prompt; add iem.studio.video when the user wants video/reel/animation; edge each image node into the video studio for Veo forge.",
+    "Deconstruct a user goal into a functional visual workflow. MOVIE RULES: 1) Identify 3-4 key VISUAL SCENES from the user's prompt. 2) Create one 'iem.reel.textToImage' node per scene. 3) Put a HIGHLY DETAILED Gemini prompt in each node description. 4) CONNECT all scene nodes to an 'iem.studio.video' node. DO NOT use generic 'Character Design' or 'Scene Breakdown' nodes. Focus on the final artifacts. APP RULES: Schema -> Programmer -> QA -> App.",
   inputSchema: z.object({
     owner_id: z
       .string()

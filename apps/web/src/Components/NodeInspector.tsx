@@ -71,7 +71,8 @@ export function NodeInspector() {
               {label || "(untitled)"}
             </div>
             <div className="text-[11px] text-white/60 truncate">
-              {catalogEntry?.label || blockId} · {String(nodeId)}
+              {(catalogEntry?.defaultData as any)?.label || blockId} ·{" "}
+              {String(nodeId)}
             </div>
           </div>
           <button

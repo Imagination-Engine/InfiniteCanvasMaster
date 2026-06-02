@@ -5,10 +5,13 @@ import type { BlockDefinition } from "../../block/protocol";
 export const ProgrammerInput = z.object({
   prompt: z.string(),
   code: z.string().optional(),
+  _accumulatedContext: z.string().optional(),
 });
 
 export const ProgrammerOutput = z.object({
   generatedCode: z.string(),
+  artifactName: z.string().optional(),
+  explanation: z.string().optional(),
 });
 
 export const programmerBlock: BlockDefinition<
@@ -25,12 +28,18 @@ export const programmerBlock: BlockDefinition<
   agent: {
     kind: "local",
     toolName: "generate_code",
-    invoke: async (input: unknown) => {
+    invoke: async (input: any) => {
       const parsed = ProgrammerInput.parse(input);
       try {
-        const fullPrompt = parsed.code
-          ? `Source code:\n${parsed.code}\n\nTask: ${parsed.prompt}\n\nPlease generate the updated code. Return ONLY the code.`
-          : `Task: ${parsed.prompt}\n\nPlease generate the code. Return ONLY the code.`;
+        let fullPrompt = "";
+
+        if (parsed._accumulatedContext) {
+          fullPrompt = `Accumulated Project Context:\n\${parsed._accumulatedContext}\n\nTask: \${parsed.prompt}\n\nPlease generate the next part of the codebase. Return ONLY the code for the requested file.`;
+        } else if (parsed.code) {
+          fullPrompt = `Source code:\n\${parsed.code}\n\nTask: \${parsed.prompt}\n\nPlease generate the updated code. Return ONLY the code.`;
+        } else {
+          fullPrompt = `Task: \${parsed.prompt}\n\nPlease generate the code. Return ONLY the code.`;
+        }
 
         const { agentRuntime } = await import("../../agent/runtime");
         const response = await agentRuntime.chat({
@@ -38,7 +47,15 @@ export const programmerBlock: BlockDefinition<
           messages: [{ role: "user", content: fullPrompt }],
         });
 
-        return { generatedCode: response.content };
+        // Try to extract a filename if the prompt mentions one
+        const nameMatch = parsed.prompt.match(/([a-z0-9_-]+\\.[a-z0-9]+)/i);
+        const artifactName = nameMatch ? nameMatch[1] : "generated_file.ts";
+
+        return {
+          generatedCode: response.content,
+          artifactName,
+          explanation: "Generated via AI Architect logic.",
+        };
       } catch (err) {
         throw new Error(
           `Programmer failed: ${err instanceof Error ? err.message : "Unknown error"}`,

@@ -36,6 +36,17 @@ export function compileGraphToWorkflow(
   if (!(registry as any).defaultAdapter) {
     // @ts-ignore
     registry.registerDefault(new DefaultStrictInputAdapter());
+
+    // Register specialized adapters
+    try {
+      // @ts-ignore
+      const { VideoStudioInputAdapter, ProgrammerInputAdapter } =
+        await import("@iem/core");
+      registry.register(new VideoStudioInputAdapter());
+      registry.register(new ProgrammerInputAdapter());
+    } catch (e) {
+      console.warn("[WORKFLOW] Could not register specialized adapters:", e);
+    }
   }
 
   const workflow = new Workflow({
@@ -112,12 +123,30 @@ export function compileGraphToWorkflow(
 
         // Use Adapter Registry instead of universal mutation
         const baseInput = { ...(node.data?.inputs || node.data?.params || {}) };
+
+        // --- PROMPT MAPPING FALLBACK ---
+        // If the block expects a 'prompt' but it's missing in inputs,
+        // fall back to the node's description (where the AI Architect puts instructions).
+        const description = node.data?.description || node.description;
+        if (!baseInput.prompt && description) {
+          baseInput.prompt = description;
+        }
+        // Also map 'text' for Scribe blocks
+        if (!baseInput.text && description) {
+          baseInput.text = description;
+        }
+
         const adaptedInput = await registry.adapt({
           envelopes,
           baseInput,
           nodeSpec: node,
-          traceId: runId, // Using runId as traceId for now
+          traceId: runId,
         });
+
+        // Ensure the description is also passed in the adapted input if not already there
+        if (description && !adaptedInput.description) {
+          adaptedInput.description = description;
+        }
 
         // Validate
         const validatedInput = blockDef.input.parse(adaptedInput);

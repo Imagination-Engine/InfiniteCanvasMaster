@@ -303,15 +303,6 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent("iem:run-graph"));
-                  }}
-                  className="p-1.5 rounded-lg bg-brand-purple/20 text-brand-purple hover:bg-brand-purple/30 transition-colors"
-                  title="Run Graph"
-                >
-                  <Zap size={14} fill="currentColor" />
-                </button>
-                <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
                 >

@@ -1,13 +1,11 @@
 import { Tldraw, createShapeId, type Editor } from "tldraw";
 import "tldraw/tldraw.css";
-import IntentcastingBar from "./IntentcastingBar";
 import { useCallback, useState } from "react";
 import { NODE_CATALOG } from "../nodes/nodeCatalog";
 import { useAuth } from "../auth/AuthContext";
 import { useParams } from "react-router-dom";
 import { useYjsStore } from "../hooks/useYjsStore";
 import { NodeInspector } from "./NodeInspector";
-import { OrchestratorDrawer } from "./OrchestratorDrawer";
 import { exportWorkflowGraphFromShapes } from "../canvas/workflow/exportGraph";
 
 export default function Canvas() {
@@ -292,58 +290,6 @@ export default function Canvas() {
       </div>
 
       <NodeInspector />
-
-      <OrchestratorDrawer
-        editor={editor}
-        accessToken={accessToken}
-        projectId={projectId}
-      />
-
-      <div className="absolute left-4 bottom-20 z-[10011] pointer-events-auto flex gap-2">
-        <button
-          onClick={handleConnectSelected}
-          disabled={!editor}
-          className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest"
-          title="Select 2 nodes then connect"
-        >
-          Connect
-        </button>
-        <button
-          onClick={handleRunWorkflow}
-          disabled={
-            !editor ||
-            !accessToken ||
-            !projectId ||
-            runStatus.status === "running"
-          }
-          className="px-3 py-2 rounded-xl bg-brand-cyan/20 hover:bg-brand-cyan/25 border border-brand-cyan/30 disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest"
-        >
-          {runStatus.status === "running" ? "Running…" : "Run"}
-        </button>
-      </div>
-
-      {runStatus.status === "success" && (
-        <div className="absolute left-4 bottom-32 z-[10011] pointer-events-auto w-[360px] max-w-[90vw] rounded-2xl bg-black/40 border border-white/10 backdrop-blur-2xl text-white p-3">
-          <div className="text-[10px] uppercase tracking-widest text-white/60">
-            Workflow Run
-          </div>
-          <div className="text-xs mt-1 text-white/80">
-            runId: {runStatus.runId}
-          </div>
-          <pre className="mt-2 text-[11px] overflow-auto max-h-32 whitespace-pre-wrap">
-            {JSON.stringify(runStatus.results, null, 2)}
-          </pre>
-        </div>
-      )}
-      {runStatus.status === "error" && (
-        <div className="absolute left-4 bottom-32 z-[10011] pointer-events-auto w-[360px] max-w-[90vw] rounded-2xl bg-rose-500/10 border border-rose-400/20 backdrop-blur-2xl text-rose-200 p-3 text-sm">
-          {runStatus.message}
-        </div>
-      )}
-
-      <div className="absolute bottom-0 w-full z-10">
-        <IntentcastingBar onSubmit={handleIntentSubmit} isLoading={isCasting} />
-      </div>
     </div>
   );
 }

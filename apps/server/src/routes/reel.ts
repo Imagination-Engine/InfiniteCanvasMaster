@@ -104,14 +104,18 @@ reelRouter.get("/media/:filename", async (c) => {
   try {
     const { readFile } = await import("node:fs/promises");
     const data = await readFile(filepath);
-    const ext = filename.split(".").pop() || "png";
-    const mimeType = ext === "jpg" ? "image/jpeg" : "image/png";
+    const ext = filename.split(".").pop()?.toLowerCase() || "png";
+    const mimeType =
+      ext === "mp4"
+        ? "video/mp4"
+        : ext === "jpg" || ext === "jpeg"
+          ? "image/jpeg"
+          : "image/png";
 
-    return new Response(data, {
-      headers: {
-        "Content-Type": mimeType,
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
+    return c.body(data, 200, {
+      "Content-Type": mimeType,
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "public, max-age=31536000, immutable",
     });
   } catch {
     return c.json({ error: "File not found" }, 404);

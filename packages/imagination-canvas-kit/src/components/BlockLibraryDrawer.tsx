@@ -7,10 +7,7 @@ import { useLibraryStore } from "../state/libraryStore";
 import { useExpansionStore } from "../state/expansionStore";
 import { BlockLibraryCard } from "./BlockLibraryCard";
 
-export const BlockLibraryDrawer: React.FC<{
-  onRunGraph?: () => void;
-  isRunning?: boolean;
-}> = ({ onRunGraph, isRunning }) => {
+export const BlockLibraryDrawer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);

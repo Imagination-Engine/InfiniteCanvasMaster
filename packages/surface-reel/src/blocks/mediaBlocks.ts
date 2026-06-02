@@ -5,170 +5,116 @@ import { generateGeminiImage, geminiImageToDataUrl } from "@iem/core";
 
 export const timelineBlock: BlockDefinition<any, any> = {
   id: "iem.reel.timeline",
-  name: "Timeline",
-  description: "Sequence video events.",
+  name: "Reel Timeline",
+  description: "Sequencing and timing control.",
   category: "media",
-  input: z.object({ events: z.array(z.any()) }),
-  output: z.object({ sequenceId: z.string() }),
+  input: z.object({ sequence: z.array(z.string()) }),
+  output: z.object({ duration: z.number() }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "seq_events",
-    invoke: async () => ({ sequenceId: "seq_1" }),
+    invoke: async () => ({ duration: 30 }),
   },
 };
 
 export const exportBlock: BlockDefinition<any, any> = {
   id: "iem.reel.export",
-  name: "Export",
-  description: "Final render and export pipeline.",
+  name: "Reel Export",
+  description: "Final render settings and export.",
   category: "media",
-  input: z.object({ format: z.enum(["mp4", "gif", "mov"]) }),
-  output: z.object({ fileUrl: z.string() }),
+  input: z.object({
+    format: z.enum(["mp4", "gif", "mov"]),
+    quality: z.string(),
+  }),
+  output: z.object({ exportUrl: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "render",
-    invoke: async () => ({ fileUrl: "http://export.mp4" }),
+    toolName: "render_video",
+    invoke: async () => ({ exportUrl: "http://export.mp4" }),
   },
 };
 
 export const sceneBlock: BlockDefinition<any, any> = {
   id: "iem.reel.scene",
   name: "Scene",
-  description: "Composes an image, dialogue, and duration on the timeline.",
+  description: "A single narrative scene or beat.",
   category: "media",
-  input: z.object({
-    imageUrl: z.string().url().optional(),
-    dialogueUrl: z.string().optional(),
-    durationMs: z.number().min(100).default(3000),
-    description: z.string().optional(),
-  }),
-  output: z.object({
-    sceneId: z.string(),
-    thumbnailUrl: z.string().optional(),
-    durationMs: z.number(),
-  }),
+  input: z.object({ description: z.string(), duration: z.number().optional() }),
+  output: z.object({ sceneId: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "gen_scene",
-    invoke: async (input: any) => ({
-      sceneId: `scene_${Date.now()}`,
-      thumbnailUrl:
-        input.imageUrl ||
-        "https://placehold.co/600x400/222/FFF?text=No+Image+Provided",
-      durationMs: input.durationMs || 3000,
-    }),
+    toolName: "def_scene",
+    invoke: async () => ({ sceneId: "scene-1" }),
   },
 };
 
 export const characterBlock: BlockDefinition<any, any> = {
   id: "iem.reel.character",
   name: "Character",
-  description: "Visual character in scene.",
+  description: "Character visual and trait definition.",
   category: "media",
-  input: z.object({ prompt: z.string() }),
-  output: z.object({
-    characterId: z.string(),
-    imageUrl: z.string().optional(),
-  }),
+  input: z.object({ name: z.string(), traits: z.array(z.string()) }),
+  output: z.object({ characterId: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "gen_char",
-    invoke: async (input: any) => {
-      const characterId = `char_${Date.now()}`;
-
-      if (process.env.IEM_MOCK_MODELS === "1") {
-        return {
-          characterId,
-          imageUrl: "https://placehold.co/600x400/png?text=Mock+Character",
-        };
-      }
-
-      const apiKey =
-        process.env.NANOBANANA_API_KEY || process.env.IMAGE_API_KEY;
-      if (!apiKey) {
-        return {
-          characterId,
-          imageUrl: "https://placehold.co/600x400/png?text=Generated+Character",
-        };
-      }
-
-      try {
-        const res = await fetch("https://api.nanobanana.ai/v1/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({ prompt: `Character design: ${input.prompt}` }),
-        });
-
-        if (!res.ok) throw new Error(`Image API error ${res.status}`);
-
-        const data = await res.json();
-        return { characterId, imageUrl: data.data[0].url };
-      } catch (e) {
-        return {
-          characterId,
-          imageUrl: "https://placehold.co/600x400/png?text=Character+Error",
-        };
-      }
-    },
+    toolName: "def_char",
+    invoke: async () => ({ characterId: "char-1" }),
   },
 };
 
 export const dialogueBlock: BlockDefinition<any, any> = {
   id: "iem.reel.dialogue",
   name: "Dialogue",
-  description: "Scripted character speech.",
+  description: "Scripted lines for characters.",
   category: "media",
-  input: z.object({ text: z.string(), characterId: z.string() }),
-  output: z.object({ audioUrl: z.string() }),
+  input: z.object({ characterId: z.string(), line: z.string() }),
+  output: z.object({ scriptId: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "tts",
-    invoke: async () => ({ audioUrl: "http://audio.mp3" }),
+    toolName: "def_dialogue",
+    invoke: async () => ({ scriptId: "dialogue-1" }),
   },
 };
 
 export const cameraBlock: BlockDefinition<any, any> = {
   id: "iem.reel.camera",
   name: "Camera",
-  description: "Camera angles and movement.",
+  description: "Shot type and movement control.",
   category: "media",
-  input: z.object({ angle: z.string(), movement: z.string() }),
-  output: z.object({ settings: z.any() }),
+  input: z.object({ shotType: z.string(), movement: z.string() }),
+  output: z.object({ success: z.boolean() }),
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "cam_op",
-    invoke: async () => ({ settings: {} }),
+    toolName: "camera_op",
+    invoke: async () => ({ success: true }),
   },
 };
 
 export const lightingBlock: BlockDefinition<any, any> = {
   id: "iem.reel.lighting",
   name: "Lighting",
-  description: "Visual atmosphere and lights.",
+  description: "Atmospheric lighting setup.",
   category: "media",
-  input: z.object({ intensity: z.number(), color: z.string() }),
-  output: z.object({ state: z.any() }),
+  input: z.object({ style: z.string(), intensity: z.number() }),
+  output: z.object({ success: z.boolean() }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "light_op",
-    invoke: async () => ({ state: {} }),
+    invoke: async () => ({ success: true }),
   },
 };
 
 export const transitionBlock: BlockDefinition<any, any> = {
   id: "iem.reel.transition",
   name: "Transition",
-  description: "Visual scene transitions.",
+  description: "Scene transition effects.",
   category: "media",
   input: z.object({ type: z.string() }),
   output: z.object({ success: z.boolean() }),
@@ -215,45 +161,44 @@ export const textToImageBlock: BlockDefinition<any, any> = {
   name: "Text to Image",
   description: "Generate an image from text.",
   category: "media",
-  input: z.object({ prompt: z.string() }),
+  input: z.object({
+    prompt: z.string().optional(),
+    description: z.string().optional(),
+    _instructions: z.string().optional(),
+  }),
   output: z.object({ imageUrl: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "gen_image",
-    invoke: async (input: { prompt: string }) => {
+    invoke: async (input: any) => {
+      const prompt = (
+        input.prompt ||
+        input.description ||
+        input._instructions ||
+        ""
+      ).trim();
+
+      if (!prompt) {
+        throw new Error(
+          "No prompt or description provided for image generation",
+        );
+      }
+
       if (process.env.IEM_MOCK_MODELS === "1") {
-        return { imageUrl: "https://placehold.co/600x400/png?text=Mock+Image" };
+        return {
+          imageUrl: `https://placehold.co/600x400/png?text=${encodeURIComponent(prompt.substring(0, 20))}`,
+        };
       }
 
       const geminiKey =
         process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
       if (geminiKey) {
-        const image = await generateGeminiImage(input.prompt, geminiKey);
+        const image = await generateGeminiImage(prompt, geminiKey);
         return { imageUrl: geminiImageToDataUrl(image) };
       }
 
-      const legacyKey =
-        process.env.NANOBANANA_API_KEY || process.env.IMAGE_API_KEY;
-      if (!legacyKey) {
-        throw new Error(
-          "No GEMINI_API_KEY or image API key configured for text-to-image",
-        );
-      }
-
-      const res = await fetch("https://api.nanobanana.ai/v1/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${legacyKey}`,
-        },
-        body: JSON.stringify({ prompt: input.prompt }),
-      });
-
-      if (!res.ok) throw new Error(`Image API error ${res.status}`);
-
-      const data = await res.json();
-      return { imageUrl: data.data[0].url };
+      throw new Error("No GEMINI_API_KEY configured for text-to-image");
     },
   },
 };
@@ -276,11 +221,10 @@ export const textToSpeechBlock: BlockDefinition<any, any> = {
 
       const apiKey = process.env.ELEVENLABS_API_KEY;
       if (!apiKey) {
-        // Fallback to placeholder if they only have Gemini keys (no speech API)
         return { audioUrl: "data:audio/mpeg;base64,mock_audio_data_generated" };
       }
 
-      const voiceId = input.voiceId || "21m00Tcm4TlvDq8ikWAM"; // default voice
+      const voiceId = input.voiceId || "21m00Tcm4TlvDq8ikWAM";
       const res = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
         {
@@ -315,6 +259,78 @@ export const textToSpeechBlock: BlockDefinition<any, any> = {
         base64 = window.btoa(binary);
       }
       return { audioUrl: `data:audio/mpeg;base64,${base64}` };
+    },
+  },
+};
+
+export const videoStudioBlock: BlockDefinition<any, any> = {
+  id: "iem.studio.video",
+  name: "Video Studio",
+  description: "Forges footage from reference images using Google Veo.",
+  category: "media",
+  input: z.object({
+    prompt: z.string().optional(),
+    description: z.string().optional(),
+    _instructions: z.string().optional(),
+    referenceImages: z.array(z.object({ url: z.string() })).optional(),
+  }),
+  output: z.object({
+    clipUrl: z.string(),
+  }),
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "video_forge",
+    invoke: async (input: any) => {
+      const prompt = (
+        input.prompt ||
+        input.description ||
+        input._instructions ||
+        "Cinematic sequence"
+      ).trim();
+      const { referenceImages = [] } = input;
+
+      const baseUrl = process.env.API_BASE_URL || "http://localhost:3001";
+
+      try {
+        const startRes = await fetch(`${baseUrl}/api/reel/generate-video`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, referenceImages }),
+        });
+
+        if (!startRes.ok) {
+          const err = await startRes.json().catch(() => ({}));
+          throw new Error(
+            err.error || `Failed to start video job: ${startRes.status}`,
+          );
+        }
+
+        const { operationId } = await startRes.json();
+
+        const maxAttempts = 60;
+        for (let i = 0; i < maxAttempts; i++) {
+          await new Promise((r) => setTimeout(r, 5000));
+
+          const pollRes = await fetch(
+            `${baseUrl}/api/reel/generate-video/${operationId}`,
+          );
+          if (!pollRes.ok) continue;
+
+          const job = await pollRes.json();
+          if (job.status === "done" && job.clipUrl) {
+            return { clipUrl: job.clipUrl };
+          }
+          if (job.status === "error") {
+            throw new Error(job.error || "Video generation failed");
+          }
+        }
+
+        throw new Error("Video generation timed out");
+      } catch (err: any) {
+        console.error("[VideoStudioBlock] Execution failed:", err);
+        throw err;
+      }
     },
   },
 };

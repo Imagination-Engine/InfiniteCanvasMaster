@@ -104,3 +104,59 @@ export class LegacyAdditionalInstructionsAdapter implements NodeInputAdapter {
     return mergedInput;
   }
 }
+
+export class VideoStudioInputAdapter implements NodeInputAdapter {
+  readonly id = "video-studio-adapter";
+  readonly supports = ["type:iem.studio.video"];
+
+  adapt(args: { baseInput: any; envelopes: any[] }): any {
+    const { baseInput, envelopes } = args;
+    let mergedInput = { ...baseInput };
+
+    const referenceImages: any[] = [];
+    for (const env of envelopes) {
+      const payload = env.payload || {};
+      const imageUrl = payload.imageUrl || payload.thumbnailUrl;
+      if (imageUrl) {
+        referenceImages.push({ url: imageUrl });
+      }
+
+      // Merge other metadata BUT keep the baseInput prompt if it exists
+      if (typeof payload === "object") {
+        const { prompt, ...rest } = payload;
+        mergedInput = { ...mergedInput, ...rest };
+      }
+    }
+
+    // Ensure we keep the forge's own prompt for the motion instructions
+    if (baseInput.prompt) {
+      mergedInput.prompt = baseInput.prompt;
+    }
+
+    mergedInput.referenceImages = referenceImages.slice(0, 3);
+    return mergedInput;
+  }
+}
+
+export class ProgrammerInputAdapter implements NodeInputAdapter {
+  readonly id = "programmer-adapter";
+  readonly supports = ["type:iem.core.programmer"];
+
+  adapt(args: { baseInput: any; envelopes: any[] }): any {
+    const { baseInput, envelopes } = args;
+    let mergedInput = { ...baseInput };
+
+    let accumulatedContext = "";
+    for (const env of envelopes) {
+      const payload = env.payload || {};
+      const name = payload.artifactName || env.source?.id || "file";
+      const code =
+        payload.generatedCode || payload.content || JSON.stringify(payload);
+
+      accumulatedContext += `File: \${name}\nContent:\n\${code}\n\n`;
+    }
+
+    mergedInput._accumulatedContext = accumulatedContext;
+    return mergedInput;
+  }
+}

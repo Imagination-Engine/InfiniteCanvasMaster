@@ -16,6 +16,7 @@ import {
   Film,
   Play,
   X,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -119,63 +120,177 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   }, [initialDocument, projectId, applyDocumentToStores]);
 
   const handleRunGraph = useCallback(async () => {
-    if (!accessToken) return;
+    if (isRunning) return;
     setIsRunning(true);
+    setIsRunPanelOpen(true); // Open panel to show progress
+
+    const { objects, updateObject } = useCanvasStore.getState();
+    const { connections } = useConnectionStore.getState();
 
     try {
-      const objects = useCanvasStore.getState().objects;
-      const connections = useConnectionStore.getState().connections;
+      console.log("[AUTO-FORGE] Starting automated workflow sequence...");
 
-      // Compile into expected document format
-      const document = {
-        nodes: Object.values(objects).map((obj) => ({
-          id: obj.id,
-          type: obj.type,
-          data: {
-            ...obj.metadata,
-            inputs: obj.metadata?.inputs || {},
-          },
-        })),
-        edges: Object.values(connections).map((conn) => ({
-          id: conn.id,
-          sourceId: conn.fromId,
-          targetId: conn.toId,
-        })),
-      };
-
-      // Set all nodes to 'running' visually
-      Object.keys(objects).forEach((id) => {
-        useCanvasStore.getState().updateObject(id, { status: "running" });
-      });
-
-      const response = await apiRequest(
-        `/api/projects/${projectId}/execute`,
-        {
-          method: "POST",
-          body: JSON.stringify({ document, triggerData: {} }),
-        },
-        accessToken,
+      // 1. Identify all scene nodes and the forge node
+      const sceneNodes = Object.values(objects).filter(
+        (o) => o.type === "iem.reel.textToImage" || o.type === "textToImage",
+      );
+      const forgeNode = Object.values(objects).find(
+        (o) => o.type === "iem.studio.video" || o.type === "reel.forge",
       );
 
-      setLastRun(response);
-      setIsRunPanelOpen(true);
-      console.log("Execution Result:", response);
+      if (sceneNodes.length === 0 && !forgeNode) {
+        throw new Error("No video or image nodes found on the canvas to run.");
+      }
 
-      // Set all nodes to 'complete' visually
-      Object.keys(objects).forEach((id) => {
-        useCanvasStore.getState().updateObject(id, { status: "complete" });
-      });
-    } catch (err) {
-      console.error("Failed to run graph:", err);
-      // Set all nodes to 'error' visually
-      const objects = useCanvasStore.getState().objects;
-      Object.keys(objects).forEach((id) => {
-        useCanvasStore.getState().updateObject(id, { status: "error" });
+      // 2. Automate Image Generation for all scenes
+      console.log(`[AUTO-FORGE] Generating ${sceneNodes.length} scenes...`);
+      const generatedImages: Record<string, string> = {};
+
+      for (const node of sceneNodes) {
+        updateObject(node.id, { status: "running" });
+
+        const prompt = (
+          node.metadata?.inputs?.prompt ||
+          node.metadata?.description ||
+          node.metadata?.label ||
+          "A cinematic scene"
+        ).trim();
+
+        console.log(
+          `[AUTO-FORGE] Generating scene: ${node.id} with prompt: ${prompt}`,
+        );
+
+        const res = await fetch(`/api/reel/generate-image`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+
+        if (!res.ok) throw new Error(`Image generation failed for ${node.id}`);
+
+        const { imageUrl } = await res.json();
+        generatedImages[node.id] = imageUrl;
+
+        // Update node on canvas immediately
+        updateObject(node.id, {
+          status: "complete",
+          metadata: {
+            ...node.metadata,
+            imageUrl,
+            outputs: { ...(node.metadata?.outputs || {}), imageUrl },
+          },
+        });
+      }
+
+      // 3. Automate Video Forge
+      if (forgeNode) {
+        console.log(
+          `[AUTO-FORGE] Starting final video forge for node: ${forgeNode.id}`,
+        );
+        updateObject(forgeNode.id, { status: "running" });
+
+        // Collect all images (including newly generated ones)
+        const referenceImages: any[] = [];
+
+        // Find nodes connected TO the forge node
+        const upstreamEdges = Object.values(connections).filter(
+          (c) => c.toId === forgeNode.id,
+        );
+        upstreamEdges.forEach((edge) => {
+          const sourceNode = objects[edge.fromId];
+          const url =
+            generatedImages[edge.fromId] ||
+            sourceNode?.metadata?.imageUrl ||
+            sourceNode?.metadata?.inputs?.imageUrl;
+          if (url) referenceImages.push({ url });
+        });
+
+        const forgePrompt = (
+          forgeNode.metadata?.description ||
+          forgeNode.metadata?.label ||
+          "A cinematic movie sequence"
+        ).trim();
+
+        const res = await fetch(`/api/reel/generate-video`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: forgePrompt,
+            referenceImages: referenceImages.slice(0, 3),
+          }),
+        });
+
+        if (!res.ok) throw new Error("Video forge failed to start");
+
+        const { operationId } = await res.json();
+        console.log(
+          `[AUTO-FORGE] Video job started: ${operationId}. Polling...`,
+        );
+
+        // Poll for completion
+        let clipUrl = "";
+        for (let i = 0; i < 100; i++) {
+          await new Promise((r) => setTimeout(r, 4000));
+          const poll = await fetch(`/api/reel/generate-video/${operationId}`);
+          if (!poll.ok) continue;
+          const job = await poll.json();
+
+          if (job.status === "done") {
+            clipUrl = job.clipUrl;
+            break;
+          }
+          if (job.status === "error")
+            throw new Error(job.error || "Forge failed");
+        }
+
+        if (!clipUrl) throw new Error("Video generation timed out");
+
+        // Update forge node on canvas
+        updateObject(forgeNode.id, {
+          status: "complete",
+          metadata: {
+            ...forgeNode.metadata,
+            clipUrl,
+            outputs: { ...(forgeNode.metadata?.outputs || {}), clipUrl },
+          },
+        });
+
+        // Set a dummy lastRun to close the loading state in the sidebar
+        setLastRun({
+          success: true,
+          results: { clipUrl },
+          steps: Object.fromEntries(
+            Object.keys(generatedImages).map((id) => [
+              id,
+              { status: "success" },
+            ]),
+          ),
+        });
+      } else {
+        // Just scenes
+        setLastRun({
+          success: true,
+          steps: Object.fromEntries(
+            Object.keys(generatedImages).map((id) => [
+              id,
+              { status: "success" },
+            ]),
+          ),
+        });
+      }
+
+      console.log("[AUTO-FORGE] Workflow complete!");
+    } catch (err: any) {
+      console.error("[AUTO-FORGE] Critical Failure:", err);
+      setLastRun({ success: false, error: err.message });
+      // Reset all running nodes to error
+      Object.values(objects).forEach((o) => {
+        if (o.status === "running") updateObject(o.id, { status: "error" });
       });
     } finally {
       setIsRunning(false);
     }
-  }, [accessToken, projectId]);
+  }, [isRunning, projectId]);
 
   useEffect(() => {
     const unsub = useCanvasStore.subscribe((state, prev) => {
@@ -194,7 +309,6 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [schedulePersist, handleRunGraph]);
-
   const downloadFile = (
     filename: string,
     content: string,
@@ -202,31 +316,31 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   ) => {
     if (!content) return;
 
-    let url;
     const isUrl =
       typeof content === "string" &&
-      (content.startsWith("http") || content.startsWith("data:"));
+      (content.startsWith("http") ||
+        content.startsWith("/") ||
+        content.startsWith("data:"));
 
     if (isUrl) {
-      url = content;
+      // Direct download for URLs to avoid Blob corruption
+      const a = document.createElement("a");
+      a.href = content;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } else {
+      // Blob download for raw text/code
       const blob = new Blob([content], { type: mime });
-      url = URL.createObjectURL(blob);
-    }
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-
-    if (!isUrl) {
-      setTimeout(() => {
-        a.remove();
-        URL.revokeObjectURL(url);
-      }, 100);
-    } else {
-      a.remove();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -303,6 +417,13 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           icon: Music,
         },
         {
+          key: "clipUrl",
+          type: "video",
+          ext: "mp4",
+          mime: "video/mp4",
+          icon: Film,
+        },
+        {
           key: "video-project",
           type: "video",
           ext: "mp4",
@@ -375,12 +496,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">
       {/* 1. Main Area: Spatial Engine Canvas */}
-      <CanvasShell
-        canvasId={projectId}
-        sessionContext={sessionSummary}
-        onRunGraph={handleRunGraph}
-        isRunning={isRunning}
-      >
+      <CanvasShell canvasId={projectId} sessionContext={sessionSummary}>
         <InfiniteViewport />
       </CanvasShell>
 
@@ -444,114 +560,109 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
             </button>
           </div>
           <div className="p-4 overflow-auto max-h-[50vh]">
-            <div className="flex items-center gap-2 mb-4">
-              <button
-                onClick={() =>
-                  downloadFile(
-                    `workflow-run-${lastRun?.runId || "latest"}.json`,
-                    JSON.stringify(lastRun, null, 2),
-                    "application/json",
-                  )
-                }
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-[10px] font-black uppercase tracking-widest"
-                title="Download the full run payload as JSON"
-              >
-                <Download size={14} />
-                Download JSON
-              </button>
-            </div>
-
             {artifacts.length > 0 && (
-              <div className="mb-6">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-3">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
                   Generated Artifacts
                 </div>
-                <div className="grid grid-cols-1 gap-2">
-                  {artifacts.map((art) => (
-                    <div
-                      key={art.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {art.type === "image" &&
-                        typeof art.content === "string" &&
-                        (art.content.startsWith("data:") ||
-                          art.content.startsWith("http")) ? (
-                          <img
-                            src={art.content}
-                            className="w-10 h-10 rounded-lg bg-black/20 object-cover border border-white/10"
-                            alt="preview"
-                          />
-                        ) : (
-                          <div className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple-light">
-                            <art.icon size={16} />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="text-[11px] font-bold text-white truncate">
-                            {art.name}
-                          </div>
-                          <div className="text-[9px] text-white/40 uppercase tracking-tighter">
-                            {art.type} · {art.source}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {art.type === "video" && (
-                          <button
-                            onClick={() =>
-                              setPreviewVideoUrl(
-                                art.content?.clipUrl || art.content,
-                              )
-                            }
-                            className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple hover:bg-brand-purple/30 transition-colors"
-                            title="Play Movie"
-                          >
-                            <Play size={14} fill="currentColor" />
-                          </button>
-                        )}
-                        {art.type === "image" &&
-                          typeof art.content === "string" && (
-                            <a
-                              href={art.content}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
-                              title="View full image"
-                            >
-                              <ExternalLink size={14} />
-                            </a>
-                          )}
-                        <button
-                          onClick={() =>
-                            downloadFile(art.name, art.content, art.mime)
-                          }
-                          className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
-                          title="Download artifact"
-                        >
-                          <Download size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  onClick={() => {
+                    artifacts.forEach((art) => {
+                      setTimeout(() => {
+                        downloadFile(art.name, art.content, art.mime);
+                      }, 100);
+                    });
+                  }}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-purple text-white hover:bg-brand-purple-light border border-brand-purple/30 text-[10px] font-black uppercase tracking-widest"
+                  title="Download all generated files"
+                >
+                  <Download size={14} />
+                  Export All (\${artifacts.length})
+                </button>
               </div>
             )}
 
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-2">
-              Raw Output
-            </div>
-            <pre className="text-[11px] whitespace-pre-wrap break-words bg-black/30 border border-white/10 rounded-xl p-3 overflow-auto">
-              {JSON.stringify(
-                {
-                  results: lastRun?.results,
-                  steps: lastRun?.steps,
-                  error: lastRun?.error,
-                },
-                null,
-                2,
-              )}
-            </pre>
+            {artifacts.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2">
+                {artifacts.map((art) => (
+                  <div
+                    key={art.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {art.type === "image" &&
+                      typeof art.content === "string" &&
+                      (art.content.startsWith("data:") ||
+                        art.content.startsWith("http")) ? (
+                        <img
+                          src={art.content}
+                          className="w-10 h-10 rounded-lg bg-black/20 object-cover border border-white/10"
+                          alt="preview"
+                        />
+                      ) : (
+                        <div className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple-light">
+                          <art.icon size={16} />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-bold text-white truncate">
+                          {art.name}
+                        </div>
+                        <div className="text-[9px] text-white/40 uppercase tracking-tighter">
+                          {art.type} · {art.source}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {art.type === "video" && (
+                        <button
+                          onClick={() =>
+                            setPreviewVideoUrl(
+                              art.content?.clipUrl || art.content,
+                            )
+                          }
+                          className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple hover:bg-brand-purple/30 transition-colors"
+                          title="Play Movie"
+                        >
+                          <Play size={14} fill="currentColor" />
+                        </button>
+                      )}
+                      {art.type === "image" &&
+                        typeof art.content === "string" && (
+                          <a
+                            href={art.content}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
+                            title="View full image"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
+                      <button
+                        onClick={() =>
+                          downloadFile(art.name, art.content, art.mime)
+                        }
+                        className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
+                        title="Download artifact"
+                      >
+                        <Download size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Loader2
+                  size={32}
+                  className="text-brand-purple animate-spin mb-4"
+                />
+                <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
+                  Assembling vision...
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

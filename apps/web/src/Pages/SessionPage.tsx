@@ -1,7 +1,7 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Zap } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
 import type { UnifiedCanvasDocument } from "../nodes/canvasTypes";
@@ -139,20 +139,43 @@ export default function SessionPage() {
               {projectName}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="Balnce AI"
-              width={24}
-              height={24}
-              className="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(123,92,234,0.3)]"
-            />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
-              Imagination{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-cyan">
-                Engine
-              </span>
-            </p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("iem:run-graph"));
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-purple text-white hover:bg-brand-purple-light transition-all shadow-lg shadow-brand-purple/20 group active:scale-95"
+                title="Run entire workflow"
+              >
+                <Zap
+                  size={14}
+                  fill="currentColor"
+                  className="group-hover:scale-110 transition-transform"
+                />
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  Run Workflow
+                </span>
+              </button>
+            </div>
+
+            <div className="h-4 w-px bg-white/10" />
+
+            <div className="flex items-center gap-3">
+              <img
+                src={logo}
+                alt="Balnce AI"
+                width={24}
+                height={24}
+                className="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(123,92,234,0.3)]"
+              />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-text-muted">
+                Imagination{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-cyan">
+                  Engine
+                </span>
+              </p>
+            </div>
           </div>
         </div>
 

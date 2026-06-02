@@ -1,17 +1,62 @@
 // @ts-nocheck
 import React, { useState } from "react";
 import type { CanvasObject } from "../../contracts";
-import { AppWindow, RefreshCw, ShieldAlert } from "lucide-react";
+import { AppWindow, RefreshCw, ShieldAlert, Download } from "lucide-react";
 
 export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
   const [key, setKey] = useState(0);
   const appUrl = (object.metadata?.appUrl as string) || "";
   const title = (object.metadata?.title as string) || "External App";
+  const generatedCode =
+    (object.metadata?.outputs?.generatedCode as string) ||
+    (object.metadata?.generatedCode as string) ||
+    "";
 
-  const isLoading = object.status === "idle" || object.status === "thinking";
+  const isLoading =
+    object.status === "idle" ||
+    object.status === "thinking" ||
+    object.status === "running";
   const isError = object.status === "error";
 
   const handleRefresh = () => setKey((prev) => prev + 1);
+
+  const handleDownload = () => {
+    if (!generatedCode) return;
+    const blob = new Blob([generatedCode], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `\${title.replace(/\s+/g, "_").toLowerCase()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // If we have generated code, we wrap it in a proper HTML structure if it's just a fragment
+  const srcDoc = React.useMemo(() => {
+    if (!generatedCode) return null;
+    if (
+      generatedCode.includes("<!DOCTYPE html>") ||
+      generatedCode.includes("<html")
+    ) {
+      return generatedCode;
+    }
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { margin: 0; padding: 20px; font-family: sans-serif; background: #000; color: #fff; }
+          </style>
+        </head>
+        <body>
+          \${generatedCode}
+        </body>
+      </html>
+    `;
+  }, [generatedCode]);
 
   return (
     <div className="w-full h-full bg-brand-bg-surface border border-white/10 rounded-2xl shadow-2xl text-white flex flex-col overflow-hidden backdrop-blur-xl">
@@ -23,12 +68,23 @@ export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
             {title}
           </span>
         </div>
-        <button
-          onClick={handleRefresh}
-          className="p-1 hover:bg-white/5 rounded transition-colors text-white/40 hover:text-white"
-        >
-          <RefreshCw size={12} />
-        </button>
+        <div className="flex items-center gap-1">
+          {generatedCode && (
+            <button
+              onClick={handleDownload}
+              className="p-1 hover:bg-white/5 rounded transition-colors text-white/40 hover:text-white"
+              title="Download App HTML"
+            >
+              <Download size={12} />
+            </button>
+          )}
+          <button
+            onClick={handleRefresh}
+            className="p-1 hover:bg-white/5 rounded transition-colors text-white/40 hover:text-white"
+          >
+            <RefreshCw size={12} />
+          </button>
+        </div>
       </div>
 
       {/* App Runtime */}
@@ -37,7 +93,7 @@ export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-brand-bg-surface/80 backdrop-blur-md">
             <div className="w-8 h-8 border-2 border-brand-cyan/20 border-t-brand-cyan rounded-full animate-spin" />
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-cyan animate-pulse">
-              Initializing Runtime...
+              Synthesizing Runtime...
             </div>
           </div>
         )}
@@ -57,7 +113,16 @@ export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
           </div>
         )}
 
-        {appUrl ? (
+        {srcDoc ? (
+          <iframe
+            key={key}
+            srcDoc={srcDoc}
+            title={title}
+            className="w-full h-full border-none bg-white"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            loading="lazy"
+          />
+        ) : appUrl ? (
           <iframe
             key={key}
             src={appUrl}
@@ -68,7 +133,7 @@ export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-[10px] text-brand-text-muted italic">
-            No URL provided for app runtime.
+            No URL or generated code for app runtime.
           </div>
         )}
       </div>

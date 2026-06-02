@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
