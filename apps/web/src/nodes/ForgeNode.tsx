@@ -28,13 +28,33 @@ const FORGE_META: Record<
     color: "text-sky-400",
     label: "Architect",
   },
+  "iem.forge.architect": {
+    icon: Wrench,
+    color: "text-sky-400",
+    label: "Architect",
+  },
   "forge.designer": {
     icon: Palette,
     color: "text-pink-400",
     label: "Designer",
   },
+  "iem.forge.designer": {
+    icon: Palette,
+    color: "text-pink-400",
+    label: "Designer",
+  },
   "forge.builder": { icon: Hammer, color: "text-orange-400", label: "Builder" },
+  "iem.forge.builder": {
+    icon: Hammer,
+    color: "text-orange-400",
+    label: "Builder",
+  },
   "forge.tester": {
+    icon: TestTube,
+    color: "text-emerald-400",
+    label: "Tester",
+  },
+  "iem.forge.tester": {
     icon: TestTube,
     color: "text-emerald-400",
     label: "Tester",
@@ -132,7 +152,10 @@ export default function ForgeNode({ id, data, selected }: NodeProps) {
     }
   };
 
-  const generatedCode = nodeData.outputs?.code as string | undefined;
+  const generatedCode = nodeData.outputs?.generatedCode as string | undefined;
+  const files = nodeData.outputs?.files as
+    | Array<{ name: string; content: string }>
+    | undefined;
   const specs = nodeData.outputs?.specs;
   const assets = nodeData.outputs?.assets;
   const testResults = Array.isArray((nodeData.outputs?.results as any)?.tests)
@@ -188,7 +211,8 @@ export default function ForgeNode({ id, data, selected }: NodeProps) {
 
       <div className="nodrag nowheel space-y-3 flex-1 overflow-auto custom-scrollbar">
         {/* Architect — goal input + specs output */}
-        {nodeData.type === "forge.architect" && (
+        {(nodeData.type === "forge.architect" ||
+          nodeData.type === "iem.forge.architect") && (
           <>
             <label className="block space-y-1.5">
               <span className="block text-[9px] font-black uppercase tracking-widest text-brand-text-muted">
@@ -219,7 +243,8 @@ export default function ForgeNode({ id, data, selected }: NodeProps) {
         )}
 
         {/* Designer — requirements + assets */}
-        {nodeData.type === "forge.designer" && (
+        {(nodeData.type === "forge.designer" ||
+          nodeData.type === "iem.forge.designer") && (
           <>
             <label className="block space-y-1.5">
               <span className="block text-[9px] font-black uppercase tracking-widest text-brand-text-muted">
@@ -250,12 +275,32 @@ export default function ForgeNode({ id, data, selected }: NodeProps) {
         )}
 
         {/* Builder — specs input + generated code */}
-        {nodeData.type === "forge.builder" && (
+        {(nodeData.type === "forge.builder" ||
+          nodeData.type === "iem.forge.builder") && (
           <>
             <div className="rounded-xl border border-white/5 bg-brand-bg-page/50 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-brand-text-muted italic text-center">
               Specs resolved from upstream
             </div>
-            {generatedCode ? (
+            {files && files.length > 0 ? (
+              <div className="space-y-2">
+                <div className="text-[9px] font-black uppercase tracking-widest text-brand-text-muted">
+                  Project Files ({files.length})
+                </div>
+                <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-auto custom-scrollbar">
+                  {files.map((f, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10"
+                    >
+                      <Code size={12} className="text-orange-400" />
+                      <span className="text-[10px] font-medium text-white truncate">
+                        {f.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : generatedCode ? (
               <CodeBlock code={generatedCode} language="typescript" />
             ) : (
               <div className="rounded-xl border border-dashed border-white/10 p-4 text-center">
@@ -269,7 +314,8 @@ export default function ForgeNode({ id, data, selected }: NodeProps) {
         )}
 
         {/* Tester — code input + test results */}
-        {nodeData.type === "forge.tester" && (
+        {(nodeData.type === "forge.tester" ||
+          nodeData.type === "iem.forge.tester") && (
           <>
             <div className="rounded-xl border border-white/5 bg-brand-bg-page/50 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-brand-text-muted italic text-center">
               Code resolved from upstream
@@ -321,7 +367,8 @@ export default function ForgeNode({ id, data, selected }: NodeProps) {
         <span className="relative z-10">
           {running
             ? "Forging..."
-            : nodeData.type === "forge.tester"
+            : nodeData.type === "forge.tester" ||
+                nodeData.type === "iem.forge.tester"
               ? "Run Tests"
               : "Build"}
         </span>
@@ -329,14 +376,16 @@ export default function ForgeNode({ id, data, selected }: NodeProps) {
       </button>
 
       {/* Output link for builder */}
-      {nodeData.type !== "forge.builder" && generatedCode && (
-        <div className="mt-3 flex items-center gap-2 px-2">
-          <ArrowRight size={10} className="text-orange-400" />
-          <span className="text-[9px] font-black uppercase tracking-widest text-orange-400">
-            Code ready — connect to Tester
-          </span>
-        </div>
-      )}
+      {nodeData.type !== "forge.builder" &&
+        nodeData.type !== "iem.forge.builder" &&
+        generatedCode && (
+          <div className="mt-3 flex items-center gap-2 px-2">
+            <ArrowRight size={10} className="text-orange-400" />
+            <span className="text-[9px] font-black uppercase tracking-widest text-orange-400">
+              Code ready — connect to Tester
+            </span>
+          </div>
+        )}
 
       {/* Surface tag */}
       <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2">

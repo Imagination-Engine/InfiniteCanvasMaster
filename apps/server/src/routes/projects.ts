@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { eq, desc, asc } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { workspaces, messages, canvases, nodes, edges } from "@iem/db";
+import { initializeBlockRegistry } from "../registry-init.js";
+import { blockRegistry } from "@iem/core";
+import { compileGraphToWorkflow, mastra } from "@iem/agents";
 
 const projectsRouter = new Hono();
 
@@ -253,8 +256,8 @@ projectsRouter.put("/:id/canvas", async (c) => {
           id: n.id,
           canvasId: canvas.id,
           type: n.type,
-          positionX: n.position.x,
-          positionY: n.position.y,
+          positionX: n.position?.x ?? n.x ?? 0,
+          positionY: n.position?.y ?? n.y ?? 0,
           data: n.data || {},
         })),
       );
@@ -317,7 +320,6 @@ projectsRouter.post("/:id/execute", async (c) => {
 
   // Ensure semantic blocks are registered (idempotent, helps in dev/hot-reload scenarios)
   try {
-    const { initializeBlockRegistry } = await import("../registry-init.js");
     initializeBlockRegistry();
   } catch {
     // non-fatal
@@ -325,8 +327,6 @@ projectsRouter.post("/:id/execute", async (c) => {
 
   // Debug: confirm key blocks exist in registry during dev
   try {
-    // @ts-ignore
-    const { blockRegistry } = await import("@iem/core");
     console.log(
       "[EXECUTE] registry has iem.conductor.saas:",
       !!blockRegistry.get("iem.conductor.saas"),
@@ -342,8 +342,6 @@ projectsRouter.post("/:id/execute", async (c) => {
   } catch {}
 
   // 2. Compile to Mastra Workflow
-  // @ts-ignore
-  const { compileGraphToWorkflow, mastra } = await import("@iem/agents");
   const workflow = compileGraphToWorkflow(document, { mastra });
 
   // 3. Execute via Mastra (Run API)

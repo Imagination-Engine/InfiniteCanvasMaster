@@ -26,7 +26,7 @@ export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `\${title.replace(/\s+/g, "_").toLowerCase()}.html`;
+    a.download = `${title.replace(/\s+/g, "_").toLowerCase()}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -52,7 +52,7 @@ export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
           </style>
         </head>
         <body>
-          \${generatedCode}
+          ${generatedCode}
         </body>
       </html>
     `;

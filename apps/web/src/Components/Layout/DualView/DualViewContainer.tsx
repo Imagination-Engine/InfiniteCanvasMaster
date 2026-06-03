@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import JSZip from "jszip";
 import { useSessionStore } from "../../../store/useSessionStore";
 import type { UnifiedCanvasDocument } from "../../../nodes/canvasTypes";
 import { apiRequest } from "../../../lib/api";
@@ -128,9 +129,17 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     const { connections } = useConnectionStore.getState();
 
     try {
-      console.log("[AUTO-FORGE] Starting automated workflow sequence...");
+      console.log("[EXECUTION] Analyzing canvas for automated run...");
 
-      // 1. Identify all scene nodes and the forge node
+      // 1. Identify workflow type
+      const hasAppNodes = Object.values(objects).some(
+        (o) =>
+          o.type === "iem.core.programmer" ||
+          o.type === "iem.app.web" ||
+          o.type === "forge.builder" ||
+          o.type === "iem.forge.builder" ||
+          o.type.startsWith("forge."),
+      );
       const sceneNodes = Object.values(objects).filter(
         (o) => o.type === "iem.reel.textToImage" || o.type === "textToImage",
       );
@@ -138,150 +147,204 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
         (o) => o.type === "iem.studio.video" || o.type === "reel.forge",
       );
 
-      if (sceneNodes.length === 0 && !forgeNode) {
-        throw new Error("No video or image nodes found on the canvas to run.");
+      if (!hasAppNodes && sceneNodes.length === 0 && !forgeNode) {
+        throw new Error("No executable nodes found on the canvas.");
       }
 
-      // 2. Automate Image Generation for all scenes
-      console.log(`[AUTO-FORGE] Generating ${sceneNodes.length} scenes...`);
-      const generatedImages: Record<string, string> = {};
+      // ─── OPTION A: MOVIE AUTOMATION (Auto-Forge) ─────────────────────────
+      if (!hasAppNodes && (sceneNodes.length > 0 || forgeNode)) {
+        console.log("[AUTO-FORGE] Starting movie sequence...");
+        const generatedImages: Record<string, string> = {};
 
-      for (const node of sceneNodes) {
-        updateObject(node.id, { status: "running" });
+        for (const node of sceneNodes) {
+          updateObject(node.id, { status: "running" });
 
-        const prompt = (
-          node.metadata?.inputs?.prompt ||
-          node.metadata?.description ||
-          node.metadata?.label ||
-          "A cinematic scene"
-        ).trim();
+          const prompt = (
+            node.metadata?.inputs?.prompt ||
+            node.metadata?.description ||
+            node.metadata?.label ||
+            "A cinematic scene"
+          ).trim();
 
-        console.log(
-          `[AUTO-FORGE] Generating scene: ${node.id} with prompt: ${prompt}`,
-        );
+          console.log(
+            `[AUTO-FORGE] Generating scene: ${node.id} with prompt: ${prompt}`,
+          );
 
-        const res = await fetch(`/api/reel/generate-image`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
-        });
+          const res = await fetch(`/api/reel/generate-image`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt }),
+          });
 
-        if (!res.ok) throw new Error(`Image generation failed for ${node.id}`);
-
-        const { imageUrl } = await res.json();
-        generatedImages[node.id] = imageUrl;
-
-        // Update node on canvas immediately
-        updateObject(node.id, {
-          status: "complete",
-          metadata: {
-            ...node.metadata,
-            imageUrl,
-            outputs: { ...(node.metadata?.outputs || {}), imageUrl },
-          },
-        });
-      }
-
-      // 3. Automate Video Forge
-      if (forgeNode) {
-        console.log(
-          `[AUTO-FORGE] Starting final video forge for node: ${forgeNode.id}`,
-        );
-        updateObject(forgeNode.id, { status: "running" });
-
-        // Collect all images (including newly generated ones)
-        const referenceImages: any[] = [];
-
-        // Find nodes connected TO the forge node
-        const upstreamEdges = Object.values(connections).filter(
-          (c) => c.toId === forgeNode.id,
-        );
-        upstreamEdges.forEach((edge) => {
-          const sourceNode = objects[edge.fromId];
-          const url =
-            generatedImages[edge.fromId] ||
-            sourceNode?.metadata?.imageUrl ||
-            sourceNode?.metadata?.inputs?.imageUrl;
-          if (url) referenceImages.push({ url });
-        });
-
-        const forgePrompt = (
-          forgeNode.metadata?.description ||
-          forgeNode.metadata?.label ||
-          "A cinematic movie sequence"
-        ).trim();
-
-        const res = await fetch(`/api/reel/generate-video`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: forgePrompt,
-            referenceImages: referenceImages.slice(0, 3),
-          }),
-        });
-
-        if (!res.ok) throw new Error("Video forge failed to start");
-
-        const { operationId } = await res.json();
-        console.log(
-          `[AUTO-FORGE] Video job started: ${operationId}. Polling...`,
-        );
-
-        // Poll for completion
-        let clipUrl = "";
-        for (let i = 0; i < 100; i++) {
-          await new Promise((r) => setTimeout(r, 4000));
-          const poll = await fetch(`/api/reel/generate-video/${operationId}`);
-          if (!poll.ok) continue;
-          const job = await poll.json();
-
-          if (job.status === "done") {
-            clipUrl = job.clipUrl;
-            break;
-          }
-          if (job.status === "error")
-            throw new Error(job.error || "Forge failed");
+          if (!res.ok)
+            throw new Error(`Image generation failed for ${node.id}`);
+          const { imageUrl } = await res.json();
+          generatedImages[node.id] = imageUrl;
+          updateObject(node.id, {
+            status: "complete",
+            metadata: {
+              ...node.metadata,
+              imageUrl,
+              outputs: { ...(node.metadata?.outputs || {}), imageUrl },
+            },
+          });
         }
 
-        if (!clipUrl) throw new Error("Video generation timed out");
+        // 3. Automate Video Forge
+        if (forgeNode) {
+          console.log(
+            `[AUTO-FORGE] Starting final video forge for node: ${forgeNode.id}`,
+          );
+          updateObject(forgeNode.id, { status: "running" });
 
-        // Update forge node on canvas
-        updateObject(forgeNode.id, {
-          status: "complete",
-          metadata: {
-            ...forgeNode.metadata,
-            clipUrl,
-            outputs: { ...(forgeNode.metadata?.outputs || {}), clipUrl },
-          },
-        });
+          // Collect all images (including newly generated ones)
+          const referenceImages: any[] = [];
 
-        // Set a dummy lastRun to close the loading state in the sidebar
-        setLastRun({
-          success: true,
-          results: { clipUrl },
-          steps: Object.fromEntries(
-            Object.keys(generatedImages).map((id) => [
-              id,
-              { status: "success" },
-            ]),
-          ),
-        });
-      } else {
-        // Just scenes
-        setLastRun({
-          success: true,
-          steps: Object.fromEntries(
-            Object.keys(generatedImages).map((id) => [
-              id,
-              { status: "success" },
-            ]),
-          ),
-        });
+          // Find nodes connected TO the forge node
+          const upstreamEdges = Object.values(connections).filter(
+            (c) => c.toId === forgeNode.id,
+          );
+          upstreamEdges.forEach((edge) => {
+            const sourceNode = objects[edge.fromId];
+            const url =
+              generatedImages[edge.fromId] ||
+              sourceNode?.metadata?.imageUrl ||
+              sourceNode?.metadata?.inputs?.imageUrl;
+            if (url) referenceImages.push({ url });
+          });
+
+          const forgePrompt = (
+            forgeNode.metadata?.description ||
+            forgeNode.metadata?.label ||
+            "A cinematic movie sequence"
+          ).trim();
+
+          const res = await fetch(`/api/reel/generate-video`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: forgePrompt,
+              referenceImages: referenceImages.slice(0, 3),
+            }),
+          });
+
+          if (!res.ok) throw new Error("Video forge failed to start");
+
+          const { operationId } = await res.json();
+          console.log(
+            `[AUTO-FORGE] Video job started: ${operationId}. Polling...`,
+          );
+
+          // Poll for completion
+          let clipUrl = "";
+          for (let i = 0; i < 100; i++) {
+            await new Promise((r) => setTimeout(r, 4000));
+            const poll = await fetch(`/api/reel/generate-video/${operationId}`);
+            if (!poll.ok) continue;
+            const job = await poll.json();
+
+            if (job.status === "done") {
+              clipUrl = job.clipUrl;
+              break;
+            }
+            if (job.status === "error")
+              throw new Error(job.error || "Forge failed");
+          }
+
+          if (!clipUrl) throw new Error("Video generation timed out");
+
+          // Update forge node on canvas
+          updateObject(forgeNode.id, {
+            status: "complete",
+            metadata: {
+              ...forgeNode.metadata,
+              clipUrl,
+              outputs: { ...(forgeNode.metadata?.outputs || {}), clipUrl },
+            },
+          });
+
+          // Set a dummy lastRun to close the loading state in the sidebar
+          setLastRun({
+            success: true,
+            results: { clipUrl },
+            steps: Object.fromEntries(
+              Object.keys(generatedImages).map((id) => [
+                id,
+                { status: "success" },
+              ]),
+            ),
+          });
+        } else {
+          // Just scenes
+          setLastRun({
+            success: true,
+            steps: Object.fromEntries(
+              Object.keys(generatedImages).map((id) => [
+                id,
+                { status: "success" },
+              ]),
+            ),
+          });
+        }
       }
 
-      console.log("[AUTO-FORGE] Workflow complete!");
+      // ─── OPTION B: APP AUTOMATION (Sequential Code Builder) ──────────────
+      else {
+        console.log("[AUTO-BUILDER] Starting software sequence...");
+
+        // Clear status and setup server request
+        Object.keys(objects).forEach((id) => {
+          updateObject(id, { status: "running" });
+        });
+
+        const viewport = useViewportStore.getState();
+        const document = exportCanvasToDocument(objects, connections, {
+          x: viewport.x,
+          y: viewport.y,
+          zoom: viewport.zoom,
+        }) as UnifiedCanvasDocument;
+
+        const response = await apiRequest(
+          `/api/projects/${projectId}/execute`,
+          {
+            method: "POST",
+            body: JSON.stringify({ document, triggerData: {} }),
+          },
+          accessToken,
+        );
+
+        setLastRun(response);
+
+        // Apply results to nodes from all steps
+        if (response.steps) {
+          Object.entries(response.steps).forEach(
+            ([nodeId, step]: [string, any]) => {
+              const existing = objects[nodeId];
+              if (existing && step.status === "success") {
+                const result = step.output?.payload || step.output;
+                updateObject(nodeId, {
+                  status: "complete",
+                  metadata: {
+                    ...existing.metadata,
+                    outputs: {
+                      ...(existing.metadata?.outputs || {}),
+                      ...result,
+                    },
+                    generatedCode:
+                      result.generatedCode || existing.metadata?.generatedCode,
+                  },
+                });
+              } else if (existing && step.status === "failed") {
+                updateObject(nodeId, { status: "error" });
+              }
+            },
+          );
+        }
+      }
+
+      console.log("[EXECUTION] Workflow complete!");
     } catch (err: any) {
-      console.error("[AUTO-FORGE] Critical Failure:", err);
+      console.error("[EXECUTION] Critical Failure:", err);
       setLastRun({ success: false, error: err.message });
       // Reset all running nodes to error
       Object.values(objects).forEach((o) => {
@@ -290,7 +353,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, projectId]);
+  }, [isRunning, projectId, accessToken]);
 
   useEffect(() => {
     const unsub = useCanvasStore.subscribe((state, prev) => {
@@ -320,6 +383,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       typeof content === "string" &&
       (content.startsWith("http") ||
         content.startsWith("/") ||
+        content.startsWith("blob:") ||
         content.startsWith("data:"));
 
     if (isUrl) {
@@ -344,13 +408,57 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
     }
   };
 
-  const artifacts = React.useMemo(() => {
-    if (!lastRun) return [];
+  const [artifacts, setArtifacts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!lastRun) {
+      setArtifacts([]);
+      return;
+    }
+
     const found: any[] = [];
     const seen = new Set();
 
-    const processPayload = (payload: any, source: string) => {
+    const processPayload = async (payload: any, source: string) => {
       if (!payload || typeof payload !== "object") return;
+
+      const currentFound: any[] = [];
+      let hasZip = false;
+
+      // Handle multi-file project (ZIP)
+      if (payload.files && Array.isArray(payload.files)) {
+        try {
+          const zip = new JSZip();
+          payload.files.forEach((file: any) => {
+            zip.file(file.name, file.content);
+          });
+
+          // Also include generatedCode if it exists and isn't already in files
+          if (
+            payload.generatedCode &&
+            !payload.files.find((f: any) => f.content === payload.generatedCode)
+          ) {
+            zip.file("main_output.txt", payload.generatedCode);
+          }
+
+          const zipBlob = await zip.generateAsync({ type: "blob" });
+          const zipUrl = URL.createObjectURL(zipBlob);
+
+          found.push({
+            id: `${source}-project-zip`,
+            name: `project-${source.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.zip`,
+            type: "file",
+            content: zipUrl,
+            mime: "application/zip",
+            label: "Packaged Project (ZIP)",
+            icon: File,
+            source,
+          });
+          hasZip = true;
+        } catch (e) {
+          console.error("Failed to generate ZIP artifact", e);
+        }
+      }
 
       const config = [
         {
@@ -359,6 +467,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           ext: "ts",
           mime: "text/plain",
           icon: Code,
+          skipIfZip: true,
         },
         {
           key: "code",
@@ -366,6 +475,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           ext: "ts",
           mime: "text/plain",
           icon: Code,
+          skipIfZip: true,
         },
         {
           key: "formattedFile",
@@ -380,6 +490,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           ext: "md",
           mime: "text/markdown",
           icon: FileText,
+          skipIfZip: true,
         },
         {
           key: "design",
@@ -387,6 +498,23 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           ext: "md",
           mime: "text/markdown",
           icon: FileText,
+          skipIfZip: true,
+        },
+        {
+          key: "specs",
+          type: "text",
+          ext: "md",
+          mime: "text/markdown",
+          icon: FileText,
+          skipIfZip: true,
+        },
+        {
+          key: "assets",
+          type: "text",
+          ext: "md",
+          mime: "text/markdown",
+          icon: FileText,
+          skipIfZip: true,
         },
         {
           key: "imageUrl",
@@ -439,8 +567,10 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
         },
       ];
 
-      config.forEach(({ key, type, ext, mime, icon }) => {
+      config.forEach(({ key, type, ext, mime, icon, skipIfZip }) => {
         if (payload[key]) {
+          if (hasZip && skipIfZip) return;
+
           const content = payload[key];
           let finalExt = ext;
           let finalMime = mime;
@@ -457,6 +587,12 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
               content.includes("export default")
             ) {
               finalExt = "tsx";
+            } else if (
+              content.includes("def ") ||
+              content.includes("import os") ||
+              content.includes("import sys")
+            ) {
+              finalExt = "py";
             }
           }
 
@@ -478,19 +614,23 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       });
     };
 
-    // 1. Process final results
-    const finalPayload = lastRun.results?.payload || lastRun.results;
-    processPayload(finalPayload, "final");
+    const run = async () => {
+      // 1. Process final results
+      const finalPayload = lastRun.results?.payload || lastRun.results;
+      await processPayload(finalPayload, "final");
 
-    // 2. Process all steps
-    if (lastRun.steps) {
-      Object.entries(lastRun.steps).forEach(([stepId, step]: [string, any]) => {
-        const stepPayload = step.output?.payload || step.output;
-        processPayload(stepPayload, stepId);
-      });
-    }
+      // 2. Process all steps
+      if (lastRun.steps) {
+        for (const [stepId, step] of Object.entries(lastRun.steps)) {
+          const stepPayload =
+            (step as any).output?.payload || (step as any).output;
+          await processPayload(stepPayload, stepId);
+        }
+      }
+      setArtifacts(found);
+    };
 
-    return found;
+    run();
   }, [lastRun]);
 
   return (
@@ -577,7 +717,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
                   title="Download all generated files"
                 >
                   <Download size={14} />
-                  Export All (\${artifacts.length})
+                  Export All (${artifacts.length})
                 </button>
               </div>
             )}

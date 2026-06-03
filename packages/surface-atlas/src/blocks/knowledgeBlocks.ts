@@ -203,13 +203,15 @@ export const queryBlock: BlockDefinition<any, any> = {
   name: "Query",
   description: "Run advanced RAG queries.",
   category: "knowledge",
-  input: z.object({ prompt: z.string() }),
+  input: z.object({ prompt: z.string().optional() }),
   output: z.object({ response: z.string() }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "rag_query",
-    invoke: async (i: any) => ({ response: `Answer to ${i.prompt}` }),
+    invoke: async (i: any) => ({
+      response: `Answer to ${i.prompt || "general query"}`,
+    }),
   },
 };
 

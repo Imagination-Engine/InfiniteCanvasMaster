@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { BlockDefinition } from "../../block/protocol";
 
 export const TranslatorInput = z.object({
-  text: z.string(),
-  targetLanguage: z.string(),
+  text: z.string().optional(),
+  targetLanguage: z.string().optional(),
 });
 
 export const TranslatorOutput = z.object({
@@ -17,16 +17,17 @@ export const translatorBlock: BlockDefinition<
 > = {
   id: "iem.core.translator",
   name: "Translator",
-  description: "Translate text.",
+  description: "Translate text between languages.",
   category: "text",
   input: TranslatorInput,
   output: TranslatorOutput,
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "translate",
-    invoke: async (input: unknown) => {
-      const parsed = TranslatorInput.parse(input);
+    toolName: "translate_text",
+    invoke: async (input: any) => {
+      const text = input.text || "No text provided to translate.";
+      const target = input.targetLanguage || "Spanish";
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
@@ -35,7 +36,7 @@ export const translatorBlock: BlockDefinition<
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "llama3",
-            prompt: `Translate the following text to ${parsed.targetLanguage}:\n\n${parsed.text}`,
+            prompt: `Translate the following text into ${target}:\n\n${text}`,
             stream: false,
           }),
           signal: controller.signal,

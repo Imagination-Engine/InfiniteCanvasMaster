@@ -7,11 +7,12 @@ export const architectBlock: BlockDefinition<any, any> = {
   description: "Produces the structured spec",
   category: "forge",
   input: z.object({
-    prompt: z.string(),
+    goal: z.string().optional(),
+    prompt: z.string().optional(),
   }),
   output: z.object({
     success: z.boolean(),
-    spec: z.string(),
+    specs: z.string(),
   }),
   mode: "triggered",
   agent: {
@@ -19,16 +20,20 @@ export const architectBlock: BlockDefinition<any, any> = {
     toolName: "forge_architect",
     invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
+      const goal =
+        input.goal ||
+        input.prompt ||
+        "No goal provided. Please define what app to build.";
       const response = await agentRuntime.chat({
         model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
-            content: `Design a technical specification for: ${input.prompt}`,
+            content: `Design a technical specification for: ${goal}. Return ONLY the spec.`,
           },
         ],
       });
-      return { success: true, spec: response.content };
+      return { success: true, specs: response.content };
     },
   },
 };
@@ -39,11 +44,12 @@ export const designerBlock: BlockDefinition<any, any> = {
   description: "Produces the layout and styling guidelines",
   category: "forge",
   input: z.object({
-    spec: z.string(),
+    specs: z.string().optional(),
+    requirements: z.string().optional(),
   }),
   output: z.object({
     success: z.boolean(),
-    design: z.string(),
+    assets: z.string(),
   }),
   mode: "triggered",
   agent: {
@@ -51,16 +57,19 @@ export const designerBlock: BlockDefinition<any, any> = {
     toolName: "forge_designer",
     invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
+      const specs =
+        input.specs || "No specs provided. Design generic modern UI.";
+      const reqs = input.requirements || "None";
       const response = await agentRuntime.chat({
         model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
-            content: `Create a design and styling guide for this spec: ${input.spec}`,
+            content: `Create a design and styling guide for this spec: ${specs}. User requirements: ${reqs}. Return ONLY the design assets and guidelines.`,
           },
         ],
       });
-      return { success: true, design: response.content };
+      return { success: true, assets: response.content };
     },
   },
 };
@@ -71,12 +80,20 @@ export const builderBlock: BlockDefinition<any, any> = {
   description: "Generates the actual code using Gemini",
   category: "forge",
   input: z.object({
-    spec: z.string(),
-    design: z.string().optional(),
+    specs: z.string().optional(),
+    assets: z.string().optional(),
   }),
   output: z.object({
     success: z.boolean(),
-    code: z.string(),
+    generatedCode: z.string(),
+    files: z
+      .array(
+        z.object({
+          name: z.string(),
+          content: z.string(),
+        }),
+      )
+      .optional(),
   }),
   mode: "triggered",
   agent: {
@@ -84,16 +101,54 @@ export const builderBlock: BlockDefinition<any, any> = {
     toolName: "forge_builder",
     invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
+      const specs =
+        input.specs || "No specs provided. Build a hello world app.";
+      const assets = input.assets || "None";
       const response = await agentRuntime.chat({
         model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
-            content: `Generate production-grade code for this spec: ${input.spec}. Design guidelines: ${input.design || "None"}`,
+            content: `Generate production-grade code for this spec: ${specs}. Design guidelines: ${assets}.
+            
+            IMPORTANT: Return a JSON object with a "files" array. Each item in "files" should have a "name" (filename with extension) and "content" (the file body).
+            Include:
+            1. The main entry point (e.g. app.py, index.tsx, main.ts).
+            2. A README.md explaining what the app is and how to use it.
+            3. A setup script (e.g. setup.sh or install.bat) that installs dependencies and prepares the environment.
+            4. Any other necessary files (requirements.txt, package.json, etc.).
+            
+            Return ONLY the raw JSON object, no markdown code blocks, no preamble.`,
           },
         ],
       });
-      return { success: true, code: response.content };
+
+      try {
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          if (result.files && Array.isArray(result.files)) {
+            const mainFile = result.files.find(
+              (f: any) =>
+                f.name.endsWith(".py") ||
+                f.name.endsWith(".ts") ||
+                f.name.endsWith(".tsx") ||
+                f.name.endsWith(".js"),
+            );
+            return {
+              success: true,
+              generatedCode: mainFile
+                ? mainFile.content
+                : JSON.stringify(result, null, 2),
+              files: result.files,
+            };
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to parse builder results as multi-file JSON", e);
+      }
+
+      return { success: true, generatedCode: response.content };
     },
   },
 };
@@ -104,12 +159,19 @@ export const testerBlock: BlockDefinition<any, any> = {
   description: "Evaluates the generated code against the initial spec",
   category: "forge",
   input: z.object({
-    code: z.string(),
-    spec: z.string(),
+    generatedCode: z.string().optional(),
+    specs: z.string().optional(),
   }),
   output: z.object({
     success: z.boolean(),
-    results: z.string(),
+    results: z.object({
+      tests: z.array(
+        z.object({
+          name: z.string(),
+          passed: z.boolean(),
+        }),
+      ),
+    }),
   }),
   mode: "triggered",
   agent: {
@@ -117,16 +179,40 @@ export const testerBlock: BlockDefinition<any, any> = {
     toolName: "forge_tester",
     invoke: async (input: any) => {
       const { agentRuntime } = await import("@iem/core");
+      const code = input.generatedCode || "// No code provided";
+      const specs = input.specs || "No spec provided";
       const response = await agentRuntime.chat({
         model: "gemini-2.5-pro",
         messages: [
           {
             role: "user",
-            content: `Test this code: ${input.code} against this spec: ${input.spec}. Return a summary of results.`,
+            content: `Test this code: ${code} against this spec: ${specs}. Return a JSON object with a "tests" array where each item has "name" and "passed" (boolean).`,
           },
         ],
       });
-      return { success: true, results: response.content };
+
+      try {
+        // Extract JSON from response
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const results = JSON.parse(jsonMatch[0]);
+          return { success: true, results };
+        }
+      } catch (e) {
+        console.warn("Failed to parse tester results as JSON", e);
+      }
+
+      return {
+        success: true,
+        results: {
+          tests: [
+            {
+              name: "General Check",
+              passed: response.content.toLowerCase().includes("pass"),
+            },
+          ],
+        },
+      };
     },
   },
 };

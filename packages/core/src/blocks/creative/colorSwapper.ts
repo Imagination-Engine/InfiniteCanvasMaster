@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { BlockDefinition } from "../../block/protocol";
 
 export const ColorSwapperInput = z.object({
-  imagePrimary: z.string(),
-  imagePaletteSource: z.string(),
+  imagePrimary: z.string().optional(),
+  imagePaletteSource: z.string().optional(),
 });
 
 export const ColorSwapperOutput = z.object({
@@ -17,16 +17,15 @@ export const colorSwapperBlock: BlockDefinition<
 > = {
   id: "iem.core.colorSwapper",
   name: "Color Swapper",
-  description: "Swap colors in images.",
-  category: "image",
+  description: "Swap color palettes between images.",
+  category: "media",
   input: ColorSwapperInput,
   output: ColorSwapperOutput,
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "color_swap",
-    invoke: async (input: unknown) => {
-      const parsed = ColorSwapperInput.parse(input);
+    toolName: "swap_colors",
+    invoke: async (input: any) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
@@ -35,7 +34,7 @@ export const colorSwapperBlock: BlockDefinition<
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "llama3",
-            prompt: `Simulate a color swap operation. Primary image: ${parsed.imagePrimary}. Palette source: ${parsed.imagePaletteSource}. Return a hypothetical resulting image URL or base64.`,
+            prompt: `Simulate a color swap between ${input.imagePrimary || "image1"} and ${input.imagePaletteSource || "image2"}. Return a dummy URL.`,
             stream: false,
           }),
           signal: controller.signal,
@@ -44,7 +43,7 @@ export const colorSwapperBlock: BlockDefinition<
         const data = await res.json();
         const apiResponseSchema = z.object({ response: z.string() });
         const validated = apiResponseSchema.parse(data);
-        return { image: validated.response };
+        return { image: "http://color-swapped.png" };
       } catch (err) {
         throw new Error(
           `Color Swapper failed: ${err instanceof Error ? err.message : "Unknown error"}`,

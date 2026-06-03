@@ -19,45 +19,37 @@ export const summarizerBlock: BlockDefinition<
 > = {
   id: "iem.core.summarizer",
   name: "Summarizer",
-  description: "Summarize and analyze text or media inputs.",
+  description: "Summarize text from one or more sources.",
   category: "text",
   input: SummarizerInput,
   output: SummarizerOutput,
   mode: "triggered",
   agent: {
     kind: "local",
-    toolName: "summarize",
-    invoke: async (input: unknown) => {
+    toolName: "summarize_text",
+    invoke: async (input: any) => {
+      const text =
+        input.text ||
+        (input.sources
+          ? input.sources.join("\n")
+          : "No content provided to summarize.");
+      const instructions = input.additionalInstructions || "";
+
       const { agentRuntime } = await import("../../agent/runtime");
-      const parsed = SummarizerInput.parse(input);
-
-      const prompt = `
-        Please summarize and analyze the following content. 
-        Return ONLY a JSON object with two fields: 
-        "summary" (a concise summary) and 
-        "analysis" (deeper insights, patterns, or notable points).
-        
-        Additional Instructions: ${parsed.additionalInstructions || "None"}
-        
-        Content:
-        ${parsed.text || ""}
-        ${(parsed.sources || []).join("\n---\n")}
-      `;
-
       const response = await agentRuntime.chat({
         model: "gemini-2.5-pro",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          {
+            role: "user",
+            content: `Summarize this content: ${text}. ${instructions}\n\nReturn a JSON object with "summary" and "analysis".`,
+          },
+        ],
       });
 
       try {
-        // Robust JSON extraction
-        let content = response.content;
-        const match = content.match(/```json\s*([\s\S]*?)\s*```/);
-        if (match) content = match[1];
-
-        const parsedResult = JSON.parse(content);
+        const parsedResult = JSON.parse(response.content);
         return {
-          summary: parsedResult.summary || "Summarization complete.",
+          summary: parsedResult.summary || response.content,
           analysis: parsedResult.analysis || "Analysis complete.",
         };
       } catch (e) {

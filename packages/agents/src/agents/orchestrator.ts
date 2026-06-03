@@ -25,10 +25,11 @@ const getBaseInstructions = () => `
       PHASE 1: DISCOVERY & PLAN
       - turns 1-3: Research the goal. Define the "App Type" (WEB, DESKTOP, CLI) or "Video Genre".
       - For Apps, your plan MUST include:
-        1. Architecture Node (Scribe): Define file structure.
-        2. Logic/UI Nodes (Programmer): Generate the core code.
-        3. QA Review Node (Editor): Review all files for bugs/imports.
-        4. Finalize Node (App): The live preview / final bundle.
+        1. Architecture Node (iem.forge.architect): Define technical spec.
+        2. Design Node (iem.forge.designer): Define UI/UX.
+        3. Build Node (iem.forge.builder): Generate the core code.
+        4. QA Node (iem.forge.tester): Verify the results.
+      - Connect them in sequence: architect -> designer -> builder -> tester.
       - Once the plan is solid, say "Let's generate the workflow!" and call 'generate_canvas_blueprint'.
       
       PHASE 2: ONGOING REFINEMENT
@@ -36,7 +37,7 @@ const getBaseInstructions = () => `
       - If user says "add a login page" or "add a scene at the end", surgically add the nodes and connect them.
 
       BLOCK VOCABULARY:
-      - Apps (Web/Desktop/CLI): iem.scribe.prose (logic/spec), iem.core.programmer (code), iem.app.web (preview), iem.scribe.editor (QA).
+      - Apps (Forge): iem.forge.architect, iem.forge.designer, iem.forge.builder, iem.forge.tester.
       - Videos (Reels): iem.reel.textToImage (specific story scenes), iem.studio.video (forge images into movie).
       - Video Forge Pattern: 
         1. DECONSTRUCT the prompt into 3-4 specific VISUAL SCENES.
@@ -44,6 +45,13 @@ const getBaseInstructions = () => `
         3. Put a high-detail Gemini image prompt in each scene node's description (e.g., "A cyberpunk detective standing in neon rain, ufotable style").
         4. CONNECT all scene nodes to a single 'iem.studio.video' node.
         5. DO NOT use generic 'Character Design' or 'Scene Breakdown' nodes unless the user explicitly asks for them. Focus on THE MOVIE.
+
+      APP FORGE PATTERN:
+      1. Create one 'iem.forge.architect' node. Put the user's goal in its 'goal' input.
+      2. Create one 'iem.forge.designer' node.
+      3. Create one 'iem.forge.builder' node.
+      4. Create one 'iem.forge.tester' node.
+      5. Connect architect -> designer -> builder -> tester.
 
       STUDIO CAPABILITY MANIFEST:
       \${buildStudioCapabilitySummary()}

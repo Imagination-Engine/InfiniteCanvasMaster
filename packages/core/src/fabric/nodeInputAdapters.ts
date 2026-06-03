@@ -153,7 +153,7 @@ export class ProgrammerInputAdapter implements NodeInputAdapter {
       const code =
         payload.generatedCode || payload.content || JSON.stringify(payload);
 
-      accumulatedContext += `File: \${name}\nContent:\n\${code}\n\n`;
+      accumulatedContext += `File: ${name}\nContent:\n${code}\n\n`;
     }
 
     mergedInput._accumulatedContext = accumulatedContext;

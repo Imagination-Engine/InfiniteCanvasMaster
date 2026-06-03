@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { BlockDefinition } from "../../block/protocol";
 
 export const FilterInput = z.object({
-  source: z.string(),
-  conditions: z.string(),
+  source: z.string().optional(),
+  conditions: z.string().optional(),
 });
 
 export const FilterOutput = z.object({
@@ -17,7 +17,7 @@ export const filterBlock: BlockDefinition<
 > = {
   id: "iem.core.filter",
   name: "Filter",
-  description: "Filter based on conditions.",
+  description: "Filter and transform data collections.",
   category: "data",
   input: FilterInput,
   output: FilterOutput,
@@ -25,8 +25,7 @@ export const filterBlock: BlockDefinition<
   agent: {
     kind: "local",
     toolName: "filter_data",
-    invoke: async (input: unknown) => {
-      const parsed = FilterInput.parse(input);
+    invoke: async (input: any) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
@@ -35,7 +34,7 @@ export const filterBlock: BlockDefinition<
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "llama3",
-            prompt: `Filter the following source based on these conditions: "${parsed.conditions}"\n\nSource: ${parsed.source}`,
+            prompt: `Filter this data: ${input.source || "[]"} based on: ${input.conditions || "no conditions"}. Return ONLY the filtered result.`,
             stream: false,
           }),
           signal: controller.signal,

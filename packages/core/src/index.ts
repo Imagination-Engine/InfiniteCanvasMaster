@@ -1,4 +1,3 @@
-// @ts-nocheck
 export * from "./block/protocol.js";
 export * from "./block/registry.js";
 export * from "./block/adapter.js";
@@ -17,8 +16,8 @@ export {
   serializeEnvelope,
 } from "./bus/protocol.js";
 
-export * from "./fabric/index.js";
-export * from "./studio/index.js";
+export * from "./fabric/index";
+export * from "./studio/index";
 export * from "./media/geminiImage.js";
 
 export * from "./bus/MessageBus.js";

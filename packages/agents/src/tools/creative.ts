@@ -41,7 +41,7 @@ export const refiner = createTool({
   id: "refiner",
   description: "Refines and improves text for clarity and impact.",
   inputSchema: z.object({
-    prompt: z.string(),
+    prompt: z.string().optional(),
     context: z.string().optional(),
     language: z.string().optional(),
   }),

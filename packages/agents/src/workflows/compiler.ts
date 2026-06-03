@@ -12,6 +12,12 @@ import {
   createEnvelope,
   // @ts-ignore
   FabricTopics,
+  // @ts-ignore
+  VideoStudioInputAdapter,
+  // @ts-ignore
+  ProgrammerInputAdapter,
+  // @ts-ignore
+  normalizeCanvasBlockId,
 } from "@iem/core";
 import { z } from "zod";
 import crypto from "crypto";
@@ -38,15 +44,8 @@ export function compileGraphToWorkflow(
     registry.registerDefault(new DefaultStrictInputAdapter());
 
     // Register specialized adapters
-    try {
-      // @ts-ignore
-      const { VideoStudioInputAdapter, ProgrammerInputAdapter } =
-        await import("@iem/core");
-      registry.register(new VideoStudioInputAdapter());
-      registry.register(new ProgrammerInputAdapter());
-    } catch (e) {
-      console.warn("[WORKFLOW] Could not register specialized adapters:", e);
-    }
+    registry.register(new VideoStudioInputAdapter());
+    registry.register(new ProgrammerInputAdapter());
   }
 
   const workflow = new Workflow({
@@ -60,19 +59,13 @@ export function compileGraphToWorkflow(
 
   // 1. Define all steps dynamically
   for (const node of graph.nodes) {
-    let blockDef = blockRegistry.get(node.type || node.blockId);
-
-    if (!blockDef) {
-      // Fallback: match UI short names (e.g., "programmer", "forge.builder") to fully qualified IDs ("iem.core.programmer")
-      const typeStr = node.type || node.blockId;
-      blockDef = blockRegistry
-        .list()
-        .find((b) => b.id.endsWith(`.${typeStr}`) || b.id === typeStr);
-    }
+    const rawType = node.type || node.blockId;
+    const normalizedType = normalizeCanvasBlockId(rawType);
+    let blockDef = blockRegistry.get(normalizedType);
 
     if (!blockDef) {
       console.warn(
-        `Block definition not found for node type: ${node.type || node.blockId}. Creating pass-through step.`,
+        `Block definition not found for node type: ${rawType} (normalized: ${normalizedType}). Creating pass-through step.`,
       );
       const step = createStep({
         id: node.id,
@@ -127,14 +120,24 @@ export function compileGraphToWorkflow(
         // --- PROMPT MAPPING FALLBACK ---
         // If the block expects a 'prompt' but it's missing in inputs,
         // fall back to the node's description (where the AI Architect puts instructions).
-        const description = node.data?.description || node.description;
-        if (!baseInput.prompt && description) {
-          baseInput.prompt = description;
-        }
-        // Also map 'text' for Scribe blocks
-        if (!baseInput.text && description) {
-          baseInput.text = description;
-        }
+        const description = node.data?.description || node.description || "";
+
+        // Universal mapping: many blocks use different names for the primary input
+        baseInput.prompt = baseInput.prompt ?? description;
+        baseInput.text = baseInput.text ?? description;
+        baseInput.goal = baseInput.goal ?? description;
+        baseInput.payload = baseInput.payload ?? description;
+        baseInput.content =
+          baseInput.payload ?? baseInput.content ?? description;
+
+        // Defensive: ensure these are at least empty strings if they exist as keys but are null/undefined
+        // This prevents Zod "Required" errors for common fields.
+        if (baseInput.prompt === undefined || baseInput.prompt === null)
+          baseInput.prompt = "";
+        if (baseInput.text === undefined || baseInput.text === null)
+          baseInput.text = "";
+        if (baseInput.goal === undefined || baseInput.goal === null)
+          baseInput.goal = "";
 
         const adaptedInput = await registry.adapt({
           envelopes,
@@ -143,13 +146,45 @@ export function compileGraphToWorkflow(
           traceId: runId,
         });
 
+        // Defensive: ensure these are at least empty strings if they are missing after adaptation
+        if (adaptedInput.prompt === undefined || adaptedInput.prompt === null) {
+          adaptedInput.prompt = baseInput.prompt || description || "";
+        }
+        if (adaptedInput.text === undefined || adaptedInput.text === null) {
+          adaptedInput.text = baseInput.text || description || "";
+        }
+        if (adaptedInput.goal === undefined || adaptedInput.goal === null) {
+          adaptedInput.goal = baseInput.goal || description || "";
+        }
+
         // Ensure the description is also passed in the adapted input if not already there
         if (description && !adaptedInput.description) {
           adaptedInput.description = description;
         }
 
         // Validate
-        const validatedInput = blockDef.input.parse(adaptedInput);
+        let validatedInput;
+        try {
+          const inputKeys = Object.keys(adaptedInput);
+          console.log(
+            `[WORKFLOW EXECUTION] Validating input for ${node.id} (${blockDef.id}). Keys: ${inputKeys.join(", ")}. Prompt value type: ${typeof adaptedInput.prompt}`,
+          );
+
+          validatedInput = blockDef.input.parse(adaptedInput);
+        } catch (err: any) {
+          console.error(
+            `[WORKFLOW VALIDATION ERROR] Node: ${node.id}, Block: ${blockDef.id}`,
+            {
+              error: err.errors || err.message,
+              receivedData: adaptedInput,
+              schemaKeys:
+                blockDef.input instanceof z.ZodObject
+                  ? Object.keys(blockDef.input.shape)
+                  : "unknown",
+            },
+          );
+          throw err;
+        }
 
         // Execute block
         const rawOutput = await blockDef.agent.invoke(validatedInput);
