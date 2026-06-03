@@ -6,13 +6,29 @@ vi.mock("@iem/agents", () => ({
   createOrchestrator: vi.fn().mockImplementation(async () => {
     return {
       stream: vi.fn().mockImplementation(async (messages) => {
-        // Adversarial condition: throw an error if the user tries to break it
-        if (messages.some((m: any) => m.content === "throw_error")) {
+        const isString = typeof messages === "string";
+        const hasThrowError = isString
+          ? messages === "throw_error"
+          : messages.some((m: any) => m.content === "throw_error");
+        if (hasThrowError) {
           throw new Error("Simulated Agent Failure");
         }
         return {
           textStream: (async function* () {
             yield "Mocked response chunk";
+          })(),
+          toolCalls: [],
+          toolResults: [],
+        };
+      }),
+    };
+  }),
+  createBlockAssistant: vi.fn().mockImplementation(async () => {
+    return {
+      stream: vi.fn().mockImplementation(async () => {
+        return {
+          textStream: (async function* () {
+            yield "Mocked block response chunk";
           })(),
           toolCalls: [],
           toolResults: [],

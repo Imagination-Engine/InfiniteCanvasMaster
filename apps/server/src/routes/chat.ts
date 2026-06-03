@@ -99,7 +99,6 @@ chatRouter.post("/", async (c) => {
         type: body.blockContext.type,
         currentData: body.blockContext.currentData,
       });
-      agent = await createBlockAssistant(mastra.storage, systemInstruction);
 
       const { instanceId, type, currentData } = body.blockContext;
       let blockDef: any = null;
@@ -165,9 +164,8 @@ ${schemaStr || "No specific schema registered."}
 ${JSON.stringify(currentData || {}, null, 2)}
 \`\`\`
 `;
+      agent = await createBlockAssistant(mastra.storage, systemInstruction);
     } else {
-      agent = await createOrchestrator(mastra.storage, systemInstruction);
-
       let canvasSystemPrompt = "";
       if (body.canvasContext) {
         canvasSystemPrompt = `\n\nCURRENT CANVAS STATE:\nNodes: ${JSON.stringify(body.canvasContext.nodes)}\nEdges: ${JSON.stringify(body.canvasContext.edges)}\nBe aware of these existing nodes and connections when suggesting changes, discussing the workspace, or generating blueprints. You are contiguous with the canvas experience.`;
@@ -186,6 +184,7 @@ REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
 - Pattern: connect each iem.reel.textToImage → iem.studio.video (edges source→target). Put the motion/Veo prompt on the video studio node description.
 - Anime / screencap requests: preserve style instructions in EACH textToImage description (e.g. ufotable style, Fate/stay night UBW, "Are you my Master" scene) — do not shorten them.
 - If the user only asked for images with no mention of video/reel/animation, textToImage nodes alone are fine; if they want a final video, always include iem.studio.video.${canvasSystemPrompt}`;
+      agent = await createOrchestrator(mastra.storage, systemInstruction);
     }
 
     const finalMessages = [

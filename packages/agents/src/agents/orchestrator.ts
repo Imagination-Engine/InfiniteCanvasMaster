@@ -66,10 +66,14 @@ export const createOrchestrator = async (
       Suggest compatible next-step blocks only when their accepts overlap the source produces.
     `;
 
+  const instructions = dynamicInstructions
+    ? `${defaultInstructions}\n\n${dynamicInstructions}`
+    : defaultInstructions;
+
   return new Agent({
     id: "orchestrator",
     name: "Imagination Orchestrator",
-    instructions: dynamicInstructions || defaultInstructions,
+    instructions,
     model: google("gemini-2.5-flash"),
     tools,
     memory: storage ? new Memory({ storage }) : undefined,
