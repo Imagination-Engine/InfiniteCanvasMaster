@@ -81,11 +81,10 @@ BlockRegistry.register("iem.conductor.webFetch", ConductorBlockView as any);
 
 BlockRegistry.register("conductor.if", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.if", ConductorBlockView as any);
-BlockRegistry.register("conductor.router", ConductorBlockView as any);
-BlockRegistry.register("iem.conductor.router", ConductorBlockView as any);
 
 BlockRegistry.register("conductor.forEach", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.foreach", ConductorBlockView as any);
+BlockRegistry.register("iem.conductor.forEach", ConductorBlockView as any);
 
 BlockRegistry.register("conductor.delay", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.delay", ConductorBlockView as any);
@@ -101,6 +100,12 @@ BlockRegistry.register("iem.conductor.slackPost", ConductorBlockView as any);
 
 BlockRegistry.register("conductor.notionCreate", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.notionCreate", ConductorBlockView as any);
+
+BlockRegistry.register("conductor.subGraph", ConductorBlockView as any);
+BlockRegistry.register("iem.conductor.subGraph", ConductorBlockView as any);
+
+BlockRegistry.register("conductor.subGraphHead", ConductorBlockView as any);
+BlockRegistry.register("iem.conductor.subGraphHead", ConductorBlockView as any);
 
 // SaaS Integration Kinds
 BlockRegistry.register("discord.post", ConductorBlockView as any);

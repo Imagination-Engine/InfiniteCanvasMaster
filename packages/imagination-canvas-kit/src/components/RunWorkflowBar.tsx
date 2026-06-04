@@ -57,6 +57,9 @@ export const RunWorkflowBar: React.FC = () => {
       .filter((obj) => {
         const t = (obj.type || "").toLowerCase();
         const bk = ((obj as any).blockKind || "").toLowerCase();
+        if (t.includes("subgraphhead") || bk.includes("subgraphhead")) {
+          return false;
+        }
         return (
           t.includes("trigger") ||
           t.includes("webhook") ||
@@ -91,7 +94,25 @@ export const RunWorkflowBar: React.FC = () => {
       return;
     }
 
-    const adj = buildAdjacency();
+    // Dynamic store readers to avoid stale closure state
+    const getFreshConnections = () =>
+      useConnectionStore.getState().connections || {};
+    const getFreshObjects = () => useCanvasStore.getState().objects || {};
+
+    const buildAdjacencyFresh = (): Record<string, string[]> => {
+      const adj: Record<string, string[]> = {};
+      const conns = Object.values(getFreshConnections());
+      for (const conn of conns) {
+        const from = conn.fromId || (conn as any).sourceId;
+        const to = conn.toId || (conn as any).targetId;
+        if (!from || !to) continue;
+        if (!adj[from]) adj[from] = [];
+        adj[from].push(to);
+      }
+      return adj;
+    };
+
+    const adj = buildAdjacencyFresh();
 
     // Helper: resolve variable templates like {{ $json.payload.title }}
     const resolveTemplates = (template: string, data: any): string => {
@@ -109,7 +130,9 @@ export const RunWorkflowBar: React.FC = () => {
 
     // Helper: compile outputs of immediately connected predecessor nodes
     const getPredecessorOutputs = (nodeId: string): any => {
-      const incomingConns = Object.values(connections || {}).filter(
+      const currentConns = getFreshConnections();
+      const currentObjects = getFreshObjects();
+      const incomingConns = Object.values(currentConns).filter(
         (conn) => (conn.toId || (conn as any).targetId) === nodeId,
       );
       if (incomingConns.length === 0) return {};
@@ -117,7 +140,7 @@ export const RunWorkflowBar: React.FC = () => {
       let mergedOutputs = {};
       for (const conn of incomingConns) {
         const fromId = conn.fromId || (conn as any).sourceId;
-        const fromObj = objects[fromId];
+        const fromObj = currentObjects[fromId];
         if (fromObj && fromObj.metadata?.outputs) {
           mergedOutputs = {
             ...mergedOutputs,
@@ -131,6 +154,48 @@ export const RunWorkflowBar: React.FC = () => {
     // BFS execution
     const visited = new Set<string>();
     const queue: string[] = [...triggerIds];
+    const loopIndexes: Record<string, number> = {};
+    const callStack: { callerId: string; callerUpstreamOutputs: any }[] = [];
+
+    const getReachableNodes = (startId: string): Set<string> => {
+      const reached = new Set<string>();
+      const bfsq = [startId];
+      while (bfsq.length > 0) {
+        const curr = bfsq.shift()!;
+        if (reached.has(curr)) continue;
+        reached.add(curr);
+        const children = adj[curr] || [];
+        for (const child of children) {
+          bfsq.push(child);
+        }
+      }
+      return reached;
+    };
+
+    const getLoopBodyNodes = (forEachId: string): Set<string> => {
+      const body = new Set<string>();
+      const currentConns = getFreshConnections();
+      const loopStartEdge = Object.values(currentConns).find(
+        (c) =>
+          (c.fromId || (c as any).sourceId) === forEachId &&
+          (c.fromHandleId || (c as any).sourceHandle) === "loop",
+      );
+      if (!loopStartEdge) return body;
+
+      const bodyQueue: string[] = [
+        loopStartEdge.toId || (loopStartEdge as any).targetId,
+      ];
+      while (bodyQueue.length > 0) {
+        const curr = bodyQueue.shift()!;
+        if (curr === forEachId || body.has(curr)) continue;
+        body.add(curr);
+        const children = adj[curr] || [];
+        for (const child of children) {
+          bodyQueue.push(child);
+        }
+      }
+      return body;
+    };
 
     try {
       while (queue.length > 0) {
@@ -140,7 +205,8 @@ export const RunWorkflowBar: React.FC = () => {
         if (visited.has(nodeId)) continue;
         visited.add(nodeId);
 
-        const obj = objects[nodeId];
+        const currentObjects = getFreshObjects();
+        const obj = currentObjects[nodeId];
         if (!obj) continue;
 
         const label =
@@ -159,8 +225,11 @@ export const RunWorkflowBar: React.FC = () => {
         const config = obj.metadata?.config || {};
         const inputs = obj.metadata?.inputs || {};
         const getVal = (key: string, def = ""): string => {
+          if (key === "currentIndex" && loopIndexes[nodeId] !== undefined) {
+            return String(loopIndexes[nodeId]);
+          }
           return String(
-            config[key] ?? inputs[key] ?? obj.metadata?.[key] ?? def,
+            obj.metadata?.[key] ?? inputs[key] ?? config[key] ?? def,
           );
         };
 
@@ -283,16 +352,38 @@ export const RunWorkflowBar: React.FC = () => {
             }
           } else if (type.includes("delay")) {
             const ms = getVal("ms");
-            const delayVal = Number(ms);
+            const delayUnit = getVal("delayUnit", "ms");
+            let multiplier = 1;
+            if (delayUnit === "seconds") multiplier = 1000;
+            else if (delayUnit === "minutes") multiplier = 60000;
+            const delayVal = Number(ms) * multiplier;
             if (isNaN(delayVal) || delayVal <= 0) {
               throw new Error(
-                "Delay length (ms) must be configured as a positive number.",
+                "Delay length must be configured as a positive number.",
               );
             }
           } else if (type.includes("foreach")) {
-            const collection = getVal("collection");
-            if (!collection || collection.trim() === "") {
-              throw new Error("Loop Collection Path is not configured.");
+            const loopType = getVal("loopType", "collection");
+            if (loopType === "collection") {
+              const collection = getVal("collection");
+              if (!collection || collection.trim() === "") {
+                throw new Error("Loop Collection Path is not configured.");
+              }
+            } else if (loopType === "times") {
+              const maxIterations = getVal("maxIterations");
+              const iterationsVal = Number(maxIterations);
+              if (isNaN(iterationsVal) || iterationsVal < 0) {
+                throw new Error(
+                  "Loop Count (Times) must be a positive number.",
+                );
+              }
+            } else if (loopType === "condition") {
+              const condition = getVal("condition");
+              if (!condition || condition.trim() === "") {
+                throw new Error(
+                  "Loop Condition (Expression) is not configured.",
+                );
+              }
             }
           }
         } catch (e: any) {
@@ -377,14 +468,95 @@ export const RunWorkflowBar: React.FC = () => {
               getVal("instructions"),
               upstreamOutputs,
             );
-            executionOutputs = {
-              role: getVal("role"),
-              model: getVal("model"),
-              instructionsEvaluated: compiledInstructions,
-              content: `[Autonomous Agent: ${getVal("role")}] Sovereign swarm successfully executed. Processed upstream data: "${upstreamOutputs?.payload?.title || upstreamOutputs?.title || "No direct inputs"}". Core decision committed to vector vault.`,
-              timestamp: new Date().toISOString(),
-            };
-            await new Promise((r) => setTimeout(r, 1000)); // AI thinking time simulation
+            const promptVal =
+              resolveTemplates(
+                getVal("prompt") || getVal("input") || "",
+                upstreamOutputs,
+              ) ||
+              upstreamOutputs?.payload?.body ||
+              upstreamOutputs?.body ||
+              upstreamOutputs?.payload?.title ||
+              upstreamOutputs?.title ||
+              "Perform your designated role.";
+
+            const agentMetadata = obj.metadata || {};
+            const agentInputs = agentMetadata.inputs || {};
+            const agentProvider =
+              agentMetadata.provider || agentInputs.provider || "google";
+            const agentModel =
+              agentMetadata.model ||
+              agentInputs.model ||
+              (agentProvider === "google" ? "gemini-3.5-flash" : "mistral");
+            const agentReferenceFiles =
+              agentMetadata.referenceFiles || agentInputs.referenceFiles || [];
+            const agentInstructions =
+              compiledInstructions ||
+              agentMetadata.instructions ||
+              agentInputs.instructions ||
+              "You are a helpful AI assistant.";
+
+            try {
+              const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+              };
+              const token = useCanvasStore.getState().accessToken;
+              if (token) headers["Authorization"] = `Bearer ${token}`;
+
+              // Use relative proxy path and matching payload structure as AgentBlock.tsx
+              const res = await fetch("/api/blocks/execute", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  blockId: "iem.agent.agent",
+                  inputs: {
+                    instructions: agentInstructions,
+                    input: promptVal,
+                    provider: agentProvider,
+                    model: agentModel,
+                    referenceFiles: agentReferenceFiles,
+                  },
+                }),
+              });
+
+              if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.output) {
+                  const outputText =
+                    typeof data.output === "string"
+                      ? data.output
+                      : data.output.output ||
+                        data.output.content ||
+                        JSON.stringify(data.output);
+                  executionOutputs = {
+                    role: getVal("role"),
+                    model: getVal("model"),
+                    instructionsEvaluated: compiledInstructions,
+                    content: outputText,
+                    output: outputText,
+                    timestamp: new Date().toISOString(),
+                  };
+                } else {
+                  throw new Error(data.error || "Agent execution failed");
+                }
+              } else {
+                throw new Error(`HTTP Error ${res.status}`);
+              }
+            } catch (err: any) {
+              console.warn(
+                "Agent execution failed, falling back to mock:",
+                err,
+              );
+              executionOutputs = {
+                role: getVal("role"),
+                model: getVal("model"),
+                instructionsEvaluated: compiledInstructions,
+                content: `[Autonomous Agent: ${getVal("role")}] Sovereign swarm successfully executed. Processed upstream data: "${upstreamOutputs?.payload?.title || upstreamOutputs?.title || "No direct inputs"}". Core decision committed to vector vault.`,
+                timestamp: new Date().toISOString(),
+              };
+              // Store output field in fallback too so the downstream propagation logic receives it
+              executionOutputs.output = executionOutputs.content;
+              await new Promise((r) => setTimeout(r, 1000));
+            }
           } else if (type.includes("webfetch")) {
             executionOutputs = {
               status: 200,
@@ -458,20 +630,87 @@ export const RunWorkflowBar: React.FC = () => {
             };
             await new Promise((r) => setTimeout(r, 500));
           } else if (type.includes("delay")) {
-            const duration = Number(getVal("ms", "800"));
+            const ms = Number(getVal("ms", "800"));
+            const delayUnit = getVal("delayUnit", "ms");
+            let multiplier = 1;
+            if (delayUnit === "seconds") multiplier = 1000;
+            else if (delayUnit === "minutes") multiplier = 60000;
+            const duration = ms * multiplier;
             await new Promise((r) => setTimeout(r, duration));
             executionOutputs = {
               sleptMs: duration,
               completedAt: new Date().toISOString(),
             };
           } else if (type.includes("foreach")) {
-            executionOutputs = {
-              iterated: true,
-              collection: getVal("collection"),
-              itemsProcessedCount: 2,
-              itemsProcessed: ["simulated_row_1", "simulated_row_2"],
-            };
+            const loopType = getVal("loopType", "collection");
+            const currentIndex = Number(getVal("currentIndex", "0"));
+            if (loopType === "collection") {
+              executionOutputs = {
+                branch: currentIndex < 2 ? "loopPath" : "exitPath",
+                item:
+                  currentIndex < 2 ? `simulated_item_${currentIndex}` : null,
+                index: currentIndex,
+                context: upstreamOutputs,
+              };
+            } else if (loopType === "times") {
+              const maxIterations = Number(getVal("maxIterations", "10"));
+              executionOutputs = {
+                branch: currentIndex < maxIterations ? "loopPath" : "exitPath",
+                item: currentIndex < maxIterations ? currentIndex : null,
+                index: currentIndex,
+                context: upstreamOutputs,
+              };
+            } else if (loopType === "condition") {
+              executionOutputs = {
+                branch: "loopPath",
+                item: currentIndex,
+                index: currentIndex,
+                context: upstreamOutputs,
+              };
+            }
             await new Promise((r) => setTimeout(r, 600));
+          } else if (type.includes("subgraphhead")) {
+            executionOutputs = upstreamOutputs || {};
+            await new Promise((r) => setTimeout(r, 300));
+          } else if (type.includes("subgraph")) {
+            const subGraphId = getVal("subGraphId") || getVal("graphId");
+            const targetHead = Object.values(getFreshObjects()).find(
+              (o) =>
+                (o.type === "iem.conductor.subGraphHead" ||
+                  o.type === "conductor.subGraphHead") &&
+                (o.id === subGraphId ||
+                  o.metadata?.name === subGraphId ||
+                  o.metadata?.label === subGraphId),
+            );
+
+            if (!targetHead) {
+              throw new Error(
+                `Sub-Graph with target ID/name "${subGraphId}" not found`,
+              );
+            }
+
+            setLogs((prev) => [
+              ...prev,
+              `⚡ Calling sub-graph: ${targetHead.metadata?.name || targetHead.metadata?.label || targetHead.id}`,
+            ]);
+
+            callStack.push({
+              callerId: nodeId,
+              callerUpstreamOutputs: upstreamOutputs,
+            });
+
+            const reachable = getReachableNodes(targetHead.id);
+            reachable.forEach((id) => visited.delete(id));
+
+            updateObject(targetHead.id, {
+              metadata: {
+                ...targetHead.metadata,
+                outputs: upstreamOutputs,
+              },
+            });
+
+            queue.unshift(targetHead.id);
+            continue;
           } else {
             // General process simulation
             executionOutputs = {
@@ -553,7 +792,7 @@ export const RunWorkflowBar: React.FC = () => {
               throw new Error(
                 "Telemetry tracking failed to verify execution sleep cycle.",
               );
-            } else if (type.includes("foreach") && !executionOutputs.iterated) {
+            } else if (type.includes("foreach") && !executionOutputs.branch) {
               throw new Error(
                 "Array loop generator failed verification check.",
               );
@@ -572,6 +811,7 @@ export const RunWorkflowBar: React.FC = () => {
               !type.includes("router") &&
               !type.includes("delay") &&
               !type.includes("foreach") &&
+              !type.includes("subgraphhead") &&
               !executionOutputs.executed
             ) {
               throw new Error(
@@ -617,21 +857,189 @@ export const RunWorkflowBar: React.FC = () => {
         }
 
         // Mark as successfully completed (status: complete, outputs saved)
+        const nextIndex = (loopIndexes[nodeId] ?? 0) + 1;
+        if (executionOutputs.branch === "loopPath") {
+          loopIndexes[nodeId] = nextIndex;
+
+          const bodyNodes = getLoopBodyNodes(nodeId);
+          bodyNodes.forEach((id) => visited.delete(id));
+          visited.delete(nodeId);
+        }
+
+        const freshObjBeforeUpdate = getFreshObjects()[nodeId] || obj;
+
         updateObject(nodeId, {
           status: "complete",
           metadata: {
-            ...obj.metadata,
+            ...freshObjBeforeUpdate.metadata,
             outputs: executionOutputs,
+            inputs: {
+              ...(freshObjBeforeUpdate.metadata?.inputs || {}),
+              currentIndex:
+                executionOutputs.branch === "loopPath" ? nextIndex : 0,
+            },
           },
         });
         setLogs((prev) => [...prev, `✓ Completed: ${label}`]);
 
-        // Queue downstream nodes
-        const downstream = adj[nodeId] || [];
-        for (const nextId of downstream) {
-          if (!visited.has(nextId)) {
-            queue.push(nextId);
+        // Propagate agent output downstream directly, mimicking test button behavior
+        const typeLower = (
+          (obj as any).blockKind ||
+          obj.type ||
+          ""
+        ).toLowerCase();
+        if (typeLower.includes("agent")) {
+          const generatedOutput =
+            executionOutputs.output || executionOutputs.content || "";
+          if (generatedOutput) {
+            const freshConnections = getFreshConnections();
+            const freshObjects = getFreshObjects();
+
+            const downstreamConns = Object.values(freshConnections).filter(
+              (c: any) => (c.fromId || c.sourceId) === nodeId,
+            );
+
+            downstreamConns.forEach((conn: any) => {
+              const targetId = conn.toId || conn.targetId;
+              const targetObj = freshObjects[targetId];
+
+              if (targetObj) {
+                const targetTypeLower = targetObj.type.toLowerCase();
+                if (
+                  targetTypeLower === "note" ||
+                  targetTypeLower === "text" ||
+                  targetTypeLower.includes("prose") ||
+                  targetTypeLower.includes("scribe") ||
+                  targetTypeLower.includes("rich")
+                ) {
+                  updateObject(targetId, {
+                    metadata: {
+                      ...targetObj.metadata,
+                      instructions: generatedOutput,
+                      text: generatedOutput,
+                      content: generatedOutput,
+                      label:
+                        targetObj.metadata?.label ||
+                        (targetTypeLower === "note"
+                          ? "Agent Output"
+                          : targetObj.metadata?.label),
+                    },
+                  });
+                }
+              }
+            });
           }
+        }
+
+        // Queue downstream nodes (using fresh connections and objects)
+        const freshConnections = getFreshConnections();
+        const freshObjects = getFreshObjects();
+        const downstream = adj[nodeId] || [];
+
+        if (downstream.length === 0 && callStack.length > 0) {
+          const frame = callStack.pop()!;
+          const callerId = frame.callerId;
+          const callerObj = freshObjects[callerId];
+          const callerLabel =
+            callerObj?.metadata?.label ||
+            callerObj?.metadata?.title ||
+            callerId;
+
+          setLogs((prev) => [
+            ...prev,
+            `↩ Returning from sub-graph to caller: ${callerLabel}`,
+          ]);
+
+          updateObject(callerId, {
+            status: "complete",
+            metadata: {
+              ...callerObj?.metadata,
+              outputs: executionOutputs,
+            },
+          });
+
+          const callerDownstream = adj[callerId] || [];
+          for (const nextId of callerDownstream) {
+            if (!visited.has(nextId)) {
+              queue.push(nextId);
+            }
+          }
+          continue;
+        }
+
+        for (const nextId of downstream) {
+          const isVisited = visited.has(nextId);
+          const nextObj = freshObjects[nextId];
+          const nextLabel =
+            nextObj?.metadata?.label || nextObj?.metadata?.title || nextId;
+
+          const conn = Object.values(freshConnections).find(
+            (c) =>
+              (c.fromId || (c as any).sourceId) === nodeId &&
+              (c.toId || (c as any).targetId) === nextId,
+          );
+          const fromHandle = conn
+            ? conn.fromHandleId || (conn as any).sourceHandle || "default"
+            : "default";
+
+          if (isVisited) {
+            setLogs((prev) => [
+              ...prev,
+              `  - Downstream node ${nextLabel} skipped because it was already visited.`,
+            ]);
+            continue;
+          }
+
+          let shouldSkip = false;
+          const type = ((obj as any).blockKind || obj.type || "").toLowerCase();
+
+          if (type.includes("if") || type.includes("router")) {
+            const outcome = executionOutputs.outcome; // "true" or "false"
+            if (conn) {
+              if (
+                outcome === "true" &&
+                (fromHandle === "false" || fromHandle === "falsePath")
+              ) {
+                shouldSkip = true;
+              }
+              if (
+                outcome === "false" &&
+                (fromHandle === "true" || fromHandle === "truePath")
+              ) {
+                shouldSkip = true;
+              }
+            }
+          } else if (type.includes("foreach")) {
+            const outcome = executionOutputs.branch; // "loopPath" or "exitPath"
+            if (conn) {
+              if (
+                outcome === "loopPath" &&
+                (fromHandle === "exit" || fromHandle === "exitPath")
+              ) {
+                shouldSkip = true;
+              }
+              if (
+                outcome === "exitPath" &&
+                (fromHandle === "loop" || fromHandle === "loopPath")
+              ) {
+                shouldSkip = true;
+              }
+            }
+          }
+
+          if (shouldSkip) {
+            setLogs((prev) => [
+              ...prev,
+              `  - Connection to ${nextLabel} skipped (handle mismatch: outcome=${executionOutputs.branch || executionOutputs.outcome || "unknown"}, handle=${fromHandle})`,
+            ]);
+            continue;
+          }
+
+          setLogs((prev) => [
+            ...prev,
+            `  - Queueing downstream node: ${nextLabel} (via handle: ${fromHandle})`,
+          ]);
+          queue.push(nextId);
         }
       }
 

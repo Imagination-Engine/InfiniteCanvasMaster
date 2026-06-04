@@ -3,6 +3,7 @@ import type { BlockDefinition, MCPToolBinding } from "@iem/core";
 import jexl from "jexl";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
+import { SubGraphRegistry } from "../runtime/subgraphRegistry.js";
 export {
   webFetchBlock,
   slackPostBlock,
@@ -14,6 +15,8 @@ export const ifBlock: BlockDefinition<any, any> = {
   name: "If",
   description: "Conditional routing branch using sandboxed evaluation.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     condition: z
       .string()
@@ -48,6 +51,8 @@ export const loopBlock: BlockDefinition<any, any> = {
   description:
     "Iterates over a collection or runs for a set number of iterations with optional break condition.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     collection: z.array(z.any()).optional(),
     maxIterations: z
@@ -88,6 +93,8 @@ export const webhookTriggerBlock: BlockDefinition<any, any> = {
   name: "Webhook Trigger",
   description: "Starts workflow on webhook.",
   category: "trigger",
+  accepts: [],
+  produces: ["any"],
   input: z.object({ path: z.string() }),
   output: z.object({ payload: z.record(z.any()), url: z.string().optional() }),
   mode: "ambient",
@@ -103,6 +110,8 @@ export const webhookCallBlock: BlockDefinition<any, any> = {
   name: "Webhook Call",
   description: "Calls external webhooks and passes data.",
   category: "io",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     url: z.string().url(),
     method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]).default("POST"),
@@ -164,6 +173,8 @@ export const functionBlock: BlockDefinition<any, any> = {
   name: "Function Definition",
   description: "Defines a reusable sub-graph function.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     canvasId: z.string().optional().default("defaultCanvas"),
     name: z.string(),
@@ -198,6 +209,8 @@ export const functionCallBlock: BlockDefinition<any, any> = {
   name: "Function Call",
   description: "Calls a defined function sub-graph.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     canvasId: z.string().optional().default("defaultCanvas"),
     functionId: z.string(),
@@ -261,6 +274,8 @@ export const codeBlock: BlockDefinition<any, any> = {
   name: "Code Execution",
   description: "Execute Python or JavaScript code in a sandbox.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     language: z.enum(["javascript", "python"]).default("javascript"),
     code: z
@@ -316,6 +331,8 @@ export const scheduleTriggerBlock: BlockDefinition<any, any> = {
   name: "Schedule Trigger",
   description: "Starts workflow on schedule.",
   category: "trigger",
+  accepts: [],
+  produces: ["any"],
   input: z.object({ cron: z.string() }),
   output: z.object({ time: z.string() }),
   mode: "ambient",
@@ -331,6 +348,8 @@ export const saasBlock: BlockDefinition<any, any> = {
   name: "SaaS Integration",
   description: "Connect to external APIs.",
   category: "io",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     provider: z.string(),
     action: z.string(),
@@ -345,26 +364,13 @@ export const saasBlock: BlockDefinition<any, any> = {
   },
 };
 
-export const routerBlock: BlockDefinition<any, any> = {
-  id: "iem.conductor.router",
-  name: "Router",
-  description: "Logic branching path.",
-  category: "control",
-  input: z.object({ path: z.string() }),
-  output: z.object({ success: z.boolean() }),
-  mode: "triggered",
-  agent: {
-    kind: "local",
-    toolName: "route",
-    invoke: async () => ({ success: true }),
-  },
-};
-
 export const delayBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.delay",
   name: "Delay",
   description: "Wait for specified duration.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     ms: z.number().min(0, "Delay duration cannot be negative"),
   }),
@@ -389,6 +395,8 @@ export const stateBlock: BlockDefinition<any, any> = {
   name: "State",
   description: "Managed variable state.",
   category: "data",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({ key: z.string(), value: z.any() }),
   output: z.object({ current: z.any() }),
   mode: "triggered",
@@ -399,29 +407,40 @@ export const stateBlock: BlockDefinition<any, any> = {
   },
 };
 
-export const errorBoundaryBlock: BlockDefinition<any, any> = {
-  id: "iem.conductor.errorBoundary",
-  name: "Error Boundary",
-  description: "Graceful error recovery.",
+export const subGraphHeadBlock: BlockDefinition<any, any> = {
+  id: "iem.conductor.subGraphHead",
+  name: "Sub-Graph Head",
+  description: "Entry point for a reusable sub-graph function.",
   category: "control",
-  input: z.object({ node: z.string() }),
-  output: z.object({ error: z.any() }),
-  mode: "triggered",
+  accepts: ["any"],
+  produces: ["any"],
+  input: z.object({
+    name: z.string().default("Sub-Graph"),
+  }),
+  output: z.object({
+    payload: z.any().optional(),
+  }),
+  mode: "ambient",
   agent: {
     kind: "local",
-    toolName: "error_trap",
-    invoke: async () => ({ error: null }),
+    toolName: "subgraph_head",
+    invoke: async (i: any) => {
+      return { payload: i };
+    },
   },
 };
 
 export const subGraphBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.subGraph",
-  name: "Sub-Graph",
-  description: "Encapsulated logic group.",
+  name: "Sub-Graph Call",
+  description: "Calls a defined sub-graph function.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     canvasId: z.string().optional().default("defaultCanvas"),
-    graphId: z.string(),
+    subGraphId: z.string().optional(),
+    graphId: z.string().optional(),
   }),
   output: z.object({ result: z.any() }),
   mode: "triggered",
@@ -429,19 +448,20 @@ export const subGraphBlock: BlockDefinition<any, any> = {
     kind: "local",
     toolName: "exec_subgraph",
     invoke: async (i: any) => {
-      const subGraph = SubGraphRegistry.get(i.graphId);
-      if (!subGraph) {
-        throw new Error(`Sub-Graph with ID ${i.graphId} not found`);
+      const targetId = i.subGraphId || i.graphId;
+      if (!targetId) {
+        throw new Error("No Sub-Graph specified to call");
       }
-
-      // Check scoping permissions (local to canvas vs global access)
-      if (!subGraph.globalAccess && subGraph.canvasId !== i.canvasId) {
+      const subgraph = SubGraphRegistry.get(targetId);
+      if (!subgraph) {
+        throw new Error(`Sub-Graph with ID ${targetId} not found`);
+      }
+      if (!subgraph.globalAccess && subgraph.canvasId !== i.canvasId) {
         throw new Error(
-          `Access denied: Sub-Graph ${subGraph.name} is local to ${subGraph.canvasId}`,
+          `Access denied: Sub-Graph ${subgraph.name} is local to ${subgraph.canvasId}`,
         );
       }
-
-      return { result: { success: true, graphId: i.graphId } };
+      return { result: { success: true, graphId: targetId } };
     },
   },
 };
@@ -451,6 +471,8 @@ export const switchBlock: BlockDefinition<any, any> = {
   name: "Switch Router",
   description: "Routes workflow to multiple paths based on conditions.",
   category: "control",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     cases: z.record(z.string()),
     context: z.record(z.any()).default({}),
@@ -484,6 +506,8 @@ export const transformBlock: BlockDefinition<any, any> = {
   name: "Transform Data",
   description: "Maps JSON structures using jexl templates.",
   category: "data",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     template: z.record(z.string()),
     context: z.record(z.any()).default({}),
@@ -515,6 +539,8 @@ export const regexExtractBlock: BlockDefinition<any, any> = {
   name: "Regex Extract",
   description: "Extracts string patterns based on Regular Expressions.",
   category: "data",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     payload: z.string(),
     pattern: z.string(),
@@ -545,6 +571,8 @@ export const jsonParseBlock: BlockDefinition<any, any> = {
   name: "JSON Parse/Stringify",
   description: "Converts strings to JSON objects and vice versa.",
   category: "data",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     payload: z.any(),
     mode: z.enum(["parse", "stringify"]).default("parse"),
@@ -587,6 +615,8 @@ export const classifyBlock: BlockDefinition<any, any> = {
   name: "AI Classify",
   description: "Uses AI to classify a string into predefined categories.",
   category: "ai",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     inputString: z.string(),
     categories: z
@@ -626,6 +656,8 @@ export const discordPostBlock: BlockDefinition<any, any> = {
   name: "Discord Post",
   description: "Posts a message to a Discord Webhook",
   category: "productivity",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     webhookUrl: z.string().url().optional(),
     content: z.string(),
@@ -674,19 +706,116 @@ export const discordPostBlock: BlockDefinition<any, any> = {
 export const forEachBlock: BlockDefinition<any, any> = {
   id: "iem.conductor.forEach",
   name: "For Each",
-  description: "Iterates over a collection.",
+  description:
+    "Iterates over a collection, for a certain number of times, or while a condition is met.",
   category: "control",
-  input: z.object({ collection: z.array(z.any()) }),
-  output: z.object({ item: z.any() }),
+  accepts: ["any"],
+  produces: ["any"],
+  input: z.object({
+    loopType: z
+      .enum(["collection", "times", "condition"])
+      .default("collection"),
+    collection: z.array(z.any()).optional().default([]),
+    maxIterations: z.number().min(0).optional().default(10),
+    condition: z
+      .string()
+      .optional()
+      .describe("JavaScript expression evaluated in a sandbox"),
+    loopWhile: z
+      .boolean()
+      .default(true)
+      .describe(
+        "If true, loops while condition is true; if false, loops while condition is false",
+      ),
+    currentIndex: z.number().default(0),
+    context: z.record(z.any()).default({}),
+  }),
+  output: z.object({
+    branch: z.enum(["loopPath", "exitPath"]),
+    item: z.any().nullable(),
+    index: z.number(),
+    context: z.record(z.any()),
+  }),
   mode: "triggered",
   agent: {
     kind: "local",
     toolName: "forEach",
     invoke: async (i: any) => {
-      if (!i.collection || i.collection.length === 0) {
-        return { item: null };
+      const loopType = i.loopType || "collection";
+      const currentIndex = i.currentIndex ?? 0;
+      const context = i.context || {};
+
+      if (loopType === "collection") {
+        const collection = i.collection || [];
+        if (currentIndex < collection.length) {
+          return {
+            branch: "loopPath",
+            item: collection[currentIndex],
+            index: currentIndex,
+            context,
+          };
+        } else {
+          return {
+            branch: "exitPath",
+            item: null,
+            index: currentIndex,
+            context,
+          };
+        }
+      } else if (loopType === "times") {
+        const maxIterations = i.maxIterations ?? 10;
+        if (currentIndex < maxIterations) {
+          return {
+            branch: "loopPath",
+            item: currentIndex,
+            index: currentIndex,
+            context,
+          };
+        } else {
+          return {
+            branch: "exitPath",
+            item: null,
+            index: currentIndex,
+            context,
+          };
+        }
+      } else if (loopType === "condition") {
+        const condition = i.condition || "true";
+        const loopWhile = i.loopWhile ?? true;
+        try {
+          const evalResult = await jexl.eval(condition, context);
+          const shouldLoop = loopWhile ? !!evalResult : !evalResult;
+          if (shouldLoop) {
+            return {
+              branch: "loopPath",
+              item: currentIndex,
+              index: currentIndex,
+              context,
+            };
+          } else {
+            return {
+              branch: "exitPath",
+              item: null,
+              index: currentIndex,
+              context,
+            };
+          }
+        } catch (err) {
+          return {
+            branch: "exitPath",
+            item: null,
+            index: currentIndex,
+            context,
+          };
+        }
       }
-      return { item: i.collection[0] };
+
+      return {
+        branch: "exitPath",
+        item: null,
+        index: currentIndex,
+        context,
+      };
     },
   },
 };
@@ -696,6 +825,8 @@ export const websocketTriggerBlock: BlockDefinition<any, any> = {
   name: "Websocket Trigger",
   description: "Starts workflow on websocket message.",
   category: "trigger",
+  accepts: [],
+  produces: ["any"],
   input: z.object({ topic: z.string() }),
   output: z.object({ message: z.any() }),
   mode: "ambient",
@@ -711,6 +842,8 @@ export const websocketSendBlock: BlockDefinition<any, any> = {
   name: "Websocket Send",
   description: "Sends a message via websocket.",
   category: "io",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({ topic: z.string(), message: z.any() }),
   output: z.object({ success: z.boolean() }),
   mode: "triggered",
@@ -726,6 +859,8 @@ export const manualTriggerBlock: BlockDefinition<any, any> = {
   name: "Manual Trigger",
   description: "Starts the workflow manually from the canvas on click.",
   category: "trigger",
+  accepts: [],
+  produces: ["any"],
   input: z.object({}),
   output: z.object({ payload: z.record(z.any()) }),
   mode: "ambient",

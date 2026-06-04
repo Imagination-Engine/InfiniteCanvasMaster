@@ -219,8 +219,9 @@ export const ObjectRenderer: React.FC<{
         setIsDragging(true);
         moved = true;
       }
-      latestDx = (moveEvent.clientX - startX) / viewportZoom;
-      latestDy = (moveEvent.clientY - startY) / viewportZoom;
+      const currentZoom = viewportZoom || 1;
+      latestDx = (moveEvent.clientX - startX) / currentZoom;
+      latestDy = (moveEvent.clientY - startY) / currentZoom;
 
       const newX = initialObjX + latestDx;
       const newY = initialObjY + latestDy;
@@ -229,7 +230,7 @@ export const ObjectRenderer: React.FC<{
 
       // 1. Instant zero-latency hardware transform
       if (containerRef.current) {
-        containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0) rotate(${(object as any).rotation || 0}deg)`;
+        containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0) scale(1.03) rotate(${(object as any).rotation || 0}deg)`;
       }
 
       // 2. Sync React state for lines
@@ -308,13 +309,16 @@ export const ObjectRenderer: React.FC<{
   return (
     <div
       ref={containerRef}
-      className={`absolute transition-[box-shadow,opacity,ring] duration-300 ${isSelected ? "z-[1000] ring-2 ring-brand-cyan shadow-[0_0_40px_rgba(0,194,255,0.3)] scale-[1.01]" : "z-[10] shadow-xl"} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "z-[10000] scale-[1.03] shadow-2xl opacity-90 cursor-grabbing transition-none" : "cursor-grab"}`}
+      className={`absolute ${isSelected ? "z-[1000] ring-2 ring-brand-cyan shadow-[0_0_40px_rgba(0,194,255,0.3)]" : "z-[10] shadow-xl"} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "z-[10000] shadow-2xl opacity-90 cursor-grabbing" : "cursor-grab"}`}
       style={{
-        transform: `translate3d(${isDragging ? dragPos.current.x : object.x}px, ${isDragging ? dragPos.current.y : object.y}px, 0) rotate(${(object as any).rotation || 0}deg)`,
+        transform: `translate3d(${isDragging ? dragPos.current.x : object.x}px, ${isDragging ? dragPos.current.y : object.y}px, 0) scale(${isDragging ? 1.03 : isSelected ? 1.01 : 1.0}) rotate(${(object as any).rotation || 0}deg)`,
         width: object.width,
         height: object.height,
         userSelect: "none",
         willChange: "transform",
+        transition: isDragging
+          ? "none"
+          : "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, opacity 0.3s ease",
       }}
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
@@ -329,6 +333,9 @@ export const ObjectRenderer: React.FC<{
         const sourceId = e.dataTransfer.getData("application/iem-connection");
         const dragType =
           e.dataTransfer.getData("application/iem-connection-type") || "source";
+        const fromHandleId =
+          e.dataTransfer.getData("application/iem-connection-handle-id") ||
+          undefined;
         if (!sourceId || sourceId === object.id) return;
 
         const sourceObj = useCanvasStore.getState().objects[sourceId];
@@ -358,6 +365,7 @@ export const ObjectRenderer: React.FC<{
           id: `edge-${Date.now()}`,
           fromId,
           toId,
+          fromHandleId: dragType === "target" ? undefined : fromHandleId,
         });
       }}
     >
@@ -525,35 +533,199 @@ export const ObjectRenderer: React.FC<{
       </div>
 
       {/* Right Output Connector Handle */}
-      <div
-        title="Output — drag to connect"
-        className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
-        style={{
-          right: "-12px",
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: "24px",
-          height: "24px",
-        }}
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData("application/iem-connection", object.id);
-          e.dataTransfer.setData("application/iem-connection-type", "source");
-          setDraftConnection({
-            fromId: object.id,
-            type: "source",
-            x: object.x + object.width,
-            y: object.y + object.height / 2,
-          });
-        }}
-        onDragEnd={() => setDraftConnection(null)}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
+      {object.type === "iem.conductor.if" ? (
+        <>
+          {/* True Path Output Connector Handle */}
+          <div
+            title="True Path — drag to connect"
+            className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+            style={{
+              right: "-12px",
+              top: "30%",
+              transform: "translateY(-50%)",
+              width: "24px",
+              height: "24px",
+            }}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/iem-connection", object.id);
+              e.dataTransfer.setData(
+                "application/iem-connection-type",
+                "source",
+              );
+              e.dataTransfer.setData(
+                "application/iem-connection-handle-id",
+                "true",
+              );
+              setDraftConnection({
+                fromId: object.id,
+                type: "source",
+                fromHandleId: "true",
+                x: object.x + object.width,
+                y: object.y + object.height * 0.3,
+              });
+            }}
+            onDragEnd={() => setDraftConnection(null)}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-3 h-3 bg-emerald-500 border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50"
+              style={{ width: "12px", height: "12px" }}
+            />
+          </div>
+
+          {/* False Path Output Connector Handle */}
+          <div
+            title="False Path — drag to connect"
+            className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+            style={{
+              right: "-12px",
+              top: "70%",
+              transform: "translateY(-50%)",
+              width: "24px",
+              height: "24px",
+            }}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/iem-connection", object.id);
+              e.dataTransfer.setData(
+                "application/iem-connection-type",
+                "source",
+              );
+              e.dataTransfer.setData(
+                "application/iem-connection-handle-id",
+                "false",
+              );
+              setDraftConnection({
+                fromId: object.id,
+                type: "source",
+                fromHandleId: "false",
+                x: object.x + object.width,
+                y: object.y + object.height * 0.7,
+              });
+            }}
+            onDragEnd={() => setDraftConnection(null)}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-3 h-3 bg-rose-500 border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50"
+              style={{ width: "12px", height: "12px" }}
+            />
+          </div>
+        </>
+      ) : object.type === "iem.conductor.forEach" ||
+        object.type === "iem.conductor.foreach" ||
+        object.type === "conductor.forEach" ? (
+        <>
+          {/* Exit Path Output Connector Handle */}
+          <div
+            title="Exit Path — drag to connect"
+            className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+            style={{
+              right: "-12px",
+              top: "30%",
+              transform: "translateY(-50%)",
+              width: "24px",
+              height: "24px",
+            }}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/iem-connection", object.id);
+              e.dataTransfer.setData(
+                "application/iem-connection-type",
+                "source",
+              );
+              e.dataTransfer.setData(
+                "application/iem-connection-handle-id",
+                "exit",
+              );
+              setDraftConnection({
+                fromId: object.id,
+                type: "source",
+                fromHandleId: "exit",
+                x: object.x + object.width,
+                y: object.y + object.height * 0.3,
+              });
+            }}
+            onDragEnd={() => setDraftConnection(null)}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-3 h-3 bg-rose-500 border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50"
+              style={{ width: "12px", height: "12px" }}
+            />
+          </div>
+
+          {/* Loop Path Output Connector Handle */}
+          <div
+            title="Loop Path — drag to connect"
+            className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+            style={{
+              right: "-12px",
+              top: "70%",
+              transform: "translateY(-50%)",
+              width: "24px",
+              height: "24px",
+            }}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/iem-connection", object.id);
+              e.dataTransfer.setData(
+                "application/iem-connection-type",
+                "source",
+              );
+              e.dataTransfer.setData(
+                "application/iem-connection-handle-id",
+                "loop",
+              );
+              setDraftConnection({
+                fromId: object.id,
+                type: "source",
+                fromHandleId: "loop",
+                x: object.x + object.width,
+                y: object.y + object.height * 0.7,
+              });
+            }}
+            onDragEnd={() => setDraftConnection(null)}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-3 h-3 bg-indigo-500 border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50"
+              style={{ width: "12px", height: "12px" }}
+            />
+          </div>
+        </>
+      ) : (
         <div
-          className={`w-3 h-3 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
-          style={{ width: "12px", height: "12px" }}
-        />
-      </div>
+          title="Output — drag to connect"
+          className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+          style={{
+            right: "-12px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "24px",
+            height: "24px",
+          }}
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData("application/iem-connection", object.id);
+            e.dataTransfer.setData("application/iem-connection-type", "source");
+            setDraftConnection({
+              fromId: object.id,
+              type: "source",
+              x: object.x + object.width,
+              y: object.y + object.height / 2,
+            });
+          }}
+          onDragEnd={() => setDraftConnection(null)}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div
+            className={`w-3 h-3 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
+            style={{ width: "12px", height: "12px" }}
+          />
+        </div>
+      )}
     </div>
   );
 });

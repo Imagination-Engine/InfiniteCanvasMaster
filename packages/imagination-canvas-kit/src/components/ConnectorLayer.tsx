@@ -24,7 +24,25 @@ const EdgeRenderer = memo(({ connectionId }: { connectionId: string }) => {
   const sWidth = sourceObj.width || 320;
   const sHeight = sourceObj.height || 240;
   const startX = sourceObj.x + sWidth;
-  const startY = sourceObj.y + sHeight / 2;
+
+  let startY = sourceObj.y + sHeight / 2;
+  if (sourceObj.type === "iem.conductor.if") {
+    if (conn.fromHandleId === "true") {
+      startY = sourceObj.y + sHeight * 0.3;
+    } else if (conn.fromHandleId === "false") {
+      startY = sourceObj.y + sHeight * 0.7;
+    }
+  } else if (
+    sourceObj.type === "iem.conductor.forEach" ||
+    sourceObj.type === "iem.conductor.foreach" ||
+    sourceObj.type === "conductor.forEach"
+  ) {
+    if (conn.fromHandleId === "loop") {
+      startY = sourceObj.y + sHeight * 0.7;
+    } else if (conn.fromHandleId === "exit") {
+      startY = sourceObj.y + sHeight * 0.3;
+    }
+  }
 
   const tWidth = targetObj.width || 320;
   const tHeight = targetObj.height || 240;
@@ -90,6 +108,37 @@ const EdgeRenderer = memo(({ connectionId }: { connectionId: string }) => {
         className="animate-flow opacity-60"
       />
 
+      {/* Visual true/false connection label badges */}
+      {conn.fromHandleId && (
+        <g>
+          <rect
+            x={startX + 12}
+            y={startY - 9}
+            width={
+              conn.fromHandleId === "true" || conn.fromHandleId === "loop"
+                ? 28
+                : 32
+            }
+            height={14}
+            rx={4}
+            className="fill-black/90 stroke-white/10"
+            strokeWidth={1}
+          />
+          <text
+            x={startX + 16}
+            y={startY + 1}
+            fill={
+              conn.fromHandleId === "true" || conn.fromHandleId === "loop"
+                ? "#10b981"
+                : "#f43f5e"
+            }
+            className="text-[8px] font-black uppercase tracking-wider select-none pointer-events-none"
+          >
+            {conn.fromHandleId}
+          </text>
+        </g>
+      )}
+
       {/* Midpoint Interactive Delete Button */}
       {isHovered && (
         <g
@@ -147,7 +196,27 @@ export const ConnectorLayer: React.FC = () => {
     const startX = isDragFromTarget
       ? draftSourceObj.x
       : draftSourceObj.x + sWidth;
-    const startY = draftSourceObj.y + sHeight / 2;
+
+    let startY = draftSourceObj.y + sHeight / 2;
+    if (draftSourceObj.type === "iem.conductor.if" && !isDragFromTarget) {
+      if (draftConnection.fromHandleId === "true") {
+        startY = draftSourceObj.y + sHeight * 0.3;
+      } else if (draftConnection.fromHandleId === "false") {
+        startY = draftSourceObj.y + sHeight * 0.7;
+      }
+    } else if (
+      (draftSourceObj.type === "iem.conductor.forEach" ||
+        draftSourceObj.type === "iem.conductor.foreach" ||
+        draftSourceObj.type === "conductor.forEach") &&
+      !isDragFromTarget
+    ) {
+      if (draftConnection.fromHandleId === "loop") {
+        startY = draftSourceObj.y + sHeight * 0.7;
+      } else if (draftConnection.fromHandleId === "exit") {
+        startY = draftSourceObj.y + sHeight * 0.3;
+      }
+    }
+
     const endX = draftConnection.x;
     const endY = draftConnection.y;
     const dx = Math.abs(endX - startX);

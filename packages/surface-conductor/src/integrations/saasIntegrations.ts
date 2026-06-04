@@ -8,6 +8,8 @@ export const webFetchBlock: any = {
   name: "Web Fetch",
   description: "Fetches content from a URL",
   category: "web",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     url: z.string().url(),
     method: z.enum(["GET", "POST"]).default("GET"),
@@ -55,6 +57,8 @@ export const slackPostBlock: any = {
   name: "Slack Post",
   description: "Posts a message to Slack",
   category: "productivity",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     channel: z.string(),
     message: z.string(),
@@ -111,6 +115,8 @@ export const notionCreateBlock: any = {
   name: "Notion Create Card",
   description: "Creates a card in a Notion Database",
   category: "productivity",
+  accepts: ["any"],
+  produces: ["any"],
   input: z.object({
     databaseId: z.string(),
     properties: z.record(z.any()),

@@ -508,24 +508,31 @@ const BASE_CATALOG: NodeCatalog = {
     {},
     "tool",
   ),
-  "conductor.router": createEntry(
-    "conductor.router",
-    "creative",
-    "Router",
-    "Logic branching path.",
-    { condition: "text" },
-    { path: "text" },
-    {},
-    "tool",
-  ),
+
   "conductor.forEach": createEntry(
     "conductor.forEach",
     "creative",
     "For Each",
-    "Iterate over collection.",
-    { items: "json" },
-    { item: "json" },
-    {},
+    "Iterates over a collection, for a certain number of times, or while a condition is met.",
+    {
+      loopType: "text",
+      collection: "json",
+      maxIterations: "number",
+      condition: "text",
+      loopWhile: "boolean",
+      currentIndex: "number",
+    },
+    { branch: "text", item: "json", index: "number" },
+    {
+      inputs: {
+        loopType: "collection",
+        collection: [],
+        maxIterations: 10,
+        condition: "",
+        loopWhile: true,
+        currentIndex: 0,
+      },
+    },
     "tool",
   ),
   "conductor.delay": createEntry(
@@ -558,16 +565,7 @@ const BASE_CATALOG: NodeCatalog = {
     {},
     "tool",
   ),
-  "conductor.errorBoundary": createEntry(
-    "conductor.errorBoundary",
-    "creative",
-    "Error Boundary",
-    "Graceful error recovery.",
-    { node: "text" },
-    { error: "json" },
-    {},
-    "tool",
-  ),
+
   "conductor.subGraph": createEntry(
     "conductor.subGraph",
     "creative",

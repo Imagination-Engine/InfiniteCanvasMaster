@@ -26,6 +26,7 @@ import {
   Plus,
   Trash2,
   Code,
+  Router,
 } from "lucide-react";
 import { useCanvasStore } from "../../state/canvasStore";
 import { blockRegistry } from "@iem/core";
@@ -35,6 +36,7 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
   mode = "compact",
 }) => {
   const updateObject = useCanvasStore((s) => s.updateObject);
+  const objects = useCanvasStore((s) => s.objects);
 
   // State for execution sandbox
   const [running, setRunning] = useState(false);
@@ -92,6 +94,7 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
     updateObject(object.id, {
       metadata: {
         ...metadata,
+        [key]: value,
         config: {
           ...(metadata.config || {}),
           [key]: value,
@@ -103,6 +106,71 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
       },
     });
   };
+
+  const handleFieldsChange = (updates: Record<string, any>) => {
+    const nextConfig = { ...(metadata.config || {}) };
+    const nextInputs = { ...(metadata.inputs || {}) };
+    const nextMetadata = { ...metadata };
+
+    Object.entries(updates).forEach(([key, value]) => {
+      nextMetadata[key] = value;
+      nextConfig[key] = value;
+      nextInputs[key] = value;
+    });
+
+    updateObject(object.id, {
+      metadata: {
+        ...nextMetadata,
+        config: nextConfig,
+        inputs: nextInputs,
+      },
+    });
+  };
+
+  useEffect(() => {
+    const isSubGraphHead =
+      object.type === "iem.conductor.subGraphHead" ||
+      object.type === "conductor.subGraphHead";
+    if (isSubGraphHead) {
+      const currentName = metadata.name;
+      const isInitial = !metadata.isAutoNamed && !currentName;
+      if (isInitial) {
+        const otherHeads = Object.values(objects || {}).filter(
+          (obj) =>
+            (obj.type === "iem.conductor.subGraphHead" ||
+              obj.type === "conductor.subGraphHead") &&
+            obj.id !== object.id,
+        );
+        const nextNum = otherHeads.length + 1;
+        const newName = `Sub-Graph ${nextNum}`;
+        updateObject(object.id, {
+          metadata: {
+            ...metadata,
+            name: newName,
+            label: newName,
+            isAutoNamed: true,
+            config: {
+              ...(metadata.config || {}),
+              name: newName,
+              label: newName,
+            },
+            inputs: {
+              ...(metadata.inputs || {}),
+              name: newName,
+              label: newName,
+            },
+          },
+        });
+      }
+    }
+  }, [
+    object.id,
+    object.type,
+    objects,
+    updateObject,
+    metadata.isAutoNamed,
+    metadata.name,
+  ]);
 
   const getFieldValue = (key: string, defaultValue = ""): string => {
     return String(config[key] ?? inputs[key] ?? metadata[key] ?? defaultValue);
@@ -240,16 +308,102 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
           to: getFieldValue("to", "user@example.com"),
           subject: getFieldValue("subject", "Workflow Triggered"),
         };
+      } else if (
+        blockType.toLowerCase().includes("foreach") ||
+        blockType.toLowerCase().includes("loop")
+      ) {
+        const loopType = getFieldValue("loopType", "collection");
+        const currentIndex = Number(getFieldValue("currentIndex", "0"));
+        const context = parsedMockInput?.payload || parsedMockInput || {};
+
+        if (loopType === "collection") {
+          let collection: any[] = [];
+          try {
+            const collectionPath = getFieldValue("collection", "payload.items");
+            const getNested = (obj: any, path: string) => {
+              return path
+                .split(".")
+                .reduce((acc, part) => acc && acc[part], obj);
+            };
+            collection =
+              getNested(context, collectionPath) ||
+              getNested(parsedMockInput, collectionPath) ||
+              [];
+            if (!Array.isArray(collection)) {
+              collection = [];
+            }
+          } catch {
+            collection = [];
+          }
+
+          if (currentIndex < collection.length) {
+            simulatedOutput = {
+              branch: "loopPath",
+              item: collection[currentIndex],
+              index: currentIndex,
+              context,
+            };
+          } else {
+            simulatedOutput = {
+              branch: "exitPath",
+              item: null,
+              index: currentIndex,
+              context,
+            };
+          }
+        } else if (loopType === "times") {
+          const maxIterations = Number(getFieldValue("maxIterations", "10"));
+          if (currentIndex < maxIterations) {
+            simulatedOutput = {
+              branch: "loopPath",
+              item: currentIndex,
+              index: currentIndex,
+              context,
+            };
+          } else {
+            simulatedOutput = {
+              branch: "exitPath",
+              item: null,
+              index: currentIndex,
+              context,
+            };
+          }
+        } else if (loopType === "condition") {
+          const condition = getFieldValue("condition", "true");
+          const loopWhile = getFieldValue("loopWhile", "true") === "true";
+          let outcome = true;
+          try {
+            const fn = new Function("data", `return !!(${condition})`);
+            outcome = fn(context);
+          } catch (e) {
+            outcome = false;
+          }
+          const shouldLoop = loopWhile ? outcome : !outcome;
+          if (shouldLoop) {
+            simulatedOutput = {
+              branch: "loopPath",
+              item: currentIndex,
+              index: currentIndex,
+              context,
+            };
+          } else {
+            simulatedOutput = {
+              branch: "exitPath",
+              item: null,
+              index: currentIndex,
+              context,
+            };
+          }
+        }
       } else if (blockType.includes("if") || blockType.includes("router")) {
         const condition = getFieldValue("condition", "true");
         let outcome = true;
         try {
-          // Safe eval with mock context
           const context = parsedMockInput?.payload || parsedMockInput;
           const fn = new Function("data", `return !!(${condition})`);
           outcome = fn(context);
         } catch (e) {
-          outcome = true; // Fallback
+          outcome = true;
         }
         simulatedOutput = {
           conditionEvaluated: condition,
@@ -299,6 +453,8 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
     if (t.includes("agent")) return Activity;
     if (t.includes("webFetch")) return Globe;
     if (t.includes("slack") || t.includes("discord")) return Send;
+    if (t.includes("subGraphHead")) return Zap;
+    if (t.includes("subGraph")) return Router;
     if (t.includes("gmail")) return Mail;
     if (t.includes("sheets")) return Sheet;
     return Settings;
@@ -1001,25 +1157,188 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
                 </div>
               )}
 
-              {/* Loop Node Configuration */}
-              {object.type.includes("forEach") && (
+              {/* Loop / For Each Node Configuration */}
+              {(object.type.toLowerCase().includes("foreach") ||
+                object.type.toLowerCase().includes("loop")) && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
-                      Collection Path
+                      Loop Type
+                    </label>
+                    <select
+                      value={getFieldValue("loopType", "collection")}
+                      onChange={(e) =>
+                        handleFieldChange("loopType", e.target.value)
+                      }
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="collection" className="bg-[#111128]">
+                        Iterate Over Collection
+                      </option>
+                      <option value="times" className="bg-[#111128]">
+                        Loop N Times
+                      </option>
+                      <option value="condition" className="bg-[#111128]">
+                        Loop While Condition
+                      </option>
+                    </select>
+                  </div>
+
+                  {getFieldValue("loopType", "collection") === "collection" && (
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                        Collection (Array or Path Expression)
+                      </label>
+                      <input
+                        type="text"
+                        value={getFieldValue("collection", "payload.items")}
+                        onChange={(e) =>
+                          handleFieldChange("collection", e.target.value)
+                        }
+                        placeholder="e.g. data.items"
+                        className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
+                      />
+                      <p className="text-[10px] text-white/30 italic">
+                        Specifies the JSON array or variable to iterate over.
+                      </p>
+                    </div>
+                  )}
+
+                  {getFieldValue("loopType", "collection") === "times" && (
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                        Loop Count (Times)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={getFieldValue("maxIterations", "10")}
+                        onChange={(e) =>
+                          handleFieldChange(
+                            "maxIterations",
+                            Number(e.target.value),
+                          )
+                        }
+                        placeholder="10"
+                        className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
+                      />
+                      <p className="text-[10px] text-white/30 italic">
+                        The maximum number of loop iterations.
+                      </p>
+                    </div>
+                  )}
+
+                  {getFieldValue("loopType", "collection") === "condition" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                          Loop Condition (Expression)
+                        </label>
+                        <input
+                          type="text"
+                          value={getFieldValue("condition", "data.counter < 5")}
+                          onChange={(e) =>
+                            handleFieldChange("condition", e.target.value)
+                          }
+                          placeholder="e.g. data.counter < 5"
+                          className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-slate-200 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all font-mono"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                          Condition Evaluation Policy
+                        </label>
+                        <select
+                          value={getFieldValue("loopWhile", "true")}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              "loopWhile",
+                              e.target.value === "true",
+                            )
+                          }
+                          className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all appearance-none cursor-pointer"
+                        >
+                          <option value="true" className="bg-[#111128]">
+                            Loop While Condition is Met (Truthy)
+                          </option>
+                          <option value="false" className="bg-[#111128]">
+                            Loop While Condition is NOT Met (Falsy)
+                          </option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Sub-Graph Call Configuration */}
+              {(object.type === "iem.conductor.subGraph" ||
+                object.type === "conductor.subGraph") && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                      Target Sub-Graph Head
+                    </label>
+                    <select
+                      value={getFieldValue("subGraphId", "")}
+                      onChange={(e) =>
+                        handleFieldChange("subGraphId", e.target.value)
+                      }
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="" className="bg-[#111128]">
+                        Select a Sub-Graph...
+                      </option>
+                      {Object.values(objects)
+                        .filter(
+                          (obj) =>
+                            obj.type === "iem.conductor.subGraphHead" ||
+                            obj.type === "conductor.subGraphHead",
+                        )
+                        .map((obj) => (
+                          <option
+                            key={obj.id}
+                            value={obj.id}
+                            className="bg-[#111128]"
+                          >
+                            {obj.metadata?.name ||
+                              obj.metadata?.label ||
+                              obj.id}
+                          </option>
+                        ))}
+                    </select>
+                    <p className="text-[10px] text-white/30 italic">
+                      Choose which Sub-Graph Head function block will receive
+                      control flow when this block runs.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-Graph Head Configuration */}
+              {(object.type === "iem.conductor.subGraphHead" ||
+                object.type === "conductor.subGraphHead") && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                      Sub-Graph Name
                     </label>
                     <input
                       type="text"
-                      value={getFieldValue("collection", "payload.items")}
-                      onChange={(e) =>
-                        handleFieldChange("collection", e.target.value)
-                      }
-                      placeholder="e.g. data.items"
+                      value={getFieldValue("name", "Sub-Graph")}
+                      onChange={(e) => {
+                        handleFieldsChange({
+                          name: e.target.value,
+                          label: e.target.value,
+                        });
+                      }}
                       className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
+                      placeholder="My Sub-Graph"
                     />
                     <p className="text-[10px] text-white/30 italic">
-                      Specifies which array key in the input JSON should be
-                      iterated over.
+                      Specify a unique and recognizable name for this subgraph
+                      function.
                     </p>
                   </div>
                 </div>
@@ -1039,7 +1358,10 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
                 !object.type.includes("if") &&
                 !object.type.includes("router") &&
                 !object.type.includes("delay") &&
-                !object.type.includes("forEach") && (
+                !object.type.includes("subGraph") &&
+                !object.type.includes("subGraphHead") &&
+                !object.type.toLowerCase().includes("foreach") &&
+                !object.type.toLowerCase().includes("loop") && (
                   <div className="space-y-4">
                     <p className="text-xs text-white/50 italic">
                       This block resolves to a general task type. Customize the
@@ -1383,6 +1705,28 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
           </div>
         )}
 
+        {(object.type === "iem.conductor.subGraph" ||
+          object.type === "conductor.subGraph") && (
+          <div className="space-y-1.5 w-full">
+            <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-brand-purple/70 block">
+              Sub-Graph Call
+            </span>
+            <div className="text-[10px] text-slate-300 font-sans italic whitespace-normal bg-white/5 border border-white/10 p-2 rounded-xl">
+              {(() => {
+                const subGraphId = getFieldValue("subGraphId");
+                const targetObj = objects[subGraphId];
+                const targetName =
+                  targetObj?.metadata?.name ||
+                  targetObj?.metadata?.label ||
+                  targetObj?.id;
+                return targetName
+                  ? `Calls "${targetName}"`
+                  : "Calls a defined sub-graph";
+              })()}
+            </div>
+          </div>
+        )}
+
         {!object.type.includes("webhook") &&
           !object.type.includes("trigger.manual") &&
           !object.type.includes("manualTrigger") &&
@@ -1393,7 +1737,8 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
           !object.type.includes("discord") &&
           !object.type.includes("gmail") &&
           !object.type.includes("sheets") &&
-          !object.type.includes("if") && (
+          !object.type.includes("if") &&
+          !object.type.includes("subGraph") && (
             <div className="flex-1 flex items-center justify-center italic text-[9px] text-white/30 text-center px-2">
               {metadata.description ||
                 "Double-click to open configuration workspace"}

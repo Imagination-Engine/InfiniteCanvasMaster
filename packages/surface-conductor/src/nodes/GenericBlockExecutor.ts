@@ -14,10 +14,8 @@ import {
   webhookCallBlock,
   scheduleTriggerBlock,
   saasBlock,
-  routerBlock,
   delayBlock,
   stateBlock,
-  errorBoundaryBlock,
   subGraphBlock,
   webFetchBlock,
   slackPostBlock,
@@ -25,6 +23,7 @@ import {
   functionBlock,
   functionCallBlock,
   codeBlock,
+  forEachBlock,
 } from "../blocks/orchestrationBlocks.js";
 import { blockRegistry, type BlockDefinition } from "@iem/core";
 
@@ -39,10 +38,8 @@ const BLOCK_DEFINITIONS: Record<string, BlockDefinition<any, any>> = {
   "iem.conductor.webhookCall": webhookCallBlock,
   "iem.conductor.schedule": scheduleTriggerBlock,
   "iem.conductor.saas": saasBlock,
-  "iem.conductor.router": routerBlock,
   "iem.conductor.delay": delayBlock,
   "iem.conductor.state": stateBlock,
-  "iem.conductor.errorBoundary": errorBoundaryBlock,
   "iem.conductor.subGraph": subGraphBlock,
   "iem.conductor.webFetch": webFetchBlock,
   "iem.conductor.slackPost": slackPostBlock,
@@ -50,6 +47,7 @@ const BLOCK_DEFINITIONS: Record<string, BlockDefinition<any, any>> = {
   "iem.conductor.function": functionBlock,
   "iem.conductor.functionCall": functionCallBlock,
   "iem.conductor.code": codeBlock,
+  "iem.conductor.forEach": forEachBlock,
 };
 
 /**
@@ -58,6 +56,7 @@ const BLOCK_DEFINITIONS: Record<string, BlockDefinition<any, any>> = {
  */
 const KIND_TO_BLOCK_ID: Record<string, string> = {
   trigger: "iem.conductor.webhook",
+  forEach: "iem.conductor.forEach",
   webhook: "iem.conductor.webhook",
   webhookCall: "iem.conductor.webhookCall",
   condition: "iem.conductor.if",

@@ -118,12 +118,12 @@ const NODE_ICON_BY_TYPE: Record<string, LucideIcon> = {
   "reel.transition": Film,
   "reel.export": Upload,
   // Conductor blocks
-  "conductor.router": GitBranch,
+
   "conductor.forEach": List,
   "conductor.delay": Timer,
   "conductor.webhook": Globe,
   "conductor.state": Database,
-  "conductor.errorBoundary": Zap,
+
   "conductor.subGraph": Layers,
   "conductor.saas": Globe,
   // Forge blocks

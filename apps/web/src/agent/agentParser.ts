@@ -102,6 +102,8 @@ export function compileToMastraWorkflow(
         id: e.id,
         source: e.source || e.fromId,
         target: e.target || e.toId,
+        sourceHandle: e.sourceHandle || e.fromHandleId,
+        targetHandle: e.targetHandle || e.toHandleId,
         data: e.data || e.props || {},
       })),
     },

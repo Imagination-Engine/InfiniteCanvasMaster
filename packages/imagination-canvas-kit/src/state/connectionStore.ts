@@ -6,6 +6,7 @@ export interface Connection {
   fromId: string;
   toId: string;
   label?: string;
+  fromHandleId?: string;
 }
 
 export interface DraftConnection {
@@ -13,6 +14,7 @@ export interface DraftConnection {
   type: "source" | "target";
   x: number;
   y: number;
+  fromHandleId?: string;
 }
 
 interface ConnectionState {

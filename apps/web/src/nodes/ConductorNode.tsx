@@ -29,12 +29,6 @@ const CONDUCTOR_META: Record<
     label: string;
   }
 > = {
-  "conductor.router": {
-    icon: GitBranch,
-    color: "text-blue-400",
-    accentBorder: "border-blue-500/40",
-    label: "Router",
-  },
   "conductor.forEach": {
     icon: Repeat,
     color: "text-indigo-400",
@@ -59,12 +53,7 @@ const CONDUCTOR_META: Record<
     accentBorder: "border-amber-500/40",
     label: "State",
   },
-  "conductor.errorBoundary": {
-    icon: AlertTriangle,
-    color: "text-rose-400",
-    accentBorder: "border-rose-500/40",
-    label: "Error Boundary",
-  },
+
   "conductor.subGraph": {
     icon: Layers,
     color: "text-purple-400",
@@ -152,42 +141,6 @@ export default function ConductorNode({ id, data, selected }: NodeProps) {
 
       <div className="nodrag nowheel space-y-3 flex-1 overflow-auto custom-scrollbar">
         {/* Router — condition + visual branches */}
-        {nodeData.type === "conductor.router" && (
-          <>
-            <label className="block space-y-1.5">
-              <span className="block text-[9px] font-black uppercase tracking-widest text-brand-text-muted">
-                Condition
-              </span>
-              <input
-                value={String(nodeData.inputs?.condition ?? "")}
-                onChange={(e) =>
-                  updateData({ inputs: { condition: e.target.value } })
-                }
-                onKeyDown={(e) => e.stopPropagation()}
-                placeholder="data.score > 80"
-                className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-3 py-2 text-[11px] font-mono outline-none focus:border-blue-500/50 transition-all text-blue-300 placeholder:text-brand-text-muted/30"
-              />
-            </label>
-            {/* Visual branch display */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase tracking-widest text-emerald-400 text-center">
-                ✓ True
-              </div>
-              <GitBranch size={12} className="text-brand-text-muted shrink-0" />
-              <div className="flex-1 py-2 px-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[9px] font-black uppercase tracking-widest text-rose-400 text-center">
-                ✗ False
-              </div>
-            </div>
-            {nodeData.outputs?.path && (
-              <div className="flex items-center gap-1.5 px-2">
-                <ArrowRight size={10} className="text-blue-400" />
-                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                  Path: {String(nodeData.outputs.path)}
-                </span>
-              </div>
-            )}
-          </>
-        )}
 
         {/* For Each — items count */}
         {nodeData.type === "conductor.forEach" && (
@@ -335,34 +288,6 @@ export default function ConductorNode({ id, data, selected }: NodeProps) {
         )}
 
         {/* Error Boundary */}
-        {nodeData.type === "conductor.errorBoundary" && (
-          <>
-            <label className="block space-y-1.5">
-              <span className="block text-[9px] font-black uppercase tracking-widest text-brand-text-muted">
-                Watching Node ID
-              </span>
-              <input
-                value={String(nodeData.inputs?.node ?? "")}
-                onChange={(e) =>
-                  updateData({ inputs: { node: e.target.value } })
-                }
-                onKeyDown={(e) => e.stopPropagation()}
-                placeholder="node-abc123"
-                className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-3 py-2 text-[11px] font-mono outline-none focus:border-rose-500/50 transition-all text-white placeholder:text-brand-text-muted/30"
-              />
-            </label>
-            {nodeData.outputs?.error && (
-              <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3">
-                <span className="block text-[9px] font-black uppercase tracking-widest text-rose-400 mb-1">
-                  Caught Error
-                </span>
-                <pre className="text-[9px] font-mono text-rose-300/70 overflow-auto max-h-16">
-                  {JSON.stringify(nodeData.outputs.error, null, 2)}
-                </pre>
-              </div>
-            )}
-          </>
-        )}
 
         {/* Sub-Graph */}
         {nodeData.type === "conductor.subGraph" && (

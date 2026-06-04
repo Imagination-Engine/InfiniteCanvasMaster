@@ -133,4 +133,141 @@ describe("DAG Workflow Compiler with Fabric v2", () => {
     expect(env.payload.result).toBe(100);
     expect(env.lane).toBe("agent_stream");
   });
+
+  it("should conditional skip branches based on If block result", async () => {
+    blockRegistry.register({
+      id: "iem.conductor.if",
+      name: "If",
+      category: "control",
+      mode: "triggered",
+      description: "If block",
+      input: z.object({ condition: z.boolean() }),
+      output: z.object({
+        branch: z.enum(["truePath", "falsePath"]),
+        context: z.record(z.any()),
+      }),
+      agent: {
+        invoke: async (input: any) => ({
+          branch: input.condition ? "truePath" : "falsePath",
+          context: {},
+        }),
+      } as any,
+    });
+
+    const graph = {
+      nodes: [
+        {
+          id: "ifNode",
+          type: "iem.conductor.if",
+          data: { inputs: { condition: true } },
+        },
+        { id: "trueNode", type: "mock.block", data: { inputs: { val: 10 } } },
+        { id: "falseNode", type: "mock.block", data: { inputs: { val: 20 } } },
+        { id: "downstreamTrueNode", type: "mock.block", data: { inputs: {} } },
+      ],
+      edges: [
+        { source: "ifNode", target: "trueNode", sourceHandle: "true" },
+        { source: "ifNode", target: "falseNode", sourceHandle: "false" },
+        { source: "trueNode", target: "downstreamTrueNode" },
+      ],
+    };
+
+    compileGraphToWorkflow(graph);
+
+    const ifStep = capturedSteps.find((s) => s.id === "ifNode");
+    const trueStep = capturedSteps.find((s) => s.id === "trueNode");
+    const falseStep = capturedSteps.find((s) => s.id === "falseNode");
+    const downstreamTrueStep = capturedSteps.find(
+      (s) => s.id === "downstreamTrueNode",
+    );
+
+    // Execute IF block (evaluates to truePath)
+    const ifEnv = await ifStep.execute({
+      getStepResult: () => null,
+      getInitData: () => null,
+    });
+    expect(ifEnv.payload.branch).toBe("truePath");
+
+    // Execute trueNode -> should execute normally
+    const trueEnv = await trueStep.execute({
+      getStepResult: (id: string) => (id === "ifNode" ? ifEnv : null),
+      getInitData: () => null,
+    });
+    expect(trueEnv.payload.val).toBe(20); // 10 * 2
+
+    // Execute falseNode -> should skip and return skipped envelope
+    const falseEnv = await falseStep.execute({
+      getStepResult: (id: string) => (id === "ifNode" ? ifEnv : null),
+      getInitData: () => null,
+    });
+    expect(falseEnv.payload.status).toBe("skipped");
+
+    // Execute downstreamTrueNode -> should execute since parent trueNode was not skipped
+    const downstreamTrueEnv = await downstreamTrueStep.execute({
+      getStepResult: (id: string) => (id === "trueNode" ? trueEnv : null),
+      getInitData: () => null,
+    });
+    expect(downstreamTrueEnv.payload.val).toBe(40); // 20 * 2
+  });
+
+  it("should compile subgraphs with virtual call and return edges", async () => {
+    blockRegistry.register({
+      id: "iem.conductor.subGraphHead",
+      name: "Sub-Graph Head",
+      category: "control",
+      mode: "ambient",
+      description: "Subgraph Head",
+      input: z.any(),
+      output: z.any(),
+      agent: {
+        invoke: async (input: any) => input,
+      } as any,
+    });
+
+    blockRegistry.register({
+      id: "iem.conductor.subGraph",
+      name: "Sub-Graph Call",
+      category: "control",
+      mode: "triggered",
+      description: "Subgraph Call",
+      input: z.any(),
+      output: z.any(),
+      agent: {
+        invoke: async (input: any) => input,
+      } as any,
+    });
+
+    const graph = {
+      nodes: [
+        {
+          id: "callerNode",
+          type: "iem.conductor.subGraph",
+          data: { inputs: { subGraphId: "subGraphHeadNode" } },
+        },
+        {
+          id: "subGraphHeadNode",
+          type: "iem.conductor.subGraphHead",
+          data: { inputs: { name: "TestSubGraph" } },
+        },
+        { id: "innerNode", type: "mock.block", data: { inputs: { val: 10 } } },
+        { id: "afterCallerNode", type: "mock.block", data: { inputs: {} } },
+      ],
+      edges: [
+        { source: "subGraphHeadNode", target: "innerNode" },
+        { source: "callerNode", target: "afterCallerNode" },
+      ],
+    };
+
+    compileGraphToWorkflow(graph);
+
+    const callerStep = capturedSteps.find((s) => s.id === "callerNode");
+    const headStep = capturedSteps.find((s) => s.id === "subGraphHeadNode");
+    const innerStep = capturedSteps.find((s) => s.id === "innerNode");
+    const afterStep = capturedSteps.find((s) => s.id === "afterCallerNode");
+
+    expect(callerStep).toBeDefined();
+    expect(headStep).toBeDefined();
+    expect(innerStep).toBeDefined();
+    expect(afterStep).toBeDefined();
+  });
 });

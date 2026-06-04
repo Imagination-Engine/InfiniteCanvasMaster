@@ -107,6 +107,11 @@ export class StudioInteropResolver {
     const sourceProduces = source.produces || [];
     const targetAccepts = target.accepts || [];
 
+    // If either block does not declare any contracts, allow the connection universally
+    if (sourceProduces.length === 0 || targetAccepts.length === 0) {
+      return true;
+    }
+
     // "any" is a universal wildcard
     if (targetAccepts.includes("any") || sourceProduces.includes("any")) {
       return true;

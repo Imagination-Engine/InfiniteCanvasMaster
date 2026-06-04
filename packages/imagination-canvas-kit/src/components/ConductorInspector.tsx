@@ -220,10 +220,34 @@ const CONDUCTOR_FIELDS: Record<string, FieldDef[]> = {
   ],
   "conductor.subGraph": [
     {
-      key: "graphId",
-      label: "Sub-Graph ID",
+      key: "subGraphId",
+      label: "Call Sub-Graph",
+      type: "select",
+      options: [],
+    },
+  ],
+  "iem.conductor.subGraph": [
+    {
+      key: "subGraphId",
+      label: "Call Sub-Graph",
+      type: "select",
+      options: [],
+    },
+  ],
+  "conductor.subGraphHead": [
+    {
+      key: "name",
+      label: "Sub-Graph Name",
       type: "text",
-      placeholder: "graph-abc123",
+      placeholder: "My Sub-Graph",
+    },
+  ],
+  "iem.conductor.subGraphHead": [
+    {
+      key: "name",
+      label: "Sub-Graph Name",
+      type: "text",
+      placeholder: "My Sub-Graph",
     },
   ],
 };
@@ -344,6 +368,10 @@ const TYPE_ICONS: Record<string, any> = {
   "conductor.state": Database,
   "conductor.errorBoundary": AlertTriangle,
   "conductor.saas": Globe,
+  "conductor.subGraph": Router,
+  "iem.conductor.subGraph": Router,
+  "conductor.subGraphHead": Zap,
+  "iem.conductor.subGraphHead": Zap,
 };
 
 function resolveIcon(type: string) {
@@ -404,13 +432,17 @@ export const ConductorInspector: React.FC = () => {
       updateObject(selectedId, {
         metadata: {
           ...(object as any).metadata,
+          [fieldKey]: value,
+          ...(fieldKey === "name" ? { label: value } : {}),
           config: {
             ...((object as any).metadata?.config || {}),
             [fieldKey]: value,
+            ...(fieldKey === "name" ? { label: value } : {}),
           },
           inputs: {
             ...((object as any).metadata?.inputs || {}),
             [fieldKey]: value,
+            ...(fieldKey === "name" ? { label: value } : {}),
           },
         },
       });
@@ -595,15 +627,34 @@ export const ConductorInspector: React.FC = () => {
                             <option value="" className="bg-[#111128]">
                               Select...
                             </option>
-                            {(field.options || []).map((opt) => (
-                              <option
-                                key={opt}
-                                value={opt}
-                                className="bg-[#111128]"
-                              >
-                                {opt}
-                              </option>
-                            ))}
+                            {field.key === "subGraphId"
+                              ? Object.values(objects)
+                                  .filter(
+                                    (obj) =>
+                                      obj.type ===
+                                        "iem.conductor.subGraphHead" ||
+                                      obj.type === "conductor.subGraphHead",
+                                  )
+                                  .map((obj) => (
+                                    <option
+                                      key={obj.id}
+                                      value={obj.id}
+                                      className="bg-[#111128]"
+                                    >
+                                      {obj.metadata?.name ||
+                                        obj.metadata?.label ||
+                                        obj.id}
+                                    </option>
+                                  ))
+                              : (field.options || []).map((opt) => (
+                                  <option
+                                    key={opt}
+                                    value={opt}
+                                    className="bg-[#111128]"
+                                  >
+                                    {opt}
+                                  </option>
+                                ))}
                           </select>
                         )}
                       </div>

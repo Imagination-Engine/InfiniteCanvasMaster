@@ -22,6 +22,8 @@ export type UnifiedCanvasEdgeLike = {
   source: string;
   target: string;
   label?: string;
+  sourceHandle?: string;
+  targetHandle?: string;
   data?: Record<string, unknown>;
 };
 
@@ -116,6 +118,8 @@ export function documentEdgesToConnections(
       fromId: edge.source,
       toId: edge.target,
       label: edge.label ?? (edge.data?.label as string | undefined),
+      fromHandleId:
+        edge.sourceHandle ?? (edge.data?.fromHandleId as string | undefined),
     };
   }
   return out;
@@ -146,7 +150,11 @@ export function exportCanvasToDocument(
       id: c.id,
       source: c.fromId,
       target: c.toId,
+      sourceHandle: c.fromHandleId,
       label: c.label,
+      data: {
+        fromHandleId: c.fromHandleId,
+      },
     })),
     viewport: viewport ?? { x: 0, y: 0, zoom: 1 },
   };

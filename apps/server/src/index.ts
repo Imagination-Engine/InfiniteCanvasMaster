@@ -1,4 +1,5 @@
 import "./env.js";
+// Force reload to pick up new compiler paths
 import { serve } from "@hono/node-server";
 import { app } from "./app.js";
 import { initializeBlockRegistry } from "./registry-init.js";
