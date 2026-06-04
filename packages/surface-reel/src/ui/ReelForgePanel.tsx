@@ -136,6 +136,8 @@ export const ReelForgePanel: React.FC<ReelForgePanelProps> = ({
     const nextForge: VideoForgeState = {
       prompt,
       status: "generating",
+      error: undefined,
+      clipUrl: undefined,
     };
 
     persist({

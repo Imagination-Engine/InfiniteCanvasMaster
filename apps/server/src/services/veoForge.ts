@@ -2,6 +2,12 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { writeFile, mkdir } from "node:fs/promises";
+import {
+  buildOperationPollUrl,
+  extractInlineVideoPayload,
+  extractVideoDownloadUri,
+  veoCompletionFailureMessage,
+} from "./veoResponse.js";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const VEO_MODEL = "veo-3.1-generate-preview";
@@ -73,12 +79,22 @@ async function resolveImageToBase64(
   return { mimeType, data: buf.toString("base64") };
 }
 
+async function persistVideoBuffer(
+  buf: Buffer,
+  mediaDir: string,
+  ext = "mp4",
+): Promise<string> {
+  await mkdir(mediaDir, { recursive: true });
+  const filename = `${randomUUID()}.${ext}`;
+  await writeFile(join(mediaDir, filename), buf);
+  return `/generated-media/${filename}`;
+}
+
 async function downloadVideoToMediaDir(
   videoUri: string,
   apiKey: string,
   mediaDir: string,
 ): Promise<string> {
-  await mkdir(mediaDir, { recursive: true });
   const res = await fetch(videoUri, {
     headers: { "x-goog-api-key": apiKey },
     redirect: "follow",
@@ -87,9 +103,7 @@ async function downloadVideoToMediaDir(
     throw new Error(`Failed to download generated video: ${res.status}`);
   }
   const buf = Buffer.from(await res.arrayBuffer());
-  const filename = `${randomUUID()}.mp4`;
-  await writeFile(join(mediaDir, filename), buf);
-  return `/generated-media/${filename}`;
+  return persistVideoBuffer(buf, mediaDir);
 }
 
 async function pollGeminiOperation(
@@ -97,9 +111,10 @@ async function pollGeminiOperation(
   apiKey: string,
   mediaDir: string,
 ): Promise<string> {
+  const pollUrl = buildOperationPollUrl(operationName, GEMINI_BASE, VEO_MODEL);
   const maxAttempts = 60;
   for (let i = 0; i < maxAttempts; i++) {
-    const res = await fetch(`${GEMINI_BASE}/${operationName}`, {
+    const res = await fetch(pollUrl, {
       headers: { "x-goog-api-key": apiKey },
     });
     if (!res.ok) {
@@ -113,15 +128,22 @@ async function pollGeminiOperation(
     }
 
     if (data.done) {
-      const videoUri =
-        data.response?.generateVideoResponse?.generatedSamples?.[0]?.video
-          ?.uri ?? data.response?.generatedVideos?.[0]?.video?.uri;
-
-      if (!videoUri) {
-        throw new Error("Veo completed but no video URI in response");
+      const inline = extractInlineVideoPayload(data);
+      if (inline) {
+        const ext = inline.mimeType.includes("webm") ? "webm" : "mp4";
+        return persistVideoBuffer(inline.data, mediaDir, ext);
       }
 
-      return downloadVideoToMediaDir(videoUri, apiKey, mediaDir);
+      const videoUri = extractVideoDownloadUri(data, GEMINI_BASE);
+      if (videoUri) {
+        return downloadVideoToMediaDir(videoUri, apiKey, mediaDir);
+      }
+
+      console.error(
+        "[VEO] Operation completed without a downloadable video:",
+        JSON.stringify(data).slice(0, 2000),
+      );
+      throw new Error(veoCompletionFailureMessage(data));
     }
 
     await new Promise((r) => setTimeout(r, 5000));
@@ -189,6 +211,7 @@ async function runVeoJob(
         parameters: {
           aspectRatio: "16:9",
           durationSeconds: referencePayload.length > 0 ? 8 : 6,
+          ...(referencePayload.length > 0 ? { resolution: "720p" } : {}),
         },
       };
 
