@@ -6,9 +6,11 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
     "rootDir": "src",
-    "moduleResolution": "NodeNext",
-    "module": "NodeNext",
-    "jsx": "react-jsx"
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "customConditions": ["default"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "vitest.config.ts"]
