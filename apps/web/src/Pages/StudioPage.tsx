@@ -4,7 +4,14 @@ import { useAuth } from "../auth/AuthContext";
 import { apiRequest } from "../lib/api";
 import { Sparkles, ChevronRight, Bot, LayoutGrid, ArrowUp } from "lucide-react";
 import { Markdown } from "../Components/Chat/Markdown";
-import { GrowingTextarea } from "@iem/chat-interaction-kit";
+import {
+  ComposerAttachmentStrip,
+  GrowingTextarea,
+  MessageAttachmentPreview,
+  createComposerAttachmentsFromFiles,
+  revokeComposerAttachmentUrls,
+  type ComposerAttachment,
+} from "@iem/chat-interaction-kit";
 
 interface Project {
   id: string;
@@ -65,7 +72,25 @@ export default function StudioPage() {
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
-  const [messages, setMessages] = useState<any[]>([]);
+  type StudioMessage = {
+    id: string;
+    role: string;
+    content: string;
+    toolInvocations?: any[];
+    attachments?: Array<{
+      id: string;
+      previewUrl: string;
+      name: string;
+      kind: "image" | "file";
+    }>;
+  };
+
+  const [messages, setMessages] = useState<StudioMessage[]>([]);
+  const [stagedAttachments, setStagedAttachments] = useState<
+    ComposerAttachment[]
+  >([]);
+  const stagedAttachmentsRef = useRef(stagedAttachments);
+  stagedAttachmentsRef.current = stagedAttachments;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<any>(null);
 
@@ -105,6 +130,36 @@ export default function StudioPage() {
     }
   }, [messages, shouldAutoScroll, scrollToBottom]);
 
+  useEffect(() => {
+    return () => {
+      revokeComposerAttachmentUrls(stagedAttachmentsRef.current);
+    };
+  }, []);
+
+  const handleFileSelect = (files: FileList) => {
+    const added = createComposerAttachmentsFromFiles(files);
+    if (added.length === 0) return;
+    setStagedAttachments((prev) => [...prev, ...added]);
+  };
+
+  const handleRemoveStagedAttachment = (id: string) => {
+    setStagedAttachments((prev) => {
+      const removed = prev.find((a) => a.id === id);
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((a) => a.id !== id);
+    });
+  };
+
+  const messageAttachmentsFromStaged = (
+    attachments: ComposerAttachment[],
+  ): StudioMessage["attachments"] =>
+    attachments.map((a) => ({
+      id: a.id,
+      previewUrl: a.previewUrl,
+      name: a.file.name,
+      kind: a.kind,
+    }));
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalInput(e.target.value);
   };
@@ -112,10 +167,13 @@ export default function StudioPage() {
   const handleChatSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const text = localInput.trim();
+    const sentAttachments = messageAttachmentsFromStaged(stagedAttachments);
 
-    if (!text || isLoading) return;
+    if ((!text && sentAttachments.length === 0) || isLoading) return;
 
+    const stagedSnapshot = [...stagedAttachments];
     setLocalInput("");
+    setStagedAttachments([]);
     setIsLoading(true);
     setError(null);
 
@@ -125,9 +183,20 @@ export default function StudioPage() {
       setActiveDraftId(sessionId);
     }
 
-    const newMessages = [
+    const userContent =
+      text ||
+      (sentAttachments.length > 0
+        ? `[Attached ${sentAttachments.length} image(s): ${sentAttachments.map((a) => a.name).join(", ")}]`
+        : "");
+
+    const newMessages: StudioMessage[] = [
       ...messages,
-      { id: Date.now().toString(), role: "user", content: text },
+      {
+        id: Date.now().toString(),
+        role: "user",
+        content: userContent,
+        ...(sentAttachments.length > 0 ? { attachments: sentAttachments } : {}),
+      },
     ];
     setMessages(newMessages);
 
@@ -222,6 +291,7 @@ export default function StudioPage() {
       console.error("[UI] Synchronization failure:", err);
       setError(err);
       setLocalInput(text);
+      setStagedAttachments(stagedSnapshot);
     } finally {
       setIsLoading(false);
     }
@@ -292,7 +362,12 @@ export default function StudioPage() {
                       <div
                         className={`p-6 rounded-3xl text-sm leading-relaxed shadow-2xl ${!isAssistant ? "bg-brand-purple/10 border border-brand-purple/20 text-white rounded-tr-sm" : "bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm"}`}
                       >
-                        <Markdown content={m?.content || ""} />
+                        {m.attachments && m.attachments.length > 0 && (
+                          <MessageAttachmentPreview
+                            attachments={m.attachments}
+                          />
+                        )}
+                        {m?.content ? <Markdown content={m.content} /> : null}
 
                         {(m?.toolInvocations || []).map((tool: any) => {
                           if (tool?.toolName === "generate_canvas_blueprint") {
@@ -390,7 +465,7 @@ export default function StudioPage() {
           <div className="p-6 bg-white/[0.02] border-t border-white/5">
             <form
               onSubmit={handleChatSubmit}
-              className="max-w-3xl mx-auto flex items-end group"
+              className="max-w-3xl mx-auto w-full"
             >
               <GrowingTextarea
                 ref={chatInputRef}
@@ -398,11 +473,25 @@ export default function StudioPage() {
                 onChange={handleInputChange}
                 placeholder="Describe your vision..."
                 onEnter={handleChatSubmit}
-                onFileSelect={(files) => console.log("Files selected:", files)}
+                onFileSelect={handleFileSelect}
+                fileAccept="image/*"
+                composerPreview={
+                  stagedAttachments.length > 0 ? (
+                    <ComposerAttachmentStrip
+                      attachments={stagedAttachments}
+                      onRemove={handleRemoveStagedAttachment}
+                      className="pb-0"
+                    />
+                  ) : null
+                }
                 actions={
                   <button
                     type="submit"
-                    disabled={!(localInput || "").trim() || isLoading}
+                    disabled={
+                      (!(localInput || "").trim() &&
+                        stagedAttachments.length === 0) ||
+                      isLoading
+                    }
                     className="w-10 h-10 flex items-center justify-center bg-brand-purple hover:bg-brand-cyan text-white rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:hover:bg-brand-purple group/btn"
                   >
                     <ArrowUp

@@ -5,7 +5,14 @@ import { BrainCircuit, X, Send, Sparkles } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useViewportStore } from "../state/viewportStore";
 import { useExpansionStore } from "../state/expansionStore";
-import { GrowingTextarea } from "@iem/chat-interaction-kit";
+import {
+  ComposerAttachmentStrip,
+  GrowingTextarea,
+  MessageAttachmentPreview,
+  createComposerAttachmentsFromFiles,
+  revokeComposerAttachmentUrls,
+  type ComposerAttachment,
+} from "@iem/chat-interaction-kit";
 import { classifyOrchestratorIntent } from "../utils/orchestratorIntentClassifier";
 import { useOrchestratorContext } from "../hooks/useOrchestratorContext";
 import { extractAgentTraits } from "../utils/orchestratorTraitExtractor";
@@ -35,14 +42,20 @@ export const FloatingOrchestratorChat: React.FC = () => {
 
   const suggestionChips = buildSuggestionChips(selectedBlockKind);
 
-  const [messages, setMessages] = useState<
-    Array<{
+  type OrchestratorMessage = {
+    id: string;
+    role: string;
+    content: string;
+    type?: "text" | "artifact" | "card";
+    attachments?: Array<{
       id: string;
-      role: string;
-      content: string;
-      type?: "text" | "artifact" | "card";
-    }>
-  >([
+      previewUrl: string;
+      name: string;
+      kind: "image" | "file";
+    }>;
+  };
+
+  const [messages, setMessages] = useState<OrchestratorMessage[]>([
     {
       id: "msg-1",
       role: "agent",
@@ -52,6 +65,11 @@ export const FloatingOrchestratorChat: React.FC = () => {
     },
   ]);
   const [input, setInput] = useState("");
+  const [stagedAttachments, setStagedAttachments] = useState<
+    ComposerAttachment[]
+  >([]);
+  const stagedAttachmentsRef = useRef(stagedAttachments);
+  stagedAttachmentsRef.current = stagedAttachments;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const addObject = useCanvasStore((s) => s.addObject);
@@ -99,6 +117,36 @@ export const FloatingOrchestratorChat: React.FC = () => {
       } catch (e) {}
     }
   }, [messages, isOpen, isStreaming]);
+
+  useEffect(() => {
+    return () => {
+      revokeComposerAttachmentUrls(stagedAttachmentsRef.current);
+    };
+  }, []);
+
+  const handleFileSelect = (files: FileList) => {
+    const added = createComposerAttachmentsFromFiles(files);
+    if (added.length === 0) return;
+    setStagedAttachments((prev) => [...prev, ...added]);
+  };
+
+  const handleRemoveStagedAttachment = (id: string) => {
+    setStagedAttachments((prev) => {
+      const removed = prev.find((a) => a.id === id);
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((a) => a.id !== id);
+    });
+  };
+
+  const messageAttachmentsFromStaged = (
+    attachments: ComposerAttachment[],
+  ): OrchestratorMessage["attachments"] =>
+    attachments.map((a) => ({
+      id: a.id,
+      previewUrl: a.previewUrl,
+      name: a.file.name,
+      kind: a.kind,
+    }));
 
   const executeOfflineFallback = (userInput: string) => {
     const intent = classifyOrchestratorIntent(userInput);
@@ -205,18 +253,27 @@ export const FloatingOrchestratorChat: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!input.trim() || isStreaming) return;
+    if ((!input.trim() && stagedAttachments.length === 0) || isStreaming) {
+      return;
+    }
 
-    const userMsg = {
+    const sentAttachments = messageAttachmentsFromStaged(stagedAttachments);
+    const userMsg: OrchestratorMessage = {
       id: `msg-${Date.now()}`,
       role: "user",
-      content: input,
+      content: input.trim(),
       type: "text",
+      ...(sentAttachments.length > 0 ? { attachments: sentAttachments } : {}),
     };
     setMessages((prev) => [...prev, userMsg]);
 
-    const promptInput = input;
+    const promptInput =
+      input.trim() ||
+      (sentAttachments.length > 0
+        ? `[Attached ${sentAttachments.length} image(s): ${sentAttachments.map((a) => a.name).join(", ")}]`
+        : "");
     setInput("");
+    setStagedAttachments([]);
     setIsStreaming(true);
 
     // 1. Gather active canvas context (nodes and edges)
@@ -464,7 +521,12 @@ export const FloatingOrchestratorChat: React.FC = () => {
                         wordBreak: "break-word",
                       }}
                     >
-                      <MarkdownText text={msg.content} />
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <MessageAttachmentPreview
+                          attachments={msg.attachments}
+                        />
+                      )}
+                      {msg.content ? <MarkdownText text={msg.content} /> : null}
                     </div>
                   </motion.div>
                 ))}
@@ -519,6 +581,17 @@ export const FloatingOrchestratorChat: React.FC = () => {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Describe your intent..."
                 onEnter={handleSubmit}
+                onFileSelect={handleFileSelect}
+                fileAccept="image/*"
+                composerPreview={
+                  stagedAttachments.length > 0 ? (
+                    <ComposerAttachmentStrip
+                      attachments={stagedAttachments}
+                      onRemove={handleRemoveStagedAttachment}
+                      className="pb-0"
+                    />
+                  ) : null
+                }
                 className="bg-transparent border-none"
                 maxHeight={150}
                 actions={
@@ -526,7 +599,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
                     aria-label="Send Message"
                     type="button"
                     onClick={handleSubmit}
-                    disabled={!input.trim()}
+                    disabled={!input.trim() && stagedAttachments.length === 0}
                     className="w-9 h-9 flex items-center justify-center text-brand-cyan disabled:text-white/20 hover:bg-brand-cyan/10 rounded-xl transition-colors"
                   >
                     <Send size={18} />
