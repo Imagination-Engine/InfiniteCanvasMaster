@@ -1,11 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   BalnceFabricRouter,
-  InProcessTransport,
-  createEnvelope,
+  DurableEventAdapter,
   FabricTopics,
+  InProcessTransport,
 } from "@iem/core";
-import { DurableEventAdapter } from "@iem/core/src/fabric/adapters/DurableEventAdapter";
 
 // --- Contract/Unit Tests ---
 describe("Durable Pipeline Contract", () => {
