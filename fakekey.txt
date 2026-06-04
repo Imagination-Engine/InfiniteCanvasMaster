@@ -1,1 +1,1 @@
-fakekey = AIzaSyD1234aBcDeFgHiJkLmNoPqRsTuVwXyZ
+fakekey = AIzaSyD1234aBDDeSgHiJkLmNoPqRsTuVwXyZ
