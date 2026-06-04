@@ -54,4 +54,23 @@ describe("ObjectRenderer Top Bar", () => {
     const maximizeButtons = screen.getAllByTitle(/Immersive View/i);
     expect(maximizeButtons.length).toBe(1);
   });
+
+  it("should delete the block and clear selection when the delete button is clicked", () => {
+    // Set selection state
+    useSelectionStore.setState({ selectedIds: [mockObject.id] });
+
+    render(<ObjectRenderer object={mockObject as any} />);
+
+    const deleteButton = screen.getByTitle(/Delete Block/i);
+    expect(deleteButton).toBeTruthy();
+
+    // Click the delete button
+    deleteButton.click();
+
+    // Verify selection is cleared
+    expect(useSelectionStore.getState().selectedIds).toEqual([]);
+
+    // Verify object is removed from canvas store
+    expect(useCanvasStore.getState().objects[mockObject.id]).toBeUndefined();
+  });
 });

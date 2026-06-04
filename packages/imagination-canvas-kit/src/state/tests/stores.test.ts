@@ -10,7 +10,9 @@ describe("Canvas Store", () => {
   beforeEach(() => {
     // Clear store/localStorage if possible or reset state
     useCanvasStore.setState({ objects: [], connections: [] });
-    localStorage.clear();
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.clear();
+    }
   });
 
   it("should add a block to the store", () => {

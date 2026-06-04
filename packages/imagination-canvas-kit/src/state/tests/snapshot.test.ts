@@ -10,7 +10,7 @@ describe("Canvas Snapshots & Recovery", () => {
   beforeEach(() => {
     // We will expand historyStore to support snapshots
     useHistoryStore.setState({ past: [], future: [], snapshots: {} } as any);
-    useCanvasStore.setState({ objects: [], connections: [], bindings: [] });
+    useCanvasStore.setState({ objects: {}, connections: [], bindings: [] });
   });
 
   it("should create a snapshot of the current canvas state", () => {
@@ -31,8 +31,8 @@ describe("Canvas Snapshots & Recovery", () => {
     const { snapshots } = useHistoryStore.getState() as any;
     expect(snapshots[snapshotId]).toBeDefined();
     expect(snapshots[snapshotId].name).toBe("pre-ai-generation");
-    expect(snapshots[snapshotId].state.objects).toHaveLength(1);
-    expect(snapshots[snapshotId].state.objects[0].id).toBe("obj-1");
+    expect(Object.keys(snapshots[snapshotId].state.objects)).toHaveLength(1);
+    expect(snapshots[snapshotId].state.objects["obj-1"].id).toBe("obj-1");
   });
 
   it("should restore the canvas state from a snapshot", () => {
@@ -52,14 +52,14 @@ describe("Canvas Snapshots & Recovery", () => {
     const snapshotId = createSnapshot("pre-ai-generation");
 
     // Simulate destructive AI action
-    useCanvasStore.setState({ objects: [], connections: [], bindings: [] });
+    useCanvasStore.setState({ objects: {}, connections: [], bindings: [] });
 
     // Restore
     restoreSnapshot(snapshotId);
 
     const canvasState = useCanvasStore.getState();
-    expect(canvasState.objects).toHaveLength(1);
-    expect(canvasState.objects[0].id).toBe("obj-1");
+    expect(Object.keys(canvasState.objects)).toHaveLength(1);
+    expect(canvasState.objects["obj-1"].id).toBe("obj-1");
   });
 
   describe("adversarial cases", () => {

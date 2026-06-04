@@ -201,6 +201,14 @@ export function sanitizeCanvasData(
     let targetId = conn.toId || (conn as any).targetId;
     let connId = conn.id;
 
+    // Check if the source and target objects actually exist in the canvas
+    const sourceIdResolved = idMap[sourceId] || sourceId;
+    const targetIdResolved = idMap[targetId] || targetId;
+    if (!nextObjects[sourceIdResolved] || !nextObjects[targetIdResolved]) {
+      changed = true;
+      continue;
+    }
+
     if (idMap[sourceId]) {
       sourceId = idMap[sourceId];
       connChanged = true;

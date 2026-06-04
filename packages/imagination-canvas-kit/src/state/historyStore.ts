@@ -4,7 +4,7 @@ import { CanvasObject, CanvasConnection, CanvasBinding } from "../contracts";
 import { useCanvasStore } from "./canvasStore";
 
 export interface CanvasStateSnapshot {
-  objects: CanvasObject[];
+  objects: Record<string, CanvasObject>;
   connections: CanvasConnection[];
   bindings: CanvasBinding[];
 }
@@ -92,7 +92,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       name,
       timestamp: Date.now(),
       state: {
-        objects: [...Object.values(currentState.objects)],
+        objects: { ...currentState.objects },
         connections: [...currentState.connections],
         bindings: [...currentState.bindings],
       },
@@ -113,7 +113,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     }
 
     useCanvasStore.setState({
-      objects: [...snapshot.state.objects],
+      objects: { ...snapshot.state.objects },
       connections: [...snapshot.state.connections],
       bindings: [...snapshot.state.bindings],
     });

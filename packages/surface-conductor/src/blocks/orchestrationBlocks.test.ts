@@ -303,7 +303,11 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     it("has valid metadata and schema", () => {
       expect(agentBlock.id).toBe("iem.conductor.agent");
       const validIn = { instructions: "Translate", input: { text: "hello" } };
-      expect(agentBlock.input.parse(validIn)).toEqual(validIn);
+      expect(agentBlock.input.parse(validIn)).toEqual({
+        ...validIn,
+        provider: "google",
+        referenceFiles: [],
+      });
     });
 
     it("executes simulated/fallback when API key is missing", async () => {

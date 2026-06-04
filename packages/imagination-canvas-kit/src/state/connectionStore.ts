@@ -10,6 +10,7 @@ export interface Connection {
 
 export interface DraftConnection {
   fromId: string;
+  type: "source" | "target";
   x: number;
   y: number;
 }

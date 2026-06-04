@@ -7,15 +7,20 @@ import React from "react";
 import { ObjectRenderer } from "../ObjectRenderer";
 
 // Mock stores
-vi.mock("../../state/selectionStore", () => ({
-  useSelectionStore: () => ({
+vi.mock("../../state/selectionStore", () => {
+  const state = {
     selectedIds: [],
     setSelection: vi.fn(),
     setHovered: vi.fn(),
     hoveredId: "some-other-id", // Test with other block hovered
     clearSelection: vi.fn(),
-  }),
-}));
+  };
+  return {
+    useSelectionStore: vi.fn((selector) =>
+      selector ? selector(state) : state,
+    ),
+  };
+});
 
 vi.mock("../../state/expansionStore", () => ({
   useExpansionStore: () => ({
@@ -23,13 +28,12 @@ vi.mock("../../state/expansionStore", () => ({
   }),
 }));
 
-vi.mock("../../state/viewportStore", () => ({
-  useViewportStore: () => ({
-    x: 0,
-    y: 0,
-    zoom: 1,
-  }),
-}));
+vi.mock("../../state/viewportStore", () => {
+  const state = { x: 0, y: 0, zoom: 1 };
+  return {
+    useViewportStore: vi.fn((selector) => (selector ? selector(state) : state)),
+  };
+});
 
 vi.mock("../../state/shellStore", () => ({
   useShellStore: () => ({
