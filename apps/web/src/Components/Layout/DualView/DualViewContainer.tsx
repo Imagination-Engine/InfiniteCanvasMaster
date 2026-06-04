@@ -20,6 +20,8 @@ import {
   Loader2,
   Eye,
 } from "lucide-react";
+import { RunPanel } from "./RunPanel";
+import { v4 as uuidv4 } from "uuid";
 
 import {
   CanvasShell,
@@ -51,8 +53,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
 }) => {
   const { accessToken } = useAuth();
   const [isRunning, setIsRunning] = useState(false);
-  const [lastRun, setLastRun] = useState<any>(null);
-  const [isRunPanelOpen, setIsRunPanelOpen] = useState(false);
+  const [runs, setRuns] = useState<any[]>([]);
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [previewWebData, setPreviewWebData] = useState<{
     content: string;
@@ -72,10 +73,12 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       y: viewport.y,
       zoom: viewport.zoom,
     }) as UnifiedCanvasDocument;
-    void saveCanvas(doc, lastRun).catch((err) =>
+    // We save the most recent successful run if any
+    const latestRun = runs.find((r) => r.status === "success") || runs[0];
+    void saveCanvas(doc, latestRun).catch((err) =>
       console.warn("[DualView] Failed to persist spatial canvas:", err),
     );
-  }, [saveCanvas, lastRun]);
+  }, [saveCanvas, runs]);
 
   const schedulePersist = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -86,17 +89,25 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
 
   // Sync initialLastRun when it loads
   useEffect(() => {
-    if (initialLastRun && !lastRun) {
-      setLastRun(initialLastRun);
+    if (initialLastRun && runs.length === 0) {
+      setRuns([
+        {
+          ...initialLastRun,
+          id: "initial",
+          status: "success",
+          startTime: Date.now(),
+          projectName,
+        },
+      ]);
     }
-  }, [initialLastRun]);
+  }, [initialLastRun, projectName]);
 
-  // Auto-save lastRun when it changes
+  // Auto-save when runs change
   useEffect(() => {
-    if (lastRun && !isRunning) {
+    if (runs.length > 0 && !isRunning) {
       schedulePersist();
     }
-  }, [lastRun, isRunning, schedulePersist]);
+  }, [runs, isRunning, schedulePersist]);
   // --- Create Session Context Summary ---
   const sessionSummary = React.useMemo(() => {
     const userMessages = (initialMessages || [])
@@ -143,13 +154,24 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   }, [initialDocument, projectId, applyDocumentToStores]);
 
   const handleRunGraph = useCallback(async () => {
-    if (isRunning) return;
-    setIsRunning(true);
-    setLastRun(null); // Clear previous artifacts for clean transition
-    setIsRunPanelOpen(true); // Open panel to show progress
+    const runId = uuidv4();
+    const newRun = {
+      id: runId,
+      status: "running",
+      startTime: Date.now(),
+      projectName,
+    };
+
+    setRuns((prev) => [newRun, ...prev]);
 
     const { objects, updateObject } = useCanvasStore.getState();
     const { connections } = useConnectionStore.getState();
+
+    const updateRun = (patch: Partial<typeof newRun>) => {
+      setRuns((prev) =>
+        prev.map((r) => (r.id === runId ? { ...r, ...patch } : r)),
+      );
+    };
 
     try {
       console.log("[EXECUTION] Analyzing canvas for automated run...");
@@ -287,7 +309,8 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           });
 
           // Set a dummy lastRun to close the loading state in the sidebar
-          setLastRun({
+          updateRun({
+            status: "success",
             success: true,
             results: { clipUrl },
             steps: Object.fromEntries(
@@ -299,7 +322,8 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           });
         } else {
           // Just scenes
-          setLastRun({
+          updateRun({
+            status: "success",
             success: true,
             steps: Object.fromEntries(
               Object.keys(generatedImages).map((id) => [
@@ -336,7 +360,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           accessToken,
         );
 
-        setLastRun(response);
+        updateRun({ ...response, status: "success", success: true });
 
         // Apply results to nodes from all steps
         if (response.steps) {
@@ -368,15 +392,13 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       console.log("[EXECUTION] Workflow complete!");
     } catch (err: any) {
       console.error("[EXECUTION] Critical Failure:", err);
-      setLastRun({ success: false, error: err.message });
+      updateRun({ status: "failed", success: false, error: err.message });
       // Reset all running nodes to error
       Object.values(objects).forEach((o) => {
         if (o.status === "running") updateObject(o.id, { status: "error" });
       });
-    } finally {
-      setIsRunning(false);
     }
-  }, [isRunning, projectId, accessToken]);
+  }, [projectId, accessToken, projectName]);
 
   useEffect(() => {
     const unsub = useCanvasStore.subscribe((state, prev) => {
@@ -395,287 +417,6 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [schedulePersist, handleRunGraph]);
-  const downloadFile = (
-    filename: string,
-    content: string,
-    mime = "text/plain",
-  ) => {
-    if (!content) return;
-
-    const isUrl =
-      typeof content === "string" &&
-      (content.startsWith("http") ||
-        content.startsWith("/") ||
-        content.startsWith("blob:") ||
-        content.startsWith("data:"));
-
-    if (isUrl) {
-      // Direct download for URLs to avoid Blob corruption
-      const a = document.createElement("a");
-      a.href = content;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } else {
-      // Blob download for raw text/code
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  const [artifacts, setArtifacts] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!lastRun) {
-      setArtifacts([]);
-      return;
-    }
-
-    const found: any[] = [];
-    const seen = new Set();
-
-    const processPayload = async (payload: any, source: string) => {
-      if (!payload || typeof payload !== "object") return;
-
-      const currentFound: any[] = [];
-      let hasZip = false;
-
-      // Handle multi-file project (ZIP)
-      if (payload.files && Array.isArray(payload.files)) {
-        try {
-          const zip = new JSZip();
-          let previewContent = null;
-          payload.files.forEach((file: any) => {
-            zip.file(file.name, file.content);
-            // Detect index.html or any html for preview
-            if (file.name === "index.html" || file.name.endsWith(".html")) {
-              if (!previewContent || file.name === "index.html") {
-                previewContent = file.content;
-              }
-            }
-          });
-
-          // Also include generatedCode if it exists and isn't already in files
-          if (
-            payload.generatedCode &&
-            !payload.files.find((f: any) => f.content === payload.generatedCode)
-          ) {
-            zip.file("main_output.txt", payload.generatedCode);
-          }
-
-          const zipBlob = await zip.generateAsync({ type: "blob" });
-          const zipUrl = URL.createObjectURL(zipBlob);
-
-          const safeProjectName = (projectName || "Project")
-            .replace(/[^a-z0-9]/gi, "_")
-            .toLowerCase();
-
-          found.push({
-            id: `${source}-project-zip`,
-            name: `${safeProjectName}.zip`,
-            type: "file",
-            content: zipUrl,
-            mime: "application/zip",
-            label: "Packaged Project (ZIP)",
-            icon: File,
-            source,
-            previewable: !!previewContent,
-            previewContent,
-          });
-          hasZip = true;
-        } catch (e) {
-          console.error("Failed to generate ZIP artifact", e);
-        }
-      }
-
-      const config = [
-        {
-          key: "generatedCode",
-          type: "code",
-          ext: "ts",
-          mime: "text/plain",
-          icon: Code,
-          skipIfZip: true,
-        },
-        {
-          key: "code",
-          type: "code",
-          ext: "ts",
-          mime: "text/plain",
-          icon: Code,
-          skipIfZip: true,
-        },
-        {
-          key: "formattedFile",
-          type: "code",
-          ext: "ts",
-          mime: "text/plain",
-          icon: Code,
-        },
-        {
-          key: "spec",
-          type: "text",
-          ext: "md",
-          mime: "text/markdown",
-          icon: FileText,
-          skipIfZip: true,
-        },
-        {
-          key: "design",
-          type: "text",
-          ext: "md",
-          mime: "text/markdown",
-          icon: FileText,
-          skipIfZip: true,
-        },
-        {
-          key: "specs",
-          type: "text",
-          ext: "md",
-          mime: "text/markdown",
-          icon: FileText,
-          skipIfZip: true,
-        },
-        {
-          key: "assets",
-          type: "text",
-          ext: "md",
-          mime: "text/markdown",
-          icon: FileText,
-          skipIfZip: true,
-        },
-        {
-          key: "imageUrl",
-          type: "image",
-          ext: "png",
-          mime: "image/png",
-          icon: ImageIcon,
-        },
-        {
-          key: "audioUrl",
-          type: "audio",
-          ext: "mp3",
-          mime: "audio/mpeg",
-          icon: Music,
-        },
-        {
-          key: "fileUrl",
-          type: "file",
-          ext: "bin",
-          mime: "application/octet-stream",
-          icon: File,
-        },
-        {
-          key: "trackUrl",
-          type: "audio",
-          ext: "mp3",
-          mime: "audio/mpeg",
-          icon: Music,
-        },
-        {
-          key: "clipUrl",
-          type: "video",
-          ext: "mp4",
-          mime: "video/mp4",
-          icon: Film,
-        },
-        {
-          key: "video-project",
-          type: "video",
-          ext: "mp4",
-          mime: "video/mp4",
-          icon: Film,
-        },
-        {
-          key: "results",
-          type: "text",
-          ext: "txt",
-          mime: "text/plain",
-          icon: FileText,
-        },
-      ];
-
-      config.forEach(({ key, type, ext, mime, icon, skipIfZip }) => {
-        if (payload[key]) {
-          if (hasZip && skipIfZip) return;
-
-          const content = payload[key];
-          let finalExt = ext;
-          let finalMime = mime;
-          let finalType = type;
-
-          if (typeof content === "string") {
-            if (
-              content.includes("<!DOCTYPE html>") ||
-              content.includes("<html")
-            ) {
-              finalExt = "html";
-              finalMime = "text/html";
-              finalType = "code";
-            } else if (
-              content.includes("import React") ||
-              content.includes("export default")
-            ) {
-              finalExt = "tsx";
-              finalType = "code";
-            } else if (
-              content.includes("def ") ||
-              content.includes("import os") ||
-              content.includes("import sys")
-            ) {
-              finalExt = "py";
-              finalType = "code";
-            }
-          }
-
-          const safeProjectName = (projectName || "Project")
-            .replace(/[^a-z0-9]/gi, "_")
-            .toLowerCase();
-
-          const hash = `${finalType}-${typeof content === "string" ? (content.length > 100 ? content.substring(0, 100) : content) : JSON.stringify(content)}`;
-          if (!seen.has(hash)) {
-            seen.add(hash);
-            found.push({
-              id: `${source}-${key}`,
-              name: `${safeProjectName}_${key.toLowerCase()}.${finalExt}`,
-              type: finalType,
-              content,
-              mime: finalMime,
-              label: key,
-              icon,
-              source,
-            });
-          }
-        }
-      });
-    };
-
-    const run = async () => {
-      // 1. Process final results
-      const finalPayload = lastRun.results?.payload || lastRun.results;
-      await processPayload(finalPayload, "final");
-
-      // 2. Process all steps
-      if (lastRun.steps) {
-        for (const [stepId, step] of Object.entries(lastRun.steps)) {
-          const stepPayload =
-            (step as any).output?.payload || (step as any).output;
-          await processPayload(stepPayload, stepId);
-        }
-      }
-      setArtifacts(found);
-    };
-
-    run();
-  }, [lastRun]);
 
   return (
     <div className="relative flex flex-1 overflow-hidden h-full">
@@ -687,7 +428,18 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       {/* 2. Right Sidebar: The Sandbox-style Copilot */}
       <CopilotSidebar projectId={projectId} />
 
-      {/* 3. Cinematic Movie Preview Modal */}
+      {/* 3. Render Active Run Panels */}
+      {runs.map((run) => (
+        <RunPanel
+          key={run.id}
+          run={run}
+          onClose={() => setRuns((prev) => prev.filter((r) => r.id !== run.id))}
+          onPreviewVideo={setPreviewVideoUrl}
+          onPreviewWeb={setPreviewWebData}
+        />
+      ))}
+
+      {/* 4. Cinematic Movie Preview Modal */}
       {previewVideoUrl && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/95 backdrop-blur-3xl animate-in fade-in duration-300">
           <div className="relative w-full max-w-6xl aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(123,92,234,0.3)] border border-white/10 group">
@@ -720,164 +472,6 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {isRunPanelOpen && (
-        <div className="absolute right-4 bottom-4 z-[60] w-[520px] max-w-[92vw] max-h-[60vh] overflow-hidden rounded-2xl border border-white/10 bg-brand-bg-page/90 backdrop-blur-2xl shadow-2xl text-white">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <div className="min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
-                Last Run
-              </div>
-              <div className="text-xs text-white/80 truncate">
-                runId: {lastRun?.runId || "—"} ·{" "}
-                {lastRun?.success ? "success" : "failed"}
-              </div>
-            </div>
-            <button
-              onClick={() => setIsRunPanelOpen(false)}
-              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10 text-[10px] font-black uppercase tracking-widest"
-            >
-              Close
-            </button>
-          </div>
-          <div className="p-4 overflow-auto max-h-[50vh]">
-            {artifacts.length > 0 && (
-              <div className="mb-4 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
-                    Generated Artifacts
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {/* GLOBAL PREVIEW BUTTON */}
-                    {artifacts.some(
-                      (a) => a.previewable || a.mime === "text/html",
-                    ) && (
-                      <button
-                        onClick={() => {
-                          const mainArt =
-                            artifacts.find((a) => a.name === "index.html") ||
-                            artifacts.find((a) => a.previewable) ||
-                            artifacts.find((a) => a.mime === "text/html");
-
-                          if (mainArt) {
-                            setPreviewWebData({
-                              content:
-                                mainArt.previewContent || mainArt.content,
-                              title: mainArt.name,
-                            });
-                          }
-                        }}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-cyan text-black hover:bg-brand-cyan/80 border border-brand-cyan/30 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-cyan/20 transition-all active:scale-95"
-                        title="Preview generated website"
-                      >
-                        <Eye size={14} />
-                        Preview Website
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => {
-                        artifacts.forEach((art) => {
-                          setTimeout(() => {
-                            downloadFile(art.name, art.content, art.mime);
-                          }, 100);
-                        });
-                      }}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-purple text-white hover:bg-brand-purple-light border border-brand-purple/30 text-[10px] font-black uppercase tracking-widest"
-                      title="Download all generated files"
-                    >
-                      <Download size={14} />
-                      Export All
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {artifacts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2">
-                {artifacts.map((art) => (
-                  <div
-                    key={art.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {art.type === "image" &&
-                      typeof art.content === "string" &&
-                      (art.content.startsWith("data:") ||
-                        art.content.startsWith("http")) ? (
-                        <img
-                          src={art.content}
-                          className="w-10 h-10 rounded-lg bg-black/20 object-cover border border-white/10"
-                          alt="preview"
-                        />
-                      ) : (
-                        <div className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple-light">
-                          <art.icon size={16} />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="text-[11px] font-bold text-white truncate">
-                          {art.name}
-                        </div>
-                        <div className="text-[9px] text-white/40 uppercase tracking-tighter">
-                          {art.type} · {art.source}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {art.type === "video" && (
-                        <button
-                          onClick={() =>
-                            setPreviewVideoUrl(
-                              art.content?.clipUrl || art.content,
-                            )
-                          }
-                          className="p-2 rounded-lg bg-brand-purple/20 text-brand-purple hover:bg-brand-purple/30 transition-colors"
-                          title="Play Movie"
-                        >
-                          <Play size={14} fill="currentColor" />
-                        </button>
-                      )}
-                      {art.type === "image" &&
-                        typeof art.content === "string" && (
-                          <a
-                            href={art.content}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
-                            title="View full image"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
-                        )}
-                      <button
-                        onClick={() =>
-                          downloadFile(art.name, art.content, art.mime)
-                        }
-                        className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
-                        title="Download artifact"
-                      >
-                        <Download size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Loader2
-                  size={32}
-                  className="text-brand-purple animate-spin mb-4"
-                />
-                <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
-                  Assembling vision...
-                </p>
-              </div>
-            )}
           </div>
         </div>
       )}

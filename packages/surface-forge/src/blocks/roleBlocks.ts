@@ -117,6 +117,12 @@ export const builderBlock: BlockDefinition<any, any> = {
             2. A README.md explaining what the app is and how to use it.
             3. A setup script (e.g. setup.sh or install.bat) that installs dependencies and prepares the environment.
             4. Any other necessary files (requirements.txt, package.json, etc.).
+
+            If the spec is for a browser game, generate a directly playable web game:
+            - Include index.html, style.css, game.js, and README.md.
+            - The game must run by opening index.html in a browser with no server and no build step.
+            - Include clear keyboard/mouse/touch controls, visible score or objective state, win/loss or replay behavior, and a polished game loop.
+            - Keep external assets optional; prefer CSS/canvas/DOM primitives so the ZIP works offline.
             
             Return ONLY the raw JSON object, no markdown code blocks, no preamble.`,
           },

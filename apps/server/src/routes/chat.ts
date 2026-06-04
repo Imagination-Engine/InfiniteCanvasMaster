@@ -72,8 +72,10 @@ chatRouter.post("/", async (c) => {
 
   try {
     // @ts-ignore
-    const { createOrchestrator, mastra } = await import("@iem/agents");
-    const agent = await createOrchestrator(mastra.storage);
+    const { createOrchestrator, mastra, storage } = await import("@iem/agents");
+    const agent = await createOrchestrator(
+      mastra.storage || mastra.config?.storage || storage,
+    );
 
     let canvasSystemPrompt = "";
     if (body.canvasContext) {
@@ -89,11 +91,11 @@ chatRouter.post("/", async (c) => {
 
 DECONSTRUCTION PROTOCOL:
 1. INTENT GATEKEEPER:
-- You ONLY support building "Apps" (Web, Desktop, CLI) or "Videos" (Movies, Reels).
+- You ONLY support building "Apps" (Web, Desktop, CLI), "Games" (simple browser-playable games), "Videos" (Movies, Reels), or "Workflows" (automation DAGs like Zapier, Make, or n8n).
 - If the user asks for anything else (recipes, general advice, etc.), you MUST politely explain your specialization and refuse.
 
 2. PHASE 1: RESEARCH & PLAN (turns 1-3)
-- If this is a new request, do NOT call tools yet. Engage conversationally to define the App Type (WEB, DESKTOP, CLI) or Video Style.
+- If this is a new request, do NOT call tools yet. Engage conversationally to define the App Type (WEB, DESKTOP, CLI), Game Type, Video Style, or Workflow Trigger/Actions.
 - Once the plan is solid, say "Let's generate the workflow!" and call 'generate_canvas_blueprint'.
 
 3. PHASE 2: SURGICAL MUTATION (Ongoing)
@@ -105,6 +107,20 @@ DECONSTRUCTION PROTOCOL:
 APP BUILDING PROTOCOL:
 - For software (Web/Desktop/CLI), your blueprint MUST follow this DAG:
   Architecture Node (iem.scribe.prose) -> Programmer Node(s) (iem.core.programmer) -> QA Review Node (iem.scribe.editor) -> Finalize/Preview Node (iem.app.web).
+
+GAME BUILDING PROTOCOL:
+- For games, generate a simple browser-playable web game DAG:
+  Game Concept (iem.forge.architect) -> Core Rules (iem.playable.rule) -> Entities & Scene (iem.playable.sprite) -> Browser Controls (iem.playable.input) -> Playable Web Game Builder (iem.forge.builder) -> Playtest/QA (iem.forge.tester).
+- The builder node description MUST require a complete playable browser game with index.html, style.css, game.js, README.md, no server dependency, keyboard/mouse/touch controls as appropriate, and a JSON "files" array.
+- Tell the builder that the generated game must be playable directly in the browser and downloadable as a ZIP.
+
+WORKFLOW AUTOMATION PROTOCOL:
+- For workflows, generate an executable automation DAG, not a static diagram.
+- Start with exactly one trigger node: use iem.conductor.schedule for timer/every-N-minutes/cron workflows, or iem.conductor.webhook for received-message/webhook/event workflows.
+- Add 2-5 connected action/logic nodes that consume prior output and pass output downstream.
+- Prefer these executable node types: iem.conductor.webFetch, iem.conductor.agent, iem.conductor.if, iem.conductor.router, iem.conductor.saas, iem.conductor.slackPost, iem.conductor.notionCreate, iem.conductor.state, iem.conductor.delay.
+- Put editable config in recommended_params (cron, path, url, provider, action, params, instructions, channel, message, databaseId, properties).
+- The resulting graph should be easy for the user to extend manually by dragging more nodes from the node library and connecting them into the chain.
 
 MOVIE BUILDING PROTOCOL:
 - DECONSTRUCT the user's story into 3-4 specific VISUAL SCENES.
@@ -238,7 +254,7 @@ chatRouter.post("/block", async (c) => {
   }
 
   try {
-    const { AgentFactory, mastra } = await import("@iem/agents");
+    const { AgentFactory, mastra, storage } = await import("@iem/agents");
     const { blockRegistry } = await import("@iem/core");
     const { nodes } = await import("@iem/db");
 
@@ -262,7 +278,9 @@ chatRouter.post("/block", async (c) => {
     }
 
     // 4. Create Agent via Factory
-    const factory = new AgentFactory({ storage: mastra.storage });
+    const factory = new AgentFactory({
+      storage: mastra.storage || mastra.config?.storage || storage,
+    });
     const agent = await factory.createAgentForBlock(definition);
 
     // 5. Scoped Thread ID (Project + Block isolation)

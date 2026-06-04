@@ -86,13 +86,31 @@ projectsRouter.get("/:id", async (c) => {
     let history: any[] = [];
     try {
       // @ts-ignore
-      const { mastra } = await import("@iem/agents");
+      const { mastra, storage } = await import("@iem/agents");
       // Safely fetch messages, falling back if storage is uninitialized or missing tables
-      const { storage } = await import("@iem/agents");
-      const fetchedHistory = await (storage as any)
-        ?.getMessages({ threadId: projectId })
-        .catch(() => []);
-      history = fetchedHistory || [];
+      let fetchedHistory: any[] = [];
+      try {
+        if (mastra?.memory?.getMessages) {
+          fetchedHistory = await mastra.memory.getMessages({
+            threadId: projectId,
+          });
+        } else if (storage?.getStore) {
+          const memoryStore = await storage.getStore("memory");
+          if (memoryStore?.listMessages) {
+            const result = await memoryStore.listMessages({
+              threadId: projectId,
+            });
+            fetchedHistory = result?.messages || [];
+          } else if (memoryStore?.getMessages) {
+            fetchedHistory = await memoryStore.getMessages({
+              threadId: projectId,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[PROJECTS] History fetch error:", err);
+      }
+      history = Array.isArray(fetchedHistory) ? fetchedHistory : [];
     } catch (mastraErr) {
       console.warn(
         "[PROJECTS] Mastra storage unavailable, defaulting to empty history.",

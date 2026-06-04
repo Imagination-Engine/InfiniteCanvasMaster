@@ -21,7 +21,10 @@ export const colliderBlock: BlockDefinition<any, any> = {
   name: "Collider",
   description: "Physics collision logic.",
   category: "game",
-  input: z.object({ targetA: z.string(), targetB: z.string() }),
+  input: z.object({
+    targetA: z.string().optional().default("player"),
+    targetB: z.string().optional().default("enemy"),
+  }),
   output: z.object({ collided: z.boolean() }),
   mode: "triggered",
   agent: {
@@ -51,7 +54,10 @@ export const spawnerBlock: BlockDefinition<any, any> = {
   name: "Spawner",
   description: "Entity spawning factory.",
   category: "game",
-  input: z.object({ entityType: z.string(), rate: z.number().default(1) }),
+  input: z.object({
+    entityType: z.string().optional().default("enemy"),
+    rate: z.number().default(1),
+  }),
   output: z.object({ entityId: z.string() }),
   mode: "triggered",
   agent: {
@@ -66,7 +72,7 @@ export const timerBlock: BlockDefinition<any, any> = {
   name: "Timer",
   description: "Countdown and event timing.",
   category: "game",
-  input: z.object({ duration: z.number() }),
+  input: z.object({ duration: z.number().optional().default(10) }),
   output: z.object({ complete: z.boolean() }),
   mode: "triggered",
   agent: {
@@ -99,7 +105,10 @@ export const lightingBlock: BlockDefinition<any, any> = {
   name: "Lighting",
   description: "Game world lighting.",
   category: "game",
-  input: z.object({ intensity: z.number(), color: z.string() }),
+  input: z.object({
+    intensity: z.number().optional().default(1),
+    color: z.string().optional().default("#ffffff"),
+  }),
   output: z.object({ success: z.boolean() }),
   mode: "triggered",
   agent: {
@@ -114,7 +123,10 @@ export const audioBlock: BlockDefinition<any, any> = {
   name: "Audio",
   description: "Sound effects and music.",
   category: "game",
-  input: z.object({ asset: z.string(), volume: z.number().default(1) }),
+  input: z.object({
+    asset: z.string().optional().default("default_sfx"),
+    volume: z.number().default(1),
+  }),
   output: z.object({ success: z.boolean() }),
   mode: "triggered",
   agent: {
@@ -129,7 +141,10 @@ export const particleBlock: BlockDefinition<any, any> = {
   name: "Particle",
   description: "Visual particle effects.",
   category: "game",
-  input: z.object({ type: z.string(), count: z.number() }),
+  input: z.object({
+    type: z.string().optional().default("explosion"),
+    count: z.number().optional().default(10),
+  }),
   output: z.object({ success: z.boolean() }),
   mode: "triggered",
   agent: {
@@ -144,7 +159,7 @@ export const spriteBlock: BlockDefinition<any, any> = {
   name: "Sprite",
   description: "Visual game entity.",
   category: "game",
-  input: z.object({ asset: z.string() }),
+  input: z.object({ asset: z.string().optional().default("default_sprite") }),
   output: z.object({ entityId: z.string() }),
   mode: "triggered",
   agent: {
@@ -159,7 +174,7 @@ export const physicsEntityBlock: BlockDefinition<any, any> = {
   name: "Physics Entity",
   description: "Rigid body physics object.",
   category: "game",
-  input: z.object({ mass: z.number() }),
+  input: z.object({ mass: z.number().optional().default(1) }),
   output: z.object({ bodyId: z.string() }),
   mode: "triggered",
   agent: {
@@ -174,7 +189,7 @@ export const inputBlock: BlockDefinition<any, any> = {
   name: "Input",
   description: "Maps keyboard/mouse inputs.",
   category: "game",
-  input: z.object({ mapping: z.record(z.string()) }),
+  input: z.object({ mapping: z.record(z.string()).optional().default({}) }),
   output: z.object({ events: z.array(z.any()) }),
   mode: "streaming",
   agent: {
@@ -189,7 +204,10 @@ export const ruleBlock: BlockDefinition<any, any> = {
   name: "Rule",
   description: "Logic rule for game behavior.",
   category: "game",
-  input: z.object({ condition: z.string(), action: z.string() }),
+  input: z.object({
+    condition: z.string().optional().default("true"),
+    action: z.string().optional().default("noop"),
+  }),
   output: z.object({ result: z.any() }),
   mode: "triggered",
   agent: {
@@ -205,9 +223,9 @@ export const sceneBlock: BlockDefinition<any, any> = {
   description: "Define visual environment.",
   category: "media",
   input: z.object({
-    background: z.string(),
-    width: z.number(),
-    height: z.number(),
+    background: z.string().optional().default("black"),
+    width: z.number().optional().default(800),
+    height: z.number().optional().default(600),
   }),
   output: z.object({ sceneId: z.string(), status: z.string() }),
   mode: "triggered",
@@ -224,10 +242,10 @@ export const characterBlock: BlockDefinition<any, any> = {
   description: "Visual character in scene.",
   category: "media",
   input: z.object({
-    name: z.string(),
-    asset: z.string(),
-    x: z.number(),
-    y: z.number(),
+    name: z.string().optional().default("Hero"),
+    asset: z.string().optional().default("default_char"),
+    x: z.number().optional().default(0),
+    y: z.number().optional().default(0),
   }),
   output: z.object({ characterId: z.string() }),
   mode: "triggered",

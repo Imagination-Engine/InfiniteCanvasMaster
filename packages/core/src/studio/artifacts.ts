@@ -44,6 +44,7 @@ export interface GameProjectArtifact {
   genre: string;
   mechanics: string[];
   status: "concept" | "prototype" | "playable";
+  files?: Array<{ name: string; content: string }>;
 }
 
 export interface AppProjectArtifact {
@@ -51,6 +52,7 @@ export interface AppProjectArtifact {
   stack: string;
   features: string[];
   status: "planning" | "building" | "deployed";
+  files?: Array<{ name: string; content: string }>;
 }
 
 export interface StorefrontArtifact {
@@ -70,6 +72,8 @@ export interface WorkflowConfigArtifact {
   name: string;
   steps: string[];
   status: "draft" | "active";
+  nodes?: any[];
+  edges?: any[];
 }
 
 export interface ResearchBriefArtifact {

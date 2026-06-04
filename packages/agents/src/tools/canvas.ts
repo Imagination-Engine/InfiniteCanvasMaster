@@ -15,7 +15,7 @@ const {
 export const generate_canvas_blueprint = createTool({
   id: "generate_canvas_blueprint",
   description:
-    "Deconstruct a user goal into a functional visual workflow. MOVIE RULES: 1) Identify 3-4 key VISUAL SCENES from the user's prompt. 2) Create one 'iem.reel.textToImage' node per scene. 3) Put a HIGHLY DETAILED Gemini prompt in each node description. 4) CONNECT all scene nodes to an 'iem.studio.video' node. DO NOT use generic 'Character Design' or 'Scene Breakdown' nodes. Focus on the final artifacts. APP RULES: Schema -> Programmer -> QA -> App.",
+    "Deconstruct a user goal into a functional visual workflow. APP RULES: use Forge/code nodes that produce buildable files. GAME RULES: create a browser-playable web game chain: Game Concept (iem.forge.architect) -> Mechanics (iem.playable.rule) -> Assets/Level Plan (iem.playable.sprite) -> Game Builder (iem.forge.builder) -> Playtest/QA (iem.forge.tester) -> Playable Game (iem.app.web). The builder MUST return index.html/style.css/game.js/README.md. MOVIE RULES: 1) Identify 3-4 key VISUAL SCENES. 2) Create one 'iem.reel.textToImage' node per scene. 3) Connect all to an 'iem.studio.video' node. WORKFLOW RULES: create an executable Conductor DAG: Trigger (iem.conductor.schedule or iem.conductor.webhook) -> Action -> Transform/Filter -> Action -> Output/Log. Use iem.conductor.* nodes. Put editable node config in recommended_params.",
   inputSchema: z.object({
     owner_id: z
       .string()
@@ -38,7 +38,7 @@ export const generate_canvas_blueprint = createTool({
         type: z
           .string()
           .describe(
-            'The EXACT block type ID (e.g., "joystick", "chunker", "prose")',
+            'The EXACT block type ID (e.g., "iem.forge.builder", "iem.reel.textToImage", "iem.conductor.schedule")',
           ),
         title: z.string(),
         description: z.string(),

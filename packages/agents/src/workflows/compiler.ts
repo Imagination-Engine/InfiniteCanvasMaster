@@ -130,6 +130,13 @@ export function compileGraphToWorkflow(
         baseInput.content =
           baseInput.payload ?? baseInput.content ?? description;
 
+        // Game-specific fallbacks to prevent Zod Required errors
+        baseInput.condition = baseInput.condition ?? description;
+        baseInput.action = baseInput.action ?? description;
+        baseInput.asset = baseInput.asset ?? description;
+        baseInput.entityType = baseInput.entityType ?? description;
+        baseInput.mapping = baseInput.mapping ?? {};
+
         // Defensive: ensure these are at least empty strings if they exist as keys but are null/undefined
         // This prevents Zod "Required" errors for common fields.
         if (baseInput.prompt === undefined || baseInput.prompt === null)
@@ -138,6 +145,14 @@ export function compileGraphToWorkflow(
           baseInput.text = "";
         if (baseInput.goal === undefined || baseInput.goal === null)
           baseInput.goal = "";
+        if (baseInput.condition === undefined || baseInput.condition === null)
+          baseInput.condition = "";
+        if (baseInput.action === undefined || baseInput.action === null)
+          baseInput.action = "";
+        if (baseInput.asset === undefined || baseInput.asset === null)
+          baseInput.asset = "";
+        if (baseInput.entityType === undefined || baseInput.entityType === null)
+          baseInput.entityType = "";
 
         const adaptedInput = await registry.adapt({
           envelopes,

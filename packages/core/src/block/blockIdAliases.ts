@@ -19,6 +19,15 @@ const SHORTHAND_ALIASES: Record<string, string> = {
 
   // Programmer core
   programmer: "iem.core.programmer",
+
+  // Conductor legacy casing / workflow catalog shorthands
+  "conductor.forEach": "iem.conductor.foreach",
+  "conductor.foreach": "iem.conductor.foreach",
+  "conductor.webhook": "iem.conductor.webhook",
+  "conductor.schedule": "iem.conductor.schedule",
+  "conductor.webFetch": "iem.conductor.webFetch",
+  "conductor.slackPost": "iem.conductor.slackPost",
+  "conductor.notionCreate": "iem.conductor.notionCreate",
 };
 
 const SURFACE_NAMESPACES = [
