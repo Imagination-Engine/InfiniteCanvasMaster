@@ -2,6 +2,8 @@
  * Gemini image generation (Nano Banana / gemini-2.5-flash-image).
  */
 
+declare const process: { env: Record<string, string | undefined> };
+
 const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image";
 
 const DEFAULT_SYSTEM_INSTRUCTION =

@@ -91,48 +91,17 @@ export default function ReelNode({ id, data, selected }: NodeProps) {
   };
   const NodeIcon = meta.icon;
 
-  if (!definition) return null;
-
-  const updateData = (patch: Partial<BaseNodeData>) => {
-    updateNodeData(id, {
-      ...nodeData,
-      ...patch,
-      inputs: { ...nodeData.inputs, ...(patch.inputs ?? {}) },
-      outputs: { ...nodeData.outputs, ...(patch.outputs ?? {}) },
-    });
-  };
-
-  const runNode = async () => {
-    setRunning(true);
-    try {
-      const upstreamInputs = getNodeInputs(
-        id,
-        getNodes() as UnifiedCanvasNode[],
-        getEdges() as UnifiedCanvasEdge[],
-        getRuntimeState(),
-      );
-      const executionInputs = { ...nodeData.inputs, ...upstreamInputs };
-      setRuntimeNodeInputs(id, upstreamInputs);
-      const output = await runCreativeNode(
-        nodeData.type,
-        executionInputs,
-        nodeData.config ?? {},
-        accessToken,
-      );
-      updateData({ outputs: output });
-      setRuntimeNodeOutputs(id, output);
-    } finally {
-      setRunning(false);
-    }
-  };
-
-  // Timeline events as an array for display
-  const events = Array.isArray(nodeData.inputs?.events)
-    ? (nodeData.inputs.events as Array<{ name: string; duration?: number }>)
-    : [];
-
-  const fileUrl = nodeData.outputs?.fileUrl as string | undefined;
-  const imageUrl = nodeData.outputs?.imageUrl as string | undefined;
+  const updateData = useCallback(
+    (patch: Partial<BaseNodeData>) => {
+      updateNodeData(id, {
+        ...nodeData,
+        ...patch,
+        inputs: { ...nodeData.inputs, ...(patch.inputs ?? {}) },
+        outputs: { ...nodeData.outputs, ...(patch.outputs ?? {}) },
+      });
+    },
+    [id, nodeData, updateNodeData],
+  );
 
   const generateImage = useCallback(async () => {
     const prompt = String(
@@ -167,6 +136,40 @@ export default function ReelNode({ id, data, selected }: NodeProps) {
       setGeneratingImage(false);
     }
   }, [nodeData, updateData]);
+
+  if (!definition) return null;
+
+  const runNode = async () => {
+    setRunning(true);
+    try {
+      const upstreamInputs = getNodeInputs(
+        id,
+        getNodes() as UnifiedCanvasNode[],
+        getEdges() as UnifiedCanvasEdge[],
+        getRuntimeState(),
+      );
+      const executionInputs = { ...nodeData.inputs, ...upstreamInputs };
+      setRuntimeNodeInputs(id, upstreamInputs);
+      const output = await runCreativeNode(
+        nodeData.type,
+        executionInputs,
+        nodeData.config ?? {},
+        accessToken,
+      );
+      updateData({ outputs: output });
+      setRuntimeNodeOutputs(id, output);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  // Timeline events as an array for display
+  const events = Array.isArray(nodeData.inputs?.events)
+    ? (nodeData.inputs.events as Array<{ name: string; duration?: number }>)
+    : [];
+
+  const fileUrl = nodeData.outputs?.fileUrl as string | undefined;
+  const imageUrl = nodeData.outputs?.imageUrl as string | undefined;
 
   return (
     <div

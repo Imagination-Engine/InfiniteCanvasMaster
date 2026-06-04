@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   render,
   screen,
@@ -10,6 +10,21 @@ import {
   cleanup,
 } from "@testing-library/react";
 import React from "react";
+
+vi.hoisted(() => {
+  const store = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => store.clear(),
+  });
+});
+
 import { FloatingOrchestratorChat } from "../FloatingOrchestratorChat";
 import { useCanvasStore } from "../../state/canvasStore";
 
@@ -19,7 +34,13 @@ describe("FloatingOrchestratorChat Integration", () => {
   });
 
   beforeEach(() => {
-    useCanvasStore.setState({ objects: {} });
+    localStorage.clear();
+    useCanvasStore.setState({
+      objects: {},
+      connections: [],
+      bindings: [],
+      _hasHydrated: true,
+    });
   });
 
   it("should open when the Agent tag is clicked", async () => {
