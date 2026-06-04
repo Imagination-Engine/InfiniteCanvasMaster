@@ -1,15 +1,26 @@
-import { describe, it, expect } from 'vitest';
-import { Mastra } from '@mastra/core';
-import { PostgresStore } from '@mastra/pg';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-describe('Mastra Brain Initialization', () => {
-  it('should initialize with a postgres store', async () => {
-    // Mock the connection string
-    process.env.DATABASE_URL = 'postgres://postgres:postgres@localhost:5433/imagination_canvas';
-    
+vi.mock("@mastra/pg", () => {
+  class MockPostgresStore {
+    init = vi.fn().mockResolvedValue(undefined);
+    __setLogger = vi.fn();
+    constructor(public readonly options: Record<string, unknown>) {}
+  }
+  return { PostgresStore: MockPostgresStore };
+});
+
+import { Mastra } from "@mastra/core";
+import { PostgresStore } from "@mastra/pg";
+
+describe("Mastra Brain Initialization", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should initialize with a postgres store adapter (no live DB in unit tests)", async () => {
     const store = new PostgresStore({
-      id: 'iem-storage',
-      connectionString: process.env.DATABASE_URL,
+      id: "iem-storage",
+      connectionString: "postgres://localhost:5433/imagination_canvas",
     });
 
     const mastra = new Mastra({
@@ -18,5 +29,9 @@ describe('Mastra Brain Initialization', () => {
     });
 
     expect(mastra).toBeDefined();
+    expect(store.options).toEqual({
+      id: "iem-storage",
+      connectionString: "postgres://localhost:5433/imagination_canvas",
+    });
   });
 });
