@@ -9,7 +9,7 @@ export const timelineBlock: BlockDefinition<any, any> = {
   name: "Timeline",
   description: "Sequence video events.",
   category: "media",
-  input: z.object({ events: z.array(z.any()) }),
+  input: z.object({ events: z.array(z.record(z.any())) }),
   output: z.object({ sequenceId: z.string() }),
   mode: "triggered",
   agent: {

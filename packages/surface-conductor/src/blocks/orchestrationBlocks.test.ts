@@ -7,13 +7,13 @@ import {
   functionBlock,
   functionCallBlock,
   codeBlock,
-  agentBlock,
   delayBlock,
   subGraphBlock,
   jsonParseBlock,
   classifyBlock,
   forEachBlock,
 } from "./orchestrationBlocks";
+import { blockRegistry } from "@iem/core";
 import { SubGraphRegistry } from "../runtime/subgraphRegistry";
 import { FunctionRegistry } from "../runtime/functionRegistry";
 
@@ -289,7 +289,7 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
   });
 
-  describe("Sub-Agent Block", () => {
+  describe("Sub-Agent Block (consolidated into core)", () => {
     let originalEnv: typeof process.env;
 
     beforeEach(() => {
@@ -300,15 +300,28 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
       process.env = originalEnv;
     });
 
-    it("has valid metadata and schema", () => {
-      expect(agentBlock.id).toBe("iem.conductor.agent");
+    it("is registered in the core blockRegistry as iem.agent.agent", () => {
+      const agentBlock = blockRegistry.get("iem.agent.agent");
+      expect(agentBlock).toBeDefined();
+      expect(agentBlock!.id).toBe("iem.agent.agent");
+    });
+
+    it("has valid input schema", () => {
+      const agentBlock = blockRegistry.get("iem.agent.agent");
+      expect(agentBlock).toBeDefined();
       const validIn = { instructions: "Translate", input: { text: "hello" } };
-      expect(agentBlock.input.parse(validIn)).toEqual(validIn);
+      expect(agentBlock!.input.parse(validIn)).toEqual({
+        ...validIn,
+        provider: "google",
+        referenceFiles: [],
+      });
     });
 
     it("executes simulated/fallback when API key is missing", async () => {
+      const agentBlock = blockRegistry.get("iem.agent.agent");
+      expect(agentBlock).toBeDefined();
       delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-      const res = await agentBlock.agent.invoke({
+      const res = await agentBlock!.agent.invoke({
         instructions: "Translate",
         input: "hello",
       });
@@ -317,6 +330,8 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
     });
 
     it("executes real LLM call when API key is present", async () => {
+      const agentBlock = blockRegistry.get("iem.agent.agent");
+      expect(agentBlock).toBeDefined();
       process.env.GOOGLE_GENERATIVE_AI_API_KEY = "dummy-key";
       const { generateText } = await import("ai");
       const { google } = await import("@ai-sdk/google");
@@ -327,7 +342,7 @@ describe("Orchestration Blocks (Red/Green Phase)", () => {
 
       vi.mocked(google).mockReturnValue({} as any);
 
-      const res = await agentBlock.agent.invoke({
+      const res = await agentBlock!.agent.invoke({
         instructions: "Translate",
         input: "hello",
       });

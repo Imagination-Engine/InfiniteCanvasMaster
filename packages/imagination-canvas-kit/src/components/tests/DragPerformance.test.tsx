@@ -3,17 +3,16 @@
  */
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 
-// Mock stores
-const selectionState = {
-  selectedIds: [],
-  hoveredId: null,
-};
-const useSelectionStoreMock = vi.fn((selector: any) =>
-  selector ? selector(selectionState) : selectionState,
-);
+const { selectionState } = vi.hoisted(() => ({
+  selectionState: {
+    selectedIds: [],
+    hoveredId: null,
+  },
+}));
 
 vi.mock("../../state/selectionStore", () => ({
-  useSelectionStore: useSelectionStoreMock,
+  useSelectionStore: (selector: any) =>
+    selector ? selector(selectionState) : selectionState,
 }));
 
 vi.mock("../../state/expansionStore", () => ({

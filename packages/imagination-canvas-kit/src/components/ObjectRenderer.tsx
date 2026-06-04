@@ -44,6 +44,52 @@ const defaultRegistry: ComponentRegistry = {
   "openclaw.agent_group": OpenClawAgentGroupBlock as any,
 };
 
+const getBlockPrefix = (object: CanvasObject) => {
+  if ((object as any).blockKind) return (object as any).blockKind;
+  const parts = object.type.split(".");
+  if (parts[0] === "iem" && parts.length > 1) {
+    if (parts[1] === "studio" && parts.length > 2) {
+      return parts[2];
+    }
+    return parts[1];
+  }
+  return parts[0];
+};
+
+const getAccentColorClass = (object: CanvasObject) => {
+  const prefix = getBlockPrefix(object);
+  switch (prefix) {
+    case "agent":
+    case "conductor":
+      return "bg-brand-cyan shadow-brand-cyan/50";
+    case "scribe":
+    case "note":
+    case "writer":
+    case "text":
+    case "rich-text":
+      return "bg-violet-500 shadow-violet-500/50";
+    case "playable":
+    case "game":
+      return "bg-orange-500 shadow-orange-500/50";
+    case "atlas":
+    case "research":
+    case "intent":
+    case "goal":
+      return "bg-blue-500 shadow-blue-500/50";
+    case "reel":
+    case "media":
+    case "video":
+      return "bg-rose-500 shadow-rose-500/50";
+    case "forge":
+    case "app":
+    case "commerce":
+    case "automation":
+      return "bg-emerald-500 shadow-emerald-500/50";
+    default:
+      return "bg-brand-purple shadow-brand-purple/50";
+  }
+};
+
 export const ObjectRenderer: React.FC<{
   objectId?: string;
   object?: CanvasObject;
@@ -265,6 +311,8 @@ export const ObjectRenderer: React.FC<{
       className={`absolute transition-[box-shadow,opacity,ring] duration-300 ${isSelected ? "z-[1000] ring-2 ring-brand-cyan shadow-[0_0_40px_rgba(0,194,255,0.3)] scale-[1.01]" : "z-[10] shadow-xl"} ${isHovered && !isSelected ? "ring-1 ring-white/30" : ""} ${isDragging ? "z-[10000] scale-[1.03] shadow-2xl opacity-90 cursor-grabbing transition-none" : "cursor-grab"}`}
       style={{
         transform: `translate3d(${isDragging ? dragPos.current.x : object.x}px, ${isDragging ? dragPos.current.y : object.y}px, 0) rotate(${(object as any).rotation || 0}deg)`,
+        width: object.width,
+        height: object.height,
         userSelect: "none",
         willChange: "transform",
       }}
@@ -279,17 +327,27 @@ export const ObjectRenderer: React.FC<{
       }}
       onDrop={(e) => {
         const sourceId = e.dataTransfer.getData("application/iem-connection");
+        const dragType =
+          e.dataTransfer.getData("application/iem-connection-type") || "source";
         if (!sourceId || sourceId === object.id) return;
 
         const sourceObj = useCanvasStore.getState().objects[sourceId];
+        if (!sourceObj) return;
+
         const sourceKind =
           (sourceObj as any)?.blockKind || sourceObj?.type || sourceId;
         const targetKind = (object as any).blockKind || object.type;
 
+        const fromId = dragType === "target" ? object.id : sourceId;
+        const toId = dragType === "target" ? sourceId : object.id;
+
+        const fromKind = dragType === "target" ? targetKind : sourceKind;
+        const toKind = dragType === "target" ? sourceKind : targetKind;
+
         if (
           !studioInteropResolver.canConnectBlocks(
-            normalizeCanvasBlockId(sourceKind),
-            normalizeCanvasBlockId(targetKind),
+            normalizeCanvasBlockId(fromKind),
+            normalizeCanvasBlockId(toKind),
           )
         ) {
           e.preventDefault();
@@ -298,26 +356,44 @@ export const ObjectRenderer: React.FC<{
 
         addConnection({
           id: `edge-${Date.now()}`,
-          fromId: sourceId,
-          toId: object.id,
+          fromId,
+          toId,
         });
       }}
     >
       {/* Left Input Connector Handle */}
       <div
         title="Input — connect upstream"
-        className={`absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-80"}`}
+        className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+        style={{
+          left: "-12px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "24px",
+          height: "24px",
+        }}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData("application/iem-connection", object.id);
+          e.dataTransfer.setData("application/iem-connection-type", "target");
+          setDraftConnection({
+            fromId: object.id,
+            type: "target",
+            x: object.x,
+            y: object.y + object.height / 2,
+          });
+        }}
+        onDragEnd={() => setDraftConnection(null)}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-full" />
+        <div
+          className={`w-3 h-3 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
+          style={{ width: "12px", height: "12px" }}
+        />
       </div>
 
       <div
-        className={`bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-shadow duration-300 ${isHovered || isSelected ? "border-brand-cyan/20" : ""}`}
-        style={{
-          width: object.width,
-          height: object.height,
-        }}
+        className={`bg-gradient-to-br from-brand-bg-surface/95 to-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden group/block transition-shadow duration-300 w-full h-full ${isHovered || isSelected ? "border-brand-cyan/20" : ""}`}
       >
         {/* Premium Canvas Block Header */}
         <div className="h-10 border-b border-white/5 flex items-center justify-between px-3 bg-gradient-to-r from-black/60 to-black/20 shrink-0 select-none group/header relative overflow-hidden">
@@ -357,10 +433,6 @@ export const ObjectRenderer: React.FC<{
               onPointerDown={(e) => e.stopPropagation()}
               onMouseEnter={() => setIsExpandHovered(true)}
               onMouseLeave={() => setIsExpandHovered(false)}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-                setExpanded(object.id, "fullscreen", projectId);
-              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setExpanded(object.id, "fullscreen", projectId);
@@ -377,12 +449,6 @@ export const ObjectRenderer: React.FC<{
 
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-                capture();
-                removeObject(object.id);
-                clearSelection();
-              }}
               onClick={(e) => {
                 e.stopPropagation();
                 capture();
@@ -398,13 +464,21 @@ export const ObjectRenderer: React.FC<{
         </div>
 
         {/* Inner Content Body */}
-        <div className="flex-1 flex flex-col p-4 overflow-hidden relative">
+        <div
+          className={`flex-1 flex flex-col overflow-hidden relative ${
+            object.type.includes("agent") ? "pt-2 px-4 pb-4" : "p-4"
+          }`}
+        >
           {/* Primary Role/Purpose */}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
-              {object.metadata?.role || object.type.split(".")[1] || "Process"}
-            </span>
-            <div className="flex items-center gap-1">
+            {!object.type.includes("agent") && (
+              <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
+                {object.metadata?.role ||
+                  object.type.split(".")[1] ||
+                  "Process"}
+              </span>
+            )}
+            <div className="flex items-center gap-1 ml-auto">
               <Activity size={10} className="text-white/20" />
               <span
                 data-testid="block-status"
@@ -416,7 +490,7 @@ export const ObjectRenderer: React.FC<{
           </div>
 
           {/* Description / Purpose Line */}
-          {object.metadata?.description && (
+          {object.metadata?.description && !object.type.includes("agent") && (
             <p
               data-testid="block-description"
               className="text-[10px] text-white/40 italic leading-relaxed line-clamp-2 mb-3"
@@ -457,12 +531,21 @@ export const ObjectRenderer: React.FC<{
       {/* Right Output Connector Handle */}
       <div
         title="Output — drag to connect"
-        className={`absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 ${isHovered ? "opacity-100" : "opacity-80"}`}
+        className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+        style={{
+          right: "-12px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "24px",
+          height: "24px",
+        }}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData("application/iem-connection", object.id);
+          e.dataTransfer.setData("application/iem-connection-type", "source");
           setDraftConnection({
             fromId: object.id,
+            type: "source",
             x: object.x + object.width,
             y: object.y + object.height / 2,
           });
@@ -470,7 +553,10 @@ export const ObjectRenderer: React.FC<{
         onDragEnd={() => setDraftConnection(null)}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="w-2.5 h-2.5 bg-brand-cyan/80 border border-white/20 shadow-lg shadow-brand-cyan/50 rounded-full" />
+        <div
+          className={`w-3 h-3 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
+          style={{ width: "12px", height: "12px" }}
+        />
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ import { useSelectionStore } from "../state/selectionStore";
 import { useConnectionStore } from "../state/connectionStore";
 import { ObjectRenderer, type ComponentRegistry } from "./ObjectRenderer";
 import { ConnectorLayer } from "./ConnectorLayer";
-import { AgentActivityLayer } from "./AgentActivityLayer";
 import { PresenceLayer } from "./PresenceLayer";
 import { screenToCanvas } from "../utils/camera";
 import { blockRegistry } from "@iem/core";
@@ -257,7 +256,6 @@ export const InfiniteViewport: React.FC<{
         }}
       >
         <ConnectorLayer />
-        <AgentActivityLayer />
         {objectIds.map((id) => (
           <ObjectRenderer key={id} objectId={id} registry={registry} />
         ))}

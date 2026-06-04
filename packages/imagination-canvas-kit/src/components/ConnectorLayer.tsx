@@ -143,12 +143,22 @@ export const ConnectorLayer: React.FC = () => {
   if (draftConnection && draftSourceObj) {
     const sWidth = draftSourceObj.width || 320;
     const sHeight = draftSourceObj.height || 240;
-    const startX = draftSourceObj.x + sWidth;
+    const isDragFromTarget = draftConnection.type === "target";
+    const startX = isDragFromTarget
+      ? draftSourceObj.x
+      : draftSourceObj.x + sWidth;
     const startY = draftSourceObj.y + sHeight / 2;
     const endX = draftConnection.x;
     const endY = draftConnection.y;
     const dx = Math.abs(endX - startX);
     const controlPointOffset = Math.min(Math.max(dx * 0.4, 50), 200);
+
+    const cp1X = isDragFromTarget
+      ? startX - controlPointOffset
+      : startX + controlPointOffset;
+    const cp2X = isDragFromTarget
+      ? endX + controlPointOffset
+      : endX - controlPointOffset;
 
     draftPath =
       "M " +
@@ -156,11 +166,11 @@ export const ConnectorLayer: React.FC = () => {
       " " +
       startY +
       " C " +
-      (startX + controlPointOffset) +
+      cp1X +
       " " +
       startY +
       ", " +
-      (endX - controlPointOffset) +
+      cp2X +
       " " +
       endY +
       ", " +

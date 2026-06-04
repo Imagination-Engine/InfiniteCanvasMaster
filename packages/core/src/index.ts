@@ -6,6 +6,7 @@ export * from "./block/factory.js";
 export * from "./blocks/creative/index.js";
 export * from "./agent/provider.js";
 export * from "./agent/runtime.js";
+export * from "./agent/roles.js";
 export * from "./chain/ChainExecutor.js";
 
 // Export from bus/protocol selectively to avoid collision with fabric

@@ -187,17 +187,28 @@ export const RunWorkflowBar: React.FC = () => {
           } else if (type.includes("agent")) {
             const instructions = getVal("instructions");
             const role = getVal("role");
-            const model = getVal("model");
+            const roleId = getVal("roleId");
+            const provider = getVal("provider", "google");
+            const model = getVal(
+              "model",
+              provider === "google" ? "gemini-3.5-flash" : "mistral",
+            );
+
+            // Allow if role is present, or if roleId is 'custom' (which we can fallback to 'Custom' role)
             if (!role || role.trim() === "") {
-              throw new Error("Agent Role is required and not configured.");
+              if (roleId !== "custom" && roleId !== "") {
+                throw new Error("Agent Role is required and not configured.");
+              }
             }
+
             if (!instructions || instructions.trim().length < 5) {
               throw new Error(
                 "System instructions must be configured with at least 5 characters.",
               );
             }
+
             if (!model || model.trim() === "") {
-              throw new Error("Gemini reasoning model must be selected.");
+              throw new Error("AI reasoning model must be selected.");
             }
           } else if (type.includes("webfetch")) {
             const url = getVal("url");

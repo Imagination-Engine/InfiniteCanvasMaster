@@ -24,6 +24,8 @@ projectsRouter.get("/", async (c) => {
     const projects = userWorkspaces.map((s: any) => ({
       id: s.id,
       name: s.name || "Untitled Project",
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
       created_at: s.createdAt,
       updated_at: s.updatedAt,
     }));
@@ -54,6 +56,8 @@ projectsRouter.post("/", async (c) => {
         project: {
           id: newWorkspace.id,
           name: newWorkspace.name,
+          createdAt: newWorkspace.createdAt,
+          updatedAt: newWorkspace.updatedAt,
           created_at: newWorkspace.createdAt,
           updated_at: newWorkspace.updatedAt,
         },
@@ -124,6 +128,8 @@ projectsRouter.get("/:id", async (c) => {
       project: {
         id: workspace.id,
         name: workspace.name,
+        createdAt: workspace.createdAt,
+        updatedAt: workspace.updatedAt,
         created_at: workspace.createdAt,
         updated_at: workspace.updatedAt,
       },
@@ -193,6 +199,9 @@ projectsRouter.get("/:id/canvas", async (c) => {
           kind: "creativity",
           name: canvas.name,
           document: defaultDoc,
+          createdAt: canvas.createdAt,
+          updatedAt: canvas.updatedAt,
+          created_at: canvas.createdAt,
           updated_at: canvas.updatedAt,
         },
       });
@@ -232,6 +241,9 @@ projectsRouter.get("/:id/canvas", async (c) => {
         kind: "creativity",
         name: canvas.name,
         document,
+        createdAt: canvas.createdAt,
+        updatedAt: canvas.updatedAt,
+        created_at: canvas.createdAt,
         updated_at: canvas.updatedAt,
       },
     });
@@ -348,6 +360,9 @@ projectsRouter.put("/:id/canvas", async (c) => {
         kind: "creativity",
         name: updatedCanvas.name,
         document,
+        createdAt: updatedCanvas.createdAt,
+        updatedAt: updatedCanvas.updatedAt,
+        created_at: updatedCanvas.createdAt,
         updated_at: updatedCanvas.updatedAt,
       },
     });

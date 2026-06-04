@@ -6,6 +6,7 @@ import {
   CanvasConnection,
   CanvasBinding,
 } from "../contracts/index";
+import { useConnectionStore } from "./connectionStore";
 
 interface CanvasState {
   objects: Record<string, CanvasObject>;
@@ -175,6 +176,22 @@ export const useCanvasStore = create<CanvasState>()(
         set((state) => {
           const newObjects = { ...state.objects };
           delete newObjects[id];
+
+          // Clean up connectionStore connections associated with the deleted object
+          const connectionStore = useConnectionStore.getState();
+          const nextConnections = { ...connectionStore.connections };
+          let connectionsChanged = false;
+          Object.keys(nextConnections).forEach((connId) => {
+            const conn = nextConnections[connId];
+            if (conn.fromId === id || conn.toId === id) {
+              delete nextConnections[connId];
+              connectionsChanged = true;
+            }
+          });
+          if (connectionsChanged) {
+            useConnectionStore.setState({ connections: nextConnections });
+          }
+
           return {
             objects: newObjects,
             connections: (state.connections || []).filter(

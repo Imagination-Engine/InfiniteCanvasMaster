@@ -105,20 +105,6 @@ const CONDUCTOR_FIELDS: Record<string, FieldDef[]> = {
       placeholder: "America/Los_Angeles",
     },
   ],
-  "conductor.agent": [
-    {
-      key: "instructions",
-      label: "Agent Instructions",
-      type: "textarea",
-      placeholder: "Describe what this agent should do...",
-    },
-    {
-      key: "model",
-      label: "Model",
-      type: "select",
-      options: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
-    },
-  ],
   "conductor.saas": [
     {
       key: "provider",
@@ -348,7 +334,6 @@ const TYPE_ICONS: Record<string, any> = {
   "trigger.webhook": Zap,
   "conductor.schedule": Clock,
   "trigger.time": Clock,
-  "conductor.agent": Bot,
   "conductor.webFetch": Globe,
   "conductor.slackPost": Send,
   "conductor.notionCreate": FileText,

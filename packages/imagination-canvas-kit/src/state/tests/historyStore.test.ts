@@ -9,14 +9,14 @@ import { useCanvasStore } from "../canvasStore";
 describe("CanvasMutation Engine & Undo Stack", () => {
   beforeEach(() => {
     useHistoryStore.setState({ past: [], future: [] });
-    useCanvasStore.setState({ objects: [], connections: [], bindings: [] });
+    useCanvasStore.setState({ objects: {}, connections: [], bindings: [] });
   });
 
   it("should push a mutation and allow undoing", () => {
     const { pushMutation, undo } = useHistoryStore.getState();
     const { addObject } = useCanvasStore.getState();
 
-    const initialState = { objects: [], connections: [], bindings: [] };
+    const initialState = { objects: {}, connections: [], bindings: [] };
 
     addObject({
       id: "obj-1",
@@ -28,8 +28,8 @@ describe("CanvasMutation Engine & Undo Stack", () => {
     } as any);
 
     const newState = {
-      objects: [
-        {
+      objects: {
+        "obj-1": {
           id: "obj-1",
           type: "shape",
           x: 0,
@@ -37,7 +37,7 @@ describe("CanvasMutation Engine & Undo Stack", () => {
           width: 100,
           height: 100,
         } as any,
-      ],
+      },
       connections: [],
       bindings: [],
     };
@@ -52,17 +52,17 @@ describe("CanvasMutation Engine & Undo Stack", () => {
 
     undo();
 
-    expect(useCanvasStore.getState().objects).toHaveLength(0);
+    expect(Object.keys(useCanvasStore.getState().objects)).toHaveLength(0);
     expect(useHistoryStore.getState().future).toHaveLength(1);
   });
 
   it("should allow redoing a mutation", () => {
     const { pushMutation, undo, redo } = useHistoryStore.getState();
 
-    const initialState = { objects: [], connections: [], bindings: [] };
+    const initialState = { objects: {}, connections: [], bindings: [] };
     const newState = {
-      objects: [
-        {
+      objects: {
+        "obj-1": {
           id: "obj-1",
           type: "shape",
           x: 0,
@@ -70,7 +70,7 @@ describe("CanvasMutation Engine & Undo Stack", () => {
           width: 100,
           height: 100,
         } as any,
-      ],
+      },
       connections: [],
       bindings: [],
     };
@@ -84,7 +84,7 @@ describe("CanvasMutation Engine & Undo Stack", () => {
     undo();
     redo();
 
-    expect(useCanvasStore.getState().objects).toHaveLength(1);
+    expect(Object.keys(useCanvasStore.getState().objects)).toHaveLength(1);
   });
 
   it("should gracefully handle undo/redo when empty", () => {
@@ -100,9 +100,11 @@ describe("CanvasMutation Engine & Undo Stack", () => {
       for (let i = 0; i < 60; i++) {
         pushMutation({
           type: "test",
-          before: { objects: [], connections: [], bindings: [] },
+          before: { objects: {}, connections: [], bindings: [] },
           after: {
-            objects: [{ id: `obj-${i}` }] as any,
+            objects: {
+              [`obj-${i}`]: { id: `obj-${i}` } as any,
+            },
             connections: [],
             bindings: [],
           },
@@ -111,8 +113,8 @@ describe("CanvasMutation Engine & Undo Stack", () => {
 
       const { past } = useHistoryStore.getState();
       expect(past).toHaveLength(50);
-      expect(past[0].after.objects[0].id).toBe("obj-10"); // 0-9 were dropped
-      expect(past[49].after.objects[0].id).toBe("obj-59");
+      expect(past[0].after.objects["obj-10"].id).toBe("obj-10"); // 0-9 were dropped
+      expect(past[49].after.objects["obj-59"].id).toBe("obj-59");
     });
   });
 });

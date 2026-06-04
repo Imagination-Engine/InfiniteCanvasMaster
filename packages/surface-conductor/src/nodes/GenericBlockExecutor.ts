@@ -14,7 +14,6 @@ import {
   webhookCallBlock,
   scheduleTriggerBlock,
   saasBlock,
-  agentBlock,
   routerBlock,
   delayBlock,
   stateBlock,
@@ -27,7 +26,7 @@ import {
   functionCallBlock,
   codeBlock,
 } from "../blocks/orchestrationBlocks.js";
-import type { BlockDefinition } from "@iem/core";
+import { blockRegistry, type BlockDefinition } from "@iem/core";
 
 /**
  * Registry mapping block IDs to their definitions.
@@ -40,7 +39,6 @@ const BLOCK_DEFINITIONS: Record<string, BlockDefinition<any, any>> = {
   "iem.conductor.webhookCall": webhookCallBlock,
   "iem.conductor.schedule": scheduleTriggerBlock,
   "iem.conductor.saas": saasBlock,
-  "iem.conductor.agent": agentBlock,
   "iem.conductor.router": routerBlock,
   "iem.conductor.delay": delayBlock,
   "iem.conductor.state": stateBlock,
@@ -68,7 +66,7 @@ const KIND_TO_BLOCK_ID: Record<string, string> = {
   merge: "iem.conductor.state",
   output: "iem.conductor.state",
   artifact: "iem.conductor.state",
-  prompt: "iem.conductor.agent",
+  prompt: "iem.agent.agent",
   tool: "iem.conductor.saas",
   function: "iem.conductor.function",
   functionCall: "iem.conductor.functionCall",
@@ -161,7 +159,7 @@ export class GenericBlockExecutor implements ConductorNodeExecutor {
 
     // --- Default: Delegate to block definition's agent.invoke() ---
     const blockId = this.resolveBlockId(node.kind);
-    const blockDef = BLOCK_DEFINITIONS[blockId];
+    const blockDef = BLOCK_DEFINITIONS[blockId] || blockRegistry.get(blockId);
 
     if (!blockDef) {
       // Graceful fallback — return the input as output so the chain continues
