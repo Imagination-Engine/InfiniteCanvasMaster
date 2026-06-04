@@ -608,7 +608,7 @@ Return ONLY the category name. Do not include quotes or any other text.
 Text: "${i.inputString}"`;
 
         const { text } = await generateText({
-          model: google("gemini-1.5-flash"),
+          model: google("gemini-3.5-flash"),
           prompt,
         });
 

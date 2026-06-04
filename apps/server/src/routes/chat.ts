@@ -307,7 +307,15 @@ chatRouter.post("/block", async (c) => {
 
   const { blockId, projectId, messages } = body;
 
+  console.log(
+    `[BLOCK-CHAT] Request from user ${user?.sub} for block ${blockId} in project ${projectId}`,
+  );
+
   if (!blockId || !projectId) {
+    console.warn("[BLOCK-CHAT] Missing blockId or projectId", {
+      blockId,
+      projectId,
+    });
     return c.json({ error: "blockId and projectId are required" }, 400);
   }
 

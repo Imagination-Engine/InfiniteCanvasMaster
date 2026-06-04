@@ -16,14 +16,17 @@ import {
   Sparkles,
   Paperclip,
   AlertCircle,
+  Send,
 } from "lucide-react";
 import { useCanvasStore } from "../../state/canvasStore";
 import { useLibraryStore } from "../../state/libraryStore";
 import { useConnectionStore } from "../../state/connectionStore";
+import { PREDEFINED_AGENT_ROLES } from "@iem/core";
 
 export const AgentBlock: React.FC<BlockComponentProps> = ({
   object,
   mode = "compact",
+  onParamsChange,
 }) => {
   const updateObject = useCanvasStore((s) => s.updateObject);
   const addCustomBlock = useLibraryStore((s) => s.addCustomBlock);
@@ -47,21 +50,107 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
 
   // Destructure or fallback metadata values
   const metadata = object.metadata || {};
-  const provider = metadata.provider || "google";
+  const inputs = metadata.inputs || {};
+  const outputs = metadata.outputs || {};
+
+  const provider = metadata.provider || inputs.provider || "google";
   const model =
-    metadata.model || (provider === "google" ? "gemini-2.5-flash" : "mistral");
-  const referenceFiles = metadata.referenceFiles || [];
-  const prompt = metadata.prompt || "";
-  const instructions = metadata.instructions || "";
-  const outputText = metadata.outputs?.output || "";
+    metadata.model ||
+    inputs.model ||
+    (provider === "google" ? "gemini-3.5-flash" : "mistral");
+  const referenceFiles = metadata.referenceFiles || inputs.referenceFiles || [];
+
+  // Prioritize inputs.prompt (routed from store) over top-level metadata.prompt
+  const prompt =
+    inputs.prompt !== undefined ? inputs.prompt : metadata.prompt || "";
+
+  const instructions = metadata.instructions || inputs.instructions || "";
+  const outputText = outputs.output || "";
+
+  // ---------------------------------------------------------------------------
+  // Reactive Input Propagation
+  // ---------------------------------------------------------------------------
+  // Detect changes in upstream connections and trigger execution automatically
+  const connections = useConnectionStore((s) => s.connections) || {};
+  const objects = useCanvasStore((s) => s.objects) || {};
+
+  React.useEffect(() => {
+    // Only auto-execute if we are on the canvas (compact mode) or explicitly enabled
+    // and if we're not already executing.
+    if (isExecuting) return;
+
+    const upstreamConns = Object.values(connections).filter(
+      (c: any) => c.toId === object.id,
+    );
+
+    if (upstreamConns.length === 0) return;
+
+    // Check if any upstream output has changed
+    let latestOutputHash = "";
+    let combinedContent = "";
+
+    upstreamConns.forEach((conn: any) => {
+      const sourceObj = objects[conn.fromId];
+      if (!sourceObj) return;
+      const meta = sourceObj.metadata || {};
+      const out =
+        meta.outputs?.output ||
+        meta.text ||
+        meta.instructions ||
+        meta.content ||
+        "";
+      if (out) {
+        latestOutputHash += `${sourceObj.id}:${out}|`;
+        combinedContent += (combinedContent ? "\n\n" : "") + out;
+      }
+    });
+
+    // Store a hash of upstream inputs in metadata to avoid infinite loops
+    const lastHash = metadata.lastUpstreamHash || "";
+    if (latestOutputHash && latestOutputHash !== lastHash) {
+      console.log(
+        `[AgentBlock] ${object.id} detected upstream change, updating input and triggering auto-run...`,
+      );
+
+      // Update the hash and the prompt field so the user can see what's inputted
+      const updates = {
+        lastUpstreamHash: latestOutputHash,
+        prompt: combinedContent,
+      };
+
+      handleChanges(updates);
+
+      // Brief delay to ensure state settles before execution
+      setTimeout(() => {
+        handleExecuteAgent(combinedContent);
+      }, 200);
+    }
+  }, [connections, objects, object.id, isExecuting, metadata.lastUpstreamHash]);
 
   const handleChange = (key: string, value: any) => {
-    updateObject(object.id, {
-      metadata: {
-        ...object.metadata,
-        [key]: value,
-      },
-    });
+    if (onParamsChange) {
+      onParamsChange({ [key]: value });
+    } else {
+      updateObject(object.id, {
+        metadata: {
+          ...object.metadata,
+          [key]: value,
+        },
+      });
+    }
+  };
+
+  const handleChanges = (patch: Record<string, any>) => {
+    if (onParamsChange) {
+      onParamsChange(patch);
+    } else {
+      updateObject(object.id, {
+        metadata: {
+          ...object.metadata,
+          ...patch,
+        },
+      });
+    }
   };
 
   const handleSaveToLibrary = async () => {
@@ -70,14 +159,14 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
 
     const blockPayload = {
       id: `custom.${object.type}.${Date.now()}`,
-      name: object.metadata.label || "Custom Agent",
+      name: metadata.label || "Custom Agent",
       category: "Custom",
-      description: object.metadata.instructions || "A custom configured agent.",
+      description: instructions || "A custom configured agent.",
       icon: "Bot",
       agentic: true,
       runtime: "agent",
       metadata: {
-        ...object.metadata,
+        ...metadata,
         isCustom: true,
         savedAt: new Date().toISOString(),
       },
@@ -158,63 +247,104 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
   };
 
   // Node Prompt Execution
-  const handleExecuteAgent = async () => {
+  const handleExecuteAgent = async (overrideInput?: string) => {
     if (isExecuting) return;
+
+    // Safely determine the input, ignoring event objects if called directly as handler
+    const activeInput =
+      typeof overrideInput === "string" ? overrideInput : prompt;
+
+    console.log("[AgentBlock] Starting execution...", {
+      input: activeInput,
+      provider,
+      model,
+      instructionsLength: instructions?.length,
+    });
 
     setIsExecuting(true);
     setExecError(null);
     updateObject(object.id, { status: "thinking" });
 
     try {
+      // Use the provided input (from reactive update) or the current local prompt
+      const finalInput =
+        activeInput || instructions || "Perform your designated role.";
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
       if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
-      const response = await fetch("http://localhost:3001/api/blocks/execute", {
+      const payload = {
+        blockId: "iem.agent.agent",
+        inputs: {
+          instructions: instructions || "You are a helpful AI assistant.",
+          input: finalInput,
+          provider: provider || "google",
+          model:
+            model || (provider === "google" ? "gemini-3.5-flash" : "mistral"),
+          referenceFiles,
+        },
+      };
+
+      console.log("[AgentBlock] Fetching /api/blocks/execute", payload);
+
+      const response = await fetch("/api/blocks/execute", {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          blockId: "iem.agent.agent",
-          inputs: {
-            instructions: instructions || "You are a helpful AI assistant.",
-            input: prompt,
-            provider,
-            model,
-            referenceFiles,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
         throw new Error(
-          `HTTP Error ${response.status}: ${response.statusText}`,
+          `HTTP Error ${response.status}: ${response.statusText} - ${errorText}`,
         );
       }
 
       const result = await response.json();
-      const generatedOutput = result.output?.output || result.output || "";
+      console.log("[AgentBlock] Execution successful", result);
+
+      // Robustly extract the text portion of the response
+      const extractText = (val: any): string => {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        // If it's an object, check common "primary output" keys
+        if (typeof val === "object") {
+          return extractText(
+            val.output ||
+              val.text ||
+              val.content ||
+              val.result ||
+              JSON.stringify(val),
+          );
+        }
+        return String(val);
+      };
+
+      const generatedOutput = extractText(result.output);
 
       // 1. Update own object status and output metadata
       updateObject(object.id, {
         status: "idle",
         metadata: {
-          ...object.metadata,
           outputs: {
             output: generatedOutput,
           },
         },
       });
 
-      // 2. Dynamic downstream propagation to connected Note or Text blocks on the canvas
-      const connections = useConnectionStore.getState().connections || {};
-      const downstreamConns = Object.values(connections).filter(
+      // 2. Dynamic downstream propagation - FETCH FRESH STATE
+      const freshConnections = useConnectionStore.getState().connections || {};
+      const freshObjects = useCanvasStore.getState().objects || {};
+
+      const downstreamConns = Object.values(freshConnections).filter(
         (c: any) => c.fromId === object.id,
       );
 
       downstreamConns.forEach((conn: any) => {
         const targetId = conn.toId;
-        const targetObj = useCanvasStore.getState().objects[targetId];
+        const targetObj = freshObjects[targetId];
 
         if (targetObj) {
           const typeLower = targetObj.type.toLowerCase();
@@ -222,13 +352,14 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
             typeLower === "note" ||
             typeLower === "text" ||
             typeLower.includes("prose") ||
-            typeLower.includes("scribe")
+            typeLower.includes("scribe") ||
+            typeLower.includes("rich")
           ) {
             updateObject(targetId, {
               metadata: {
-                ...targetObj.metadata,
                 instructions: generatedOutput, // note instructions/content
                 text: generatedOutput, // standard text field
+                content: generatedOutput, // rich text field
                 label:
                   targetObj.metadata?.label ||
                   (typeLower === "note"
@@ -242,46 +373,47 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
 
       setShowOutput(true);
     } catch (err: any) {
-      console.warn(
-        "Agent Node execution failed, falling back to local simulation.",
-        err,
-      );
+      console.error("[AgentBlock] Execution failed", err);
+      setExecError(err.message || "Execution failed");
 
       // Local simulation fallback
       await new Promise((res) => setTimeout(res, 1000));
-      const simulatedText = `[LOCAL SIMULATOR - ${model.toUpperCase()}]\n\nHello! I am your configured agent (Provider: ${provider.toUpperCase()}). I successfully processed your prompt:\n"${prompt}"\n\nActive Instructions:\n"${instructions || "No custom instructions defined"}"\n\nReference Documents Attached: ${referenceFiles.length} file(s).`;
+      const modelLabel = (model || "UNKNOWN").toUpperCase();
+      const simulatedText = `[LOCAL SIMULATOR - ${modelLabel}]\n\nHello! I am your configured agent (Provider: ${(provider || "google").toUpperCase()}). I successfully processed your input:\n"${activeInput}"\n\nActive Instructions:\n"${instructions || "No custom instructions defined"}"\n\nReference Documents Attached: ${referenceFiles.length} file(s).`;
 
       updateObject(object.id, {
         status: "idle",
         metadata: {
-          ...object.metadata,
           outputs: {
             output: simulatedText,
           },
         },
       });
 
-      // Propagate mock downstream
-      const connections = useConnectionStore.getState().connections || {};
-      const downstreamConns = Object.values(connections).filter(
+      // Propagate mock downstream - FETCH FRESH STATE
+      const freshConnections = useConnectionStore.getState().connections || {};
+      const freshObjects = useCanvasStore.getState().objects || {};
+
+      const downstreamConns = Object.values(freshConnections).filter(
         (c: any) => c.fromId === object.id,
       );
 
       downstreamConns.forEach((conn: any) => {
         const targetId = conn.toId;
-        const targetObj = useCanvasStore.getState().objects[targetId];
+        const targetObj = freshObjects[targetId];
         if (targetObj) {
           const typeLower = targetObj.type.toLowerCase();
           if (
             typeLower === "note" ||
             typeLower === "text" ||
-            typeLower.includes("prose")
+            typeLower.includes("prose") ||
+            typeLower.includes("rich")
           ) {
             updateObject(targetId, {
               metadata: {
-                ...targetObj.metadata,
                 instructions: simulatedText,
                 text: simulatedText,
+                content: simulatedText,
               },
             });
           }
@@ -318,21 +450,71 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="agent-role"
-                className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1.5"
-              >
-                Agent Role
-              </label>
-              <input
-                id="agent-role"
-                type="text"
-                value={object.metadata.role || ""}
-                onChange={(e) => handleChange("role", e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all font-mono"
-                placeholder="e.g., Copywriter, Coder"
-              />
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="agent-role"
+                  className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1.5"
+                >
+                  Agent Role Preset
+                </label>
+                <select
+                  id="agent-role"
+                  value={metadata.roleId || "custom"}
+                  onChange={(e) => {
+                    const roleId = e.target.value;
+                    const updates: Record<string, any> = { roleId };
+                    if (roleId !== "custom") {
+                      const role = PREDEFINED_AGENT_ROLES.find(
+                        (r) => r.id === roleId,
+                      );
+                      if (role) {
+                        updates.role = role.label;
+                        updates.instructions = role.prompt;
+                      }
+                    } else {
+                      updates.role = metadata.role || "Custom Agent";
+                    }
+                    handleChanges(updates);
+                  }}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all cursor-pointer"
+                >
+                  <option
+                    value="custom"
+                    className="bg-brand-bg-page text-white"
+                  >
+                    Custom
+                  </option>
+                  {PREDEFINED_AGENT_ROLES.map((r) => (
+                    <option
+                      key={r.id}
+                      value={r.id}
+                      className="bg-brand-bg-page text-white"
+                    >
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {(metadata.roleId === "custom" || !metadata.roleId) && (
+                <div>
+                  <label
+                    htmlFor="custom-role-name"
+                    className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1.5"
+                  >
+                    Custom Role Name
+                  </label>
+                  <input
+                    id="custom-role-name"
+                    type="text"
+                    value={metadata.role || ""}
+                    onChange={(e) => handleChange("role", e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all"
+                    placeholder="e.g., Space Explorer, Math Tutor"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -343,22 +525,24 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
                 AI Provider
               </label>
               <select
-                value={provider}
+                value={provider === "local" ? "ollama" : provider}
                 onChange={(e) => {
                   const nextProvider = e.target.value;
-                  handleChange("provider", nextProvider);
-                  handleChange(
-                    "model",
-                    nextProvider === "google" ? "gemini-2.5-flash" : "mistral",
-                  );
+                  handleChanges({
+                    provider: nextProvider,
+                    model:
+                      nextProvider === "google"
+                        ? "gemini-3.5-flash"
+                        : "mistral",
+                  });
                 }}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all cursor-pointer"
               >
                 <option value="google" className="bg-brand-bg-page text-white">
                   Google Gemini
                 </option>
-                <option value="local" className="bg-brand-bg-page text-white">
-                  Local Ollama
+                <option value="ollama" className="bg-brand-bg-page text-white">
+                  Ollama (Local)
                 </option>
               </select>
             </div>
@@ -375,28 +559,28 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
                 {provider === "google" ? (
                   <>
                     <option
-                      value="gemini-2.5-flash"
+                      value="gemini-3.5-flash"
                       className="bg-brand-bg-page text-white"
                     >
-                      gemini-2.5-flash
+                      gemini-3.5-flash
                     </option>
                     <option
-                      value="gemini-2.5-pro"
+                      value="gemini-3.5-pro"
                       className="bg-brand-bg-page text-white"
                     >
-                      gemini-2.5-pro
+                      gemini-3.5-pro
                     </option>
                     <option
-                      value="gemini-1.5-flash"
+                      value="gemini-3.1-pro"
                       className="bg-brand-bg-page text-white"
                     >
-                      gemini-1.5-flash
+                      gemini-3.1-pro
                     </option>
                     <option
-                      value="gemini-1.5-pro"
+                      value="gemini-3.1-flash-lite"
                       className="bg-brand-bg-page text-white"
                     >
-                      gemini-1.5-pro
+                      gemini-3.1-flash-lite
                     </option>
                   </>
                 ) : (
@@ -443,9 +627,55 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
               id="agent-instructions"
               value={instructions}
               onChange={(e) => handleChange("instructions", e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all min-h-[100px] resize-none"
+              disabled={!!metadata.roleId && metadata.roleId !== "custom"}
+              className={`w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all min-h-[100px] resize-none ${
+                metadata.roleId && metadata.roleId !== "custom"
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
               placeholder="Define exactly how this agent should behave (e.g., You are a critic who replies in bullet points...)"
             />
+          </div>
+
+          {/* Input Section */}
+          <div className="border-t border-white/5 pt-4">
+            <label
+              htmlFor="agent-prompt"
+              className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1.5"
+            >
+              Input
+            </label>
+            <textarea
+              id="agent-prompt"
+              value={prompt}
+              onChange={(e) => handleChange("prompt", e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 outline-none transition-all min-h-[100px] resize-none"
+              placeholder="Incoming data from upstream blocks will appear here automatically..."
+            />
+          </div>
+
+          {/* Agent Output Section */}
+          <div className="border-t border-white/5 pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[9px] font-bold uppercase tracking-[0.15em] text-brand-cyan">
+                Agent Output
+              </label>
+              {execError && (
+                <div className="flex items-center gap-1.5 text-rose-400 text-[10px] animate-pulse">
+                  <AlertCircle size={12} />
+                  <span>{execError}</span>
+                </div>
+              )}
+            </div>
+            <div className="w-full bg-black/40 border border-white/10 rounded-xl p-4 min-h-[150px] font-mono text-[11px] text-white/90 leading-relaxed overflow-y-auto custom-scrollbar shadow-inner break-words">
+              {outputText ? (
+                outputText
+              ) : (
+                <span className="text-white/20 italic">
+                  No output yet. Run the agent to see results.
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Reference Files Section */}
@@ -528,32 +758,46 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
               {provider === "google" ? "Gemini API Proxy" : "Ollama Daemon"}
             </span>
           </div>
-          <button
-            onClick={handleSaveToLibrary}
-            disabled={isSaving}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
-              saveStatus === "success"
-                ? "bg-green-500/20 text-green-500 border-green-500/30"
-                : saveStatus === "error"
-                  ? "bg-red-500/20 text-red-500 border-red-500/30"
-                  : "bg-brand-purple/20 text-brand-purple border-brand-purple/30 hover:bg-brand-purple/30"
-            }`}
-          >
-            {isSaving ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : saveStatus === "success" ? (
-              <Check size={14} />
-            ) : (
-              <Save size={14} />
-            )}
-            {isSaving
-              ? "Saving..."
-              : saveStatus === "success"
-                ? "Saved!"
-                : saveStatus === "error"
-                  ? "Failed"
-                  : "Save to Library"}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleExecuteAgent()}
+              disabled={isExecuting || (!prompt.trim() && !instructions.trim())}
+              className="flex items-center gap-2 px-4 py-2 bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-cyan/30 transition-all disabled:opacity-40"
+            >
+              {isExecuting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Send size={14} />
+              )}
+              {isExecuting ? "Executing..." : "Test Agent"}
+            </button>
+            <button
+              onClick={handleSaveToLibrary}
+              disabled={isSaving}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                saveStatus === "success"
+                  ? "bg-green-500/20 text-green-500 border-green-500/30"
+                  : saveStatus === "error"
+                    ? "bg-red-500/20 text-red-500 border-red-500/30"
+                    : "bg-brand-purple/20 text-brand-purple border-brand-purple/30 hover:bg-brand-purple/30"
+              }`}
+            >
+              {isSaving ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : saveStatus === "success" ? (
+                <Check size={14} />
+              ) : (
+                <Save size={14} />
+              )}
+              {isSaving
+                ? "Saving..."
+                : saveStatus === "success"
+                  ? "Saved!"
+                  : saveStatus === "error"
+                    ? "Failed"
+                    : "Save to Library"}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -561,7 +805,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
 
   // Minimized / Compact View directly on the Canvas Viewport
   return (
-    <div className="flex flex-col gap-3.5 h-full text-white font-sans p-1">
+    <div className="flex flex-col gap-2.5 h-full text-white font-sans pt-0 px-1 pb-1">
       {/* Role / Summary */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -572,136 +816,39 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
             {metadata.role || "AI Sub-Agent"}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          {referenceFiles.length > 0 && (
-            <div
-              className="flex items-center gap-1 text-[9px] text-white/40 bg-white/5 border border-white/10 rounded-full px-2 py-0.5"
-              title={`${referenceFiles.length} reference documents loaded`}
-            >
-              <Paperclip size={9} />
-              <span>{referenceFiles.length}</span>
-            </div>
-          )}
-          <select
-            value={metadata.preset || "general"}
-            onChange={(e) => {
-              const preset = e.target.value;
-              const presetConfig: Record<
-                string,
-                { role: string; instructions: string }
-              > = {
-                general: { role: "AI Sub-Agent", instructions: "" },
-                researcher: {
-                  role: "Research Agent",
-                  instructions:
-                    "You are a deep research specialist. Your task is to thoroughly investigate topics, find relevant sources, synthesize information, and present findings in a structured, well-cited format.",
-                },
-                coder: {
-                  role: "Code Agent",
-                  instructions:
-                    "You are an expert software engineer. Your task is to write clean, well-documented, production-quality code. Follow best practices, use appropriate design patterns, and include error handling.",
-                },
-                builder: {
-                  role: "Builder Agent",
-                  instructions:
-                    "You are a project scaffolding specialist. Your task is to design file structures, create boilerplate code, set up configurations, and build foundational project architecture.",
-                },
-              };
-              const cfg = presetConfig[preset] || presetConfig.general;
-              handleChange("preset", preset);
-              handleChange("role", cfg.role);
-              if (
-                !instructions ||
-                Object.values(presetConfig).some(
-                  (p) => p.instructions === instructions,
-                )
-              ) {
-                handleChange("instructions", cfg.instructions);
-              }
-            }}
-            className="bg-white/5 border border-white/10 rounded-lg px-1.5 py-0.5 text-[9px] text-white/60 outline-none cursor-pointer focus:border-brand-purple/40 transition-all"
+        {referenceFiles.length > 0 && (
+          <div
+            className="flex items-center gap-1 text-[9px] text-white/40 bg-white/5 border border-white/10 rounded-full px-2 py-0.5"
+            title={`${referenceFiles.length} reference documents loaded`}
           >
-            <option value="general" className="bg-brand-bg-page">
-              General
-            </option>
-            <option value="researcher" className="bg-brand-bg-page">
-              Researcher
-            </option>
-            <option value="coder" className="bg-brand-bg-page">
-              Coder
-            </option>
-            <option value="builder" className="bg-brand-bg-page">
-              Builder
-            </option>
-          </select>
-        </div>
+            <Paperclip size={9} />
+            <span>{referenceFiles.length}</span>
+          </div>
+        )}
       </div>
 
-      {/* Tagline / Instructions Purpose */}
-      <div className="text-[10px] text-white/40 italic truncate shrink-0 px-0.5">
-        {instructions ||
-          metadata.lastAction ||
-          "Defining my purpose on the canvas..."}
-      </div>
+      {/* Description / Tagline */}
+      {metadata.description && (
+        <div className="text-[10px] text-white/40 italic line-clamp-2 shrink-0 px-0.5">
+          {metadata.description}
+        </div>
+      )}
 
       {/* Main Execution Segment */}
-      <div className="space-y-3 flex-1 flex flex-col min-h-0">
-        {/* Prompt input */}
-        <div className="space-y-1 shrink-0">
-          <label className="text-[8px] font-black uppercase tracking-wider text-white/30">
-            User Prompt
-          </label>
-          <textarea
-            value={prompt}
-            onChange={(e) => handleChange("prompt", e.target.value)}
-            placeholder="Type your prompt here..."
-            className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-brand-purple/50 outline-none transition-all placeholder-white/20 min-h-[50px] resize-none custom-scrollbar font-medium"
-          />
-        </div>
-
+      <div className="mt-auto pt-2 flex flex-col gap-3 shrink-0">
         {/* Run Button Panel */}
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={handleExecuteAgent}
-            disabled={isExecuting || !prompt.trim()}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-brand-purple to-brand-cyan text-white hover:shadow-[0_0_12px_rgba(123,92,234,0.4)] disabled:opacity-40 disabled:pointer-events-none transition-all scale-100 hover:scale-[1.02]"
-          >
-            {isExecuting ? (
-              <Loader2 size={12} className="animate-spin" />
-            ) : (
-              <Play size={10} className="fill-current" />
-            )}
-            {isExecuting ? "Executing..." : "Run Agent"}
-          </button>
-        </div>
-
-        {/* Toggleable Output Segment */}
-        <div className="flex-1 min-h-0 flex flex-col">
-          {/* Header Toggle */}
-          <button
-            onClick={() => setShowOutput(!showOutput)}
-            className="w-full py-1.5 flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-white/30 hover:text-white/60 transition-colors border-t border-white/5"
-          >
-            <span className="flex items-center gap-1">
-              <Sparkles size={9} className="text-brand-cyan animate-pulse" />
-              Agent Output
-            </span>
-            {showOutput ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-          </button>
-
-          {/* Collapsible Area */}
-          {showOutput && (
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 bg-black/30 border border-white/5 rounded-xl font-mono text-[11px] text-white/80 leading-relaxed break-words shadow-inner">
-              {outputText ? (
-                outputText
-              ) : (
-                <span className="text-white/25 italic">
-                  No output generated yet. Enter a prompt and run the agent.
-                </span>
-              )}
-            </div>
+        <button
+          onClick={() => handleExecuteAgent()}
+          disabled={isExecuting || (!prompt.trim() && !instructions.trim())}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-brand-purple to-brand-cyan text-white hover:shadow-[0_0_12px_rgba(123,92,234,0.4)] disabled:opacity-40 disabled:pointer-events-none transition-all scale-100 hover:scale-[1.02]"
+        >
+          {isExecuting ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            <Play size={10} className="fill-current" />
           )}
-        </div>
+          {isExecuting ? "Executing..." : "Run Agent"}
+        </button>
       </div>
     </div>
   );

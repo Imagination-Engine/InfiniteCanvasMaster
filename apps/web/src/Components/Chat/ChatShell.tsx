@@ -65,18 +65,49 @@ const ChatInternal: React.FC<ChatShellProps & { accessToken: string }> = ({
   const connections = useConnectionStore((s) => s.connections);
 
   // Determine final API endpoint based on blockId
-  const baseApi = blockId ? `${apiEndpoint}/block` : apiEndpoint;
+  const apiBase = blockId ? `${apiEndpoint}/block` : apiEndpoint;
 
-  // ROBUST AUTH FALLBACK: Use query param as tertiary fallback for standard fetch handlers
-  const finalApi = `${baseApi}?token=${accessToken}`;
+  // In development, we might want to call the server directly to bypass proxy issues
+  const finalApiBase =
+    apiBase.startsWith("/") && window.location.hostname === "localhost"
+      ? `http://localhost:3001${apiBase}`
+      : apiBase;
 
   // LOCAL STATE OVERRIDE for input to bypass SDK synchronization issues
   const [localInput, setLocalInput] = useState("");
 
   const chatResult = useChat({
-    api: finalApi,
+    api: finalApiBase,
     headers: {
       Authorization: `Bearer ${accessToken}`,
+    },
+    fetch: async (url, options) => {
+      // Append token to URL manually to ensure it's there
+      const urlObj = new URL(
+        url.toString(),
+        window.location.origin.includes("localhost")
+          ? "http://localhost:3001"
+          : window.location.origin,
+      );
+      urlObj.searchParams.set("token", accessToken);
+
+      const finalUrl = urlObj.toString();
+
+      // Merge headers correctly
+      const headers = new Headers(options?.headers || {});
+      if (!headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+      }
+
+      console.log(
+        `[CHAT-SHELL] Fetching absolute: ${finalUrl.split("token=")[0]}token=REDACTED`,
+      );
+
+      return fetch(finalUrl, {
+        ...options,
+        headers,
+        credentials: "include",
+      });
     },
     body: {
       sessionId: projectId,

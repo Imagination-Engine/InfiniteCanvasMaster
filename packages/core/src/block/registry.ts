@@ -76,6 +76,7 @@ class BlockRegistry {
 }
 
 export const blockRegistry = new BlockRegistry();
+console.log("[CORE] Registry.ts loaded with updated AgentBlock schema.");
 
 // Helper to construct empty/dummy MCP bindings for UI-only blocks
 const dummyMcp = {
@@ -264,9 +265,21 @@ createBlock({
   input: z.object({
     instructions: z.string(),
     input: z.any().optional(),
-    provider: z.enum(["google", "local"]).optional().default("google"),
+    provider: z
+      .enum(["google", "ollama", "local"])
+      .optional()
+      .default("google"),
     model: z.string().optional(),
-    referenceFiles: z.array(z.any()).optional().default([]),
+    referenceFiles: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string().optional(),
+          content: z.any().optional(),
+        }),
+      )
+      .optional()
+      .default([]),
   }),
   output: z.object({ output: z.string() }),
   agent: {
@@ -302,7 +315,7 @@ createBlock({
         ? `${instructions}${referenceContext}\n\n### Input Prompt:\n${upstreamContext}`
         : `${instructions}${referenceContext}`;
 
-      if (provider === "local") {
+      if (provider === "local" || provider === "ollama") {
         try {
           const ollamaUrl =
             process.env.OLLAMA_BASE_URL || "http://localhost:11434";
@@ -1277,7 +1290,7 @@ const BLOCK_DATA_ENRICHMENT: Record<
 > = {
   // --- Agents & Swarms ---
   "iem.agent.agent": {
-    accepts: ["prompt", "text", "config"],
+    accepts: ["prompt", "text", "config", "any"],
     produces: ["text", "data", "any"],
     capabilities: ["text-generation", "tool-use", "reasoning"],
   },
@@ -1838,6 +1851,18 @@ const BLOCK_DATA_ENRICHMENT: Record<
     accepts: ["any"],
     produces: ["file"],
     capabilities: ["export"],
+  },
+
+  // --- Conductor Triggers ---
+  "trigger.manual": {
+    accepts: [],
+    produces: ["any"],
+    capabilities: ["manual-trigger"],
+  },
+  "conductor.manualTrigger": {
+    accepts: [],
+    produces: ["any"],
+    capabilities: ["manual-trigger"],
   },
 };
 

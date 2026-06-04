@@ -464,13 +464,21 @@ export const ObjectRenderer: React.FC<{
         </div>
 
         {/* Inner Content Body */}
-        <div className="flex-1 flex flex-col p-4 overflow-hidden relative">
+        <div
+          className={`flex-1 flex flex-col overflow-hidden relative ${
+            object.type.includes("agent") ? "pt-2 px-4 pb-4" : "p-4"
+          }`}
+        >
           {/* Primary Role/Purpose */}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
-              {object.metadata?.role || object.type.split(".")[1] || "Process"}
-            </span>
-            <div className="flex items-center gap-1">
+            {!object.type.includes("agent") && (
+              <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
+                {object.metadata?.role ||
+                  object.type.split(".")[1] ||
+                  "Process"}
+              </span>
+            )}
+            <div className="flex items-center gap-1 ml-auto">
               <Activity size={10} className="text-white/20" />
               <span
                 data-testid="block-status"
@@ -482,7 +490,7 @@ export const ObjectRenderer: React.FC<{
           </div>
 
           {/* Description / Purpose Line */}
-          {object.metadata?.description && (
+          {object.metadata?.description && !object.type.includes("agent") && (
             <p
               data-testid="block-description"
               className="text-[10px] text-white/40 italic leading-relaxed line-clamp-2 mb-3"

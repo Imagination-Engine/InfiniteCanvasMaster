@@ -3,6 +3,7 @@ import React from "react";
 import { Settings, Save, Trash2, Sliders } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useExpansionStore } from "../state/expansionStore";
+import { PREDEFINED_AGENT_ROLES } from "@iem/core";
 
 interface BlockInspectorProps {
   object: any;
@@ -19,17 +20,43 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({
   const updateObject = useCanvasStore((s) => s.updateObject);
   const removeObject = useCanvasStore((s) => s.removeObject);
   const clearExpanded = useExpansionStore((s) => s.clearExpanded);
-  const inputs = object.metadata?.inputs || {};
+  const metadata = object.metadata || {};
+  const inputs = metadata.inputs || {};
+
+  const isAgent = object.type.includes("agent");
 
   const handleInputChange = (key: string, value: any) => {
     updateObject(object.id, {
       metadata: {
-        ...object.metadata,
         inputs: {
           ...inputs,
           [key]: value,
         },
       },
+    });
+  };
+
+  const handleMetadataChange = (key: string, value: any) => {
+    updateObject(object.id, {
+      metadata: {
+        [key]: value,
+      },
+    });
+  };
+
+  const handleAgentRoleChange = (roleId: string) => {
+    const updates: Record<string, any> = { roleId };
+    if (roleId !== "custom") {
+      const role = PREDEFINED_AGENT_ROLES.find((r) => r.id === roleId);
+      if (role) {
+        updates.role = role.label;
+        updates.instructions = role.prompt;
+      }
+    } else {
+      updates.role = metadata.role || "Custom Agent";
+    }
+    updateObject(object.id, {
+      metadata: updates,
     });
   };
 
@@ -57,29 +84,58 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({
               </p>
               <input
                 type="text"
-                value={object.metadata?.label || ""}
-                onChange={(e) =>
-                  updateObject(object.id, {
-                    metadata: { ...object.metadata, label: e.target.value },
-                  })
-                }
+                value={metadata.label || ""}
+                onChange={(e) => handleMetadataChange("label", e.target.value)}
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brand-cyan/50 transition-colors"
               />
             </div>
-            <div>
-              <p className="text-[9px] text-white/30 uppercase mb-1.5 ml-1">
-                Role
-              </p>
-              <input
-                type="text"
-                value={object.metadata?.role || ""}
-                onChange={(e) =>
-                  updateObject(object.id, {
-                    metadata: { ...object.metadata, role: e.target.value },
-                  })
-                }
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brand-cyan/50 transition-colors"
-              />
+            <div className="space-y-3">
+              <div>
+                <p className="text-[9px] text-white/30 uppercase mb-1.5 ml-1">
+                  Role Preset
+                </p>
+                {isAgent ? (
+                  <select
+                    value={metadata.roleId || "custom"}
+                    onChange={(e) => handleAgentRoleChange(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brand-cyan/50 transition-colors cursor-pointer"
+                  >
+                    <option value="custom">Custom</option>
+                    {PREDEFINED_AGENT_ROLES.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={metadata.role || ""}
+                    onChange={(e) =>
+                      handleMetadataChange("role", e.target.value)
+                    }
+                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brand-cyan/50 transition-colors"
+                  />
+                )}
+              </div>
+
+              {isAgent &&
+                (metadata.roleId === "custom" || !metadata.roleId) && (
+                  <div>
+                    <p className="text-[9px] text-white/30 uppercase mb-1.5 ml-1">
+                      Custom Role Name
+                    </p>
+                    <input
+                      type="text"
+                      value={metadata.role || ""}
+                      onChange={(e) =>
+                        handleMetadataChange("role", e.target.value)
+                      }
+                      className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brand-cyan/50 transition-colors"
+                      placeholder="e.g., Space Explorer"
+                    />
+                  </div>
+                )}
             </div>
           </div>
         </section>
@@ -90,7 +146,27 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({
             Parameters
           </label>
           <div className="space-y-4">
-            {Object.keys(inputs).length === 0 ? (
+            {isAgent && (
+              <div>
+                <p className="text-[9px] text-white/30 uppercase mb-1.5 ml-1">
+                  Instructions (System Prompt)
+                </p>
+                <textarea
+                  value={metadata.instructions || ""}
+                  onChange={(e) =>
+                    handleMetadataChange("instructions", e.target.value)
+                  }
+                  disabled={!!metadata.roleId && metadata.roleId !== "custom"}
+                  rows={4}
+                  className={`w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brand-cyan/50 transition-colors custom-scrollbar ${
+                    metadata.roleId && metadata.roleId !== "custom"
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                />
+              </div>
+            )}
+            {Object.keys(inputs).length === 0 && !isAgent ? (
               <p className="text-[10px] text-white/20 italic p-4 bg-white/5 rounded-lg border border-dashed border-white/10 text-center">
                 No configurable inputs found.
               </p>

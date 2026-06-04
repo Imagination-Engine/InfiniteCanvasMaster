@@ -103,7 +103,7 @@ export const ImmersiveBlockModal: React.FC<ImmersiveBlockModalProps> = ({
           >
             <div className="flex items-center gap-4">
               <div
-                className={`w-2.5 h-2.5 rounded-full ${activeObject.status === "error" ? "bg-red-500 animate-pulse" : activeObject.status === "running" ? "bg-brand-cyan animate-pulse shadow-[0_0_10px_rgba(0,194,255,0.6)]" : "bg-white/20"}`}
+                className={`w-2.5 h-2.5 rounded-full ${activeObject.status === "error" ? "bg-red-500 animate-pulse" : activeObject.status === "running" || activeObject.status === "thinking" ? "bg-brand-cyan animate-pulse shadow-[0_0_10px_rgba(0,194,255,0.6)]" : "bg-white/20"}`}
               />
               <div className="flex flex-col">
                 <div className="flex items-center gap-3">
