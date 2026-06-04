@@ -8,6 +8,7 @@ export {
   webFetchBlock,
   slackPostBlock,
   notionCreateBlock,
+  httpRequestBlock,
 } from "../integrations/saasIntegrations.js";
 
 export const ifBlock: BlockDefinition<any, any> = {

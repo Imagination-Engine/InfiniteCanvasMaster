@@ -168,3 +168,187 @@ export const notionCreateBlock: any = {
     },
   },
 };
+
+export const httpRequestBlock: any = {
+  id: "iem.conductor.httpRequest",
+  name: "HTTP Request",
+  description:
+    "Formats and sends custom HTTP requests to external APIs (n8n style)",
+  category: "web",
+  accepts: ["any"],
+  produces: ["any"],
+  input: z.object({
+    url: z.string().url(),
+    method: z
+      .enum(["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"])
+      .default("GET"),
+    sendHeaders: z.boolean().default(false),
+    headersJson: z.string().optional(),
+    sendQueryParameters: z.boolean().default(false),
+    queryParametersJson: z.string().optional(),
+    sendBody: z.boolean().default(false),
+    bodyContentType: z
+      .enum(["json", "form-data", "raw", "urlencoded"])
+      .default("json"),
+    bodyJson: z.string().optional(),
+    bodyRaw: z.string().optional(),
+    authentication: z.enum(["none", "basic", "header"]).default("none"),
+    authUsername: z.string().optional(),
+    authPassword: z.string().optional(),
+    authHeaderName: z.string().optional(),
+    authHeaderValue: z.string().optional(),
+  }),
+  output: z.object({
+    status: z.number(),
+    data: z.any(),
+    headers: z.record(z.string()).optional(),
+    error: z.string().optional(),
+  }),
+  view: MockView,
+  mode: "triggered",
+  agent: {
+    kind: "local",
+    toolName: "http_request",
+    invoke: async (input: any) => {
+      try {
+        const urlObj = new URL(input.url);
+
+        // 1. Query Parameters
+        if (input.sendQueryParameters && input.queryParametersJson) {
+          try {
+            const queryParams =
+              typeof input.queryParametersJson === "string"
+                ? JSON.parse(input.queryParametersJson)
+                : input.queryParametersJson;
+            if (queryParams && typeof queryParams === "object") {
+              Object.entries(queryParams).forEach(([k, v]) => {
+                urlObj.searchParams.set(k, String(v));
+              });
+            }
+          } catch (e: any) {
+            return {
+              status: 400,
+              data: null,
+              error: `Invalid Query Parameters JSON: ${e.message}`,
+            };
+          }
+        }
+
+        // 2. Headers
+        const headers: Record<string, string> = {};
+        if (input.sendHeaders && input.headersJson) {
+          try {
+            const customHeaders =
+              typeof input.headersJson === "string"
+                ? JSON.parse(input.headersJson)
+                : input.headersJson;
+            if (customHeaders && typeof customHeaders === "object") {
+              Object.entries(customHeaders).forEach(([k, v]) => {
+                headers[k.toLowerCase()] = String(v);
+              });
+            }
+          } catch (e: any) {
+            return {
+              status: 400,
+              data: null,
+              error: `Invalid Headers JSON: ${e.message}`,
+            };
+          }
+        }
+
+        // 3. Authentication
+        if (input.authentication === "basic") {
+          const credentials = Buffer.from(
+            `${input.authUsername || ""}:${input.authPassword || ""}`,
+          ).toString("base64");
+          headers["authorization"] = `Basic ${credentials}`;
+        } else if (input.authentication === "header" && input.authHeaderName) {
+          headers[input.authHeaderName.toLowerCase()] =
+            input.authHeaderValue || "";
+        }
+
+        // 4. Body Content
+        let requestBody: any = undefined;
+        if (
+          input.method !== "GET" &&
+          input.method !== "HEAD" &&
+          input.sendBody
+        ) {
+          const contentType = input.bodyContentType || "json";
+          if (contentType === "json" && input.bodyJson) {
+            try {
+              requestBody =
+                typeof input.bodyJson === "string"
+                  ? input.bodyJson
+                  : JSON.stringify(input.bodyJson);
+              if (!headers["content-type"]) {
+                headers["content-type"] = "application/json";
+              }
+            } catch (e: any) {
+              return {
+                status: 400,
+                data: null,
+                error: `Invalid Body JSON: ${e.message}`,
+              };
+            }
+          } else if (contentType === "urlencoded" && input.bodyJson) {
+            try {
+              const bodyObj =
+                typeof input.bodyJson === "string"
+                  ? JSON.parse(input.bodyJson)
+                  : input.bodyJson;
+              const params = new URLSearchParams();
+              Object.entries(bodyObj).forEach(([k, v]) => {
+                params.set(k, String(v));
+              });
+              requestBody = params.toString();
+              if (!headers["content-type"]) {
+                headers["content-type"] = "application/x-www-form-urlencoded";
+              }
+            } catch (e: any) {
+              return {
+                status: 400,
+                data: null,
+                error: `Invalid urlencoded Body JSON: ${e.message}`,
+              };
+            }
+          } else if (contentType === "raw" && input.bodyRaw) {
+            requestBody = input.bodyRaw;
+            if (!headers["content-type"]) {
+              headers["content-type"] = "text/plain";
+            }
+          }
+        }
+
+        const options: RequestInit = {
+          method: input.method,
+          headers,
+          body: requestBody,
+        };
+
+        const res = await fetch(urlObj.toString(), options);
+
+        const responseHeaders: Record<string, string> = {};
+        res.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+
+        let data;
+        const resContentType = res.headers.get("content-type");
+        if (resContentType && resContentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          data = await res.text();
+        }
+
+        return {
+          status: res.status,
+          data,
+          headers: responseHeaders,
+        };
+      } catch (err: any) {
+        return { status: 500, data: null, error: err.message };
+      }
+    },
+  },
+};

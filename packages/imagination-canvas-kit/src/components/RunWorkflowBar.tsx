@@ -293,6 +293,20 @@ export const RunWorkflowBar: React.FC = () => {
             if (!method || method.trim() === "") {
               throw new Error("HTTP Method must be configured.");
             }
+          } else if (type.includes("httprequest")) {
+            const url = getVal("url");
+            const method = getVal("method", "GET"); // Default to GET like the UI does
+            if (!url || url.trim() === "") {
+              throw new Error("HTTP Target URL is not configured.");
+            }
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+              throw new Error(
+                "HTTP Target URL must start with 'http://' or 'https://'.",
+              );
+            }
+            if (!method || method.trim() === "") {
+              throw new Error("HTTP Method must be configured.");
+            }
           } else if (type.includes("slack") || type.includes("discord")) {
             const message = getVal("message");
             if (!message || message.trim().length < 5) {
@@ -573,6 +587,122 @@ export const RunWorkflowBar: React.FC = () => {
               },
             };
             await new Promise((r) => setTimeout(r, 800));
+          } else if (type.includes("httprequest")) {
+            const httpUrl = getVal("url", "");
+            const httpMethod = getVal("method", "GET");
+            const httpAuth = getVal("authentication", "none");
+            const httpSendHeaders = getVal("sendHeaders", "false") === "true";
+            const httpSendQueryParams =
+              getVal("sendQueryParameters", "false") === "true";
+            const httpSendBody = getVal("sendBody", "false") === "true";
+            const httpBodyContentType = getVal("bodyContentType", "json");
+
+            const httpInputs: Record<string, any> = {
+              url: httpUrl,
+              method: httpMethod,
+              authentication: httpAuth,
+              sendHeaders: httpSendHeaders,
+              headersJson: getVal("headersJson", ""),
+              sendQueryParameters: httpSendQueryParams,
+              queryParametersJson: getVal("queryParametersJson", ""),
+              sendBody: httpSendBody,
+              bodyContentType: httpBodyContentType,
+              bodyJson: getVal("bodyJson", ""),
+              bodyRaw: getVal("bodyRaw", ""),
+              authUsername: getVal("authUsername", ""),
+              authPassword: getVal("authPassword", ""),
+              authHeaderName: getVal("authHeaderName", ""),
+              authHeaderValue: getVal("authHeaderValue", ""),
+            };
+
+            try {
+              const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+              };
+              const token = useCanvasStore.getState().accessToken;
+              if (token) headers["Authorization"] = `Bearer ${token}`;
+
+              const res = await fetch("/api/blocks/execute", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  blockId: "iem.conductor.httpRequest",
+                  inputs: httpInputs,
+                }),
+              });
+
+              if (res.ok) {
+                const data = await res.json();
+                executionOutputs = data.output || data;
+              } else {
+                throw new Error(`Server error ${res.status}`);
+              }
+            } catch (err: any) {
+              // Fallback: direct browser fetch if server route unavailable
+              try {
+                const urlObj = new URL(httpUrl);
+                if (httpSendQueryParams && httpInputs.queryParametersJson) {
+                  try {
+                    const params = JSON.parse(httpInputs.queryParametersJson);
+                    Object.entries(params).forEach(([k, v]) =>
+                      urlObj.searchParams.set(k, String(v)),
+                    );
+                  } catch {}
+                }
+                const reqHeaders: Record<string, string> = {};
+                if (httpSendHeaders && httpInputs.headersJson) {
+                  try {
+                    Object.assign(
+                      reqHeaders,
+                      JSON.parse(httpInputs.headersJson),
+                    );
+                  } catch {}
+                }
+                if (httpAuth === "basic") {
+                  reqHeaders["Authorization"] =
+                    `Basic ${btoa(`${httpInputs.authUsername}:${httpInputs.authPassword}`)}`;
+                } else if (httpAuth === "header" && httpInputs.authHeaderName) {
+                  reqHeaders[httpInputs.authHeaderName] =
+                    httpInputs.authHeaderValue;
+                }
+                let body: string | undefined;
+                if (
+                  httpSendBody &&
+                  httpMethod !== "GET" &&
+                  httpMethod !== "HEAD"
+                ) {
+                  if (httpBodyContentType === "json" && httpInputs.bodyJson) {
+                    reqHeaders["Content-Type"] = "application/json";
+                    body = httpInputs.bodyJson;
+                  } else if (
+                    httpBodyContentType === "raw" &&
+                    httpInputs.bodyRaw
+                  ) {
+                    body = httpInputs.bodyRaw;
+                  }
+                }
+                const fetchRes = await fetch(urlObj.toString(), {
+                  method: httpMethod,
+                  headers: reqHeaders,
+                  body,
+                });
+                const resContentType =
+                  fetchRes.headers.get("content-type") || "";
+                const resData = resContentType.includes("application/json")
+                  ? await fetchRes.json()
+                  : await fetchRes.text();
+                executionOutputs = {
+                  status: fetchRes.status,
+                  data: resData,
+                };
+              } catch (fetchErr: any) {
+                executionOutputs = {
+                  status: 500,
+                  data: null,
+                  error: fetchErr.message,
+                };
+              }
+            }
           } else if (type.includes("slack") || type.includes("discord")) {
             const compiledMessage = resolveTemplates(
               getVal("message"),
@@ -763,6 +893,13 @@ export const RunWorkflowBar: React.FC = () => {
                 `Telemetry verify failed: API target URL returned status ${executionOutputs.status}.`,
               );
             } else if (
+              type.includes("httprequest") &&
+              executionOutputs.status !== 200
+            ) {
+              throw new Error(
+                `HTTP Request failed: API target URL returned status ${executionOutputs.status}.`,
+              );
+            } else if (
               (type.includes("slack") || type.includes("discord")) &&
               (!executionOutputs.success || !executionOutputs.messageSent)
             ) {
@@ -803,6 +940,7 @@ export const RunWorkflowBar: React.FC = () => {
               !type.includes("time") &&
               !type.includes("agent") &&
               !type.includes("webfetch") &&
+              !type.includes("httprequest") &&
               !type.includes("slack") &&
               !type.includes("discord") &&
               !type.includes("gmail") &&

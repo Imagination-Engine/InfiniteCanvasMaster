@@ -79,6 +79,9 @@ BlockRegistry.register("trigger.time", ConductorBlockView as any);
 BlockRegistry.register("conductor.webFetch", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.webFetch", ConductorBlockView as any);
 
+BlockRegistry.register("conductor.httpRequest", ConductorBlockView as any);
+BlockRegistry.register("iem.conductor.httpRequest", ConductorBlockView as any);
+
 BlockRegistry.register("conductor.if", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.if", ConductorBlockView as any);
 

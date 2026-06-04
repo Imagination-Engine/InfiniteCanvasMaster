@@ -41,6 +41,7 @@ import {
   slackPostBlock,
   notionCreateBlock,
   manualTriggerBlock,
+  httpRequestBlock,
 } from "@iem/surface-conductor";
 
 import {
@@ -132,6 +133,7 @@ export function initializeBlockRegistry() {
     slackPostBlock,
     notionCreateBlock,
     manualTriggerBlock,
+    httpRequestBlock,
 
     // Forge
     architectBlock,

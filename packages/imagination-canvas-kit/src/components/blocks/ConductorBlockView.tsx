@@ -777,86 +777,323 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
 
               {/* HTTP Request / Web Fetch Node */}
               {(object.type.includes("webFetch") ||
-                object.type === "conductor.webFetch") && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="col-span-1 space-y-2">
-                      <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
-                        Method
-                      </label>
+                object.type === "conductor.webFetch" ||
+                object.type === "iem.conductor.httpRequest") && (
+                <div className="space-y-5">
+                  {/* Method + URL */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                      Request URL
+                    </label>
+                    <div className="flex items-center gap-2">
                       <select
                         value={getFieldValue("method", "GET")}
                         onChange={(e) =>
                           handleFieldChange("method", e.target.value)
                         }
-                        className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all appearance-none cursor-pointer"
+                        className="shrink-0 rounded-lg bg-white/5 border border-white/10 px-2.5 py-2 text-[10px] font-bold text-white focus:border-brand-purple/50 outline-none appearance-none cursor-pointer"
                       >
-                        <option value="GET" className="bg-[#111128]">
-                          GET
-                        </option>
-                        <option value="POST" className="bg-[#111128]">
-                          POST
-                        </option>
-                        <option value="PUT" className="bg-[#111128]">
-                          PUT
-                        </option>
-                        <option value="DELETE" className="bg-[#111128]">
-                          DELETE
-                        </option>
+                        {["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"].map(
+                          (m) => (
+                            <option key={m} value={m} className="bg-[#111128]">
+                              {m}
+                            </option>
+                          ),
+                        )}
                       </select>
-                    </div>
-                    <div className="col-span-3 space-y-2">
-                      <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
-                        Request URL
-                      </label>
                       <input
                         type="text"
-                        value={getFieldValue(
-                          "url",
-                          "https://api.example.com/data",
-                        )}
+                        value={getFieldValue("url", "")}
                         onChange={(e) =>
                           handleFieldChange("url", e.target.value)
                         }
                         placeholder="https://api.domain.com/endpoint"
-                        className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
+                        className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
-                      Headers (JSON)
-                    </label>
-                    <textarea
-                      value={getFieldValue(
-                        "headers",
-                        '{\n  "Content-Type": "application/json"\n}',
-                      )}
-                      onChange={(e) =>
-                        handleFieldChange("headers", e.target.value)
-                      }
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all font-mono min-h-[70px] resize-y"
-                    />
+                  {/* Authentication */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30">
+                        Authentication
+                      </p>
+                      <div className="flex gap-1">
+                        {["none", "basic", "header"].map((opt) => (
+                          <button
+                            key={opt}
+                            onClick={() =>
+                              handleFieldChange("authentication", opt)
+                            }
+                            className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wide transition-all ${
+                              getFieldValue("authentication", "none") === opt
+                                ? "bg-brand-purple/30 text-brand-purple"
+                                : "text-white/30 hover:text-white/50"
+                            }`}
+                          >
+                            {opt === "none"
+                              ? "None"
+                              : opt === "basic"
+                                ? "Basic"
+                                : "Header"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {getFieldValue("authentication", "none") === "basic" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 block">
+                            Username
+                          </label>
+                          <input
+                            type="text"
+                            value={getFieldValue("authUsername", "")}
+                            onChange={(e) =>
+                              handleFieldChange("authUsername", e.target.value)
+                            }
+                            placeholder="Username"
+                            className="w-full bg-transparent border-b border-white/10 pb-1.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/40 outline-none transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 block">
+                            Password
+                          </label>
+                          <input
+                            type="password"
+                            value={getFieldValue("authPassword", "")}
+                            onChange={(e) =>
+                              handleFieldChange("authPassword", e.target.value)
+                            }
+                            placeholder="••••••••"
+                            className="w-full bg-transparent border-b border-white/10 pb-1.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/40 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {getFieldValue("authentication", "none") === "header" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 block">
+                            Header Name
+                          </label>
+                          <input
+                            type="text"
+                            value={getFieldValue("authHeaderName", "")}
+                            onChange={(e) =>
+                              handleFieldChange(
+                                "authHeaderName",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="Authorization"
+                            className="w-full bg-transparent border-b border-white/10 pb-1.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/40 outline-none transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 block">
+                            Header Value
+                          </label>
+                          <input
+                            type="text"
+                            value={getFieldValue("authHeaderValue", "")}
+                            onChange={(e) =>
+                              handleFieldChange(
+                                "authHeaderValue",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="Bearer token..."
+                            className="w-full bg-transparent border-b border-white/10 pb-1.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/40 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {getFieldValue("method", "GET") !== "GET" && (
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
-                        Request Body (JSON)
-                      </label>
+                  {/* Headers */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30">
+                        Headers
+                      </p>
+                      <button
+                        onClick={() =>
+                          handleFieldChange(
+                            "sendHeaders",
+                            getFieldValue("sendHeaders", "false") === "true"
+                              ? "false"
+                              : "true",
+                          )
+                        }
+                        className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wide transition-all ${
+                          getFieldValue("sendHeaders", "false") === "true"
+                            ? "bg-brand-purple/30 text-brand-purple"
+                            : "text-white/30 hover:text-white/50"
+                        }`}
+                      >
+                        {getFieldValue("sendHeaders", "false") === "true"
+                          ? "Enabled"
+                          : "Disabled"}
+                      </button>
+                    </div>
+                    {getFieldValue("sendHeaders", "false") === "true" && (
                       <textarea
                         value={getFieldValue(
-                          "body",
-                          '{\n  "message": "Hello from Balnce AI"\n}',
+                          "headersJson",
+                          '{\n  "X-Custom-Header": "value"\n}',
                         )}
                         onChange={(e) =>
-                          handleFieldChange("body", e.target.value)
+                          handleFieldChange("headersJson", e.target.value)
                         }
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all font-mono min-h-[90px] resize-y"
+                        rows={4}
+                        className="w-full bg-white/[0.03] rounded-lg px-3 py-2.5 text-xs text-white/70 focus:text-white outline-none transition-all font-mono resize-y"
                       />
+                    )}
+                  </div>
+
+                  {/* Query Parameters */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30">
+                        Query Parameters
+                      </p>
+                      <button
+                        onClick={() =>
+                          handleFieldChange(
+                            "sendQueryParameters",
+                            getFieldValue("sendQueryParameters", "false") ===
+                              "true"
+                              ? "false"
+                              : "true",
+                          )
+                        }
+                        className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wide transition-all ${
+                          getFieldValue("sendQueryParameters", "false") ===
+                          "true"
+                            ? "bg-brand-purple/30 text-brand-purple"
+                            : "text-white/30 hover:text-white/50"
+                        }`}
+                      >
+                        {getFieldValue("sendQueryParameters", "false") ===
+                        "true"
+                          ? "Enabled"
+                          : "Disabled"}
+                      </button>
                     </div>
-                  )}
+                    {getFieldValue("sendQueryParameters", "false") ===
+                      "true" && (
+                      <textarea
+                        value={getFieldValue(
+                          "queryParametersJson",
+                          '{\n  "key": "value"\n}',
+                        )}
+                        onChange={(e) =>
+                          handleFieldChange(
+                            "queryParametersJson",
+                            e.target.value,
+                          )
+                        }
+                        rows={4}
+                        className="w-full bg-white/[0.03] rounded-lg px-3 py-2.5 text-xs text-white/70 focus:text-white outline-none transition-all font-mono resize-y"
+                      />
+                    )}
+                  </div>
+
+                  {/* Body */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/30">
+                        Body
+                      </p>
+                      <button
+                        onClick={() =>
+                          handleFieldChange(
+                            "sendBody",
+                            getFieldValue("sendBody", "false") === "true"
+                              ? "false"
+                              : "true",
+                          )
+                        }
+                        className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wide transition-all ${
+                          getFieldValue("sendBody", "false") === "true"
+                            ? "bg-brand-purple/30 text-brand-purple"
+                            : "text-white/30 hover:text-white/50"
+                        }`}
+                      >
+                        {getFieldValue("sendBody", "false") === "true"
+                          ? "Enabled"
+                          : "Disabled"}
+                      </button>
+                    </div>
+                    {getFieldValue("sendBody", "false") === "true" && (
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                            Content Type
+                          </label>
+                          <select
+                            value={getFieldValue("bodyContentType", "json")}
+                            onChange={(e) =>
+                              handleFieldChange(
+                                "bodyContentType",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none appearance-none cursor-pointer"
+                          >
+                            <option value="json" className="bg-[#111128]">
+                              JSON
+                            </option>
+                            <option value="urlencoded" className="bg-[#111128]">
+                              URL Encoded
+                            </option>
+                            <option value="raw" className="bg-[#111128]">
+                              Raw Text
+                            </option>
+                          </select>
+                        </div>
+                        {(getFieldValue("bodyContentType", "json") === "json" ||
+                          getFieldValue("bodyContentType", "json") ===
+                            "urlencoded") && (
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                              Body (JSON Object)
+                            </label>
+                            <textarea
+                              value={getFieldValue(
+                                "bodyJson",
+                                '{\n  "key": "value"\n}',
+                              )}
+                              onChange={(e) =>
+                                handleFieldChange("bodyJson", e.target.value)
+                              }
+                              rows={5}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all font-mono resize-y"
+                            />
+                          </div>
+                        )}
+                        {getFieldValue("bodyContentType", "json") === "raw" && (
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                              Body (Raw Text)
+                            </label>
+                            <textarea
+                              value={getFieldValue("bodyRaw", "")}
+                              onChange={(e) =>
+                                handleFieldChange("bodyRaw", e.target.value)
+                              }
+                              rows={5}
+                              placeholder="Raw text..."
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all font-mono resize-y"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1659,9 +1896,23 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
           </div>
         )}
 
-        {(object.type.includes("slack") ||
-          object.type.includes("discord") ||
-          object.type === "conductor.slackPost") && (
+        {(object.type === "iem.conductor.httpRequest" ||
+          object.type === "conductor.httpRequest") && (
+          <div className="space-y-1.5">
+            <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-brand-purple/70 block">
+              HTTP Request
+            </span>
+            <div className="text-[10px] text-indigo-400 font-mono truncate bg-indigo-400/5 border border-indigo-400/10 p-2 rounded-xl">
+              {getFieldValue("method", "GET")} ·{" "}
+              {getFieldValue("url", "https://api.example.com/endpoint")}
+            </div>
+          </div>
+        )}
+
+        {(object.type === "iem.conductor.slackPost" ||
+          object.type === "conductor.slackPost" ||
+          object.type.includes("slack") ||
+          object.type.includes("discord")) && (
           <div className="space-y-1.5">
             <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-brand-purple/70 block">
               Slack/Discord Push

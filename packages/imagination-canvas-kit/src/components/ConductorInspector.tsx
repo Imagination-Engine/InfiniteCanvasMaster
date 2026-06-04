@@ -250,6 +250,190 @@ const CONDUCTOR_FIELDS: Record<string, FieldDef[]> = {
       placeholder: "My Sub-Graph",
     },
   ],
+  "conductor.httpRequest": [
+    {
+      key: "method",
+      label: "Method",
+      type: "select",
+      options: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"],
+    },
+    {
+      key: "url",
+      label: "URL",
+      type: "text",
+      placeholder: "https://api.example.com/endpoint",
+    },
+    {
+      key: "authentication",
+      label: "Authentication",
+      type: "select",
+      options: ["none", "basic", "header"],
+    },
+    {
+      key: "authUsername",
+      label: "Auth Username",
+      type: "text",
+      placeholder: "Username",
+    },
+    {
+      key: "authPassword",
+      label: "Auth Password",
+      type: "text",
+      placeholder: "Password",
+    },
+    {
+      key: "authHeaderName",
+      label: "Auth Header Name",
+      type: "text",
+      placeholder: "Authorization or X-API-Key",
+    },
+    {
+      key: "authHeaderValue",
+      label: "Auth Header Value",
+      type: "text",
+      placeholder: "Bearer ... or key",
+    },
+    {
+      key: "sendHeaders",
+      label: "Send Headers",
+      type: "select",
+      options: ["false", "true"],
+    },
+    {
+      key: "headersJson",
+      label: "Headers (JSON Object)",
+      type: "textarea",
+      placeholder: '{\n  "X-Custom-Header": "value"\n}',
+    },
+    {
+      key: "sendQueryParameters",
+      label: "Send Query Parameters",
+      type: "select",
+      options: ["false", "true"],
+    },
+    {
+      key: "queryParametersJson",
+      label: "Query Parameters (JSON Object)",
+      type: "textarea",
+      placeholder: '{\n  "key": "value"\n}',
+    },
+    {
+      key: "sendBody",
+      label: "Send Body",
+      type: "select",
+      options: ["false", "true"],
+    },
+    {
+      key: "bodyContentType",
+      label: "Body Content Type",
+      type: "select",
+      options: ["json", "urlencoded", "raw"],
+    },
+    {
+      key: "bodyJson",
+      label: "Body (JSON Object)",
+      type: "textarea",
+      placeholder: '{\n  "key": "value"\n}',
+    },
+    {
+      key: "bodyRaw",
+      label: "Body Raw (Text)",
+      type: "textarea",
+      placeholder: "Raw text...",
+    },
+  ],
+  "iem.conductor.httpRequest": [
+    {
+      key: "method",
+      label: "Method",
+      type: "select",
+      options: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"],
+    },
+    {
+      key: "url",
+      label: "URL",
+      type: "text",
+      placeholder: "https://api.example.com/endpoint",
+    },
+    {
+      key: "authentication",
+      label: "Authentication",
+      type: "select",
+      options: ["none", "basic", "header"],
+    },
+    {
+      key: "authUsername",
+      label: "Auth Username",
+      type: "text",
+      placeholder: "Username",
+    },
+    {
+      key: "authPassword",
+      label: "Auth Password",
+      type: "text",
+      placeholder: "Password",
+    },
+    {
+      key: "authHeaderName",
+      label: "Auth Header Name",
+      type: "text",
+      placeholder: "Authorization or X-API-Key",
+    },
+    {
+      key: "authHeaderValue",
+      label: "Auth Header Value",
+      type: "text",
+      placeholder: "Bearer ... or key",
+    },
+    {
+      key: "sendHeaders",
+      label: "Send Headers",
+      type: "select",
+      options: ["false", "true"],
+    },
+    {
+      key: "headersJson",
+      label: "Headers (JSON Object)",
+      type: "textarea",
+      placeholder: '{\n  "X-Custom-Header": "value"\n}',
+    },
+    {
+      key: "sendQueryParameters",
+      label: "Send Query Parameters",
+      type: "select",
+      options: ["false", "true"],
+    },
+    {
+      key: "queryParametersJson",
+      label: "Query Parameters (JSON Object)",
+      type: "textarea",
+      placeholder: '{\n  "key": "value"\n}',
+    },
+    {
+      key: "sendBody",
+      label: "Send Body",
+      type: "select",
+      options: ["false", "true"],
+    },
+    {
+      key: "bodyContentType",
+      label: "Body Content Type",
+      type: "select",
+      options: ["json", "urlencoded", "raw"],
+    },
+    {
+      key: "bodyJson",
+      label: "Body (JSON Object)",
+      type: "textarea",
+      placeholder: '{\n  "key": "value"\n}',
+    },
+    {
+      key: "bodyRaw",
+      label: "Body Raw (Text)",
+      type: "textarea",
+      placeholder: "Raw text...",
+    },
+  ],
 };
 
 // Prefix-based matching for SaaS integration blocks
@@ -372,6 +556,8 @@ const TYPE_ICONS: Record<string, any> = {
   "iem.conductor.subGraph": Router,
   "conductor.subGraphHead": Zap,
   "iem.conductor.subGraphHead": Zap,
+  "conductor.httpRequest": Globe,
+  "iem.conductor.httpRequest": Globe,
 };
 
 function resolveIcon(type: string) {
@@ -575,90 +761,138 @@ export const ConductorInspector: React.FC = () => {
                     Configuration
                   </p>
                   <div className="space-y-3.5">
-                    {fields.map((field) => (
-                      <div key={field.key} className="space-y-1.5">
-                        <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
-                          {field.label}
-                        </label>
-                        {field.type === "text" && (
-                          <input
-                            type="text"
-                            value={getFieldValue(field.key)}
-                            onChange={(e) =>
-                              handleFieldChange(field.key, e.target.value)
-                            }
-                            placeholder={field.placeholder}
-                            className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
-                          />
-                        )}
-                        {field.type === "number" && (
-                          <input
-                            type="number"
-                            value={getFieldValue(field.key)}
-                            onChange={(e) =>
-                              handleFieldChange(
-                                field.key,
-                                Number(e.target.value),
-                              )
-                            }
-                            placeholder={field.placeholder}
-                            className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
-                          />
-                        )}
-                        {field.type === "textarea" && (
-                          <textarea
-                            value={getFieldValue(field.key)}
-                            onChange={(e) =>
-                              handleFieldChange(field.key, e.target.value)
-                            }
-                            placeholder={field.placeholder}
-                            rows={3}
-                            className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all resize-y min-h-[80px]"
-                          />
-                        )}
-                        {field.type === "select" && (
-                          <select
-                            value={getFieldValue(field.key)}
-                            onChange={(e) =>
-                              handleFieldChange(field.key, e.target.value)
-                            }
-                            className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none appearance-none cursor-pointer"
-                          >
-                            <option value="" className="bg-[#111128]">
-                              Select...
-                            </option>
-                            {field.key === "subGraphId"
-                              ? Object.values(objects)
-                                  .filter(
-                                    (obj) =>
-                                      obj.type ===
-                                        "iem.conductor.subGraphHead" ||
-                                      obj.type === "conductor.subGraphHead",
-                                  )
-                                  .map((obj) => (
+                    {fields.map((field) => {
+                      const authVal = getFieldValue("authentication");
+                      if (
+                        field.key === "authUsername" ||
+                        field.key === "authPassword"
+                      ) {
+                        if (authVal !== "basic") return null;
+                      }
+                      if (
+                        field.key === "authHeaderName" ||
+                        field.key === "authHeaderValue"
+                      ) {
+                        if (authVal !== "header") return null;
+                      }
+                      if (
+                        field.key === "headersJson" &&
+                        getFieldValue("sendHeaders") !== "true"
+                      ) {
+                        return null;
+                      }
+                      if (
+                        field.key === "queryParametersJson" &&
+                        getFieldValue("sendQueryParameters") !== "true"
+                      ) {
+                        return null;
+                      }
+                      if (
+                        field.key === "bodyContentType" &&
+                        getFieldValue("sendBody") !== "true"
+                      ) {
+                        return null;
+                      }
+                      if (field.key === "bodyJson") {
+                        const sendBody = getFieldValue("sendBody") === "true";
+                        const type = getFieldValue("bodyContentType") || "json";
+                        if (
+                          !sendBody ||
+                          (type !== "json" && type !== "urlencoded")
+                        )
+                          return null;
+                      }
+                      if (field.key === "bodyRaw") {
+                        const sendBody = getFieldValue("sendBody") === "true";
+                        const type = getFieldValue("bodyContentType");
+                        if (!sendBody || type !== "raw") return null;
+                      }
+
+                      return (
+                        <div key={field.key} className="space-y-1.5">
+                          <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 block">
+                            {field.label}
+                          </label>
+                          {field.type === "text" && (
+                            <input
+                              type="text"
+                              value={getFieldValue(field.key)}
+                              onChange={(e) =>
+                                handleFieldChange(field.key, e.target.value)
+                              }
+                              placeholder={field.placeholder}
+                              className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
+                            />
+                          )}
+                          {field.type === "number" && (
+                            <input
+                              type="number"
+                              value={getFieldValue(field.key)}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  field.key,
+                                  Number(e.target.value),
+                                )
+                              }
+                              placeholder={field.placeholder}
+                              className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all"
+                            />
+                          )}
+                          {field.type === "textarea" && (
+                            <textarea
+                              value={getFieldValue(field.key)}
+                              onChange={(e) =>
+                                handleFieldChange(field.key, e.target.value)
+                              }
+                              placeholder={field.placeholder}
+                              rows={3}
+                              className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder:text-white/20 focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none transition-all resize-y min-h-[80px]"
+                            />
+                          )}
+                          {field.type === "select" && (
+                            <select
+                              value={getFieldValue(field.key)}
+                              onChange={(e) =>
+                                handleFieldChange(field.key, e.target.value)
+                              }
+                              className="w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5 text-xs text-white focus:border-brand-purple/50 focus:bg-white/[0.08] outline-none appearance-none cursor-pointer"
+                            >
+                              <option value="" className="bg-[#111128]">
+                                Select...
+                              </option>
+                              {field.key === "subGraphId"
+                                ? Object.values(objects)
+                                    .filter(
+                                      (obj) =>
+                                        obj.type ===
+                                          "iem.conductor.subGraphHead" ||
+                                        obj.type === "conductor.subGraphHead",
+                                    )
+                                    .map((obj) => (
+                                      <option
+                                        key={obj.id}
+                                        value={obj.id}
+                                        className="bg-[#111128]"
+                                      >
+                                        {obj.metadata?.name ||
+                                          obj.metadata?.label ||
+                                          obj.id}
+                                      </option>
+                                    ))
+                                : (field.options || []).map((opt) => (
                                     <option
-                                      key={obj.id}
-                                      value={obj.id}
+                                      key={opt}
+                                      value={opt}
                                       className="bg-[#111128]"
                                     >
-                                      {obj.metadata?.name ||
-                                        obj.metadata?.label ||
-                                        obj.id}
+                                      {opt}
                                     </option>
-                                  ))
-                              : (field.options || []).map((opt) => (
-                                  <option
-                                    key={opt}
-                                    value={opt}
-                                    className="bg-[#111128]"
-                                  >
-                                    {opt}
-                                  </option>
-                                ))}
-                          </select>
-                        )}
-                      </div>
-                    ))}
+                                  ))}
+                            </select>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (

@@ -25,6 +25,7 @@ import {
   websocketTriggerBlock,
   websocketSendBlock,
   manualTriggerBlock,
+  httpRequestBlock,
 } from "@iem/surface-conductor";
 
 import {
@@ -104,6 +105,7 @@ export function initializeWebRegistry() {
     websocketTriggerBlock,
     websocketSendBlock,
     manualTriggerBlock,
+    httpRequestBlock,
 
     // Forge
     architectBlock,
