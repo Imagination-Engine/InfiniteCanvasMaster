@@ -49,7 +49,7 @@ export const loopBlock: BlockDefinition<any, any> = {
     "Iterates over a collection or runs for a set number of iterations with optional break condition.",
   category: "control",
   input: z.object({
-    collection: z.array(z.any()).optional(),
+    collection: z.array(z.record(z.any())).optional(),
     maxIterations: z
       .number()
       .min(0, "Maximum iterations cannot be negative")
@@ -676,7 +676,7 @@ export const forEachBlock: BlockDefinition<any, any> = {
   name: "For Each",
   description: "Iterates over a collection.",
   category: "control",
-  input: z.object({ collection: z.array(z.any()) }),
+  input: z.object({ collection: z.array(z.record(z.any())) }),
   output: z.object({ item: z.any() }),
   mode: "triggered",
   agent: {

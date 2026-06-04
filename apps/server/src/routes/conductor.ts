@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { conductorGraphs, conductorNodes, conductorRuns, db } from "@iem/db";
 import { eq, and } from "drizzle-orm";
-import { tickConductorNode } from "@iem/surface-conductor/src/runtime/engine.js";
-import { ConductorEnvelope } from "@iem/surface-conductor/src/types/runtime.js";
+import { tickConductorNode } from "@iem/surface-conductor/src/runtime/engine.ts";
+import { ConductorEnvelope } from "@iem/surface-conductor/src/types/runtime.ts";
 
 const conductorRouter = new Hono();
 

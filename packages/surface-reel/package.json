@@ -1,6 +1,7 @@
 {
   "name": "@iem/surface-reel",
   "version": "1.0.0",
+  "type": "module",
   "main": "src/index.ts",
   "scripts": {
     "test": "vitest run"

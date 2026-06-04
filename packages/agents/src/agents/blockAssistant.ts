@@ -33,7 +33,7 @@ export const createBlockAssistant = async (
     id: "block-assistant",
     name: "Block Configuration Assistant",
     instructions: dynamicInstructions || defaultInstructions,
-    model: google("gemini-2.5-pro"),
+    model: google("gemini-3.1-pro-preview"),
     tools: { configure_block },
     memory: storage ? new Memory({ storage }) : undefined,
   });

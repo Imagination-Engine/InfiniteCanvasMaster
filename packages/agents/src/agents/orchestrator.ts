@@ -74,7 +74,7 @@ export const createOrchestrator = async (
     id: "orchestrator",
     name: "Imagination Orchestrator",
     instructions,
-    model: google("gemini-2.5-flash"),
+    model: google("gemini-3.1-pro-preview"),
     tools,
     memory: storage ? new Memory({ storage }) : undefined,
   });
