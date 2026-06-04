@@ -471,13 +471,9 @@ export const ObjectRenderer: React.FC<{
         >
           {/* Primary Role/Purpose */}
           <div className="flex items-center justify-between mb-2">
-            {!object.type.includes("agent") && (
-              <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
-                {object.metadata?.role ||
-                  object.type.split(".")[1] ||
-                  "Process"}
-              </span>
-            )}
+            <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
+              {object.metadata?.role || object.type.split(".")[1] || "Process"}
+            </span>
             <div className="flex items-center gap-1 ml-auto">
               <Activity size={10} className="text-white/20" />
               <span
@@ -490,7 +486,7 @@ export const ObjectRenderer: React.FC<{
           </div>
 
           {/* Description / Purpose Line */}
-          {object.metadata?.description && !object.type.includes("agent") && (
+          {object.metadata?.description && (
             <p
               data-testid="block-description"
               className="text-[10px] text-white/40 italic leading-relaxed line-clamp-2 mb-3"
