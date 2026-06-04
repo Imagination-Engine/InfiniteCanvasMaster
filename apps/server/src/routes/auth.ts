@@ -117,27 +117,62 @@ authRouter.post("/login", async (c) => {
       .select()
       .from(users as any)
       .where(eq((users as any).email, email));
-    if (!user) {
-      return c.json({ error: "Invalid email or password" }, 401);
-    }
 
-    const isValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isValid) {
-      return c.json({ error: "Invalid email or password" }, 401);
+    // DEV MODE BYPASS: Allow any user/password if password is 'dev-pass' or if requested via header
+    const isDevMode = process.env.NODE_ENV !== "production";
+    const bypassRequested =
+      password === "dev-pass" || c.req.header("x-bypass-auth") === "true";
+
+    let targetUser = user;
+
+    if (isDevMode && bypassRequested) {
+      console.log(`[AUTH-DEV] Bypassing authentication for ${email}`);
+      if (!user) {
+        // Auto-create user if they don't exist in dev mode
+        const [newUser] = await db
+          .insert(users as any)
+          .values({
+            email,
+            passwordHash: await bcrypt.hash("dev-pass", 10),
+            hasCompletedOnboarding: true,
+          })
+          .returning();
+        targetUser = newUser;
+      } else {
+        // Auto-onboard existing user in dev mode bypass
+        const [updatedUser] = await db
+          .update(users as any)
+          .set({ hasCompletedOnboarding: true })
+          .where(eq((users as any).id, user.id))
+          .returning();
+        targetUser = updatedUser;
+      }
+    } else {
+      if (!user) {
+        return c.json({ error: "Invalid email or password" }, 401);
+      }
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) {
+        return c.json({ error: "Invalid email or password" }, 401);
+      }
     }
 
     const accessToken = jwt.sign(
-      { sub: user.id, email: user.email },
+      { sub: targetUser.id, email: targetUser.email },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN },
     );
-    const refreshToken = jwt.sign({ sub: user.id }, REFRESH_TOKEN_SECRET, {
-      expiresIn: "7d",
-    });
+    const refreshToken = jwt.sign(
+      { sub: targetUser.id },
+      REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: "7d",
+      },
+    );
 
     // Store refresh token in DB
     await db.insert(authSessions as any).values({
-      userId: user.id,
+      userId: targetUser.id,
       refreshToken,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
@@ -153,9 +188,9 @@ authRouter.post("/login", async (c) => {
     return c.json({
       accessToken,
       user: {
-        id: user.id,
-        email: user.email,
-        hasCompletedOnboarding: user.hasCompletedOnboarding,
+        id: targetUser.id,
+        email: targetUser.email,
+        hasCompletedOnboarding: targetUser.hasCompletedOnboarding,
       },
     });
   } catch (error: any) {

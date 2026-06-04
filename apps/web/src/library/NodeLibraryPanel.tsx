@@ -46,22 +46,48 @@ export default function NodeLibraryModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [cliInput, setCliInput] = useState("");
 
-  const creativeNodeTypes = useMemo(() => {
-    return Object.keys(NODE_CATALOG).filter((type) => {
-      const entry = NODE_CATALOG[type];
-      return entry?.category === "creative" && type !== "fileUpload";
-    });
+  const normalizePrefix = (type: string) => {
+    const parts = type.split(".");
+    return parts[0] === "iem" ? parts[1] : parts[0];
+  };
+
+  const isWorkflowNodeType = (type: string) => {
+    const entry = NODE_CATALOG[type];
+    const prefix = normalizePrefix(type);
+    return (
+      entry?.category === "workflow" ||
+      entry?.role === "trigger" ||
+      entry?.role === "action" ||
+      prefix === "trigger" ||
+      prefix === "slack" ||
+      prefix === "gmail" ||
+      prefix === "discord" ||
+      prefix === "zoom" ||
+      prefix === "trello" ||
+      prefix === "calendly" ||
+      prefix === "sheets" ||
+      type.startsWith("iem.conductor.")
+    );
+  };
+
+  const allNodeTypes = useMemo(() => {
+    return Object.keys(NODE_CATALOG).filter((type) => type !== "fileUpload");
   }, []);
 
   const filteredNodes = useMemo(() => {
-    const nodes = creativeNodeTypes.filter((type) => type.startsWith(tab));
+    const nodes = allNodeTypes.filter((type) => {
+      if (tab === "workflow") {
+        return isWorkflowNodeType(type);
+      }
+      return normalizePrefix(type) === tab;
+    });
     if (!searchQuery) return nodes;
     return nodes.filter((type) =>
       NODE_CATALOG[type]?.defaultData.label
         .toLowerCase()
         .includes(searchQuery.toLowerCase()),
     );
-  }, [creativeNodeTypes, tab, searchQuery]);
+  }, [allNodeTypes, tab, searchQuery]);
 
   const onDragStart = (event: DragEvent<HTMLDivElement>, nodeType: string) => {
     event.dataTransfer.setData("application/reactflow", nodeType);

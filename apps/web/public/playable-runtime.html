@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playable Runtime</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: #060913;
+        overflow: hidden;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .hud {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        color: #d8ecff;
+        font-size: 12px;
+        line-height: 1.35;
+        letter-spacing: 0.02em;
+        opacity: 0.95;
+        user-select: none;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <div class="hud" id="hud"></div>
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const hud = document.getElementById("hud");
+
+      const state = {
+        keys: new Set(),
+        score: 0,
+        won: false,
+      };
+
+      const world = {
+        gravity: 1800,
+        friction: 0.85,
+        platforms: [],
+        stars: [],
+        finish: { x: 0, y: 0, w: 40, h: 70 },
+      };
+
+      const player = {
+        x: 80,
+        y: 80,
+        w: 30,
+        h: 38,
+        vx: 0,
+        vy: 0,
+        grounded: false,
+      };
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        buildLevel();
+      }
+
+      function buildLevel() {
+        const w = canvas.width;
+        const h = canvas.height;
+        world.platforms = [
+          { x: 0, y: h - 42, w, h: 42 },
+          { x: 120, y: h - 120, w: 200, h: 20 },
+          { x: 410, y: h - 200, w: 170, h: 20 },
+          { x: 670, y: h - 280, w: 220, h: 20 },
+          { x: Math.max(900, w - 260), y: h - 340, w: 170, h: 20 },
+        ];
+        world.stars = [
+          { x: 200, y: h - 155, r: 8, taken: false },
+          { x: 485, y: h - 235, r: 8, taken: false },
+          { x: 760, y: h - 315, r: 8, taken: false },
+          { x: Math.max(980, w - 180), y: h - 375, r: 8, taken: false },
+        ];
+        world.finish = {
+          x: Math.max(1110, w - 90),
+          y: h - 420,
+          w: 36,
+          h: 78,
+        };
+        resetPlayer();
+      }
+
+      function resetPlayer() {
+        player.x = 80;
+        player.y = 80;
+        player.vx = 0;
+        player.vy = 0;
+        player.grounded = false;
+        state.score = 0;
+        state.won = false;
+        world.stars.forEach((s) => (s.taken = false));
+      }
+
+      function intersects(a, b) {
+        return (
+          a.x < b.x + b.w &&
+          a.x + a.w > b.x &&
+          a.y < b.y + b.h &&
+          a.y + a.h > b.y
+        );
+      }
+
+      function tick(dt) {
+        const accel = 1400;
+        const maxSpeed = 360;
+        const jump = 680;
+
+        if (state.won) {
+          if (state.keys.has("r")) resetPlayer();
+          return;
+        }
+
+        if (state.keys.has("arrowleft") || state.keys.has("a"))
+          player.vx -= accel * dt;
+        if (state.keys.has("arrowright") || state.keys.has("d"))
+          player.vx += accel * dt;
+        if (
+          (state.keys.has("arrowup") ||
+            state.keys.has("w") ||
+            state.keys.has(" ")) &&
+          player.grounded
+        ) {
+          player.vy = -jump;
+          player.grounded = false;
+        }
+
+        player.vx *= world.friction;
+        player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
+        player.vy += world.gravity * dt;
+
+        player.x += player.vx * dt;
+        for (const p of world.platforms) {
+          if (intersects(player, p)) {
+            if (player.vx > 0) player.x = p.x - player.w;
+            else if (player.vx < 0) player.x = p.x + p.w;
+            player.vx = 0;
+          }
+        }
+
+        player.y += player.vy * dt;
+        player.grounded = false;
+        for (const p of world.platforms) {
+          if (intersects(player, p)) {
+            if (player.vy > 0) {
+              player.y = p.y - player.h;
+              player.grounded = true;
+            } else if (player.vy < 0) {
+              player.y = p.y + p.h;
+            }
+            player.vy = 0;
+          }
+        }
+
+        if (player.y > canvas.height + 200) resetPlayer();
+        if (player.x < -20) player.x = -20;
+        if (player.x > canvas.width - player.w + 20)
+          player.x = canvas.width - player.w + 20;
+
+        for (const star of world.stars) {
+          if (star.taken) continue;
+          const dx = player.x + player.w / 2 - star.x;
+          const dy = player.y + player.h / 2 - star.y;
+          if (dx * dx + dy * dy < 18 * 18) {
+            star.taken = true;
+            state.score += 10;
+          }
+        }
+
+        if (
+          intersects(player, world.finish) &&
+          world.stars.every((s) => s.taken)
+        ) {
+          state.won = true;
+          state.score += 50;
+        }
+      }
+
+      function draw() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, "#0b1328");
+        g.addColorStop(1, "#04070f");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let i = 0; i < w; i += 28) {
+          for (let j = 0; j < h; j += 28) {
+            ctx.fillStyle = "rgba(120,170,255,0.06)";
+            ctx.fillRect(i, j, 2, 2);
+          }
+        }
+
+        ctx.fillStyle = "#1f4f8d";
+        world.platforms.forEach((p) => ctx.fillRect(p.x, p.y, p.w, p.h));
+
+        ctx.fillStyle = "#ffc94f";
+        world.stars.forEach((s) => {
+          if (s.taken) return;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.fillStyle = state.won ? "#35d49a" : "#8bd2ff";
+        ctx.fillRect(
+          world.finish.x,
+          world.finish.y,
+          world.finish.w,
+          world.finish.h,
+        );
+
+        ctx.fillStyle = "#d2ecff";
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+      }
+
+      function updateHud() {
+        const remaining = world.stars.filter((s) => !s.taken).length;
+        hud.textContent = state.won
+          ? `You win! Score: ${state.score}  Press R to restart`
+          : `Move: A/D or ←/→   Jump: W/↑/Space   Score: ${state.score}   Stars left: ${remaining}`;
+      }
+
+      let last = performance.now();
+      function frame(now) {
+        const dt = Math.min(0.033, (now - last) / 1000);
+        last = now;
+        tick(dt);
+        draw();
+        updateHud();
+        requestAnimationFrame(frame);
+      }
+
+      window.addEventListener("keydown", (e) =>
+        state.keys.add(e.key.toLowerCase()),
+      );
+      window.addEventListener("keyup", (e) =>
+        state.keys.delete(e.key.toLowerCase()),
+      );
+      window.addEventListener("resize", resize);
+      resize();
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

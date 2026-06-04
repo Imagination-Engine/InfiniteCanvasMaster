@@ -293,6 +293,13 @@ export default function StudioPage() {
                         className={`p-6 rounded-3xl text-sm leading-relaxed shadow-2xl ${!isAssistant ? "bg-brand-purple/10 border border-brand-purple/20 text-white rounded-tr-sm" : "bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm"}`}
                       >
                         <Markdown content={m?.content || ""} />
+                        {isAssistant &&
+                        !m?.content &&
+                        (m?.toolInvocations || []).length === 0 ? (
+                          <p className="text-xs text-brand-text-muted">
+                            Engine responded with no text payload.
+                          </p>
+                        ) : null}
 
                         {(m?.toolInvocations || []).map((tool: any) => {
                           if (tool?.toolName === "generate_canvas_blueprint") {
@@ -368,7 +375,24 @@ export default function StudioPage() {
                               </div>
                             );
                           }
-                          return null;
+                          return (
+                            <div
+                              key={tool?.toolCallId}
+                              className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4"
+                            >
+                              <div className="text-[10px] font-black uppercase tracking-[0.15em] text-brand-cyan">
+                                Tool Executed:{" "}
+                                {tool?.toolName || "unknown_tool"}
+                              </div>
+                              <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-words text-[11px] text-brand-text-muted">
+                                {JSON.stringify(
+                                  tool?.result ?? tool?.args ?? {},
+                                  null,
+                                  2,
+                                )}
+                              </pre>
+                            </div>
+                          );
                         })}
                       </div>
                     </div>

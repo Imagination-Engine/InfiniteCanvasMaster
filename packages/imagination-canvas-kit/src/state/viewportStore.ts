@@ -169,8 +169,8 @@ export const useViewportStore = create<ViewportState>()(
 
         set({
           zoom: nextZoom,
-          x: minX + width / 2 - viewportWidth / 2 / nextZoom,
-          y: minY + height / 2 - viewportHeight / 2 / nextZoom,
+          x: viewportWidth / 2 - (minX + width / 2) * nextZoom,
+          y: viewportHeight / 2 - (minY + height / 2) * nextZoom,
         });
       },
     }),

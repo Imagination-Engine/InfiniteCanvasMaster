@@ -9,6 +9,7 @@ import { blocksRouter } from "./routes/blocks.js";
 import { a2aRouter } from "./routes/a2a.js";
 import { conductorRouter } from "./routes/conductor.js";
 import { reelRouter } from "./routes/reel.js";
+import { slackRouter, gmailRouter } from "./routes/integrations.js";
 import { dbMiddleware } from "./db.js";
 
 const app = new Hono();
@@ -37,6 +38,8 @@ app.route("/api/blocks", blocksRouter);
 app.route("/api/a2a", a2aRouter);
 app.route("/api/conductor", conductorRouter);
 app.route("/api/reel", reelRouter);
+app.route("/api/slack", slackRouter);
+app.route("/api/gmail", gmailRouter);
 
 // Serve persisted generated media files
 app.get("/generated-media/:filename", async (c) => {

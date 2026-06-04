@@ -13,6 +13,46 @@ const {
   users,
 } = dbModule as any;
 
+const isUuid = (value?: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value || "",
+  );
+
+async function ensureOwnerId(ownerId: string): Promise<string | null> {
+  if (!isUuid(ownerId)) return null;
+
+  try {
+    const [existingById] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, ownerId));
+    if (existingById?.id) return existingById.id;
+
+    const [created] = await db
+      .insert(users)
+      .values({
+        id: ownerId,
+        email: `token-${ownerId}@local.invalid`,
+        passwordHash: "token-user-autocreated",
+        hasCompletedOnboarding: true,
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (created?.id) return created.id;
+
+    // Second check in case of race condition
+    const [finalCheck] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, ownerId));
+    return finalCheck?.id || null;
+  } catch (err) {
+    console.error("[CANVAS-TOOL] Error ensuring owner_id:", err);
+    return null;
+  }
+}
+
 export const generate_canvas_blueprint = createTool({
   id: "generate_canvas_blueprint",
   description:
@@ -63,12 +103,20 @@ export const generate_canvas_blueprint = createTool({
       input;
 
     try {
+      const resolvedOwnerId = await ensureOwnerId(owner_id);
+      if (!resolvedOwnerId) {
+        return {
+          success: false,
+          nodes,
+          edges,
+          error:
+            "Unable to resolve a valid workspace owner from owner_id. Re-authenticate and retry.",
+        };
+      }
+
       // Create the workspace using the current chat session_id to maintain continuity.
       // If the session_id is a UUID we use it, otherwise we fall back to a new one.
-      const isValidUUID =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          session_id || "",
-        );
+      const isValidUUID = isUuid(session_id || "");
       const finalWorkspaceId = isValidUUID ? session_id : crypto.randomUUID();
 
       // Securely resolve owner ID from execution context if available (passed as resourceId in agent.stream)
@@ -173,9 +221,9 @@ export const generate_canvas_blueprint = createTool({
           })
           .returning();
       } else {
-        // Canvas exists: Clear old nodes and edges to avoid duplication/overlapping
-        await db.delete(nodesTable).where(eq(nodesTable.canvasId, canvas.id));
+        // Canvas exists: Clear old edges then nodes to avoid foreign key violations
         await db.delete(edgesTable).where(eq(edgesTable.canvasId, canvas.id));
+        await db.delete(nodesTable).where(eq(nodesTable.canvasId, canvas.id));
       }
 
       // Topological/Hierarchical DAG layout calculation
@@ -303,6 +351,14 @@ export const generate_canvas_blueprint = createTool({
             label: n.title,
             description: n.description,
             inputs: n.recommended_params || {},
+            title:
+              n.type === "iem.app.game"
+                ? n.recommended_params?.title || n.title || "Playable Runtime"
+                : n.title,
+            appUrl:
+              n.type === "iem.app.game"
+                ? n.recommended_params?.appUrl || "/playable-runtime.html"
+                : undefined,
           },
           positionX: pos.x,
           positionY: pos.y,

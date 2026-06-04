@@ -5,8 +5,12 @@ import { AppWindow, RefreshCw, ShieldAlert } from "lucide-react";
 
 export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
   const [key, setKey] = useState(0);
-  const appUrl = (object.metadata?.appUrl as string) || "";
-  const title = (object.metadata?.title as string) || "External App";
+  const appUrl =
+    (object.metadata?.appUrl as string) ||
+    (object.type === "iem.app.game" ? "/playable-runtime.html" : "");
+  const title =
+    (object.metadata?.title as string) ||
+    (object.type === "iem.app.game" ? "Playable Runtime" : "External App");
 
   const isLoading = object.status === "idle" || object.status === "thinking";
   const isError = object.status === "error";

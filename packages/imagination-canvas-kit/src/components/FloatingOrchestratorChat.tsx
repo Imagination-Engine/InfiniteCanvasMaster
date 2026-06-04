@@ -5,6 +5,8 @@ import { BrainCircuit, X, Send, Sparkles } from "lucide-react";
 import { useCanvasStore } from "../state/canvasStore";
 import { useViewportStore } from "../state/viewportStore";
 import { useExpansionStore } from "../state/expansionStore";
+import { useConnectionStore } from "../state/connectionStore";
+import { useSelectionStore } from "../state/selectionStore";
 import { GrowingTextarea } from "@iem/chat-interaction-kit";
 import { classifyOrchestratorIntent } from "../utils/orchestratorIntentClassifier";
 import { useOrchestratorContext } from "../hooks/useOrchestratorContext";
@@ -13,7 +15,6 @@ import {
   buildSuggestionChips,
   resolveOrchestratorReply,
 } from "../utils/orchestratorSuggestions";
-import { useConnectionStore } from "../state/connectionStore";
 import { useShellStore } from "../state/shellStore";
 import { generateUUID } from "../utils/uuid";
 import { MarkdownText } from "./MarkdownText";
@@ -57,6 +58,8 @@ export const FloatingOrchestratorChat: React.FC = () => {
   const addObject = useCanvasStore((s) => s.addObject);
   const accessToken = useCanvasStore((s) => s.accessToken);
   const canvasId = useShellStore((s) => s.canvasId);
+  const addConnection = useConnectionStore((s) => s.addConnection);
+  const setSelection = useSelectionStore((s) => s.setSelection);
   const [isStreaming, setIsStreaming] = useState(false);
   const aiGeneratedBlockIdsRef = useRef<Set<string>>(new Set());
   const greetedBlockIdsRef = useRef<Set<string>>(new Set());
@@ -100,6 +103,190 @@ export const FloatingOrchestratorChat: React.FC = () => {
     }
   }, [messages, isOpen, isStreaming]);
 
+  const getViewportCenter = () => {
+    const viewport = useViewportStore.getState();
+    const width = viewport.width || window.innerWidth || 1200;
+    const height = viewport.height || window.innerHeight || 800;
+
+    return {
+      x: (width / 2 - viewport.x) / viewport.zoom,
+      y: (height / 2 - viewport.y) / viewport.zoom,
+    };
+  };
+
+  const createWorkingBlueprint = (sourceInput: string) => {
+    const lowerInput = sourceInput.toLowerCase();
+    const center = getViewportCenter();
+    const suffix = Date.now();
+    const isGame =
+      /game|playable|player|sprite|joystick|platform|rpg|arcade|level/.test(
+        lowerInput,
+      );
+
+    const blueprint = isGame
+      ? {
+          response:
+            "I placed a playable game studio graph on the canvas: controls, player, physics, collision, score, and runtime are wired together.",
+          nodes: [
+            [
+              "game-studio",
+              "iem.studio.game",
+              "Game Studio",
+              "Coordinates the playable surface.",
+              0,
+              0,
+            ],
+            [
+              "input",
+              "iem.playable.input",
+              "Input Controller",
+              "Maps keyboard or joystick intent.",
+              1,
+              -0.6,
+            ],
+            [
+              "player",
+              "iem.playable.sprite",
+              "Player Sprite",
+              "The visible controllable character.",
+              2,
+              -0.6,
+            ],
+            [
+              "physics",
+              "iem.playable.physicsEntity",
+              "Physics Entity",
+              "Movement and collision state.",
+              3,
+              -0.6,
+            ],
+            [
+              "collider",
+              "iem.playable.collider",
+              "Collision Rules",
+              "Detects pickups and obstacles.",
+              4,
+              -0.6,
+            ],
+            [
+              "score",
+              "iem.playable.score",
+              "Score System",
+              "Tracks points and objectives.",
+              5,
+              -0.6,
+            ],
+            [
+              "runtime",
+              "iem.app.game",
+              "Playable Runtime",
+              "Runs the current playable scene.",
+              6,
+              0,
+            ],
+          ],
+          edges: [
+            ["game-studio", "input"],
+            ["input", "player"],
+            ["player", "physics"],
+            ["physics", "collider"],
+            ["collider", "score"],
+            ["score", "runtime"],
+          ],
+        }
+      : {
+          response:
+            "I placed a working starter workflow on the canvas: goal, plan, builder agent, and output artifact are wired together.",
+          nodes: [
+            [
+              "goal",
+              "iem.intent.goal",
+              "Goal",
+              sourceInput || "Capture the desired outcome.",
+              0,
+              0,
+            ],
+            [
+              "plan",
+              "iem.intent.plan",
+              "Plan",
+              "Break the goal into executable steps.",
+              1,
+              0,
+            ],
+            [
+              "agent",
+              "iem.agent.agent",
+              "Builder Agent",
+              "Executes the next concrete step.",
+              2,
+              0,
+            ],
+            [
+              "artifact",
+              "iem.data.artifact",
+              "Output Artifact",
+              "Stores the current result for review.",
+              3,
+              0,
+            ],
+          ],
+          edges: [
+            ["goal", "plan"],
+            ["plan", "agent"],
+            ["agent", "artifact"],
+          ],
+        };
+
+    const ids: string[] = [];
+    const idMap = new Map<string, string>();
+    const startX = center.x - 520;
+    const startY = center.y - 160;
+
+    blueprint.nodes.forEach(([key, type, label, description, column, row]) => {
+      const id = `${key}-${suffix}`;
+      idMap.set(key, id);
+      ids.push(id);
+      addObject({
+        id,
+        type,
+        x: startX + Number(column) * 360,
+        y: startY + Number(row) * 260,
+        width: type === "iem.app.game" ? 360 : 320,
+        height: type === "iem.app.game" ? 260 : 220,
+        zIndex: 1 + Number(column),
+        status: type === "iem.app.game" ? "running" : "idle",
+        metadata: {
+          label,
+          description,
+          runtime: type === "iem.app.game" ? "PLAYABLE" : "LIVE",
+          title: type === "iem.app.game" ? "Playable Runtime" : label,
+          appUrl:
+            type === "iem.app.game" ? "/playable-runtime.html" : undefined,
+          capabilities: ["inspect", "connect", "move"],
+        },
+      });
+    });
+
+    blueprint.edges.forEach(([sourceKey, targetKey]) => {
+      const fromId = idMap.get(sourceKey);
+      const toId = idMap.get(targetKey);
+      if (!fromId || !toId) return;
+      addConnection({
+        id: `edge-${fromId}-${toId}`,
+        fromId,
+        toId,
+      });
+    });
+
+    setSelection(ids);
+    requestAnimationFrame(() => {
+      useViewportStore.getState().zoomToSelection(ids, 120);
+    });
+
+    return blueprint.response;
+  };
+
   const executeOfflineFallback = (userInput: string) => {
     const intent = classifyOrchestratorIntent(userInput);
     setTimeout(() => {
@@ -122,10 +309,19 @@ export const FloatingOrchestratorChat: React.FC = () => {
         const viewport = useViewportStore.getState();
         const vw = viewport.width || 1000;
         const vh = viewport.height || 1000;
-        const dropX = viewport.x + vw / 2 / viewport.zoom - 150;
-        const dropY = viewport.y + vh / 2 / viewport.zoom - 100;
+        const dropX = (vw / 2 - viewport.x) / viewport.zoom - 150;
+        const dropY = (vh / 2 - viewport.y) / viewport.zoom - 100;
 
-        if (lowerInput.includes("agent") || lowerInput.includes("claw")) {
+        if (
+          /game|playable|player|sprite|joystick|platform|rpg|arcade|level|workflow|blueprint|canvas|studio/.test(
+            lowerInput,
+          )
+        ) {
+          response = createWorkingBlueprint(userInput);
+        } else if (
+          lowerInput.includes("agent") ||
+          lowerInput.includes("claw")
+        ) {
           const traits = extractAgentTraits(userInput);
           const label = traits.role
             ? `${traits.role.charAt(0).toUpperCase() + traits.role.slice(1)} Agent`
@@ -186,9 +382,10 @@ export const FloatingOrchestratorChat: React.FC = () => {
         }
       } else if (selectedBlock && missingToolMounts.length > 0 && !response) {
         response = `Note: "${blockContext?.blockName || selectedBlock.type}" may need tool configuration (${missingToolMounts.map((m) => m.name).join(", ")}).`;
+      } else if (intent === "plan_request" || intent === "run_workflow") {
+        response = createWorkingBlueprint(userInput);
       } else if (!response) {
-        response =
-          "I'm analyzing the canvas context to optimize your DAG. Tell me more about the logic flow.";
+        response = createWorkingBlueprint(userInput);
       }
 
       setMessages((prev) => [
