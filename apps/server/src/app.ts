@@ -47,8 +47,19 @@ app.get("/generated-media/:filename", async (c) => {
 
   try {
     const data = await readFile(filepath);
-    const ext = filename.split(".").pop() || "png";
-    const mimeType = ext === "jpg" ? "image/jpeg" : "image/png";
+    const ext = (filename.split(".").pop() || "png").toLowerCase();
+    const mimeType =
+      ext === "mp4"
+        ? "video/mp4"
+        : ext === "webm"
+          ? "video/webm"
+          : ext === "jpg" || ext === "jpeg"
+            ? "image/jpeg"
+            : ext === "gif"
+              ? "image/gif"
+              : ext === "webp"
+                ? "image/webp"
+                : "image/png";
 
     return new Response(data, {
       headers: {

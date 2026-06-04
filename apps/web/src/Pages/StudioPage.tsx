@@ -10,6 +10,7 @@ import {
   MessageAttachmentPreview,
   createComposerAttachmentsFromFiles,
   revokeComposerAttachmentUrls,
+  readAttachmentsAsBase64,
   type ComposerAttachment,
 } from "@iem/chat-interaction-kit";
 
@@ -172,6 +173,8 @@ export default function StudioPage() {
     if ((!text && sentAttachments.length === 0) || isLoading) return;
 
     const stagedSnapshot = [...stagedAttachments];
+    // Read image bytes before clearing staged list (File objects are lost after clear)
+    const imageParts = await readAttachmentsAsBase64(stagedAttachments);
     setLocalInput("");
     setStagedAttachments([]);
     setIsLoading(true);
@@ -183,11 +186,7 @@ export default function StudioPage() {
       setActiveDraftId(sessionId);
     }
 
-    const userContent =
-      text ||
-      (sentAttachments.length > 0
-        ? `[Attached ${sentAttachments.length} image(s): ${sentAttachments.map((a) => a.name).join(", ")}]`
-        : "");
+    const userContent = text || "";
 
     const newMessages: StudioMessage[] = [
       ...messages,
@@ -200,6 +199,13 @@ export default function StudioPage() {
     ];
     setMessages(newMessages);
 
+    // Enrich the last user message with real image data for the API call
+    const apiMessages = newMessages.map((m, i) =>
+      i === newMessages.length - 1 && imageParts.length > 0
+        ? { ...m, imageParts }
+        : m,
+    );
+
     try {
       const res = await fetch("http://localhost:3001/api/chat", {
         method: "POST",
@@ -209,7 +215,7 @@ export default function StudioPage() {
         },
         body: JSON.stringify({
           sessionId,
-          messages: newMessages,
+          messages: apiMessages,
         }),
       });
 

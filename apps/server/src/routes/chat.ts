@@ -2,14 +2,20 @@ import { Hono } from "hono";
 import { mastra } from "@iem/agents";
 import { eq } from "drizzle-orm";
 import { workspaces } from "@iem/db";
+import { join } from "node:path";
 import jwt from "jsonwebtoken";
 import {
   RequestContext,
   MASTRA_RESOURCE_ID_KEY,
   MASTRA_THREAD_ID_KEY,
 } from "@mastra/core/request-context";
+import { persistBase64Image } from "../services/mediaPersist.js";
+import { injectReferenceImageNodes } from "../services/referenceNodes.js";
 
 const chatRouter = new Hono();
+
+// Directory where uploaded reference images are persisted (shared with reel media).
+const MEDIA_DIR = join(process.cwd(), "public", "generated-media");
 
 import { authMiddleware } from "../middleware/auth.js";
 
@@ -50,17 +56,25 @@ chatRouter.post("/", async (c) => {
     ];
   }
 
+  type ImagePart = { mimeType: string; data: string };
+
   const sanitizedMessages = messagesToProcess
     .map((m) => {
-      if (typeof m === "string") return { role: "user", content: m };
+      if (typeof m === "string")
+        return { role: "user", content: m, imageParts: [] as ImagePart[] };
       const contentValue = m.content || m.text || m.body || m.prompt;
       return {
         role: m.role || "user",
         content: String(contentValue || ""),
+        imageParts: Array.isArray(m.imageParts)
+          ? (m.imageParts as ImagePart[])
+          : ([] as ImagePart[]),
       };
     })
     .filter(
-      (m) => m.content && m.content !== "undefined" && m.content !== "null",
+      (m) =>
+        (m.content && m.content !== "undefined" && m.content !== "null") ||
+        m.imageParts.length > 0,
     );
 
   if (sanitizedMessages.length === 0) {
@@ -183,7 +197,8 @@ REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
 - Video forge: "iem.studio.video" — REQUIRED when the user wants a reel, video, animation, or to forge footage from reference images.
 - Pattern: connect each iem.reel.textToImage → iem.studio.video (edges source→target). Put the motion/Veo prompt on the video studio node description.
 - Anime / screencap requests: preserve style instructions in EACH textToImage description (e.g. ufotable style, Fate/stay night UBW, "Are you my Master" scene) — do not shorten them.
-- If the user only asked for images with no mention of video/reel/animation, textToImage nodes alone are fine; if they want a final video, always include iem.studio.video.${canvasSystemPrompt}`;
+- If the user only asked for images with no mention of video/reel/animation, textToImage nodes alone are fine; if they want a final video, always include iem.studio.video.
+- UPLOADED REFERENCE IMAGES (CRITICAL): When the user ATTACHES image file(s) to the message, the system AUTOMATICALLY places each upload on the canvas as an "iem.reel.referenceImage" node and wires it into the forge for you. You MUST NOT create "iem.reel.textToImage" (or any other) nodes to represent, describe, or recreate the attached images — that produces duplicates. For attached uploads, only add an "iem.studio.video" node (when the user wants a reel/video/animation) and leave the reference nodes to the system. Do NOT include the uploaded images as textToImage nodes in your blueprint.${canvasSystemPrompt}`;
       agent = await createOrchestrator(mastra.storage, systemInstruction);
     }
 
@@ -197,16 +212,139 @@ REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
 
     const latestMsg = sanitizedMessages[sanitizedMessages.length - 1];
     const prompt = latestMsg?.content || "";
+    const latestImageParts: ImagePart[] = latestMsg?.imageParts ?? [];
+
+    console.log(
+      `[CHAT ROUTE] latestImageParts=${latestImageParts.length} (session ${sessionId})`,
+    );
 
     const requestContext = new RequestContext();
     requestContext.set(MASTRA_RESOURCE_ID_KEY, user.sub);
     requestContext.set(MASTRA_THREAD_ID_KEY, sessionId);
 
-    const result = await agent.stream(prompt, {
-      threadId: sessionId, // This tells Mastra to load history and save this turn!
+    // Build multimodal input when images are attached; fall back to plain string.
+    // IMPORTANT: the `mimeType` field must be present on ImagePart so that
+    // Mastra's TypeDetector classifies the message as AI SDK v4 (which uses
+    // `mimeType`) rather than v5 (which uses `mediaType`). Without `mimeType`
+    // Mastra silently routes the message through the v5 adapter, which ignores
+    // the `image` field and the model never sees the image bytes.
+    type AiTextPart = { type: "text"; text: string };
+    type AiImagePart = {
+      type: "image";
+      image: string;
+      mimeType: string;
+    };
+    type AiUserMsg = { role: "user"; content: (AiTextPart | AiImagePart)[] };
+
+    const agentInput: string | AiUserMsg[] =
+      latestImageParts.length > 0
+        ? [
+            {
+              role: "user" as const,
+              content: [
+                {
+                  type: "text" as const,
+                  text: prompt || "Please look at the attached image(s).",
+                },
+                ...latestImageParts.map((p) => ({
+                  type: "image" as const,
+                  image: `data:${p.mimeType};base64,${p.data}`,
+                  mimeType: p.mimeType,
+                })),
+              ],
+            },
+          ]
+        : prompt;
+
+    const result = await agent.stream(agentInput as any, {
+      threadId: sessionId,
       resourceId: user.sub,
       requestContext,
     });
+
+    // Is this session backed by a real (persisted) workspace? If so its id
+    // doubles as the workspace id, letting us attach references even when the
+    // model did NOT (re)run generate_canvas_blueprint this turn.
+    const isPersistedWorkspaceSession = Boolean(
+      sessionId &&
+      !sessionId.startsWith("draft-") &&
+      !sessionId.startsWith("block-chat-") &&
+      !body.isDraft,
+    );
+
+    // Tracks the workspace id of any canvas the orchestrator built this turn.
+    let blueprintProjectId: string | undefined;
+
+    const recordBlueprintProjectId = (toolName: string, resultValue: any) => {
+      if (
+        toolName === "generate_canvas_blueprint" &&
+        resultValue?.success &&
+        typeof resultValue.projectId === "string"
+      ) {
+        blueprintProjectId = resultValue.projectId;
+      }
+    };
+
+    // Persist attached uploads + drop them onto the canvas as reference-image
+    // nodes, auto-wiring into an existing reel-forge (iem.studio.video) node.
+    // Returns a paint payload (or null) to stream so the canvas renders them.
+    const buildReferenceImagePayload = async (): Promise<any | null> => {
+      if (latestImageParts.length === 0) {
+        return null;
+      }
+
+      const workspaceId =
+        blueprintProjectId ??
+        (isPersistedWorkspaceSession ? sessionId : undefined);
+
+      if (!workspaceId) {
+        console.log(
+          "[CHAT ROUTE] Skipping reference injection: no workspace id (blueprint did not run and session is not a persisted workspace).",
+        );
+        return null;
+      }
+
+      try {
+        const references: { url: string; mimeType?: string }[] = [];
+        for (const part of latestImageParts) {
+          const url = await persistBase64Image(
+            part.data,
+            part.mimeType,
+            MEDIA_DIR,
+          );
+          references.push({ url, mimeType: part.mimeType });
+        }
+
+        const injected = await injectReferenceImageNodes({
+          workspaceId,
+          references,
+        });
+
+        console.log(
+          `[CHAT ROUTE] Injected ${injected.nodes.length} reference node(s), ${injected.edges.length} edge(s) into workspace ${workspaceId} (wired: ${injected.edges.length > 0}).`,
+        );
+
+        if (injected.nodes.length === 0) return null;
+
+        return {
+          toolCallId: `reference-images-${Date.now()}`,
+          toolName: "generate_canvas_blueprint",
+          args: {},
+          result: {
+            success: true,
+            projectId: workspaceId,
+            nodes: injected.nodes,
+            edges: injected.edges,
+          },
+        };
+      } catch (e) {
+        console.error(
+          "[CHAT ROUTE] Failed to inject reference image nodes:",
+          e,
+        );
+        return null;
+      }
+    };
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -234,11 +372,16 @@ REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
                 ? resultWrapper.payload || resultWrapper
                 : undefined;
 
+              const blueprintResult = toolResult
+                ? toolResult.result
+                : undefined;
+              recordBlueprintProjectId(toolCall.toolName, blueprintResult);
+
               const uiToolPayload = {
                 toolCallId: toolCall.toolCallId,
                 toolName: toolCall.toolName,
                 args: toolCall.args,
-                result: toolResult ? toolResult.result : undefined,
+                result: blueprintResult,
               };
 
               controller.enqueue(
@@ -259,11 +402,16 @@ REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
                     ? resultWrapper.payload || resultWrapper
                     : undefined;
 
+                  const blueprintResult = toolResult
+                    ? toolResult.result
+                    : undefined;
+                  recordBlueprintProjectId(toolCall.toolName, blueprintResult);
+
                   const uiToolPayload = {
                     toolCallId: toolCall.toolCallId,
                     toolName: toolCall.toolName,
                     args: toolCall.args,
-                    result: toolResult ? toolResult.result : undefined,
+                    result: blueprintResult,
                   };
                   controller.enqueue(
                     encoder.encode(`9:${JSON.stringify(uiToolPayload)}\n`),
@@ -271,6 +419,16 @@ REEL / VIDEO RULES (use EXACT block type IDs in blueprint nodes):
                 }
               }
             }
+          }
+
+          // After the orchestrator's tool calls are processed, attach any
+          // uploaded reference images to the canvas (auto-wiring into the reel
+          // forge when present) and stream them so the UI paints them live.
+          const referencePayload = await buildReferenceImagePayload();
+          if (referencePayload) {
+            controller.enqueue(
+              encoder.encode(`9:${JSON.stringify(referencePayload)}\n`),
+            );
           }
         } catch (err: any) {
           console.error("[STREAM ITERATION ERROR]:", err);

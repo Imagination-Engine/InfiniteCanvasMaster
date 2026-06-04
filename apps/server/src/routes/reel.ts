@@ -1,13 +1,20 @@
 import { Hono } from "hono";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { getVeoJob, startVeoForgeJob } from "../services/veoForge.js";
+import {
+  getVeoJob,
+  startVeoForgeJob,
+  resumePendingVeoJobs,
+} from "../services/veoForge.js";
 import { generateGeminiImageToMedia } from "../services/geminiImagePersist.js";
 
 const reelRouter = new Hono();
 
 // Directory where generated images are persisted to disk
 const MEDIA_DIR = join(process.cwd(), "public", "generated-media");
+
+// Resume any in-flight Veo jobs that were interrupted by a server restart.
+resumePendingVeoJobs(MEDIA_DIR);
 
 /**
  * POST /api/reel/generate-image
@@ -104,8 +111,19 @@ reelRouter.get("/media/:filename", async (c) => {
   try {
     const { readFile } = await import("node:fs/promises");
     const data = await readFile(filepath);
-    const ext = filename.split(".").pop() || "png";
-    const mimeType = ext === "jpg" ? "image/jpeg" : "image/png";
+    const ext = (filename.split(".").pop() || "png").toLowerCase();
+    const mimeType =
+      ext === "mp4"
+        ? "video/mp4"
+        : ext === "webm"
+          ? "video/webm"
+          : ext === "jpg" || ext === "jpeg"
+            ? "image/jpeg"
+            : ext === "gif"
+              ? "image/gif"
+              : ext === "webp"
+                ? "image/webp"
+                : "image/png";
 
     return new Response(data, {
       headers: {

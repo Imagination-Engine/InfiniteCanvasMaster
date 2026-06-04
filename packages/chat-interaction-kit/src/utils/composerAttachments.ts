@@ -30,3 +30,29 @@ export function revokeComposerAttachmentUrls(
     URL.revokeObjectURL(attachment.previewUrl);
   }
 }
+
+export type ImagePart = { mimeType: string; data: string };
+
+export async function readAttachmentsAsBase64(
+  attachments: ComposerAttachment[],
+): Promise<ImagePart[]> {
+  return Promise.all(
+    attachments
+      .filter((a) => a.kind === "image")
+      .map(
+        (a) =>
+          new Promise<ImagePart>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+              const comma = dataUrl.indexOf(",");
+              const mimeType = dataUrl.slice(5, dataUrl.indexOf(";"));
+              const data = dataUrl.slice(comma + 1);
+              resolve({ mimeType, data });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(a.file);
+          }),
+      ),
+  );
+}

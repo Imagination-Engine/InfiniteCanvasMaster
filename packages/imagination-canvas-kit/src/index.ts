@@ -28,6 +28,7 @@ import { ArtifactBlock } from "./components/blocks/ArtifactBlock";
 import { ChatBlock } from "./components/blocks/ChatBlock";
 import { MemoryClusterBlock } from "./components/blocks/MemoryClusterBlock";
 import { AppBlock } from "./components/blocks/AppBlock";
+import { ReferenceImageBlock } from "./components/blocks/ReferenceImageBlock";
 import { STUDIO_BLOCK_REGISTRATIONS } from "./components/blocks/studio/studioBlocks";
 
 // Register default blocks with both short and full IDs
@@ -56,6 +57,11 @@ BlockRegistry.register("iem.data.cluster", MemoryClusterBlock as any);
 BlockRegistry.register("app", AppBlock as any);
 BlockRegistry.register("iem.app.web", AppBlock as any);
 BlockRegistry.register("iem.app.iframe", AppBlock as any);
+
+// Uploaded reference still (non-generated) — renders an image on the canvas
+// and is consumable by the reel forge.
+BlockRegistry.register("iem.reel.referenceImage", ReferenceImageBlock as any);
+BlockRegistry.register("reel.referenceImage", ReferenceImageBlock as any);
 
 // Conductor Blocks
 import { ConductorBlockView } from "./components/blocks/ConductorBlockView";

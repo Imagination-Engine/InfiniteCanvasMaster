@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { writeFile, mkdir } from "node:fs/promises";
+import { writeFileSync, existsSync, readFileSync } from "node:fs";
 import {
   buildOperationPollUrl,
   extractInlineVideoPayload,
@@ -21,7 +22,49 @@ export interface VeoJobRecord {
   geminiOperationName?: string;
 }
 
-const jobs = new Map<string, VeoJobRecord>();
+// Persist the job map to a JSON file so that dev-server hot-reloads don't
+// lose in-flight operations. The file lives next to the server's public dir.
+const JOB_STORE_PATH = join(process.cwd(), "public", "veo-jobs.json");
+
+function loadJobStore(): Map<string, VeoJobRecord> {
+  try {
+    if (existsSync(JOB_STORE_PATH)) {
+      const raw = readFileSync(JOB_STORE_PATH, "utf8");
+      const parsed = JSON.parse(raw) as Record<string, VeoJobRecord>;
+      return new Map(Object.entries(parsed));
+    }
+  } catch {
+    // corrupt file – start fresh
+  }
+  return new Map();
+}
+
+function saveJobStore(map: Map<string, VeoJobRecord>): void {
+  try {
+    const obj = Object.fromEntries(map.entries());
+    writeFileSync(JOB_STORE_PATH, JSON.stringify(obj, null, 2), "utf8");
+  } catch {
+    // best-effort; don't crash the request
+  }
+}
+
+const jobs = loadJobStore();
+
+// On startup, resume any jobs that were "running" or "pending" when the server
+// last stopped – they need to be re-queued once startVeoForgeJob is wired up.
+const pendingResumeIds: string[] = [];
+for (const [id, job] of jobs.entries()) {
+  if (
+    (job.status === "running" || job.status === "pending") &&
+    job.geminiOperationName
+  ) {
+    pendingResumeIds.push(id);
+  } else if (job.status === "running" || job.status === "pending") {
+    // No Gemini operation name recorded – can't resume; mark as error.
+    job.status = "error";
+    job.error = "Server restarted before operation started; please retry.";
+  }
+}
 
 export function getVeoJob(operationId: string): VeoJobRecord | undefined {
   return jobs.get(operationId);
@@ -29,6 +72,19 @@ export function getVeoJob(operationId: string): VeoJobRecord | undefined {
 
 export function clearVeoJobsForTests(): void {
   jobs.clear();
+}
+
+function setVeoJob(id: string, record: VeoJobRecord): void {
+  jobs.set(id, record);
+  saveJobStore(jobs);
+}
+
+function updateVeoJob(id: string, patch: Partial<VeoJobRecord>): void {
+  const existing = jobs.get(id);
+  if (existing) {
+    Object.assign(existing, patch);
+    saveJobStore(jobs);
+  }
 }
 
 function geminiApiKey(): string | undefined {
@@ -95,14 +151,20 @@ async function downloadVideoToMediaDir(
   apiKey: string,
   mediaDir: string,
 ): Promise<string> {
+  console.log(`[VEO] Downloading video from: ${videoUri}`);
   const res = await fetch(videoUri, {
     headers: { "x-goog-api-key": apiKey },
     redirect: "follow",
   });
   if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error(
+      `[VEO] Download failed ${res.status} for URL: ${videoUri}\n${body.slice(0, 300)}`,
+    );
     throw new Error(`Failed to download generated video: ${res.status}`);
   }
   const buf = Buffer.from(await res.arrayBuffer());
+  console.log(`[VEO] Downloaded ${buf.byteLength} bytes`);
   return persistVideoBuffer(buf, mediaDir);
 }
 
@@ -112,6 +174,8 @@ async function pollGeminiOperation(
   mediaDir: string,
 ): Promise<string> {
   const pollUrl = buildOperationPollUrl(operationName, GEMINI_BASE, VEO_MODEL);
+  console.log(`[VEO] Polling operation: ${operationName}`);
+  console.log(`[VEO] Poll URL: ${pollUrl}`);
   const maxAttempts = 60;
   for (let i = 0; i < maxAttempts; i++) {
     const res = await fetch(pollUrl, {
@@ -128,6 +192,11 @@ async function pollGeminiOperation(
     }
 
     if (data.done) {
+      console.log(
+        "[VEO] Operation complete. Response shape:",
+        JSON.stringify(data).slice(0, 1000),
+      );
+
       const inline = extractInlineVideoPayload(data);
       if (inline) {
         const ext = inline.mimeType.includes("webm") ? "webm" : "mp4";
@@ -135,6 +204,7 @@ async function pollGeminiOperation(
       }
 
       const videoUri = extractVideoDownloadUri(data, GEMINI_BASE);
+      console.log("[VEO] Download URI:", videoUri);
       if (videoUri) {
         return downloadVideoToMediaDir(videoUri, apiKey, mediaDir);
       }
@@ -161,12 +231,14 @@ async function runVeoJob(
   const job = jobs.get(operationId);
   if (!job) return;
 
-  job.status = "running";
+  updateVeoJob(operationId, { status: "running" });
 
   const apiKey = geminiApiKey();
   if (!apiKey) {
-    job.status = "error";
-    job.error = "No Gemini API key configured (GEMINI_API_KEY)";
+    updateVeoJob(operationId, {
+      status: "error",
+      error: "No Gemini API key configured (GEMINI_API_KEY)",
+    });
     return;
   }
 
@@ -258,13 +330,46 @@ async function runVeoJob(
       throw new Error("Veo did not return an operation name");
     }
 
-    job.geminiOperationName = operationName;
+    // Persist the Gemini operation name immediately so a restart can resume.
+    updateVeoJob(operationId, { geminiOperationName: operationName });
+
     const clipUrl = await pollGeminiOperation(operationName, apiKey, mediaDir);
-    job.status = "done";
-    job.clipUrl = clipUrl;
+    updateVeoJob(operationId, { status: "done", clipUrl });
   } catch (err) {
-    job.status = "error";
-    job.error = err instanceof Error ? err.message : "Veo generation failed";
+    updateVeoJob(operationId, {
+      status: "error",
+      error: err instanceof Error ? err.message : "Veo generation failed",
+    });
+  }
+}
+
+async function resumeVeoJob(operationId: string, mediaDir: string) {
+  const job = jobs.get(operationId);
+  if (!job?.geminiOperationName) return;
+  const apiKey = geminiApiKey();
+  if (!apiKey) {
+    updateVeoJob(operationId, {
+      status: "error",
+      error: "No Gemini API key configured (GEMINI_API_KEY)",
+    });
+    return;
+  }
+  console.log(
+    `[VEO] Resuming job ${operationId} (op: ${job.geminiOperationName})`,
+  );
+  updateVeoJob(operationId, { status: "running" });
+  try {
+    const clipUrl = await pollGeminiOperation(
+      job.geminiOperationName,
+      apiKey,
+      mediaDir,
+    );
+    updateVeoJob(operationId, { status: "done", clipUrl });
+  } catch (err) {
+    updateVeoJob(operationId, {
+      status: "error",
+      error: err instanceof Error ? err.message : "Veo generation failed",
+    });
   }
 }
 
@@ -275,7 +380,7 @@ export async function startVeoForgeJob(options: {
 }): Promise<{ operationId: string }> {
   if (process.env.IEM_MOCK_MODELS === "1") {
     const operationId = `mock-${randomUUID()}`;
-    jobs.set(operationId, {
+    setVeoJob(operationId, {
       status: "done",
       clipUrl: "/generated-media/mock-reel.mp4",
     });
@@ -283,7 +388,7 @@ export async function startVeoForgeJob(options: {
   }
 
   const operationId = randomUUID();
-  jobs.set(operationId, { status: "pending" });
+  setVeoJob(operationId, { status: "pending" });
 
   void runVeoJob(
     operationId,
@@ -293,4 +398,14 @@ export async function startVeoForgeJob(options: {
   );
 
   return { operationId };
+}
+
+/**
+ * Resume any jobs that were in-flight when the server last stopped.
+ * Call once at server startup.
+ */
+export function resumePendingVeoJobs(mediaDir: string): void {
+  for (const id of pendingResumeIds) {
+    void resumeVeoJob(id, mediaDir);
+  }
 }

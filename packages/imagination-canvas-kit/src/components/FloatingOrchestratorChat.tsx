@@ -11,6 +11,7 @@ import {
   MessageAttachmentPreview,
   createComposerAttachmentsFromFiles,
   revokeComposerAttachmentUrls,
+  readAttachmentsAsBase64,
   type ComposerAttachment,
 } from "@iem/chat-interaction-kit";
 import { classifyOrchestratorIntent } from "../utils/orchestratorIntentClassifier";
@@ -258,6 +259,9 @@ export const FloatingOrchestratorChat: React.FC = () => {
     }
 
     const sentAttachments = messageAttachmentsFromStaged(stagedAttachments);
+    // Read image bytes before clearing staged list
+    const imageParts = await readAttachmentsAsBase64(stagedAttachments);
+
     const userMsg: OrchestratorMessage = {
       id: `msg-${Date.now()}`,
       role: "user",
@@ -267,11 +271,7 @@ export const FloatingOrchestratorChat: React.FC = () => {
     };
     setMessages((prev) => [...prev, userMsg]);
 
-    const promptInput =
-      input.trim() ||
-      (sentAttachments.length > 0
-        ? `[Attached ${sentAttachments.length} image(s): ${sentAttachments.map((a) => a.name).join(", ")}]`
-        : "");
+    const promptInput = input.trim();
     setInput("");
     setStagedAttachments([]);
     setIsStreaming(true);
@@ -295,15 +295,20 @@ export const FloatingOrchestratorChat: React.FC = () => {
     };
 
     // 2. Format history array for Mastra Agent format
-    const chatHistory = [...messages, userMsg]
-      .filter(
-        (m) =>
-          m.role === "user" || m.role === "agent" || m.role === "assistant",
-      )
-      .map((m) => ({
+    const allMsgs = [...messages, userMsg].filter(
+      (m) => m.role === "user" || m.role === "agent" || m.role === "assistant",
+    );
+    const chatHistory = allMsgs.map((m, i) => {
+      const base = {
         role: m.role === "agent" ? "assistant" : m.role,
         content: m.content,
-      }));
+      };
+      // Attach image data only to the last (latest) user message
+      if (i === allMsgs.length - 1 && imageParts.length > 0) {
+        return { ...base, imageParts };
+      }
+      return base;
+    });
 
     try {
       const url = "http://localhost:3001/api/chat";
