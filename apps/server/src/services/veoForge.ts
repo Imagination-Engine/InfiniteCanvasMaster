@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { writeFile, mkdir } from "node:fs/promises";
-import { writeFileSync, existsSync, readFileSync } from "node:fs";
+import { writeFileSync, existsSync, readFileSync, rmSync } from "node:fs";
 import {
   buildOperationPollUrl,
   extractInlineVideoPayload,
@@ -53,6 +53,7 @@ const jobs = loadJobStore();
 // On startup, resume any jobs that were "running" or "pending" when the server
 // last stopped – they need to be re-queued once startVeoForgeJob is wired up.
 const pendingResumeIds: string[] = [];
+let mutatedDuringStartup = false;
 for (const [id, job] of jobs.entries()) {
   if (
     (job.status === "running" || job.status === "pending") &&
@@ -63,7 +64,13 @@ for (const [id, job] of jobs.entries()) {
     // No Gemini operation name recorded – can't resume; mark as error.
     job.status = "error";
     job.error = "Server restarted before operation started; please retry.";
+    mutatedDuringStartup = true;
   }
+}
+// Persist the swept error states so the same dead jobs aren't re-processed on
+// every subsequent restart.
+if (mutatedDuringStartup) {
+  saveJobStore(jobs);
 }
 
 export function getVeoJob(operationId: string): VeoJobRecord | undefined {
@@ -72,6 +79,13 @@ export function getVeoJob(operationId: string): VeoJobRecord | undefined {
 
 export function clearVeoJobsForTests(): void {
   jobs.clear();
+  // Also remove the on-disk store so stale records aren't reloaded on the next
+  // server start (which would otherwise pollute subsequent test runs).
+  try {
+    rmSync(JOB_STORE_PATH, { force: true });
+  } catch {
+    // best-effort cleanup
+  }
 }
 
 function setVeoJob(id: string, record: VeoJobRecord): void {

@@ -71,5 +71,8 @@ data-node/
 
 public/generated-media/
 apps/server/public/generated-media/
+# Runtime Veo job store (in-flight operation state, not source)
+veo-jobs.json
+apps/server/public/veo-jobs.json
 playwright-report/
 test-results/
