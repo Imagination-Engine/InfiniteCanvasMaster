@@ -1,10 +1,5 @@
 import { Hono } from "hono";
-import { db } from "@iem/db";
-import {
-  conductorGraphs,
-  conductorNodes,
-  conductorRuns,
-} from "@iem/db/src/schema/conductor.js";
+import { conductorGraphs, conductorNodes, conductorRuns, db } from "@iem/db";
 import { eq, and } from "drizzle-orm";
 import { tickConductorNode } from "@iem/surface-conductor/src/runtime/engine.js";
 import { ConductorEnvelope } from "@iem/surface-conductor/src/types/runtime.js";

@@ -1,10 +1,11 @@
-import { db } from "@iem/db";
 import {
   conductorRuns,
   conductorEvents,
   conductorNodeResults,
   conductorNodes,
-} from "@iem/db/src/schema/conductor.js";
+  conductorEdges,
+  db,
+} from "@iem/db";
 import { eq } from "drizzle-orm";
 import {
   ConductorEnvelope,
@@ -35,8 +36,17 @@ registerExecutor("agent", new AgentNodeExecutor());
 // Register GenericBlockExecutor for all other node kinds
 const genericExecutor = new GenericBlockExecutor();
 const genericKinds = [
-  "trigger", "webhook", "condition", "transform", "merge",
-  "loop", "human_checkpoint", "artifact", "output", "prompt", "tool",
+  "trigger",
+  "webhook",
+  "condition",
+  "transform",
+  "merge",
+  "loop",
+  "human_checkpoint",
+  "artifact",
+  "output",
+  "prompt",
+  "tool",
 ];
 for (const kind of genericKinds) {
   registerExecutor(kind, genericExecutor);
@@ -135,7 +145,6 @@ export async function tickConductorNode(
 
     // 8. Route output envelopes to downstream nodes via edges
     try {
-      const { conductorEdges } = await import("@iem/db/src/schema/conductor.js");
       const edges = await db
         .select()
         .from(conductorEdges)
@@ -162,7 +171,11 @@ export async function tickConductorNode(
 
         // Fire-and-forget: tick the downstream node
         tickConductorNode(runId, edge.targetNodeId, mappedEnvelopes).catch(
-          (err) => console.error(`[ENGINE] Edge routing error → ${edge.targetNodeId}:`, err),
+          (err) =>
+            console.error(
+              `[ENGINE] Edge routing error → ${edge.targetNodeId}:`,
+              err,
+            ),
         );
       }
     } catch (edgeErr) {
