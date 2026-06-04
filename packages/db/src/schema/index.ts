@@ -37,6 +37,7 @@ export const canvases = pgTable("canvases", {
   name: text("name").notNull(),
   description: text("description"),
   surfaceType: text("surface_type").default("conductor").notNull(), // playable, conductor, reel, forge, scribe
+  lastRun: jsonb("last_run"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

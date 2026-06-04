@@ -13,6 +13,7 @@ type CanvasResponse = {
   kind: "creativity" | "work";
   name: string;
   document: UnifiedCanvasDocument;
+  lastRun?: any;
   updated_at: string;
 };
 
@@ -20,6 +21,7 @@ export default function SessionPage() {
   const { projectId } = useParams();
   const { accessToken } = useAuth();
   const [document, setDocument] = useState<UnifiedCanvasDocument | null>(null);
+  const [initialLastRun, setInitialLastRun] = useState<any>(null);
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [projectName, setProjectName] = useState<string>("Untitled");
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,7 @@ export default function SessionPage() {
         accessToken,
       );
       setDocument(response.canvas.document);
+      setInitialLastRun(response.canvas.lastRun);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load canvas");
     } finally {
@@ -68,7 +71,7 @@ export default function SessionPage() {
   }, [loadData]);
 
   const saveCanvas = useCallback(
-    async (currentDocument: UnifiedCanvasDocument) => {
+    async (currentDocument: UnifiedCanvasDocument, lastRun?: any) => {
       if (!accessToken || !projectId) {
         throw new Error("Missing auth or project information.");
       }
@@ -77,7 +80,7 @@ export default function SessionPage() {
         `/api/projects/${projectId}/canvas`,
         {
           method: "PUT",
-          body: JSON.stringify({ document: currentDocument }),
+          body: JSON.stringify({ document: currentDocument, lastRun }),
         },
         accessToken,
       );
@@ -183,6 +186,7 @@ export default function SessionPage() {
           <DualViewContainer
             projectId={projectId}
             initialDocument={document}
+            initialLastRun={initialLastRun}
             initialMessages={initialMessages}
             projectName={projectName}
             saveCanvas={saveCanvas}

@@ -18,6 +18,7 @@ import {
   Play,
   X,
   Loader2,
+  Eye,
 } from "lucide-react";
 
 import {
@@ -34,15 +35,18 @@ import { useViewportStore } from "@iem/imagination-canvas-kit";
 interface DualViewContainerProps {
   projectId: string;
   initialDocument: UnifiedCanvasDocument | null;
+  initialLastRun?: any;
   initialMessages: any[];
   projectName: string;
-  saveCanvas: (doc: UnifiedCanvasDocument) => Promise<void>;
+  saveCanvas: (doc: UnifiedCanvasDocument, lastRun?: any) => Promise<void>;
 }
 
 export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   projectId,
   initialDocument,
+  initialLastRun,
   initialMessages,
+  projectName,
   saveCanvas,
 }) => {
   const { accessToken } = useAuth();
@@ -50,6 +54,10 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   const [lastRun, setLastRun] = useState<any>(null);
   const [isRunPanelOpen, setIsRunPanelOpen] = useState(false);
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [previewWebData, setPreviewWebData] = useState<{
+    content: string;
+    title: string;
+  } | null>(null);
 
   const documentSyncedRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,10 +72,10 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       y: viewport.y,
       zoom: viewport.zoom,
     }) as UnifiedCanvasDocument;
-    void saveCanvas(doc).catch((err) =>
+    void saveCanvas(doc, lastRun).catch((err) =>
       console.warn("[DualView] Failed to persist spatial canvas:", err),
     );
-  }, [saveCanvas]);
+  }, [saveCanvas, lastRun]);
 
   const schedulePersist = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -75,6 +83,20 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       persistSpatialToServer();
     }, 800);
   }, [persistSpatialToServer]);
+
+  // Sync initialLastRun when it loads
+  useEffect(() => {
+    if (initialLastRun && !lastRun) {
+      setLastRun(initialLastRun);
+    }
+  }, [initialLastRun]);
+
+  // Auto-save lastRun when it changes
+  useEffect(() => {
+    if (lastRun && !isRunning) {
+      schedulePersist();
+    }
+  }, [lastRun, isRunning, schedulePersist]);
   // --- Create Session Context Summary ---
   const sessionSummary = React.useMemo(() => {
     const userMessages = (initialMessages || [])
@@ -123,6 +145,7 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
   const handleRunGraph = useCallback(async () => {
     if (isRunning) return;
     setIsRunning(true);
+    setLastRun(null); // Clear previous artifacts for clean transition
     setIsRunPanelOpen(true); // Open panel to show progress
 
     const { objects, updateObject } = useCanvasStore.getState();
@@ -429,8 +452,15 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
       if (payload.files && Array.isArray(payload.files)) {
         try {
           const zip = new JSZip();
+          let previewContent = null;
           payload.files.forEach((file: any) => {
             zip.file(file.name, file.content);
+            // Detect index.html or any html for preview
+            if (file.name === "index.html" || file.name.endsWith(".html")) {
+              if (!previewContent || file.name === "index.html") {
+                previewContent = file.content;
+              }
+            }
           });
 
           // Also include generatedCode if it exists and isn't already in files
@@ -444,15 +474,21 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           const zipBlob = await zip.generateAsync({ type: "blob" });
           const zipUrl = URL.createObjectURL(zipBlob);
 
+          const safeProjectName = (projectName || "Project")
+            .replace(/[^a-z0-9]/gi, "_")
+            .toLowerCase();
+
           found.push({
             id: `${source}-project-zip`,
-            name: `project-${source.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.zip`,
+            name: `${safeProjectName}.zip`,
             type: "file",
             content: zipUrl,
             mime: "application/zip",
             label: "Packaged Project (ZIP)",
             icon: File,
             source,
+            previewable: !!previewContent,
+            previewContent,
           });
           hasZip = true;
         } catch (e) {
@@ -574,35 +610,43 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           const content = payload[key];
           let finalExt = ext;
           let finalMime = mime;
+          let finalType = type;
 
-          if (type === "code" && typeof content === "string") {
+          if (typeof content === "string") {
             if (
               content.includes("<!DOCTYPE html>") ||
               content.includes("<html")
             ) {
               finalExt = "html";
               finalMime = "text/html";
+              finalType = "code";
             } else if (
               content.includes("import React") ||
               content.includes("export default")
             ) {
               finalExt = "tsx";
+              finalType = "code";
             } else if (
               content.includes("def ") ||
               content.includes("import os") ||
               content.includes("import sys")
             ) {
               finalExt = "py";
+              finalType = "code";
             }
           }
 
-          const hash = `${type}-${typeof content === "string" ? (content.length > 100 ? content.substring(0, 100) : content) : JSON.stringify(content)}`;
+          const safeProjectName = (projectName || "Project")
+            .replace(/[^a-z0-9]/gi, "_")
+            .toLowerCase();
+
+          const hash = `${finalType}-${typeof content === "string" ? (content.length > 100 ? content.substring(0, 100) : content) : JSON.stringify(content)}`;
           if (!seen.has(hash)) {
             seen.add(hash);
             found.push({
               id: `${source}-${key}`,
-              name: `${key}-${source.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.${finalExt}`,
-              type,
+              name: `${safeProjectName}_${key.toLowerCase()}.${finalExt}`,
+              type: finalType,
               content,
               mime: finalMime,
               label: key,
@@ -701,24 +745,55 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
           </div>
           <div className="p-4 overflow-auto max-h-[50vh]">
             {artifacts.length > 0 && (
-              <div className="mb-4 flex items-center justify-between">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
-                  Generated Artifacts
+              <div className="mb-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
+                    Generated Artifacts
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* GLOBAL PREVIEW BUTTON */}
+                    {artifacts.some(
+                      (a) => a.previewable || a.mime === "text/html",
+                    ) && (
+                      <button
+                        onClick={() => {
+                          const mainArt =
+                            artifacts.find((a) => a.name === "index.html") ||
+                            artifacts.find((a) => a.previewable) ||
+                            artifacts.find((a) => a.mime === "text/html");
+
+                          if (mainArt) {
+                            setPreviewWebData({
+                              content:
+                                mainArt.previewContent || mainArt.content,
+                              title: mainArt.name,
+                            });
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-cyan text-black hover:bg-brand-cyan/80 border border-brand-cyan/30 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-cyan/20 transition-all active:scale-95"
+                        title="Preview generated website"
+                      >
+                        <Eye size={14} />
+                        Preview Website
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        artifacts.forEach((art) => {
+                          setTimeout(() => {
+                            downloadFile(art.name, art.content, art.mime);
+                          }, 100);
+                        });
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-purple text-white hover:bg-brand-purple-light border border-brand-purple/30 text-[10px] font-black uppercase tracking-widest"
+                      title="Download all generated files"
+                    >
+                      <Download size={14} />
+                      Export All
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    artifacts.forEach((art) => {
-                      setTimeout(() => {
-                        downloadFile(art.name, art.content, art.mime);
-                      }, 100);
-                    });
-                  }}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-purple text-white hover:bg-brand-purple-light border border-brand-purple/30 text-[10px] font-black uppercase tracking-widest"
-                  title="Download all generated files"
-                >
-                  <Download size={14} />
-                  Export All (${artifacts.length})
-                </button>
               </div>
             )}
 
@@ -803,6 +878,64 @@ export const DualViewContainer: React.FC<DualViewContainerProps> = ({
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 4. Cinematic Web Preview Modal */}
+      {previewWebData && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/95 backdrop-blur-3xl animate-in fade-in duration-300">
+          <div className="relative w-[95vw] h-[90vh] bg-white rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(34,211,238,0.3)] border border-white/10 group flex flex-col">
+            {/* Header */}
+            <div className="h-14 bg-brand-bg-page border-b border-white/10 flex items-center justify-between px-6 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-brand-cyan/20 rounded-lg">
+                  <Eye size={18} className="text-brand-cyan" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                    Live Preview: {previewWebData.title}
+                  </h3>
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                    Forge Website Runtime
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewWebData(null)}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all backdrop-blur-xl border border-white/10"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 bg-white relative">
+              <iframe
+                srcDoc={
+                  previewWebData.content.includes("<!DOCTYPE html>") ||
+                  previewWebData.content.includes("<html")
+                    ? previewWebData.content
+                    : `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { margin: 0; padding: 20px; font-family: sans-serif; background: #fff; color: #333; }
+          </style>
+        </head>
+        <body>
+          ${previewWebData.content}
+        </body>
+      </html>
+    `
+                }
+                title="Website Preview"
+                className="w-full h-full border-none"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            </div>
           </div>
         </div>
       )}

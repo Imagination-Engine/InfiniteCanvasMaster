@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState } from "react";
 import type { CanvasObject } from "../../contracts";
-import { AppWindow, RefreshCw, ShieldAlert, Download } from "lucide-react";
+import { AppWindow, RefreshCw, ShieldAlert, Download, Eye } from "lucide-react";
 
 export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
   const [key, setKey] = useState(0);
@@ -69,6 +69,21 @@ export const AppBlock: React.FC<{ object: CanvasObject }> = ({ object }) => {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {srcDoc && (
+            <button
+              onClick={() => {
+                const blob = new Blob([srcDoc], { type: "text/html" });
+                const url = URL.createObjectURL(blob);
+                window.open(url, "_blank");
+                // Note: We don't revoke here because the new tab needs it,
+                // but browser usually handles blob lifecycle for new tabs.
+              }}
+              className="p-1 hover:bg-white/5 rounded transition-colors text-white/40 hover:text-white"
+              title="Open Preview in New Tab"
+            >
+              <Eye size={12} />
+            </button>
+          )}
           {generatedCode && (
             <button
               onClick={handleDownload}

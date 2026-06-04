@@ -212,6 +212,7 @@ projectsRouter.get("/:id/canvas", async (c) => {
         kind: "creativity",
         name: canvas.name,
         document,
+        lastRun: canvas.lastRun,
         updated_at: canvas.updatedAt,
       },
     });
@@ -225,7 +226,7 @@ projectsRouter.put("/:id/canvas", async (c) => {
   const db = c.get("db") as any;
   const user = c.get("user") as any;
   const projectId = c.req.param("id");
-  const { document } = await c.req.json();
+  const { document, lastRun } = await c.req.json();
 
   try {
     // Check auth
@@ -277,9 +278,14 @@ projectsRouter.put("/:id/canvas", async (c) => {
       );
     }
 
+    const updateData: any = { updatedAt: new Date() };
+    if (lastRun !== undefined) {
+      updateData.lastRun = lastRun;
+    }
+
     const [updatedCanvas] = await db
       .update(canvases as any)
-      .set({ updatedAt: new Date() })
+      .set(updateData)
       .where(eq((canvases as any).id, canvas.id))
       .returning();
 
@@ -289,6 +295,7 @@ projectsRouter.put("/:id/canvas", async (c) => {
         kind: "creativity",
         name: updatedCanvas.name,
         document,
+        lastRun: updatedCanvas.lastRun,
         updated_at: updatedCanvas.updatedAt,
       },
     });
