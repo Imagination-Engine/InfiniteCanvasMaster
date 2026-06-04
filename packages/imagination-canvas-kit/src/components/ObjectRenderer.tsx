@@ -364,7 +364,14 @@ export const ObjectRenderer: React.FC<{
       {/* Left Input Connector Handle */}
       <div
         title="Input — connect upstream"
-        className={`absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+        className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+        style={{
+          left: "-12px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "24px",
+          height: "24px",
+        }}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData("application/iem-connection", object.id);
@@ -380,7 +387,8 @@ export const ObjectRenderer: React.FC<{
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div
-          className={`w-4 h-4 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
+          className={`w-3 h-3 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
+          style={{ width: "12px", height: "12px" }}
         />
       </div>
 
@@ -515,7 +523,14 @@ export const ObjectRenderer: React.FC<{
       {/* Right Output Connector Handle */}
       <div
         title="Output — drag to connect"
-        className={`absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+        className={`absolute rounded-full flex items-center justify-center cursor-crosshair transition-opacity duration-300 z-20 group/handle ${isHovered ? "opacity-100" : "opacity-80"}`}
+        style={{
+          right: "-12px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "24px",
+          height: "24px",
+        }}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData("application/iem-connection", object.id);
@@ -531,7 +546,8 @@ export const ObjectRenderer: React.FC<{
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div
-          className={`w-4 h-4 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
+          className={`w-3 h-3 ${getAccentColorClass(object)} border-2 border-white/20 shadow-lg rounded-full transition-all duration-300 group-hover/handle:scale-125 group-hover/handle:border-white/50`}
+          style={{ width: "12px", height: "12px" }}
         />
       </div>
     </div>

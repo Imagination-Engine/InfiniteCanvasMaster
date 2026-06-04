@@ -17,7 +17,7 @@ export interface PlanGraph {
 function inferBlockId(node: PlanNode): string {
   const t = (node.type + " " + node.title).toLowerCase();
 
-  if (t.indexOf("research") !== -1) return "iem.agent.researcher";
+  if (t.indexOf("research") !== -1) return "iem.agent.agent";
   if (
     t.indexOf("write") !== -1 ||
     t.indexOf("copy") !== -1 ||

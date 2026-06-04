@@ -508,16 +508,6 @@ const BASE_CATALOG: NodeCatalog = {
     {},
     "tool",
   ),
-  "conductor.agent": createEntry(
-    "conductor.agent",
-    "creative",
-    "Sub-Agent",
-    "Autonomous worker node.",
-    { instructions: "text" },
-    { output: "text" },
-    {},
-    "tool",
-  ),
   "conductor.router": createEntry(
     "conductor.router",
     "creative",

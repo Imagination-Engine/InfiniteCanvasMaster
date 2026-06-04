@@ -71,12 +71,6 @@ const CONDUCTOR_META: Record<
     accentBorder: "border-purple-500/40",
     label: "Sub-Graph",
   },
-  "conductor.agent": {
-    icon: Bot,
-    color: "text-brand-cyan",
-    accentBorder: "border-brand-cyan/40",
-    label: "Sub-Agent",
-  },
   "conductor.saas": {
     icon: Zap,
     color: "text-brand-purple",
@@ -393,37 +387,6 @@ export default function ConductorNode({ id, data, selected }: NodeProps) {
                 Encapsulated Graph
               </span>
             </div>
-          </>
-        )}
-
-        {/* Agent */}
-        {nodeData.type === "conductor.agent" && (
-          <>
-            <label className="block space-y-1.5">
-              <span className="block text-[9px] font-black uppercase tracking-widest text-brand-text-muted">
-                Instructions
-              </span>
-              <textarea
-                value={String(nodeData.inputs?.instructions ?? "")}
-                onChange={(e) =>
-                  updateData({ inputs: { instructions: e.target.value } })
-                }
-                onKeyDown={(e) => e.stopPropagation()}
-                rows={3}
-                placeholder="You are a specialist in data analysis..."
-                className="w-full resize-none rounded-xl bg-white/[0.03] border border-white/10 px-3 py-2 text-[11px] font-medium outline-none focus:border-brand-cyan/50 transition-all text-white placeholder:text-brand-text-muted/30"
-              />
-            </label>
-            {nodeData.outputs?.output && (
-              <div className="rounded-xl border border-brand-cyan/20 bg-brand-cyan/5 p-3">
-                <span className="block text-[9px] font-black uppercase tracking-widest text-brand-cyan mb-1">
-                  Agent Output
-                </span>
-                <div className="text-[11px] font-medium text-brand-text-body leading-relaxed max-h-20 overflow-auto custom-scrollbar">
-                  {String(nodeData.outputs.output)}
-                </div>
-              </div>
-            )}
           </>
         )}
 

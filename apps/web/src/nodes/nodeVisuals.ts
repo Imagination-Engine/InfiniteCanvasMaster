@@ -125,7 +125,6 @@ const NODE_ICON_BY_TYPE: Record<string, LucideIcon> = {
   "conductor.state": Database,
   "conductor.errorBoundary": Zap,
   "conductor.subGraph": Layers,
-  "conductor.agent": Bot,
   "conductor.saas": Globe,
   // Forge blocks
   "forge.architect": Network,

@@ -175,7 +175,7 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
         method: "POST",
         headers,
         body: JSON.stringify({
-          blockId: "iem.conductor.agent",
+          blockId: "iem.agent.agent",
           inputs: {
             instructions: instructions || "You are a helpful AI assistant.",
             input: prompt,
@@ -572,15 +572,69 @@ export const AgentBlock: React.FC<BlockComponentProps> = ({
             {metadata.role || "AI Sub-Agent"}
           </span>
         </div>
-        {referenceFiles.length > 0 && (
-          <div
-            className="flex items-center gap-1 text-[9px] text-white/40 bg-white/5 border border-white/10 rounded-full px-2 py-0.5"
-            title={`${referenceFiles.length} reference documents loaded`}
+        <div className="flex items-center gap-2">
+          {referenceFiles.length > 0 && (
+            <div
+              className="flex items-center gap-1 text-[9px] text-white/40 bg-white/5 border border-white/10 rounded-full px-2 py-0.5"
+              title={`${referenceFiles.length} reference documents loaded`}
+            >
+              <Paperclip size={9} />
+              <span>{referenceFiles.length}</span>
+            </div>
+          )}
+          <select
+            value={metadata.preset || "general"}
+            onChange={(e) => {
+              const preset = e.target.value;
+              const presetConfig: Record<
+                string,
+                { role: string; instructions: string }
+              > = {
+                general: { role: "AI Sub-Agent", instructions: "" },
+                researcher: {
+                  role: "Research Agent",
+                  instructions:
+                    "You are a deep research specialist. Your task is to thoroughly investigate topics, find relevant sources, synthesize information, and present findings in a structured, well-cited format.",
+                },
+                coder: {
+                  role: "Code Agent",
+                  instructions:
+                    "You are an expert software engineer. Your task is to write clean, well-documented, production-quality code. Follow best practices, use appropriate design patterns, and include error handling.",
+                },
+                builder: {
+                  role: "Builder Agent",
+                  instructions:
+                    "You are a project scaffolding specialist. Your task is to design file structures, create boilerplate code, set up configurations, and build foundational project architecture.",
+                },
+              };
+              const cfg = presetConfig[preset] || presetConfig.general;
+              handleChange("preset", preset);
+              handleChange("role", cfg.role);
+              if (
+                !instructions ||
+                Object.values(presetConfig).some(
+                  (p) => p.instructions === instructions,
+                )
+              ) {
+                handleChange("instructions", cfg.instructions);
+              }
+            }}
+            className="bg-white/5 border border-white/10 rounded-lg px-1.5 py-0.5 text-[9px] text-white/60 outline-none cursor-pointer focus:border-brand-purple/40 transition-all"
           >
-            <Paperclip size={9} />
-            <span>{referenceFiles.length}</span>
-          </div>
-        )}
+            <option value="general" className="bg-brand-bg-page">
+              General
+            </option>
+            <option value="researcher" className="bg-brand-bg-page">
+              Researcher
+            </option>
+            <option value="coder" className="bg-brand-bg-page">
+              Coder
+            </option>
+            <option value="builder" className="bg-brand-bg-page">
+              Builder
+            </option>
+          </select>
+        </div>
       </div>
 
       {/* Tagline / Instructions Purpose */}

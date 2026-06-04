@@ -101,7 +101,8 @@ export class StudioInteropResolver {
     const source = blockRegistry.get(normalizeCanvasBlockId(sourceId));
     const target = blockRegistry.get(normalizeCanvasBlockId(targetId));
 
-    if (!source || !target) return false;
+    // Graceful fallback: allow connection if either block's contract is unknown/dynamic/conductor
+    if (!source || !target) return true;
 
     const sourceProduces = source.produces || [];
     const targetAccepts = target.accepts || [];

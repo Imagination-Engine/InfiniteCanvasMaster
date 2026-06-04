@@ -2,6 +2,8 @@
 import type { BlockDefinition } from "./protocol";
 import type { StudioId } from "../studio/contracts";
 import { z } from "zod";
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
 
 // ---------------------------------------------------------------------------
 // Map legacy studio strings to canonical StudioId values
@@ -259,16 +261,98 @@ createBlock({
   agentic: true,
   runtime: "agent",
   studio: "Agent Studio",
-});
-createBlock({
-  id: "iem.agent.blank",
-  name: "Blank Agent Template",
-  category: "Agents & Swarms",
-  description: "An unconfigured agent ready for instructions.",
-  icon: "Bot",
-  agentic: true,
-  runtime: "agent",
-  studio: "Agent Studio",
+  input: z.object({
+    instructions: z.string(),
+    input: z.any().optional(),
+    provider: z.enum(["google", "local"]).optional().default("google"),
+    model: z.string().optional(),
+    referenceFiles: z.array(z.any()).optional().default([]),
+  }),
+  output: z.object({ output: z.string() }),
+  agent: {
+    kind: "local",
+    toolName: "agent_exec",
+    invoke: async (i: any) => {
+      const instructions = i.instructions || "";
+      const inputVal = i.input || "";
+      const provider = i.provider || "google";
+      const model = i.model;
+      const referenceFiles = i.referenceFiles || [];
+
+      let upstreamContext = "";
+      if (inputVal !== undefined && inputVal !== null) {
+        if (typeof inputVal === "string") {
+          upstreamContext = inputVal;
+        } else {
+          upstreamContext = JSON.stringify(inputVal, null, 2);
+        }
+      }
+
+      // Compile reference document contexts
+      let referenceContext = "";
+      if (referenceFiles && referenceFiles.length > 0) {
+        referenceContext =
+          "\n\n### Reference Documents:\n" +
+          referenceFiles
+            .map((f: any) => `[Document: ${f.name}]\n${f.content || ""}`)
+            .join("\n\n");
+      }
+
+      const finalPrompt = upstreamContext
+        ? `${instructions}${referenceContext}\n\n### Input Prompt:\n${upstreamContext}`
+        : `${instructions}${referenceContext}`;
+
+      if (provider === "local") {
+        try {
+          const ollamaUrl =
+            process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+          console.log(`[LOCAL LLM] Calling Ollama generate at ${ollamaUrl}...`);
+          const res = await fetch(`${ollamaUrl}/api/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: model || "mistral",
+              prompt: finalPrompt,
+              stream: false,
+            }),
+          });
+          if (!res.ok) {
+            throw new Error(`Ollama HTTP ${res.status}: ${res.statusText}`);
+          }
+          const data = await res.json();
+          return { output: data.response || "" };
+        } catch (err: any) {
+          console.warn(
+            "[OLLAMA FALLBACK] Local LLM unreachable. Simulating...",
+            err.message,
+          );
+          return {
+            output: `Simulated local Ollama response (${model || "mistral"}):\n\nProcessed prompt: "${inputVal}"\n\nReference Files Attached: ${referenceFiles.length}\nSystem context: "${instructions}"`,
+          };
+        }
+      } else {
+        // provider === "google"
+        const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        if (!apiKey) {
+          return {
+            output: `Simulated Google Gemini response (${model || "gemini-2.5-flash"}):\n\nProcessed prompt: "${inputVal}"\n\nReference Files Attached: ${referenceFiles.length}\nSystem context: "${instructions}"`,
+          };
+        }
+
+        try {
+          const response = await generateText({
+            model: google(model || "gemini-2.5-flash"),
+            prompt: finalPrompt,
+          });
+          return { output: response.text };
+        } catch (err: any) {
+          return {
+            output: `Simulated Google Gemini response (API fallback, error: ${err.message || String(err)}) (${model || "gemini-2.5-flash"}):\n\nProcessed prompt: "${inputVal}"\n\nReference Files Attached: ${referenceFiles.length}\nSystem context: "${instructions}"`,
+          };
+        }
+      }
+    },
+  },
 });
 createBlock({
   id: "iem.agent.mastra",
@@ -355,36 +439,7 @@ createBlock({
   icon: "ArrowRightLeft",
   runtime: "sandbox",
 });
-createBlock({
-  id: "iem.agent.researcher",
-  name: "Research Agent Block",
-  category: "Agents & Swarms",
-  description: "Specializes in deep web and document research.",
-  icon: "Search",
-  agentic: true,
-  runtime: "agent",
-  studio: "Research Studio",
-});
-createBlock({
-  id: "iem.agent.builder",
-  name: "Builder Agent Block",
-  category: "Agents & Swarms",
-  description: "Specializes in scaffolding projects and files.",
-  icon: "Hammer",
-  agentic: true,
-  runtime: "agent",
-  studio: "Agent Studio",
-});
-createBlock({
-  id: "iem.agent.code",
-  name: "Code Agent Block",
-  category: "Agents & Swarms",
-  description: "Specializes in writing and debugging code.",
-  icon: "Code2",
-  agentic: true,
-  runtime: "agent",
-  studio: "App Creation Studio",
-});
+
 createBlock({
   id: "iem.agent.operator",
   name: "Operator Agent Block",

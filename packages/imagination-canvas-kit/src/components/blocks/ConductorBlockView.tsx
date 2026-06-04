@@ -553,8 +553,7 @@ export const ConductorBlockView: React.FC<BlockComponentProps> = ({
               )}
 
               {/* Agent Node Configuration */}
-              {(object.type.includes("agent") ||
-                object.type === "conductor.agent") && (
+              {object.type.includes("agent") && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">

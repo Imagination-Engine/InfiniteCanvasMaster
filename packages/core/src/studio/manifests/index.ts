@@ -259,7 +259,7 @@ export const appCreationStudioManifest: StudioManifest = {
   blockIds: [
     "iem.studio.app",
     "iem.studio.saas",
-    "iem.agent.code",
+    "iem.agent.agent",
     "iem.app.code-workspace",
     "iem.app.terminal",
     "iem.app.preview",
@@ -363,12 +363,10 @@ export const agentStudioManifest: StudioManifest = {
   accent: "#9B79FF",
   blockIds: [
     "iem.agent.agent",
-    "iem.agent.blank",
     "iem.agent.supervisor",
     "iem.agent.swarm",
     "iem.agent.imagiclaw",
     "iem.agent.imagiclaw-swarm",
-    "iem.agent.builder",
   ],
   capabilities: [
     {
@@ -390,7 +388,7 @@ export const agentStudioManifest: StudioManifest = {
       id: "agent-config",
       name: "Agent Configuration",
       mimeType: "application/x-agent-config+json",
-      producedBy: ["iem.agent.agent", "iem.agent.blank"],
+      producedBy: ["iem.agent.agent"],
       acceptedBy: ["iem.agent.supervisor", "iem.agent.swarm"],
     },
   ],
@@ -423,7 +421,7 @@ export const researchStudioManifest: StudioManifest = {
   accent: "#4ECDC4",
   blockIds: [
     "iem.studio.research",
-    "iem.agent.researcher",
+    "iem.agent.agent",
     "iem.text.brief",
     "iem.text.citation",
     "iem.data.stream",

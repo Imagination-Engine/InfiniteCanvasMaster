@@ -39,10 +39,6 @@ BlockRegistry.register("iem.text.rich", RichTextBlock as any);
 
 BlockRegistry.register("agent", AgentBlock as any);
 BlockRegistry.register("iem.agent.agent", AgentBlock as any);
-BlockRegistry.register("iem.agent.researcher", AgentBlock as any);
-BlockRegistry.register("iem.agent.builder", AgentBlock as any);
-BlockRegistry.register("iem.agent.code", AgentBlock as any);
-BlockRegistry.register("iem.agent.blank", AgentBlock as any);
 
 BlockRegistry.register("goal", GoalBlock as any);
 BlockRegistry.register("iem.intent.goal", GoalBlock as any);
@@ -79,9 +75,6 @@ BlockRegistry.register("trigger.manual", ConductorBlockView as any);
 BlockRegistry.register("conductor.schedule", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.schedule", ConductorBlockView as any);
 BlockRegistry.register("trigger.time", ConductorBlockView as any);
-
-BlockRegistry.register("conductor.agent", ConductorBlockView as any);
-BlockRegistry.register("iem.conductor.agent", ConductorBlockView as any);
 
 BlockRegistry.register("conductor.webFetch", ConductorBlockView as any);
 BlockRegistry.register("iem.conductor.webFetch", ConductorBlockView as any);
