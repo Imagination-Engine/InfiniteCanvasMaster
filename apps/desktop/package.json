@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "bun run bun.build.ts",
+    "build": "node build-or-skip.mjs",
     "test": "echo \"Electrobun stretch goal - bypass test for now\""
   },
   "dependencies": {
