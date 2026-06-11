@@ -44,7 +44,7 @@ export const RunPanel: React.FC<RunPanelProps> = ({
 
   const downloadFile = (
     filename: string,
-    content: string,
+    content: any,
     mime = "text/plain",
   ) => {
     if (!content) return;
@@ -63,7 +63,11 @@ export const RunPanel: React.FC<RunPanelProps> = ({
       a.click();
       document.body.removeChild(a);
     } else {
-      const blob = new Blob([content], { type: mime });
+      const strContent =
+        typeof content === "object"
+          ? JSON.stringify(content, null, 2)
+          : String(content);
+      const blob = new Blob([strContent], { type: mime });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -137,20 +141,50 @@ export const RunPanel: React.FC<RunPanelProps> = ({
 
       let hasZip = false;
 
-      // Handle multi-file project (ZIP)
-      if (payload.files && Array.isArray(payload.files)) {
+      const hasFiles = payload.files && Array.isArray(payload.files);
+      const hasCode = !!payload.generatedCode || !!payload.code;
+
+      // Handle multi-file project (ZIP) OR package single code output into ZIP
+      if (hasFiles || hasCode) {
         try {
           const zip = new JSZip();
-          payload.files.forEach((file: any) => {
-            zip.file(file.name, file.content);
-          });
-          const previewContent = buildPreviewHtmlFromFiles(payload.files);
+
+          if (hasFiles) {
+            payload.files.forEach((file: any) => {
+              zip.file(file.name, file.content);
+            });
+          }
+
+          const previewContent = hasFiles
+            ? buildPreviewHtmlFromFiles(payload.files)
+            : null;
 
           if (
             payload.generatedCode &&
-            !payload.files.find((f: any) => f.content === payload.generatedCode)
+            (!hasFiles ||
+              !payload.files.find(
+                (f: any) => f.content === payload.generatedCode,
+              ))
           ) {
-            zip.file("main_output.txt", payload.generatedCode);
+            const ext =
+              typeof payload.generatedCode === "string" &&
+              payload.generatedCode.includes("import React")
+                ? "tsx"
+                : "ts";
+            zip.file(`main_output.${ext}`, payload.generatedCode);
+          }
+
+          if (
+            payload.code &&
+            (!hasFiles ||
+              !payload.files.find((f: any) => f.content === payload.code))
+          ) {
+            const ext =
+              typeof payload.code === "string" &&
+              payload.code.includes("import React")
+                ? "tsx"
+                : "ts";
+            zip.file(`code_output.${ext}`, payload.code);
           }
 
           const zipBlob = await zip.generateAsync({ type: "blob" });
